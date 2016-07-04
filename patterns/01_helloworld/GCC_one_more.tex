@@ -1,14 +1,14 @@
-\section{GCC\EMDASH{}\EN{one more thing}\RU{ещё кое-что}}
+\section{GCC\EMDASH{}\EN{one more thing}\RU{ещё кое-что}\PTBR{mais uma coisa}}
 \label{use_parts_of_C_strings}
 
-\RU{Тот факт, что \IT{анонимная} Си-строка имеет тип}\EN{The fact that an \IT{anonymous} C-string has} 
-\IT{const}\EN{ type} (\myref{string_is_const_char}), 
+\RU{Тот факт, что \IT{анонимная} Си-строка имеет тип}\EN{The fact that an \IT{anonymous} C-string has}\PTBR{O fato de que uma \IT{anonimo} C-string tenha} 
+\IT{const}\EN{ type}\PTBR{tipo} (\myref{string_is_const_char}), 
 \RU{и тот факт, что выделенные в сегменте констант Си-строки гаратировано неизменяемые (immutable), 
 ведет к интересному следствию}\EN{and
-that C-strings allocated in constants segment are guaranteed to be immutable, has an interesting consequence}:
-\RU{компилятор может использовать определенную часть строки}\EN{the compiler may use a specific part of the string}.
+that C-strings allocated in constants segment are guaranteed to be immutable, has an interesting consequence}\PTBR{e a string alocada no segumento das contantes possuem garantias de não serem alteradas, isso tem uma consequencia interessante}:
+\RU{компилятор может использовать определенную часть строки}\EN{the compiler may use a specific part of the string}\PTBR{o compilador pode usar um trecho especifico da string}.
 
-\RU{Вот простой пример}\EN{Let's try this example}:
+\RU{Вот простой пример}\EN{Let's try this example}\PTBR{Vejamos este exemplo}:
 
 \begin{lstlisting}
 #include <stdio.h>
@@ -33,7 +33,8 @@ int main()
 \RU{Среднестатистический компилятор с \CCpp (включая MSVC) выделит место для двух строк, 
 но вот что делает GCC 4.8.1}%
 \EN{Common \CCpp{}-compilers (including MSVC) allocate two strings, 
-but let's see what GCC 4.8.1 does}:
+but let's see what GCC 4.8.1 does}\PTBR{Compiladores comuns baseados no \CCpp{} (incluindo MSVC) alocam duas strings, 
+mas vejamos o que o GCC 4.8.1 faz}:
 
 \begin{lstlisting}[caption=GCC 4.8.1 + \RU{листинг в }IDA\EN{ listing}]
 f1              proc near
@@ -62,16 +63,17 @@ aHello          db 'hello '
 s               db 'world',0xa,0
 \end{lstlisting}
 
-\RU{Действительно, когда мы выводим строку}\EN{Indeed: when we print the \q{hello world} string}, 
+\RU{Действительно, когда мы выводим строку}\EN{Indeed: when we print the \q{hello world} string}\PTBR{Fato: quando imprimimos a string \q{hello world}, 
 \RU{эти два слова расположены в памяти впритык друг к другу и \puts, вызываясь из функции f2(), вообще не знает,
 что эти строки разделены}\EN{these two words are positioned in memory adjacently and \puts called from f2() 
-function is not aware that this string is divided}. \RU{Они и не разделены на самом деле, они разделены
+function is not aware that this string is divided}\PTBR{as duas palavras são posisionadas na mem\'oria em posições adjacentes e \puts \'e chamado da funcao f2() não sabe que a string esta dividida}. \RU{Они и не разделены на самом деле, они разделены
 только \q{виртуально}, в нашем листинге}\EN{In fact, it's not divided; it's divided only \q{virtually}, in this
-listing}.
+listing}\PTBR{Na verdade, não est\'a dividida; est\'a separada apenas \q{virtualmente}, nesta listagem}.
 
-\RU{Когда}\EN{When} \puts \RU{вызывается из f1(), он использует строку}\EN{is called from f1(), it uses the} 
-\q{world} \RU{плюс нулевой байт}\EN{string plus a zero byte}. \puts \RU{не знает, что там ещё есть какая-то строка
-перед этой}\EN{is not aware that there is something before this string}!
+\RU{Когда}\EN{When}\PTBR{Quando} \puts \RU{вызывается из f1(), он использует строку}\EN{is called from f1(), it uses the}\PTBR{e chamado de f1(), usa o} 
+\q{world} \RU{плюс нулевой байт}\EN{string plus a zero byte}\PTBR{string mais um byte zerado}. \puts \RU{не знает, что там ещё есть какая-то строка
+перед этой}\EN{is not aware that there is something before this string}\PTBR{e não sabe que h\'a mais alguma coisa antes da string}!
 
 \RU{Этот трюк часто используется (по крайней мере в GCC) и может сэкономить немного памяти.}
 \EN{This clever trick is often used by at least GCC and can save some memory.}
+\EN{Este \'e um truque geralmente utilizado pelo GCC e pode economizar um pouco de memoria.}
