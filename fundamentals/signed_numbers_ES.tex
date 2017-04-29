@@ -1,0 +1,126 @@
+\section{\SignedNumbersSectionName}
+\label{sec:signednumbers}
+\myindex{Signed numbers}
+
+\newcommand{\URLS}{\href{http://go.yurichev.com/17117}{wikipedia}}
+
+Hay distintos m\'etodos para representar n\'umeros con signo\footnote{\URLS},
+pero el \q{complemento a dos} es el m\'as popular en las computadoras.
+
+Aqu\'i hay una tabla con los valores de algunos bytes:
+
+\begin{center}
+\begin{tabular}{ | l | l | l | l | }
+\hline
+\HeaderColor binario & \HeaderColor hexadecimal & \HeaderColor sin signo & \HeaderColor con signo \\
+\hline
+01111111 & 0x7f & 127 & 127 \\
+\hline
+01111110 & 0x7e & 126 & 126 \\
+\hline
+\multicolumn{4}{ |c| }{...} \\
+\hline
+00000110 & 0x6 & 6 & 6 \\
+\hline
+00000101 & 0x5 & 5 & 5 \\
+\hline
+00000100 & 0x4 & 4 & 4 \\
+\hline
+00000011 & 0x3 & 3 & 3 \\
+\hline
+00000010 & 0x2 & 2 & 2 \\
+\hline
+00000001 & 0x1 & 1 & 1 \\
+\hline
+00000000 & 0x0 & 0 & 0 \\
+\hline
+11111111 & 0xff & 255 & -1 \\
+\hline
+11111110 & 0xfe & 254 & -2 \\
+\hline
+11111101 & 0xfd & 253 & -3 \\
+\hline
+11111100 & 0xfc & 252 & -4 \\
+\hline
+11111011 & 0xfb & 251 & -5 \\
+\hline
+11111010 & 0xfa & 250 & -6 \\
+\hline
+\multicolumn{4}{ |c| }{...} \\
+\hline
+10000010 & 0x82 & 130 & -126 \\
+\hline
+10000001 & 0x81 & 129 & -127 \\
+\hline
+10000000 & 0x80 & 128 & -128 \\
+\hline
+\end{tabular}
+\end{center}
+
+\myindex{x86!\Instructions!JA}
+\myindex{x86!\Instructions!JB}
+\myindex{x86!\Instructions!JL}
+\myindex{x86!\Instructions!JG}
+La diferencia entre n\'umeros con signo y sin signo est\'a en que si representamos \TT{0xFFFFFFFE} y \TT{0x00000002}
+sin signo, el primero (4294967294) es mayor que el segundo (2).
+Pero si representamos ambos con signo, el primero se vuelve $-2$, y es menor que el segundo (2).
+Esa es la raz\'on por la que se tienen saltos condicionales~(\myref{sec:Jcc}) tanto para operaciones con signo (e.g. \JG, \JL)
+como sin signo (\JA, \JB).
+
+Con el fin de la simplicidad, esto es lo que uno debe de saber:
+
+\begin{itemize}
+\item Los n\'umeros pueden ser con signo y sin signo.
+
+\item Tipos con signo en \CCpp:
+
+  \begin{itemize}
+    \item \TT{int64\_t} (-9,223,372,036,854,775,808 .. 9,223,372,036,854,775,807) (-~9.2..~9.2 billones) \ESph{} \\
+		  \TT{0x8000000000000000..0x7FFFFFFFFFFFFFFF}),
+    \item \Tint (-2,147,483,648..2,147,483,647 (-~2.15..~2.15Gb) \ESph{} \\
+	    \TT{0x80000000..0x7FFFFFFF}),
+    \item \Tchar (-128..127 \ESph{} \TT{0x80..0x7F}),
+    \item \TT{ssize\_t}.
+   \end{itemize}
+
+	Sin signo:
+  \begin{itemize}
+	  \item \TT{uint64\_t} (0..18,446,744,073,709,551,615 
+		  (~18 billones) \ESph{}}
+		  \TT{0..0xFFFFFFFFFFFFFFFF}),
+  \item \TT{unsigned int} (0..4,294,967,295 (~4.3Gb) \ESph{} \TT{0..0xFFFFFFFF}),
+  \item \TT{unsigned char} (0..255 \ESph{} \TT{0..0xFF}), 
+   \item \TT{size\_t}.
+  \end{itemize}
+
+\item En los tipos con signo, el signo se encuentra en el bit m\'as significativo: 1 significa \q{menos}, 0 significa \q{m\'as}.
+
+\item Promover a un tipo de dato m\'as grande es sencillo:
+
+\myref{subsec:sign_extending_32_to_64}.
+
+\label{sec:signednumbers:negation}
+\item La negaci\'on es simple: s\'olo invierte todos los bits y suma 1.
+Podemos recordar que un n\'umero con signo contrario se localiza en el lado opuesto a la misma distancia de cero.
+La suma de 1 es necesaria porque el cero se localiza en medio.
+
+\myindex{x86!\Instructions!IDIV}
+\myindex{x86!\Instructions!DIV}
+\myindex{x86!\Instructions!IMUL}
+\myindex{x86!\Instructions!MUL}
+\myindex{x86!\Instructions!CBW}
+\myindex{x86!\Instructions!CWD}
+\myindex{x86!\Instructions!CWDE}
+\myindex{x86!\Instructions!CDQ}
+\myindex{x86!\Instructions!CDQE}
+\myindex{x86!\Instructions!MOVSX}
+\myindex{x86!\Instructions!SAR}
+\item Las operaciones de suma y resta funcionan bien para valores tanto con signo como sin signo.
+	Sin embargo, para las operaciones de multiplicaci\'on y divisi\'on x86 tiene instrucciones distintas:
+	\TT{IDIV}/\TT{IMUL} para n\'umeros con signo \ESph{} \TT{DIV}/\TT{MUL} para n\'umeros sin signo.
+\item \'Estas son algunas otras instruccciones que funcionan con n\'umeros con signo:\\
+	\TT{CBW/CWD/CWDE/CDQ/CDQE} (\myref{ins:CBW_CWD_etc}), \TT{MOVSX} (\myref{MOVSX}), \TT{SAR} (\myref{ins:SAR}).
+\end{itemize}
+
+% TBT
+

@@ -1,0 +1,38 @@
+\section{Another heisenbug}
+
+Sometimes, array (or buffer) can overflow due to \IT{fencepost error}:
+
+\lstinputlisting[style=customc]{advanced/750_heisenbug/1.c}
+
+This is what this program printed in my case (non-optimized GCC 5.4 x86 on Linux):
+
+\begin{lstlisting}
+important_var1=1
+important_var2=456
+important_var3=3
+important_var4=4
+important_var5=5
+\end{lstlisting}
+
+As it happens, \TT{important\_var2} has been placed by compiler right after \TT{array1[]}:
+
+\begin{lstlisting}[caption=objdump -x]
+0804a040 g     O .bss   00000200              array1
+...
+0804a240 g     O .bss   00000004              important_var2
+0804a244 g     O .bss   00000004              important_var4
+...
+0804a248 g     O .bss   00000004              important_var1
+0804a24c g     O .bss   00000004              important_var3
+0804a250 g     O .bss   00000004              important_var5
+\end{lstlisting}
+
+Other compiler can arrange variables in another order, and another variable would be zapped.
+\myindex{Heisenbug}
+This is also \textit{heisenbug} (\myref{heisenbug})---bug may appear or may left unnoticed
+depending on compiler version and optimization switches.
+
+\myindex{Valgrind}
+It all variables and arrays are allocated in local stack, stack protection may be triggered, or may not.
+However, Valgrind can find bugs like these.
+

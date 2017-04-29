@@ -1,0 +1,38 @@
+\subsection{\Example{} \#6}
+
+\lstinputlisting[style=customc]{\CURPATH/ex6.c}
+
+\lstinputlisting[style=customasmx86]{\CURPATH/ex6.lst}
+
+\myindex{\CStandardLibrary!time()}
+\myindex{\CStandardLibrary!localtime()}
+
+UNIX time is a 32-bit value, so it is returned in the \TT{DX:AX} register pair and stored in two local 16-bit variables.
+Then a pointer to the pair is passed to the
+\TT{localtime()} function.
+The \TT{localtime()} function has a \TT{struct tm} 
+allocated somewhere in the guts of the C library, so only a pointer to it is returned. 
+
+By the way, this also implies that the function cannot be called again until its results are used.
+
+For the \TT{time()} and \TT{localtime()} 
+functions, a Watcom calling convention is used here:
+the first four arguments are passed in the \TT{AX}, \TT{DX}, \TT{BX} and \TT{CX}, 
+registers, and the rest arguments are via the stack.
+
+The functions using this convention are also marked by underscore at the end of their name.
+
+\TT{sprintf()} does not use the \TT{PASCAL} calling convention, nor the Watcom one,\\ % varioref bug
+so the arguments are passed in the normal \IT{cdecl} way (\myref{cdecl}).
+
+\subsubsection{Global variables}
+
+This is the same example, but now these variables are global:
+
+\lstinputlisting[style=customc]{\CURPATH/ex6_global.c}
+
+\lstinputlisting[style=customasmx86]{\CURPATH/ex6_global.lst}
+
+\TT{t} is not to be used, but the compiler emitted the code which stores the value.
+
+Because it is not sure, maybe that value will eventually be used in some other module.

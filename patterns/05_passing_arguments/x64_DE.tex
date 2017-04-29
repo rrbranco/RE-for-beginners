@@ -1,0 +1,80 @@
+\subsection{x64}
+
+\myindex{x86-64}
+
+Die Geschichte bei x86-64 Funktions Argumenten ist ein wenig anders (zumindest für die ersten vier bis sechs)
+sie werden über die Register übergeben z.b. der \gls{callee} liest direkt aus den Registern anstatt vom Stack 
+zu lesen.
+
+\subsubsection{MSVC}
+
+\Optimizing MSVC:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64]{patterns/05_passing_arguments/x64_MSVC_Ox_EN.asm}
+
+Wie wir sehen können, die compact Funktion \ttf nimmt alle Argumente aus den Registern.
+
+Die \LEA Instruktion wird hier für Addition benutzt,
+scheinbar hat der Compiler die Instruktion für schneller befunden als
+die \TT{ADD} Instruktion.
+
+\myindex{x86!\Instructions!LEA}
+
+\LEA wird auch benutzt in der \main Funktion um das erste und das dritte \ttf Argument vor zu bereiten.
+Der Compiler muss entschieden haben das dies schneller abgearbeitet wird als die Werte in die Register 
+zu laden mit der \MOV Instruktion.
+
+Lasst uns einen Blick auf nicht optimierte MSVC Ausgabe werfen:
+
+\lstinputlisting[caption=MSVC 2012 x64]{patterns/05_passing_arguments/x64_MSVC_IDA_EN.asm}
+
+Es sieht ein bisschen wie ein Puzzle aus, weil alle drei Argumente aus den Registern auf dem Stack
+gespeichert werden aus irgend einem Grund.
+
+\myindex{Shadow space}
+\label{shadow_space}
+Dies bezeichnet man als \q{shadow space}
+
+\footnote{\href{http://go.yurichev.com/17256}{MSDN}}: 
+So wird sich wahrscheinlich jede Win64 EXE verhalten und alle vier Register Werte auf dem Stack speichern.
+
+Das wird aus zwei Gründen so gemacht:
+
+1) Es ist ziemlich übertrieben ein ganzes Register (oder gar vier Register) zu Reservieren für eine
+Argument Übergabe, also werden die Argumente über den Stack zugänglich gemacht.
+2) Der Debugger weiß immer wo die Funktions Argumente zu finden sind bei einem breakpoint\footnote{\href{http://go.yurichev.com/17257}{MSDN}}.
+
+
+Also, so können größere Funktionen ihre Eingabe Argumente im \q{shadows space} speichern wenn die Funktion
+auf die Argumente während der Laufzeit zugreifen will, kleinere Funktionen (wie unsere) zeigen dieses Verhalten 
+nicht. 
+
+Es liegt in der Verantwortung vom \gls{caller} den \q{shadow space} auf dem Stack zu allozieren.
+
+\subsubsection{GCC}
+
+Optimierter GCC generiert mehr oder minder verständlichen Code:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.6 x64]{patterns/05_passing_arguments/x64_GCC_O3_EN.s}
+
+\NonOptimizing GCC:
+
+\lstinputlisting[caption=GCC 4.4.6 x64]{patterns/05_passing_arguments/x64_GCC_EN.s}
+
+\myindex{Shadow space}
+
+Bei System V *NIX Systemen (\SysVABI) ist kein \q{shadow space} nötig, aber der \gls{callee} will vielleicht
+seine Argumente irgendwo speichern im Fall das keine oder zu wenig Register frei sind.
+
+\subsubsection{GCC: uint64\_t statt int}
+
+Unser Beispiel funktioniert mit 32-Bit \Tint, weshalb auch 32-Bit Register Bereiche benutzt werden (mit dem Präfix \TT{E-}).
+
+Es lassen sich auch ohne Probleme 64-Bit Werte benutzen:
+
+\lstinputlisting{patterns/05_passing_arguments/ex64.c}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.6 x64]{patterns/05_passing_arguments/ex64_GCC_O3_IDA_EN.asm}
+
+Der Code ist der gleiche, aber diesmal werden die \IT{full size} 64-Bit Register benutzt (mit dem \TT{R-} Präfix).
+

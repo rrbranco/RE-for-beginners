@@ -1,0 +1,187 @@
+\subsection{Text strings}
+
+\subsubsection{\CCpp}
+
+\label{C_strings}
+
+Die normalen C-strings sind NULL-Terminiert (\ac{ASCIIZ}-strings).
+
+Der Grund warum C Stringformatierung so ist wie sie ist (NULL-Terminiert) scheint ein Historischer zu sein.
+In [Dennis M. Ritchie, \IT{The Evolution of the Unix Time-sharing System}, (1979)] kann man nach lesen:
+
+\begin{framed}
+\begin{quotation}
+Ein kleiner Unterschied war das die I/O Einheit ein ``word'' war, nicht ein Byte, weil die PDP-7 eine word-adressierte
+Maschine war. In der Praxis bedeutete das lediglich das alle Programme die mit Zeichen Streams arbeiteten, das NULL 
+Zeichen ignorieren mussten, weil die NULL benutzt wurde um eine Datei bis zu einer Graden Zahl an Bytes auf zu f\"ullen.
+
+\end{quotation}
+\end{framed}
+
+\myindex{Hiew}
+
+In Hiew oder FAR Manager sehen diese Strings so aus:
+
+\begin{lstlisting}[style=customc]
+int main()
+{
+	printf ("Hello, world!\n");
+};
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{digging_into_code/strings/C-string.png}
+\caption{Hiew}
+\end{figure}
+
+% FIXME видно \n в конце, потом пробел
+
+\subsubsection{Borland Delphi}
+\myindex{Pascal}
+\myindex{Borland Delphi}
+
+Dem String in Passcal und Borland Delphi h\"angt eine 8 oder 32-Bit Zeichenkette an. 
+
+Zum Beispiel:
+
+\begin{lstlisting}[caption=Delphi,style=customasmx86]
+CODE:00518AC8                 dd 19h
+CODE:00518ACC aLoading___Plea db 'Loading... , please wait.',0
+
+...
+
+CODE:00518AFC                 dd 10h
+CODE:00518B00 aPreparingRun__ db 'Preparing run...',0
+\end{lstlisting}
+
+\subsubsection{Unicode}
+
+\myindex{Unicode}
+
+Oft, ist das was Unicode genannt wird einfach eine Methode um Strings zu codieren, bei denen jedes Zeichen 2 Byte oder 
+16 Bits verbraucht. Das ist ein h\a"ufiger Terminologischer Fehler. Unicode ist ein Standard bei dem eine Nummer 
+zu einem der vielen Schreibsysteme der Welt zugeordnet wird, aber es beschreibt nicht die codierungs Methode. 
+
+\myindex{UTF-8}
+\myindex{UTF-16LE}
+
+Die bekannteste Methode zu Codieren ist: UTF-8 ( ist weit verteilt im Internet und auf *NIX Systemen) und UTF-16LE ( wird bei Windows benutzt). 
+
+\myparagraph{UTF-8}
+
+\myindex{UTF-8}
+UTF-8 ist eine der erfolgreichsten Methoden um Zeichen zu codieren.
+Alle Latein Zeichen werden codiert so wie in ASCII, und alle Symbole nach der
+ASCII Tabelle wurden codiert mit zus\"atzlichen Bytes. 0 wird codiert als davor,
+also arbeiten alle Standard C String Funktionen mit UTF-8 Strings wie mit jedem anderen String auch.
+
+Lasst uns anschauen wie die Symbole in verschiedenen anderen Sprachen nach UTF-8 Codiert werden und 
+wie man sie als FAR aussehen lassen kann, durch das benutzen der codepage 437.
+
+\footnote{Beispiel und \"Ubersetzung k\o"nnen von hier bezogen werden:  
+\url{http://go.yurichev.com/17304}}:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{digging_into_code/strings/multilang_sampler.png}
+\end{figure}
+
+% FIXME: cut it
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/strings/multilang_sampler_UTF8.png}
+\caption{FAR: UTF-8}
+\end{figure}
+
+Wie man hier sehen kann, der Englische String sieht genauso aus wie sein Gegenst\"uck in ASCII.
+
+Die Ungarische Sprache benutzt Latein Symbole plus ein paar Symbole mit diacritic Markierungen.
+
+Diese Symbole werden mit mehreren Bytes codiert, diese wurden rot unterstrichen.
+Das gleiche gilt f\"ur die Isl\"andischen und Polnischen Sprachen.
+
+Es gibt auch das \q{Euro} W\"ahrungs Symbol im Standard, das Symbol wurde mit 3 Bytes Codiert.
+
+Der Rest der Schreibsysteme hat keinen Bezug zu Latein.
+
+Zumindest in Russisch, Arabisch, Hebr\"aisch und Hindu k\"onnen wir wiederkehrende Bytes erkennen und das ist nicht mal \"uberraschend:
+Alle Zeichen eines Schreibsystems werden normalerweise in der selben Unicode Tabelle angelegt, also f\"angt ihr code mit den 
+immer gleichen nummern an. % <--- Wird anders \"ubersetzt.
+
+Zu Anfang, noch vor dem \q{How much?} String sehen wir 3 Bytes, die tats\"achlich das \ac{BOM} darstellen.
+Das \ac{BOM} definiert das Codierungssystem das benutzt werden soll.
+
+\myparagraph{UTF-16LE}
+
+\myindex{UTF-16LE}
+\myindex{Windows!Win32}
+Viele win32 Funktionen in Windows haben die Suffixe \TT{-A} und \TT{-W}. 
+Der erste Typ Funktionen arbeitet mit normalen Strings, der andere Typ mit 
+UTF-16LE Strings (\IT{wide}). 
+
+Im zweiten Fall, wird jedes Symbol normal als 16-Bit Wert des Typs \IT{short} gespeichert.
+
+Die Latein Symbole in UFT-16 Strings sehen in Hiew oder FAR aus als w\"aren sie mit Null Bytes verschachtelt:
+
+\begin{lstlisting}[style=customc]
+int wmain()
+{
+	wprintf (L"Hello, world!\n");
+};
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{digging_into_code/strings/UTF16-string.png}
+\caption{Hiew}
+\end{figure}
+
+Wir k\o"nnen das oft auch in gls{Windows NT} System Dateien sehen:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{digging_into_code/strings/ntoskrnl_UTF16.png}
+\caption{Hiew}
+\end{figure}
+
+\myindex{IDA}
+Strings mit Zeichen die exakt 2 Bytes verbrauchen werden \q{Unicode} in \IDA genannt:
+
+\begin{lstlisting}[style=customasmx86]
+.data:0040E000 aHelloWorld:
+.data:0040E000                 unicode 0, <Hello, world!>
+.data:0040E000                 dw 0Ah, 0
+\end{lstlisting}
+
+Hier sieht man wie Russische Sprache in UTF-16LE Codiert wird:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{digging_into_code/strings/russian_UTF16.png}
+\caption{Hiew: UTF-16LE}
+\end{figure}
+
+Was man leicht sehen kann ist das die Symbole durchzogen sind von den Diamant Zeichen (das im ASCII code mit 4 codiert wird).
+Tats\"achlich, findet man die Kyrillischen Symbole in der vierten Unicode Tabelle 
+\footnote{\href{http://go.yurichev.com/17003}{wikipedia}}.
+Deswegen, alle Kyrillischen Symbole in UTF-16LE findet man im Bereich \TT{0x400-0x4FF}.
+
+Lass uns noch mal zu dem Beispiel gehen mit dem String der in verschiedenen Sprachen geschrieben ist.
+Hier sieht man wie der String in UTF-16LE aussieht. 
+
+% FIXME: cut it
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/strings/multilang_sampler_UTF16.png}
+\caption{FAR: UTF-16LE}
+\end{figure}
+
+Hier k\"onnen wir auch das \ac{BOM} am Anfang sehen. 
+Alle Latein Zeichen enthalten Null Bytes.
+
+Manche Zeichen mit unterschiedlichen Markierungen (Ungarisch und Isl\"andisch) wurden rot unterstrichen.
+
+% subsection:
+\input{digging_into_code/strings/base64_DE}
+

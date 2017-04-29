@@ -1,0 +1,30 @@
+...
+.text:C0169EA8      MOV       R9, R3  ; R3 - (4th argument) open_flag
+...
+.text:C0169ED4      LDR       R6, [R9] ; R6 - open_flag
+...
+.text:C0169F68      TST       R6, #0x40 ; jumptable C0169F00 default case
+.text:C0169F6C      BNE       loc_C016A128
+.text:C0169F70      LDR       R2, [R4,#0x10]
+.text:C0169F74      ADD       R12, R4, #8
+.text:C0169F78      LDR       R3, [R4,#0xC]
+.text:C0169F7C      MOV       R0, R4
+.text:C0169F80      STR       R12, [R11,#var_50]
+.text:C0169F84      LDRB      R3, [R2,R3]
+.text:C0169F88      MOV       R2, R8
+.text:C0169F8C      CMP       R3, #0
+.text:C0169F90      ORRNE     R1, R1, #3
+.text:C0169F94      STRNE     R1, [R4,#0x24]
+.text:C0169F98      ANDS      R3, R6, #0x200000
+.text:C0169F9C      MOV       R1, R12
+.text:C0169FA0      LDRNE     R3, [R4,#0x24]
+.text:C0169FA4      ANDNE     R3, R3, #1
+.text:C0169FA8      EORNE     R3, R3, #1
+.text:C0169FAC      STR       R3, [R11,#var_54]
+.text:C0169FB0      SUB       R3, R11, #-var_38
+.text:C0169FB4      BL        lookup_fast
+...
+.text:C016A128 loc_C016A128   ; CODE XREF: do_last.isra.14+DC
+.text:C016A128      MOV       R0, R4
+.text:C016A12C      BL        complete_walk
+...

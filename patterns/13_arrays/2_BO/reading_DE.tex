@@ -1,0 +1,48 @@
+\subsubsection{Lesezugriff außerhalb von Arraygrenzen}
+Der indizierte Zugriff auf ein Array wird durch \IT{array\lbrack{}index\rbrack} realisiert.
+Wenn man sich den erzeugten Code genau ansieht, bemerkt man, dass eine Prüfung der Indexgrenzen fehlt, welche die
+Bedingung \IT{kleiner als 20} validiert.
+Was also passiert, wenn der Index 20 oder größer ist? 
+Hier haben wir es mit einem unschönen Feature von \CCpp zu tun
+
+Hier ein Beipsielcode der erfolgreich kompiliert wurde und funktioniert:
+
+\lstinputlisting[style=customc]{patterns/13_arrays/2_BO/r.c}
+
+Ergebnis des Kompiliervorgangs (MSVC 2008):
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2008,style=customasmx86]{patterns/13_arrays/2_BO/r_msvc.asm}
+
+Der Code produziert dieses Ergebnis:
+
+\lstinputlisting[caption=\olly: console output]{patterns/13_arrays/2_BO/console.txt}
+Es handelt sich um \IT{irgendetwas}, das auf dem Stack in der Nähe des Arrays gelegen hat, 80 Byte von dessen erstem
+Element entfernt.
+
+\clearpage
+\myindex{\olly}
+Versuchen wir mit \olly herauszufinden, woher dieser Wert kommt.
+
+Laden und finden wir also den Wert, der sich direkt hinter dem letzten Arrayelement befindet:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/13_arrays/2_BO/olly_r1.png}
+\caption{\olly: das 20. Element lesen und \printf ausführen}
+\label{fig:array_BO_olly_r1}
+\end{figure}
+
+Worum handelt es sich? 
+Dem Stacklayout nach zu urteilen ist dies der gespeicherte Wert des EBP Registers.
+\clearpage
+Verfolgen wir das ganze weiter und schauen uns an, wie dieser wiederhergestellt wird:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/13_arrays/2_BO/olly_r2.png}
+\caption{\olly: Wert von EBP wiederherstellen}
+\label{fig:array_BO_olly_r2}
+\end{figure}
+Wie könnte es anders gelöst werden?
+Der Compiler könnte zusätzlichen Code erzeugen, der sicherstellt, dass der Index sich stets innerhalb der Arraygrenzen
+befindet (wie in höheren Programmiersprachen\footnote{Java, Python, etc.}), aber das würde den Code langsamer machen.

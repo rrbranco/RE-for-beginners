@@ -1,0 +1,78 @@
+% TODO proof-reading
+\subsubsection{Первый пример}
+
+
+Перейдем к простой задаче модификации кода.
+
+\begin{lstlisting}[style=customjava]
+public class nag
+{
+	public static void nag_screen()
+	{
+		System.out.println("This program is not registered");
+	};
+	public static void main(String[] args) 
+	{
+		System.out.println("Greetings from the mega-software");
+		nag_screen();
+	}
+}
+\end{lstlisting}
+
+
+Как можно избавиться от печати строки \q{This program is not registered}?
+
+
+Наконец загрузим .class-файл в IDA:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{Java_and_NET/java/13_patching/1/1.png}
+\caption{IDA}
+\end{figure}
+
+
+В начале заменим первый байт функции на 177 (это опкод инструкции \TT{return}):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{Java_and_NET/java/13_patching/1/2.png}
+\caption{IDA}
+\end{figure}
+
+Но это не работает (JRE 1.7):
+
+\begin{lstlisting}
+Exception in thread "main" java.lang.VerifyError: Expecting a stack map frame
+Exception Details:
+  Location:
+    nag.nag_screen()V @1: nop
+  Reason:
+    Error exists in the bytecode
+  Bytecode:
+    0000000: b100 0212 03b6 0004 b1
+
+        at java.lang.Class.getDeclaredMethods0(Native Method)
+        at java.lang.Class.privateGetDeclaredMethods(Class.java:2615)
+        at java.lang.Class.getMethod0(Class.java:2856)
+        at java.lang.Class.getMethod(Class.java:1668)
+        at sun.launcher.LauncherHelper.getMainMethod(LauncherHelper.java:494)
+        at sun.launcher.LauncherHelper.checkAndLoadMain(LauncherHelper.java:486)
+\end{lstlisting}
+
+%
+Вероятно, в JVM есть проверки связанные с картами стека.
+
+
+ОК, попробуем пропатчить её иначе, удаляя вызов функции \TT{nag()}:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{Java_and_NET/java/13_patching/1/3.png}
+\caption{IDA}
+\end{figure}
+
+
+0 это опкод инструкции \ac{NOP}.
+
+Теперь всё работает!

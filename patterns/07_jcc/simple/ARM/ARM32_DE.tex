@@ -1,0 +1,101 @@
+\myparagraph{32-bit ARM}
+\label{subsec:jcc_ARM}
+
+\mysubparagraph{\OptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_O3_signed.asm}
+
+\myindex{ARM!Condition codes}
+% FIXME \ref -> which instructions?
+Viele Befehle im ARM mode können nur ausgeführt werden, wenn spezielle Flags gesetzt sind.
+Dies ist beispielsweise oft beim Vergleich von Zahlen der Fall.
+
+\myindex{ARM!\Instructions!ADD}
+\myindex{ARM!\Instructions!ADDAL}
+Der \ADD Befehl zum Beispiel heißt hier intern \TT{ADDAL}, wobei \TT{AL} für \IT{Always} (dt. immer) steht, d.h. er wird
+immer ausgeführt.
+Die Prädikate werden in den 4 höchstwertigsten Bits des 32-Bit-ARM-Befehls kodiert, dem \IT{condition field}.
+
+\myindex{ARM!\Instructions!B}
+Der Befehl \TT{B} für einen unbedingten Sprung ist tatsächlich doch bedingt und genau wie jeder andere bedingte Sprung
+kodiert, nut dass er \TT{AL} im \IT{condition field} hat und dadurch die Flags ignoriert und immer ausgeführt wird.
+
+\myindex{ARM!\Instructions!ADR}
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!CMP}
+Der Befehl \TT{ADRGT} arbeitet wie \TT{ADR}, wird aber nur ausgeführt, wenn das vorangehende \CMP ergeben hat, dass eine
+der beiden Eingabezahlen größer war als die andere. 
+
+\myindex{ARM!\Instructions!BL}
+\myindex{ARM!\Instructions!BLcc}
+% ToBeUpdated
+Der folgende \TT{BLGT} Befehl verhält sich genau wie \TT{BL} und wird nur dann ausgeführt, wenn das Ergebnis des
+Vergleichs das gleiche war (d.h. größer als).
+\TT{ADRGT} schreibt einen Pointer auf den String \TT{a>b\textbackslash{}n} nach \Reg{0} und \TT{BLGT} ruft \printf auf.
+Das heißt, Befehl mit dem Suffix \TT{-GT} werden nur ausgeführt, wenn der Wert in \Reg{0} (das ist $a$) größer ist als
+der Wert in \Reg{4} (das ist $b$).
+
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!BLcc}
+Im Folgenden finden wir die Befehle \TT{ADREQ} und \TT{BLEQ}.
+Sie verhalten sich wie \TT{ADR} und \TT{BL}, werden aber nur ausgeführt, wenn die beiden Operanden des letzten
+Vergleichs gleich waren.
+Ein weiteres \CMP befindet sich davor (denn die Ausführung von \printf könnte die Flags verändert haben).
+
+\myindex{ARM!\Instructions!LDMccFD}
+\myindex{ARM!\Instructions!LDMFD}
+Dann finden wir \TT{LDMGEFD}; dieser Befehl arbeitet genau wie \TT{LDMFD}\footnote{\ac{LDMFD}}, wird aber nur
+ausgeführt, wenn einer der Werte größer gleich dem anderen ist. 
+Der Befehl \TT{LDMGEFD SP!, \{R4-R6,PC\}} fungiert als Funktionsepilog, wird aber nur ausgeführt, ewnn $a>=b$ und nur
+dann wird die Funktionsausführung beendet.
+\myindex{Function epilogue}
+Wenn aber diese Bedingung nicht erfüllt ist, d.h. $a<b$, wird der Control Flow zum nächsten \\
+\TT{\q{LDMFD SP!, \{R4-R6,LR\}}} springen, der ebenfalls einen Funktionsepilog darstellt. Dieser Befehl stellt nicht nur
+den Zustand der \TT{R4-R6} Register wieder her, sondern auch \ac{LR} anstatt \ac{PC}, dadurch gibt er nichts aus der
+Funktion zurück.
+Die letzten beiden Befehle rufen \printf mit dem String <<a<b\textbackslash{}n>> als einzigem Argument auf.
+Wir haben bereits einen unbedingten Sprung zur Funktion \printf anstelle einer Funktionsrückgabe im Abschnitt
+<<\PrintfSeveralArgumentsSectionName>>~(\myref{ARM_B_to_printf}) untersucht.
+
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!BLcc}
+\myindex{ARM!\Instructions!LDMccFD}
+\TT{f\_unsigned} ist ähnlich, nur die Befehle \TT{ADRHI}, \TT{BLHI} und \TT{LDMCSFD} werden hier verwendet.
+Deren Prädikaten (\IT{HI = Unsigned higher, CS = Carry Set (greater than or equal)}) sind analog zu den eben
+betrachteten, nur eben für vorzeichenlose Werte. 
+
+In der Funktion \main finden wir nicht viel Neues:
+
+\lstinputlisting[caption=\main,style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_O3_main.asm}
+Auf diese Weise kann man bedingte Sprünge im ARM mode entfernen.
+
+
+\myindex{RISC pipeline}
+Für eine Begründung warum dies vorteilhaft ist, siehe: \myref{branch_predictors}.
+
+\myindex{x86!\Instructions!CMOVcc}
+In x86 gibt es kein solches Feature, außer dem \TT{CMOVcc} Befehl, der genau wie \MOV funktioniert, aber nur ausgeführt
+wird, wenn spezielle Flags - normalerweise durch \CMP - gesetzt sind.
+
+
+\mysubparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_thumb_signed.asm}
+
+\myindex{ARM!\Instructions!BLE}
+\myindex{ARM!\Instructions!BNE}
+\myindex{ARM!\Instructions!BGE}
+\myindex{ARM!\Instructions!BLS}
+\myindex{ARM!\Instructions!BCS}
+\myindex{ARM!\Instructions!B}
+\myindex{ARM!\ThumbMode}
+Nur der \TT{B} Befehl im Thumb mode kann mit condition codes versehen werden, sodass der Thumb Code gewöhnlicher
+aussieht.
+
+
+\TT{BLE} ist ein normaler bedingter Sprung \IT{Less than or Equal}, 
+\TT{BNE}---\IT{Not Equal}, 
+\TT{BGE}---\IT{Greater than or Equal}.
+
+\TT{f\_unsigned} ist ähnlich, nur dass andere Befehle verwendet werden, wenn mit vorzeichenlosen Werten umgegangen wird:
+\TT{BLS} (\IT{Unsigned lower or same}) und \TT{BCS} (\IT{Carry Set (Greater than or equal)}).

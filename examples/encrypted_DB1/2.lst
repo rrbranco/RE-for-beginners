@@ -1,0 +1,44 @@
+... tracer.exe -l:filename.exe bpf=filename.exe!0x4339a0,args:5,dump_args:0x10
+
+Warning: no tracer.cfg file.
+PID=1984|New process software.exe
+no module registered with image base 0x77320000
+no module registered with image base 0x76e20000
+no module registered with image base 0x77320000
+no module registered with image base 0x77220000
+Warning: unknown (to us) INT3 breakpoint at ntdll.dll!LdrVerifyImageMatchesChecksum+0x96c (0x776c103b)
+(0) software.exe!0x4339a0(0x38b920, 0x0, 0x38b978, 0x10, 0x0) (called from software.exe!.text+0x33c0d (0x13e4c0d))
+Argument 1/5 
+0038B920: 01 00 00 00 FF FF FF FF-79 C1 69 0B 67 C1 04 7D "........y.i.g..}"
+Argument 3/5 
+0038B978: CD CD CD CD CD CD CD CD-CD CD CD CD CD CD CD CD "................"
+(0) software.exe!0x4339a0() -> 0x0
+Argument 3/5 difference
+00000000: C7 39 4E 7B 33 1B D6 1F-B8 31 10 39 39 13 A5 5D ".9N{3....1.99..]"
+(0) software.exe!0x4339a0(0x38a828, 0x38a838, 0x38bb40, 0x0, 0x8) (called from software.exe!.text+0x3a407 (0x13eb407))
+Argument 1/5 
+0038A828: 95 80 27 02 21 D5 2D 1A-0F D9 45 9F 75 EE 24 C4 "..'.!.-...E.u.$."
+Argument 2/5 
+0038A838: B1 27 7F 84 FE 41 37 86-C9 C0 00 CD CD CD CD CD ".'...A7........."
+Argument 3/5 
+0038BB40: CD CD CD CD CD CD CD CD-CD CD CD CD CD CD CD CD "................"
+(0) software.exe!0x4339a0() -> 0x0
+(0) software.exe!0x4339a0(0x38b920, 0x38a828, 0x38bb30, 0x10, 0x0) (called from software.exe!.text+0x33c0d (0x13e4c0d))
+Argument 1/5 
+0038B920: CA 39 B1 85 75 1B 84 1F-F9 31 5E 39 72 13 EC 5D ".9..u....1^9r..]"
+Argument 2/5 
+0038A828: 95 80 27 02 21 D5 2D 1A-0F D9 45 9F 75 EE 24 C4 "..'.!.-...E.u.$."
+Argument 3/5 
+0038BB30: CD CD CD CD CD CD CD CD-CD CD CD CD CD CD CD CD "................"
+(0) software.exe!0x4339a0() -> 0x0
+Argument 3/5 difference
+00000000: 45 00 20 00 4A 00 4F 00-48 00 4E 00 53 00 00 00 "E. .J.O.H.N.S..."
+(0) software.exe!0x4339a0(0x38b920, 0x0, 0x38b978, 0x10, 0x0) (called from software.exe!.text+0x33c0d (0x13e4c0d))
+Argument 1/5 
+0038B920: 95 80 27 02 21 D5 2D 1A-0F D9 45 9F 75 EE 24 C4 "..'.!.-...E.u.$."
+Argument 3/5 
+0038B978: 95 80 27 02 21 D5 2D 1A-0F D9 45 9F 75 EE 24 C4 "..'.!.-...E.u.$."
+(0) software.exe!0x4339a0() -> 0x0
+Argument 3/5 difference
+00000000: B1 27 7F E4 9F 01 E3 81-CF C6 12 FB B9 7C F1 BC ".'...........|.."
+PID=1984|Process software.exe exited. ExitCode=0 (0x0)

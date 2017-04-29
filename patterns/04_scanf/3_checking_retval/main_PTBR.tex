@@ -1,0 +1,37 @@
+\subsection{Checagem de resultados do scanf()}
+
+Como dito anteriormente, está meio fora de moda usar \scanf atualmente, mas nós temos que fazer.
+Precisamos ao menos testar se a função \scanf termina corretamente sem nenhum erro.
+
+\lstinputlisting[style=customc]{patterns/04_scanf/3_checking_retval/ex3.c}
+
+Por padrão, a função \scanf\footnote{scanf, wscanf: \href{http://go.yurichev.com/17255}{MSDN}} retorna o número de campos que ela leu com sucesso.
+
+No nosso caso, se tudo ocorrer bem e o usuário entrar com um número, \scanf retornará 1, ou em caso de erro (ou \ac{EOF}) --- 0.
+
+Vamos adicionar um pouco de código em C para checar o valor de retorno de \scanf e imprimir uma mensagem no caso de um erro.
+
+Isso funciona com o desejado:
+
+\begin{lstlisting}
+C:\...>ex3.exe
+Enter X:
+123
+You entered 123...
+
+C:\...>ex3.exe
+Enter X:
+ouch
+What you entered? Huh?
+\end{lstlisting}
+
+% subsections
+\input{patterns/04_scanf/3_checking_retval/x86}
+\input{patterns/04_scanf/3_checking_retval/x64}
+\input{patterns/04_scanf/3_checking_retval/ARM}
+\input{patterns/04_scanf/3_checking_retval/MIPS}
+
+\subsubsection{\Exercise}
+
+\PTBRph{}
+

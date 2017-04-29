@@ -1,0 +1,61 @@
+\subsubsection{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=IDA,style=customasmARM]{patterns/04_scanf/2_global/ARM.lst}
+
+Donc, la variable \TT{x} est maintenant globale, et pour cette raison, elle se trouve
+dans un autre segment, appelé le segment de données (\IT{.data}).
+On pourrait demander pour quoi les chaînes de textes sont dans le segment de code
+(\IT{.text}) et \TT{x} là.
+C'est parque c'est une variable et que par définition sa valeur peut changer. En
+outre, elle peut même changer souvent.
+Alors que les chaînes de texte ont un type constant, elles ne changent pas, donc
+elles sont dans le segmnet \IT{.text}.
+\myindex{\RAM}
+\myindex{\ROM}
+
+Le segment de code peut parfois se trouver dans la \ac{ROM} d'un circuit (gardez
+à l'esprit que nous avons maintenant affaire avec de l'électronique embarquée, et
+que la pénurie de mémoire y est courante), et les variables~---en \ac{RAM}.
+
+Il n'est pas très économique de stocker des constantes en RAM quand vous avez de
+la ROM.
+
+En outre, les variables en RAM doivent être initialisées, car après le démarrage,
+la RAM, évidemment, contient des données aléatoires.
+
+\myindex{Linker}
+
+En avançant, nous voyons un pointeur sur la variable \TT{x} (\TT{off\_2C}) dans
+le segment de code, et que toutes les opérations avec cette variable s'éffectuent
+via ce pointeur.
+
+Car la variable \TT{x} peut se trouver loin de ce morceau de code, donc son adresse
+doit être sauvée proche du code.
+\myindex{ARM!\Instructions!LDR}
+
+L'instruction \INS{LDR} en mode Thumb ne peut adresser des variables que dans un
+intervalle de 1020 octets de son emplacement.
+
+et en mode ARM~---l'intervalle des variables est de $\pm{}4095$ octets.
+
+Et donc l'adresse de la variable \TT{x} doit se trouver quelque part de très proche,
+car il n'y a pas de garantie que l'éditeur de liens pourra stocker la variable proche
+du code, elle peut même se trouver sur un module de mémoire externe.
+
+\myindex{\CLanguageElements!const}
+\myindex{\ROM}
+
+Encore une chose: si une variable est déclarée comme \IT{const}, le compilateur
+Keil va l'allouer dans le segment \TT{.constdata}.
+
+Peut-être qu'après, l'éditeur de liens mettra ce segemnt en ROM aussi, à côté du segment de code.
+
+\subsubsection{ARM64}
+
+\lstinputlisting[caption=GCC 4.9.1 ARM64 \NonOptimizing,numbers=left,style=customasmARM]{patterns/04_scanf/2_global/ARM64_GCC491_O0_FR.s}
+
+\myindex{ARM!\Instructions!ADRP/ADD pair}
+
+Dans ce car la variable $x$ est déclarée comme étant globale et son adresse est
+calculée en utilisant la paire d'instructions \INS{ADRP}/\INS{ADD} (lignes 21 et 25).
+

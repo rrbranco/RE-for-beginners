@@ -1,0 +1,92 @@
+﻿\subsubsection{Linux}
+
+Let's take the \TT{tm} structure from \TT{time.h} in Linux for example:
+
+\lstinputlisting[style=customc]{patterns/15_structs/3_tm_linux/GCC_tm.c}
+
+Let's compile it in GCC 4.4.1:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/15_structs/3_tm_linux/GCC_tm_EN.asm}
+
+Somehow, \IDA did not write the local variables' names in the local stack.
+But since we already are experienced reverse engineers :-) we may do it without this information in 
+this simple example.
+
+\myindex{x86!\Instructions!LEA}
+
+Please also pay attention to the \TT{lea edx, [eax+76Ch]}~---this instruction just adds \TT{0x76C} (1900) to value in \EAX,
+but doesn't modify any flags. See also the relevant section about \LEA{}~(\myref{sec:LEA}).
+
+\myparagraph{GDB}
+
+Let's try to load the example into GDB
+\footnote{The \IT{date} result is slightly corrected for demonstration purposes.
+Of course, it's not possible to run GDB that quickly, in the same second.}:
+
+\lstinputlisting[caption=GDB]{patterns/15_structs/3_tm_linux/GCC_tm_GDB.txt}
+
+We can easily find our structure in the stack.
+First, let's see how it's defined in \IT{time.h}:
+
+\begin{lstlisting}[caption=time.h, label=struct_tm,style=customc]
+struct tm
+{
+  int	tm_sec;
+  int	tm_min;
+  int	tm_hour;
+  int	tm_mday;
+  int	tm_mon;
+  int	tm_year;
+  int	tm_wday;
+  int	tm_yday;
+  int	tm_isdst;
+};
+\end{lstlisting}
+
+Pay attention that
+32-bit \Tint is used here instead of WORD in SYSTEMTIME.
+So, each field occupies 32-bit.
+
+Here are the fields of our structure in the stack:
+
+\begin{lstlisting}
+0xbffff0dc:	0x080484c3	0x080485c0	0x000007de	0x00000000
+0xbffff0ec:	0x08048301	0x538c93ed	0x00000025 sec	0x0000000a min
+0xbffff0fc:	0x00000012 hour	0x00000002 mday	0x00000005 mon 	0x00000072 year
+0xbffff10c:	0x00000001 wday	0x00000098 yday	0x00000001 isdst0x00002a30
+0xbffff11c:	0x0804b090	0x08048530	0x00000000	0x00000000
+\end{lstlisting}
+
+Or as a table:
+
+\begin{center}
+\begin{tabular}{ | l | l | l | }
+\hline
+\headercolor{} Hexadecimal number & 
+\headercolor{} decimal number & 
+\headercolor{} field name \\
+\hline
+0x00000025 & 37 	& tm\_sec \\
+\hline
+0x0000000a & 10 	& tm\_min \\
+\hline
+0x00000012 & 18 	& tm\_hour \\	
+\hline
+0x00000002 & 2 		& tm\_mday \\	
+\hline
+0x00000005 & 5 		& tm\_mon \\	
+\hline
+0x00000072 & 114 	& tm\_year \\
+\hline
+0x00000001 & 1 		& tm\_wday \\	
+\hline
+0x00000098 & 152 	& tm\_yday \\	
+\hline
+0x00000001 & 1 		& tm\_isdst \\
+\hline
+\end{tabular}
+\end{center}
+
+Just like SYSTEMTIME (\myref{sec:SYSTEMTIME}), 
+
+there are also other fields available that are not used, like tm\_wday, tm\_yday, tm\_isdst.

@@ -1,0 +1,193 @@
+\subsection{\CapitalPICcode}
+\myindex{\PICcode}
+\myindex{Linux}
+\label{sec:PIC}
+
+Wenn der Code von Shared Libraries (.so) unter Linux analysiert wird, findet
+man häufig das folgende Code-Muster:
+
+\begin{lstlisting}[caption=libc-2.17.so x86]
+.text:0012D5E3 __x86_get_pc_thunk_bx proc near         ; CODE XREF: sub_17350+3
+.text:0012D5E3                                         ; sub_173CC+4 ...
+.text:0012D5E3                 mov     ebx, [esp+0]
+.text:0012D5E6                 retn
+.text:0012D5E6 __x86_get_pc_thunk_bx endp
+
+...
+
+.text:000576C0 sub_576C0       proc near               ; CODE XREF: tmpfile+73
+
+...
+
+.text:000576C0                 push    ebp
+.text:000576C1                 mov     ecx, large gs:0
+.text:000576C8                 push    edi
+.text:000576C9                 push    esi
+.text:000576CA                 push    ebx
+.text:000576CB                 call    __x86_get_pc_thunk_bx
+.text:000576D0                 add     ebx, 157930h
+.text:000576D6                 sub     esp, 9Ch
+
+...
+
+.text:000579F0                 lea     eax, (a__gen_tempname - 1AF000h)[ebx] ; "__gen_tempname"
+.text:000579F6                 mov     [esp+0ACh+var_A0], eax
+.text:000579FA                 lea     eax, (a__SysdepsPosix - 1AF000h)[ebx] ; "../sysdeps/posix/tempname.c"
+.text:00057A00                 mov     [esp+0ACh+var_A8], eax
+.text:00057A04                 lea     eax, (aInvalidKindIn_ - 1AF000h)[ebx] ; "! \"invalid KIND in __gen_tempname\""
+.text:00057A0A                 mov     [esp+0ACh+var_A4], 14Ah
+.text:00057A12                 mov     [esp+0ACh+var_AC], eax
+.text:00057A15                 call    __assert_fail
+\end{lstlisting}
+
+Alle Zeiger auf Zeichenketten sind durch Konstanten und den Wert in \EBX korrigiert,
+welcher zu Beginn jeder Funktion berechnet wird.
+
+Dies ist sogenannter \ac{PIC}, und hat den Zweck an jeder beliebigen Stelle im Speicher
+ausführbar zu sein. Aus diesem Grund können keine absoluten Speicheradressen verwendet werden.
+
+\ac{PIC} war entscheidend in früheren Computer-Systemen und ist es immer noch in Eingebetteten
+Systeme ohne virtuelle Speicherverwaltung in denen sich alle Prozesse in einem einzigen durchgängigen
+Speicherbereich befinden.
+
+Diese Technik wird auch heute noch in *NIX-Systemen für Shared Libraries verwendet
+da diese von mehreren Prozessen genutzt, aber nur einmal in den Speicher geladen werden.
+Jeder Prozess kann jedoch die gleiche Bibliothek an verschiedene Adressen \q{mappen}.
+Aus diesem Grund muss diese Bibliothek auch ohne Verwendung absoluter Adressen funktionieren.
+
+Machen wir ein sehr einfaches Experiment:
+
+\begin{lstlisting}
+#include <stdio.h>
+
+int global_variable=123;
+
+int f1(int var)
+{
+    int rt=global_variable+var;
+    printf ("returning %d\n", rt);
+    return rt;
+};
+\end{lstlisting}
+
+Nachfolgende die kompilierte .so-Datei von GCC 4.7.3. in \IDA:
+
+\begin{lstlisting}
+gcc -fPIC -shared -O3 -o 1.so 1.c
+\end{lstlisting}
+
+\begin{lstlisting}[caption=GCC 4.7.3]
+.text:00000440                 public __x86_get_pc_thunk_bx
+.text:00000440 __x86_get_pc_thunk_bx proc near         ; CODE XREF: _init_proc+4
+.text:00000440                                         ; deregister_tm_clones+4 ...
+.text:00000440                 mov     ebx, [esp+0]
+.text:00000443                 retn
+.text:00000443 __x86_get_pc_thunk_bx endp
+
+.text:00000570                 public f1
+.text:00000570 f1              proc near
+.text:00000570
+.text:00000570 var_1C          = dword ptr -1Ch
+.text:00000570 var_18          = dword ptr -18h
+.text:00000570 var_14          = dword ptr -14h
+.text:00000570 var_8           = dword ptr -8
+.text:00000570 var_4           = dword ptr -4
+.text:00000570 arg_0           = dword ptr  4
+.text:00000570
+.text:00000570                 sub     esp, 1Ch
+.text:00000573                 mov     [esp+1Ch+var_8], ebx
+.text:00000577                 call    __x86_get_pc_thunk_bx
+.text:0000057C                 add     ebx, 1A84h
+.text:00000582                 mov     [esp+1Ch+var_4], esi
+.text:00000586                 mov     eax, ds:(global_variable_ptr - 2000h)[ebx]
+.text:0000058C                 mov     esi, [eax]
+.text:0000058E                 lea     eax, (aReturningD - 2000h)[ebx] ; "returning %d\n"
+.text:00000594                 add     esi, [esp+1Ch+arg_0]
+.text:00000598                 mov     [esp+1Ch+var_18], eax
+.text:0000059C                 mov     [esp+1Ch+var_1C], 1
+.text:000005A3                 mov     [esp+1Ch+var_14], esi
+.text:000005A7                 call    ___printf_chk
+.text:000005AC                 mov     eax, esi
+.text:000005AE                 mov     ebx, [esp+1Ch+var_8]
+.text:000005B2                 mov     esi, [esp+1Ch+var_4]
+.text:000005B6                 add     esp, 1Ch
+.text:000005B9                 retn
+.text:000005B9 f1              endp
+\end{lstlisting}
+
+\newcommand{\retstring}{\IT{<<returning \%d\textbackslash{}n>>}}
+\newcommand{\globvar}{\IT{global\_variable}}
+
+Das ist es: die Zeiger auf \retstring{} und \globvar{} werden bei jedem Funktionsaufruf korrigiert.
+
+\par Die \TT{\_\_x86\_get\_pc\_thunk\_bx()}-Funktion gibt in \EBX die Adresse auf eine Stelle nach einen
+Aufruf von sich selbst zurück (hier \TT{0x57C}).
+
+Dies ist eine einfache Möglichkeit um den Wert des Programmzählers (\EIP) an einer beliebigen Stelle zu erhalten.
+Die Konstante \TT{0x1A84} gehört zu dem Unterschied des Funktionsanfangs und der sogenannten
+\IT{Global Offset Table Procedure Linkage Table} (GOT PLT), die Sektion direkt hinter der \IT{Global Offset Table}
+(GOT), an der der Zeiger auf \globvar{}.
+\IDA zeigt diese Offsets aus Gründen des einfacheren Verständnisses in einer verarbeiteten Form an,
+der Code ist aber wie folgt:
+
+\begin{lstlisting}
+.text:00000577                 call    __x86_get_pc_thunk_bx
+.text:0000057C                 add     ebx, 1A84h
+.text:00000582                 mov     [esp+1Ch+var_4], esi
+.text:00000586                 mov     eax, [ebx-0Ch]
+.text:0000058C                 mov     esi, [eax]
+.text:0000058E                 lea     eax, [ebx-1A30h]
+\end{lstlisting}
+
+Hier zeigt \EBX auf die \TT{GOT PLT}-Sektion und um den Zeiger auf \globvar{} zu berechnen
+(welcher in der \TT{GOT} gesichert ist) muss \TT{0xC} subtrahiert werden.
+
+Um den Zeiger auf die Zeichenkette \retstring{} zu berechnen muss \TT{0x1A30} abgezogen werden.
+
+\myindex{x86-64}
+\myindex{x86!\Registers!RIP}
+
+Übrigens ist dies der Grund warum die AMD64-Anweisungen RIP\footnote{Programmzähler in AMD64}-relative Adressierung
+unterstützen: sie vereinfachen den PIC-Code.
+
+Nachfolgend der selbe C-Code mit der gleichen GCC-Version, jedoch für x64 kompiliert.
+
+\myindex{objdump}
+\IDA würde den resultierenden Code vereinfachen aber auch die Details zur RIP-relativen Adressierung
+unterdrücken. Um alles sehen zu können wird hier \IT{objdump} anstatt IDA genutzt.
+
+\begin{lstlisting}
+0000000000000720 <f1>:
+ 720:	48 8b 05 b9 08 20 00 	mov    rax,QWORD PTR [rip+0x2008b9]        # 200fe0 <_DYNAMIC+0x1d0>
+ 727:	53                   	push   rbx
+ 728:	89 fb                	mov    ebx,edi
+ 72a:	48 8d 35 20 00 00 00 	lea    rsi,[rip+0x20]        # 751 <_fini+0x9>
+ 731:	bf 01 00 00 00       	mov    edi,0x1
+ 736:	03 18                	add    ebx,DWORD PTR [rax]
+ 738:	31 c0                	xor    eax,eax
+ 73a:	89 da                	mov    edx,ebx
+ 73c:	e8 df fe ff ff       	call   620 <__printf_chk@plt>
+ 741:	89 d8                	mov    eax,ebx
+ 743:	5b                   	pop    rbx
+ 744:	c3                   	ret    
+\end{lstlisting}
+
+\TT{0x2008b9} ist der Unterschied zwischen der Adresse der Anweisung an \TT{0x720} und \globvar{},
+und \TT{0x20} ist der Unterschied zwischen der Adresse der Anweisung an \TT{0x72A} und der
+Zeichenkette \retstring{}.
+
+Wie zu sehen ist, die Notwendigkeit die Adressen regelmäßig neu zu berechnen macht die Ausführung
+etwas langsamer (auch wenn dies in x64 etwas besser ist).
+
+Es mag also von Vorteil sein, statisch zu linken wenn Geschwindigkeit eine Rolle spielt \InSqBrackets{siehe: \AgnerFogCPP}.
+
+\subsubsection{Windows}
+\myindex{Windows!Win32}
+
+Der PIC-Mechanismus wird in Windows-DLLs nicht genutzt. Wenn der Windows-Loader eine DLL an
+eine andere Basisadresse laden muss, \q{patched} er diese im Speicher (and den \IT{FIXUP}-Platz)
+um alle Adressen zu korrigieren.
+
+Dies bedeutet, dass mehrere Windows-Prozesse eine einmal geladene DLL nicht teilen können
+wenn diese an verschiedenen Adressen in verschiedenen Prozess-Speichern sein muss, da
+jede Instanz im Speicher die Funktionen an einer festen Adresse erwartet.

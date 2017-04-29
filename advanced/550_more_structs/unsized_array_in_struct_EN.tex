@@ -1,0 +1,85 @@
+\subsection{Unsized array in C structure}
+
+In some win32 structures we can find ones with last field defined as an array of one element:
+
+\begin{lstlisting}[style=customc]
+typedef struct _SYMBOL_INFO {
+  ULONG   SizeOfStruct;
+  ULONG   TypeIndex;
+  
+  ...
+
+  ULONG   MaxNameLen;
+  TCHAR   Name[1];
+} SYMBOL_INFO, *PSYMBOL_INFO;
+\end{lstlisting}
+
+( \url{https://msdn.microsoft.com/en-us/library/windows/desktop/ms680686(v=vs.85).aspx} )
+
+This is a hack, meaning, the last field is array of unknown size,
+which is to be calculated at the time of structure allocation.
+
+Why: \IT{Name} field may be short, so why to define it with some kind of \IT{MAX\_NAME}
+constant which can be 128, 256, or even bigger?
+
+Why not to use pointer instead? Then you have to allocate two blocks: one for structure and the other one for string.
+This may be slower and may require larger memory overhead.
+Also, you need dereference pointer (i.e., read address of the string from the structure)---not a big deal, but some
+people say this is still surplus cost.
+
+This is also known as \IT{struct hack}: \url{http://c-faq.com/struct/structhack.html}.
+
+Example:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+struct st
+{
+	int a;
+	int b;
+	char s[];
+};
+
+void f (struct st *s)
+{
+	printf ("%d %d %s\n", s->a, s->b, s->s);
+	// f() can't replace s[] with bigger string - size of allocated block is unknown at this point
+};
+
+int main()
+{
+#define STRING "Hello!"
+	struct st *s=malloc(sizeof(struct st)+strlen(STRING)+1); // incl. terminating zero
+	s->a=1;
+	s->b=2;
+	strcpy (s->s, STRING);
+	f(s);
+};
+\end{lstlisting}
+
+In short, it works because C has no array boundary checks. Any array is treated as having infinite size.
+
+Problem: after allocation, the whole size of allocated block for structure is unknown (except for memory manager),
+so you can't just replace string with larger string.
+You would still be able to do so if the field would be declared as something like \IT{s[MAX\_NAME]}.
+
+In other words, you have a structure plus an array (or string) fused together in the single allocated memory block.
+Another problem is what you obviously can't declare two such arrays in single structure, or to declare another field
+after such array.
+
+Older compilers require to declare array with at least one element: \IT{s[1]}, newer allows to declare it as variable-sized
+array: \IT{s[]}.
+This is also called \IT{flexible array member}\footnote{\url{https://en.wikipedia.org/wiki/Flexible_array_member}}
+in C99 standard.
+
+Read more about it in
+GCC documentation\footnote{\url{https://gcc.gnu.org/onlinedocs/gcc/Zero-Length.html}},
+MSDN documentation\footnote{\url{https://msdn.microsoft.com/en-us/library/b6fae073.aspx}}.
+
+Dennis Ritchie (one of C creators) called this trick \q{unwarranted chumminess with the C implementation} 
+(perhaps, acknowledging hackish nature of the trick).
+
+Like it or not, use it or not:
+it is still another demonstration on how structures are stored in memory, that's why I write about it.
+

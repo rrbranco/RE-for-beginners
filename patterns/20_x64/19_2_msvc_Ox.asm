@@ -149,6 +149,6 @@ _s1    PROC
     pop    ebp
     mov    DWORD PTR [ecx], eax
     pop    ebx
-    add    esp, 20                    ; 00000014H
+    add    esp, 20
     ret    0
 _s1    ENDP

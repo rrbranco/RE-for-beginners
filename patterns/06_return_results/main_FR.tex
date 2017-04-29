@@ -1,0 +1,191 @@
+\section{Plus sur le renvoi des résultats}
+
+\myindex{x86!\Registers!EAX}
+
+En x86, le résultat de l'exécution d'une fonction est d'habitude renvoyé
+\footnote{\Seealso: MSDN: Return Values (C++): \href{http://go.yurichev.com/17258}{MSDN}}
+dans le registre \EAX.
+
+Si il est de type octet ou un caractère (\Tchar), alors la partie basse du registre
+\EAX (\AL) est utilisée.
+Si une fonction renvoie un nombre de type \Tfloat, le registre \ST{0} du FPU est utilisé. % what about double ?
+\myindex{ARM!\Registers!R0}
+En ARM, d'habitude, le résultat est renvoyé dans le registre \Reg{0}.
+
+\subsection{Tentative d'utilisation du résultat d'une fonction renvoyant \Tvoid}
+
+Donc, que se passe-t-il si le type de retour de la fonction \main a été déclaré
+du type \Tvoid et non pas \Tint?
+Le soi-disant code de démarrage (startup-code) appelle \main grosso-modo de la façon
+suivante:
+
+\begin{lstlisting}[style=customasmx86]
+push envp
+push argv
+push argc
+call main
+push eax
+call exit
+\end{lstlisting}
+
+En d'autres mots:
+
+\begin{lstlisting}[style=customc]
+exit(main(argc,argv,envp));
+\end{lstlisting}
+
+Si vous déclarez \main comme renvoyant \Tvoid, rien ne sera renvoyé explicitement
+(en utilisant la déclaration \IT{return}), alors quelque chose d'inconnu, qui aura
+été stocké dans la registre \EAX lors de l'exécution de \main sera l'unique argument
+de la fonction exit().
+Il y aura probablement une valeur aléatoire, laissée lors de l'exécution de la fonction,
+donc le code de retour du programme est pseudo-aléatoire.
+\par
+Illustrons ce fait:
+Notez bien  que la fonction \main a un type de retour \Tvoid:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+void main()
+{
+	printf ("Hello, world!\n");
+};
+\end{lstlisting}
+
+Compilons-le sous Linux.
+
+\myindex{puts() instead of printf()}
+GCC 4.8.1 a remplacé \printf par \puts (nous avons vu ceci avant: \myref{puts}),
+mais c'est OK, puisque \puts renvoie le nombre de caractères écrit, tout comme
+\printf.
+Remarquez que le registre \EAX n'est pas mis à zéro avant la fin de \main.
+
+Cece implique que la valeur de \EAX à la fin de \main contient ce que \puts y avait mis.
+
+\begin{lstlisting}[caption=GCC 4.8.1,style=customasmx86]
+.LC0:
+	.string	"Hello, world!"
+main:
+	push	ebp
+	mov	ebp, esp
+	and	esp, -16
+	sub	esp, 16
+	mov	DWORD PTR [esp], OFFSET FLAT:.LC0
+	call	puts
+	leave
+	ret
+\end{lstlisting}
+
+\myindex{bash}
+
+Écrivons un script bash qui montre le code de retour:
+
+\begin{lstlisting}[caption=tst.sh]
+#!/bin/sh
+./hello_world
+echo \$?
+\end{lstlisting}
+
+Et lançons le:
+
+\begin{lstlisting}
+\$ tst.sh 
+Hello, world!
+14
+\end{lstlisting}
+
+14 est le nombre de caractères écrits.
+Le nombre de caractères affichés est \textit{passé} de \printf{}, à travers \TT{EAX}/\TT{RAX}, dans le \q{code de retour}.
+
+\myindex{Hex-Rays}
+A propos, lorsque l'on décompile du C++ dans Hex-Rays, nous rencontrons souvent
+une fonction qui se termine par un destructeur d'une classe:
+
+\begin{lstlisting}[style=customasmx86]
+...
+
+call    ??1CString@@QAE@XZ ; CString::~CString(void)
+mov     ecx, [esp+30h+var_C]
+pop     edi
+pop     ebx
+mov     large fs:0, ecx
+add     esp, 28h
+retn
+\end{lstlisting}
+
+Dans le standard C++, le destructeur ne renvoie rien, mais lorsque Hex-Rays n'en % FIXME \IDA ?
+sait rien, et pense que le destructeur et cette function renvoient tout deux un \Tint
+
+\begin{lstlisting}[style=customc]
+...
+
+	return CString::~CString(&Str);
+}
+\end{lstlisting}
+
+\subsection{Que se passe-t-il si on n'utilise pas le résultat de la fonction?}
+
+\printf renvoie le nombre de caractères écrit avec succès, mais, en pratique, ce
+résultat est rarement utilisé.
+
+Il est aussi possible d'appeler une fonction dont la finalité est de renvoyer une valeur,
+et de ne pas l'utiliser:
+
+\begin{lstlisting}[style=customc]
+int f()
+{
+    // skip first 3 random values:
+    rand();
+    rand();
+    rand();
+    // and use 4th:
+    return rand();
+};
+\end{lstlisting}
+
+Le résultat de la fonction rand() est mis dans \EAX, dans les quatre cas.
+
+Mais dans les 3 premiers, la valeur dans \EAX n'est pas utilisée.
+
+\subsection{Renvoyer une structure}
+
+\myindex{\CLanguageElements!return}
+
+Revenons au fait que la valeur de retour est passée par le registre \EAX.
+
+C'est pourquoi les vieux compilateurs C ne peuvent pas créer de fonction capable
+de renvoyer quelque chosr qui ne tient pas dans un registre (d'habitude \Tint), mais
+si besoin, les informations doivent être renvoyées via un pointeur passé en argument.
+
+Donc, d'habitude, si une fonction doit renvoyer plusieurs valeurs, elle en renvoie
+une seule, et le reste---par des pointeurs.
+
+Maintenant, il est possible de renvoyer. disons, une structure entière, mais ce
+n'est pas encore très populaire.
+Si une fonction doit renvoyer une grosse structure, la fonction \glslink{caller}{appelante}
+doit l'allouer et passer un pointeur sur cette dernière via le premier argument,
+de manière transparente pour le programmeur.
+C'est presque la même chose que de passer un pointeur manuellement dans le premier
+argument, mais le compilateur le cache.
+
+Petit exemple:
+
+\lstinputlisting[style=customc]{patterns/06_return_results/6_1.c}
+
+\dots ce que nous obtenons (MSVC 2010 \Ox):
+
+\lstinputlisting[style=customasmx86]{patterns/06_return_results/6_1.asm}
+
+Ici, le nom de la macro interne pour passer le pointeur sur une structure est \GTT{\$T3853}.
+
+\myindex{\CLanguageElements!C99}
+Cet exemple peut être ré-écrit en utilisant les extensions C99 du langage:
+
+\lstinputlisting[style=customc]{patterns/06_return_results/6_1_C99.c}
+
+\lstinputlisting[caption=GCC 4.8.1,style=customasmx86]{patterns/06_return_results/6_1_C99.asm}
+
+Comme on le voit, la fonction remplit simplement les champs de la structure allouée
+par la fonction appelante, comme si un pointeur sur la structure avait été passé.
+Donc, il n'y a pas d'impact négatif sur les performances.

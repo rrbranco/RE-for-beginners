@@ -1,0 +1,73 @@
+\subsubsection{Base64}
+\myindex{Base64}
+
+Die Base64 Codierung ist sehr weit verbreitet f\"ur f\"alle in denen man Bin\"ardaten als Textstring \"ubertragen will.
+
+Im Grunde, codiert dieser Algorithmus 3 Bin\"ar Bytes in 4 druckbare Zeichen: 
+Alle 26 Latein Zeichen (beides klein und groß Buchstaben), Ziffern, plus Zeichen (\q{+}) und slash Zeichen (\q{/}),
+64 Zeichen insgesamt. 
+
+Ein charakteristisches Feature von Base64 Strings ist das sie oft (aber nicht immer) mit 1 oder 2  \gls{padding}
+Gleichheitszeichen (\q{=}) Enden, zum Beispiel: 
+
+\begin{lstlisting}
+AVjbbVSVfcUMu1xvjaMgjNtueRwBbxnyJw8dpGnLW8ZW8aKG3v4Y0icuQT+qEJAp9lAOuWs=
+\end{lstlisting}
+
+\begin{lstlisting}
+WVjbbVSVfcUMu1xvjaMgjNtueRwBbxnyJw8dpGnLW8ZW8aKG3v4Y0icuQT+qEJAp9lAOuQ==
+\end{lstlisting}
+
+Das Gleichheitszeichen Symbol (q{=}) wird man niemals in der Mitte eines Base64-codierten
+Strings sehen.
+
+Jetzt ein Beispiel wie man per Hand Base64 codieren kann.
+Lasst uns 0x00, 0x11 , 0x22 und 0x33 in Hexadezimalzahlen in einen Base64
+String umwandeln: 
+
+\lstinputlisting{digging_into_code/strings/base64_ex.sh}
+
+Lasst uns alle 4 Bytes in Bin\"ar Form bringen und dann neu gruppieren in 6-Bit Gruppen:
+
+\begin{lstlisting}
+|  00  ||  11  ||  22  ||  33  ||      ||      |
+00000000000100010010001000110011????????????????
+| A  || B  || E  || i  || M  || w  || =  || =  |
+\end{lstlisting}
+
+Die ersten drei Bytes (0x00, 0x11, 0x22) k\"onnen in 4 Base64 Zeichen umgewandelt werden (``ABEi''),
+aber nicht das letzte Byte (0x33), also wird das Byte codiert indem man zwei Buchstaben 
+benutzt (``Mw'') und das \gls{padding} Symbol (``='') wird zweimal hinzugef\"ugt um die letzte
+Gruppe auf 4 Zeichen zu erweitern. Das bedeutet das die L\"ange aller korrekten Base64 Strings
+sich immer durch 4 Teilen l\"asst. 
+
+\myindex{XML}
+\myindex{PGP}
+Base64 wird oft benutzt wenn es darum geht Bin\"ardaten in  XML Dateien zu speichern.
+``Armored'' (z.B, in Text Form) PGP Cookie und Signaturen werden codiert mit Base64.
+
+Manche Leute versuchen auch Base64 zu benutzen um Strings zu verschleiern. 
+\url{http://blog.sec-consult.com/2016/01/deliberately-hidden-backdoor-account-in.html}
+\footnote{\url{http://archive.is/nDCas}}.
+
+\myindex{base64scanner}
+Es gibt Werkzeuge zum scannen von beliebigen Bin\"ardateien nach Base64 Strings.
+Ein solch ein Scanner ist base64scanner\footnote{\url{https://github.com/dennis714/base64scanner}}.
+
+\myindex{UseNet}
+\myindex{FidoNet}
+\myindex{Uuencoding}
+\myindex{Phrack}
+Ein weiteres codierungs System was sehr weit verbreitet und weit mehr genutzt wurde im UseNet und im 
+FidoNet ist Uuencoding.
+% TBT
+Es hat eigentlich die gleichen Features, aber unterscheidet sich von Base64 
+in so fern das der Dateiname auch im header gespeichert wird.
+
+\myindex{Tor}
+\myindex{base32}
+By the Way: Es gibt auch einen nahen Verwandten zu Base64: Base32., ein Alphabet das ~10 Zeichen und ~26 Latein Zeichen hat. 
+Eine verbreitete Anwendung ist Onion Adressen zu codieren. 
+\footnote{\url{https://trac.torproject.org/projects/tor/wiki/doc/HiddenServiceNames}},
+z.B: \url{http://3g2upl4pq6kufc4m.onion/}.
+\ac{URL} kann keine mixed-case Latein Zeichen beinhalten, deshalb haben Tor Entwickler sich f\"ur Base32 entschieden.

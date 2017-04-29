@@ -1,0 +1,56 @@
+\section{Incorrectly disassembled code}
+\label{sec:incorrectly_disasmed_code}
+
+Practicing reverse engineers often have to deal with incorrectly disassembled code.
+
+\subsection{Disassembling from an incorrect start (x86)}
+
+Unlike ARM and MIPS (where any instruction has a length of 2 or 4 bytes), x86 instructions have variable size,
+so any disassembler that starts in the middle of a x86 instruction may produce incorrect results.
+
+As an example:
+
+\lstinputlisting[style=customasmx86]{\CURPATH/x86_wrong_start_EN.asm}
+
+There are incorrectly disassembled instructions at the beginning, but eventually the disassembler gets on the right 
+track.
+
+\subsection{How does random noise looks disassembled?}
+
+Common properties that can be spotted easily are:
+
+\begin{itemize}
+\item Unusually big instruction dispersion.
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!MOV}
+\myindex{x86!\Instructions!CALL}
+\myindex{x86!\Instructions!IN}
+\myindex{x86!\Instructions!OUT}
+The most frequent x86 instructions are \PUSH{}, \MOV{}, \CALL{}, 
+but here we see
+instructions from all instruction groups: \ac{FPU} instructions, \TT{IN}/\TT{OUT} instructions, rare and system instructions,
+everything mixed up in one single place.
+
+\item Big and random values, offsets and immediates.
+
+\item Jumps having incorrect offsets, often jumping in the middle of another instructions.
+\end{itemize}
+
+\lstinputlisting[caption=\randomNoise{} (x86),style=customasmx86]{\CURPATH/x86.asm}
+
+\myindex{x86-64}
+\lstinputlisting[caption=\randomNoise{} (x86-64),style=customasmx86]{\CURPATH/x64.asm}
+
+\myindex{ARM}
+\lstinputlisting[caption=\randomNoise{} (ARM (\ARMMode)),style=customasmARM]{\CURPATH/ARM.asm}
+
+\lstinputlisting[caption=\randomNoise{} (ARM (\ThumbMode)),style=customasmARM]{\CURPATH/ARM_thumb.asm}
+
+\myindex{MIPS}
+\lstinputlisting[caption=\randomNoise{} (MIPS little endian),style=customasmMIPS]{\CURPATH/MIPS.asm}
+
+It is also important to keep in mind that 
+cleverly constructed unpacking and decryption code 
+(including self-modifying) may looks like noise as well, but still execute correctly.
+% TODO таких примеров тоже бы добавить
+

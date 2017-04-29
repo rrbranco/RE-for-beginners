@@ -1,0 +1,85 @@
+\section{Patchen von ausführbaren Dateien}
+
+\subsection{Zeichenketten}
+
+Zeichenketten in C können sehr einfach mit einem Hex-Editor verändert werden,
+sofern sie nicht verschlüsselt sind.
+Diese Technik kann sogar von denen angewandt werden, die nicht viel von Maschinencode
+und Formaten von ausführbaren Dateien verstehen.
+Die neue Zeichenkette darf nicht größer sein als die alte, da sonst die Gefahr
+groß ist, dass ein anderer Wert oder Code überschrieben wird.
+\myindex{MS-DOS}
+
+Mit dieser Methode wurde in der MS-DOS-Ära eine Vielzahl von Software \IT{übersetzt},
+zumindest in den ehemaligen USSR-Staaten in den 80er- und 90er-Jahren.
+Aus diesem Grund existieren einige seltsame Abkürzungen in den \IT{übersetzten}
+Programmen: es gab keinen Platz für längere Zeichenketten.
+
+\myindex{Borland Delphi}
+
+In Delphi müssen die Längen der Zeichenketten falls nötig korrigiert werden.
+
+\subsection{x86-Code}
+\label{x86_patching}
+
+Häufige Aufgaben beim Patchen sind:
+
+\myindex{x86!\Instructions!NOP}
+\begin{itemize}
+
+\item 
+Eine der häufigsten Aufgaben ist das Deaktivieren bestimmter Anweisungen. Oft
+wird dies durch Austauschen des Bytes durch \TT{0x90} (\ac{NOP}).
+
+\item
+Bedingte Sprünge, die den Opcode wie \TT{74 xx} (\JZ) haben, können durch
+\ac{NOP}s ersetzt werden.
+
+Es ist möglich alle bedingten Sprünge zu deaktivieren, in dem eine 0 in das
+zweite Byte geschrieben wird (\IT{Sprung-Offset}).
+
+\myindex{x86!\Instructions!JMP}
+\item 
+Eine weitere häufige Aufgabe ist es einen bedingten Sprung immer ausführen zu
+lassen: dies kann durch Schreiben von \TT{0xEB}, was für \JMP steht, anstatt des
+Opcodes erreicht werden.
+
+\myindex{x86!\Instructions!RET}
+\myindex{stdcall}
+\item Die Ausführung einer Funktion kann deaktiviert werden, wenn \RETN (0xC3) an
+den Anfang geschrieben wird. Dies gilt für alle Funktionen außer \TT{stdcall}
+(\myref{sec:stdcall}).
+Um \TT{stdcall}-Funktionen zu patchen muss die Anzahl der Argumente bekannt sein
+(zum Beispiel durch Finden der \RETN-Anweisung in der Funktion) und die \RETN-Anweisung
+mit einem 16-Bit-Argument (0xC2) angewendet werden.
+
+\myindex{x86!\Instructions!MOV}
+\myindex{x86!\Instructions!XOR}
+\myindex{x86!\Instructions!INC}
+\item Manchmal muss eine deaktivierte Funktion den Wert 0 oder 1 zurückgeben.
+Dies kann durch \TT{MOV EAX, 0} oder \TT{MOV EAX, 1} erreicht werden, was aber relativ
+ausführlich ist.
+Ein besserer Weg ist \TT{XOR EAX, EAX} (2 Byte \TT{0x31 0xC0}) oder \TT{XOR EAX, EAX / INC EAX}
+(3 Byte \TT{0x31 0xC0 0x40}).
+
+\end{itemize}
+
+Eine Software kann gegen Manipulation geschützt sein.
+
+Dieser Schutz ist häufig realisiert indem der ausführbare Code gelesen und ein
+passende Checksumme errechnet wird.
+Aus diesem Grund muss der Code gelesen werden bevor die Schutzfunktion aktiviert
+wird. Die Stelle kann durch setzen eines Breakpoints beim Lesen von Speicher
+herausgefunden werden.
+
+\myindex{tracer}
+\tracer hat für diesen Zweck die BPM-Option.
+
+Die Relocs (\myref{subsec:relocs}) in ausführbaren PE-Dateien sollten nicht
+verändert werden, da der Windows-Laser den neuen, veränderten Code möglicherweise
+überschreibt.
+\myindex{Hiew}
+(In Hiew sind die Stellen grau markiert, zum Beispiel: \figref{fig:scanf_ex3_hiew_1}).
+
+Eine Möglichkeit ist es Sprünge zu schreiben, welche die Relocs umgehen oder die
+Reloc-Tabelle muss editiert werden.

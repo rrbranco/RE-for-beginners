@@ -1,3 +1,19 @@
-\index{x86!\Instructions!XCHG}
-  \item[XCHG] \RU{обменять местами значения в операндах}\EN{exchange the values in the operands}
+\myindex{x86!\Instructions!XCHG}
+  \item[XCHG] (M) \RU{обменять местами значения в операндах}\EN{exchange the values in the operands}
+
+\myindex{Borland Delphi}
+\RU{Это редкая инструкция: компиляторы её не генерируют, потому что начиная с Pentium, XCHG с адресом в памяти в операнде
+исполняется так, как если имеет префикс LOCK (см.\InSqBrackets{\MAbrash глава 19}).
+Вероятно, в Intel так сделали для совместимости с синхронизирующими примитивами.
+Таким образом, XCHG начиная с Pentium может быть медленной.
+С другой стороны, XCHG была очень популярна у программистов на ассемблере.
+Так что, если вы видите XCHG в коде, это может быть знаком, что код написан вручную.
+Впрочем, по крайней мере компилятор Borland Delphi генерирует эту инструкцию.}
+\EN{This instruction is rare: compilers don't generate it, because starting at Pentium, XCHG with address in memory in operand executes as if it has LOCK prefix (\InSqBrackets{\MAbrash chapter 19}).
+Perhaps, Intel engineers did so for compatibility with synchronizing primitives.
+Hence, XCHG starting at Pentium can be slow.
+On the other hand, XCHG was very popular in assembly language programmers.
+So if you see XCHG in code, it can be a sign that this piece of code is written manually.
+However, at least Borland Delphi compiler generates this instruction.}
+
 

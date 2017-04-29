@@ -1,0 +1,18 @@
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/08_switch/2_lot/MIPS_O3_IDA_DE.lst}
+
+\myindex{MIPS!\Instructions!SLTIU}
+Der für uns neue Befehl ist \INS{SLTIU} (\q{Set on Less Than Immediate Unsigned}).
+
+\myindex{MIPS!\Instructions!SLTU}
+Dies ist das gleiche wie \INS{SLTU} (\q{Set on Less Than Unsigned}); das \q{I} steht dabei für \q{immediate}, d.h.
+für den Befehl muss eine Zahl angegeben werden. 
+
+\myindex{MIPS!\Instructions!BNEZ}
+\INS{BNEZ} ist \q{Branch if Not Equal to Zero}.
+
+Der Code ist den anderen \ac{ISA}s sehr ähnlich.
+\myindex{MIPS!\Instructions!SLL}
+\INS{SLL} (\q{Shift Word Left Logical}) führt eine Multiplikation mit 4 durch.
+Da MIPS eine 32-Bit CPU ist, sind auch die Adressen in der \IT{Jumptable} 32 Bit groß.

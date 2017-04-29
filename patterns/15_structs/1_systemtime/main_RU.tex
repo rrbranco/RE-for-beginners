@@ -1,0 +1,75 @@
+\subsection{MSVC: Пример SYSTEMTIME}
+\label{sec:SYSTEMTIME}
+
+\newcommand{\FNSYSTEMTIME}{\footnote{\href{http://go.yurichev.com/17260}{MSDN: SYSTEMTIME structure}}}
+
+Возьмем, к примеру, структуру SYSTEMTIME\FNSYSTEMTIME{} из win32 описывающую время.
+
+Она объявлена так:
+
+\begin{lstlisting}[caption=WinBase.h,style=customc]
+typedef struct _SYSTEMTIME {
+  WORD wYear;
+  WORD wMonth;
+  WORD wDayOfWeek;
+  WORD wDay;
+  WORD wHour;
+  WORD wMinute;
+  WORD wSecond;
+  WORD wMilliseconds;
+} SYSTEMTIME, *PSYSTEMTIME;
+\end{lstlisting}
+
+Пишем на Си функцию для получения текущего системного времени:
+
+\lstinputlisting[style=customc]{patterns/15_structs/1_systemtime/systemtime.c}
+
+Что в итоге (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010 /GS-,style=customasmx86]{patterns/15_structs/1_systemtime/systemtime.asm}
+
+Под структуру в стеке выделено 16 байт ~--- именно столько будет \TT{sizeof(WORD)*8}
+(в структуре 8 переменных с типом WORD).
+
+\newcommand{\FNMSDNGST}{\footnote{\href{http://go.yurichev.com/17261}{MSDN: GetSystemTime function}}}
+
+Обратите внимание на тот факт, что структура начинается с поля \TT{wYear}. 
+Можно сказать, что в качестве аргумента для \TT{GetSystemTime()}\FNMSDNGST передается указатель на структуру 
+SYSTEMTIME, но можно также сказать, что передается указатель на поле \TT{wYear}, 
+что одно и тоже! 
+\TT{GetSystemTime()} пишет текущий год в тот WORD на который указывает переданный указатель, 
+затем сдвигается на 2 байта вправо, пишет текущий месяц, итд, итд.
+
+\input{patterns/15_structs/1_systemtime/olly_RU.tex}
+
+\subsubsection{Замена структуры массивом}
+
+Тот факт, что поля структуры --- это просто переменные расположенные рядом, легко проиллюстрировать следующим образом.%
+
+Глядя на описание структуры \TT{SYSTEMTIME}, можно переписать этот простой пример так:%
+
+\lstinputlisting[style=customc]{patterns/15_structs/1_systemtime/systemtime2.c}
+
+Компилятор немного ворчит:
+
+\begin{lstlisting}
+systemtime2.c(7) : warning C4133: 'function' : incompatible types - from 'WORD [8]' to 'LPSYSTEMTIME'
+\end{lstlisting}
+
+Тем не менее, выдает такой код:
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2010,style=customasmx86]{patterns/15_structs/1_systemtime/systemtime2.asm}
+
+И это работает так же!
+
+Любопытно что результат на ассемблере неотличим от предыдущего.
+Таким образом, глядя на этот код, 
+никогда нельзя сказать с уверенностью, была ли там объявлена структура, либо просто набор переменных.
+
+Тем не менее, никто в здравом уме делать так не будет.
+
+Потому что это неудобно. 
+К тому же, иногда, поля в структуре могут меняться разработчиками, переставляться местами, итд.
+
+С \olly этот пример изучать не будем, потому что он будет точно такой же, как и в случае со структурой.
+

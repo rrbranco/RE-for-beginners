@@ -1,0 +1,21 @@
+﻿\subsection{Fall-through}
+
+Ещё одно популярное использование оператора \TT{switch()} это т.н. \q{fallthrough} (\q{провал}).
+Вот простой пример\footnote{Взято отсюда: \url{https://github.com/azonalon/prgraas/blob/master/prog1lib/lecture_examples/is_whitespace.c}}:
+
+\lstinputlisting[numbers=left,style=customc]{patterns/08_switch/4_fallthrough/fallthrough1.c}
+
+Немного сложнее, из ядра Linux\footnote{\url{https://github.com/torvalds/linux/blob/master/drivers/media/dvb-frontends/lgdt3306a.c}}:
+
+\lstinputlisting[numbers=left,style=customc]{patterns/08_switch/4_fallthrough/fallthrough2.c}
+
+\lstinputlisting[caption=Оптимизирующий GCC 5.4.0 x86,numbers=left,style=customc]{patterns/08_switch/4_fallthrough/fallthrough2.s}
+
+На метку \TT{.L5} управление может перейти если на входе ф-ции число 3250.
+Но на эту метку можно попасть и с другой стороны:
+мы видим что между вызовом \printf и меткой \TT{.L5} нет никаких пероходов.
+
+Теперь мы можем понять, почему иногда \IT{switch()} является источником ошибок: если забыть дописать \IT{break},
+это прекратит выражение \IT{switch()} в \IT{fallthrough}, и вместо одного блока для каждого условия,
+будет исполняться сразу несколько.
+

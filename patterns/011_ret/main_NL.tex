@@ -1,0 +1,73 @@
+% TODO to be resynced with EN version
+\section{De meest eenvoudige functie}
+
+De meest eenvoudige functie is er een die simpelweg een constante waarde terug geeft:
+
+Hier is ze:
+
+\lstinputlisting[caption=\NLph{},style=customc]{patterns/011_ret/1.c}
+
+Compileren maar!
+
+\subsection{x86}
+
+Hier zie je wat zowel de optimaliserende GCC als MSVC compilers produceren op een x86 platform:
+
+\lstinputlisting[caption=\Optimizing GCC/MSVC (\assemblyOutput),style=customasmx86]{patterns/011_ret/1.s}
+
+\myindex{x86!\Instructions!RET}
+Er zijn slechts twee instructies: de eerste plaatst de waarde 123 in het \EAX register, hetwelk volgens de conventies gebruikt wordt om de return value op te slaan en de tweede is \RET, wat de programma-uitvoering terug geeft aan de \gls{caller}.
+
+De caller zal dan het resultaat uit het \EAX register halen.
+
+\subsection{ARM}
+
+Er zijn een aantal verschillen met het ARM platform:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) ASM Output,style=customasmARM]{patterns/011_ret/1_Keil_ARM_O3.s}
+
+ARM gebruikt het register \Reg{0} om de resultaten van functies te returnen. 123 wordt dus gekopieerd in \Reg{0}.
+
+Het return address wordt niet bijgehouden op de local stack in het ARM \ac{ISA}, maar eerder in het link register, de \INS{BX LR} instructie zorgt er dus voor dat de programma-executie naar dat adres springt, en op die manier de uitvoering terug geeft aan de \gls{caller}.
+
+\myindex{ARM!\Instructions!MOV}
+\myindex{x86!\Instructions!MOV}
+Het is een vermelding waard dat \MOV een misleidende naam is voor de instructie in zowel x86 als ARM \ac{ISA}s.
+
+De data wordt feitelijk niet \IT{verplaatst}, maar \IT{gekopieerd}.
+
+\subsection{MIPS}
+
+\label{MIPS_leaf_function_ex1}
+In de wereld van MIPS zijn er twee afspraken mbt de benaming wanneer het op registers aankomt:
+genummerd (van \$0 tot \$31) of per pseudoniem (\$V0, \$A0, etc.).
+
+De GCC assembly output hieronder lijst de registers genummerd op:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/011_ret/MIPS.s}
+
+\dots terwijl \IDA dit doet per pseudoniem:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/011_ret/MIPS_IDA.lst}
+
+Het \$2 (of \$V0) register wordt gebruikt om de return value van de functie in op te slaan.
+\myindex{MIPS!\Pseudoinstructions!LI}
+\INS{LI} staat voor ``Load Immediate'' en is het MIPS equivalent voor MOV.
+
+\myindex{MIPS!\Instructions!J}
+De andere instructie is de jump instructie (J of JR), dewelke de uitvoering van het programma terug geeft aan de \gls{caller}, door een jump naar het adres in het \$31 (of \$RA) register.
+
+Dit register staat analoog tot het \ac{LR} in ARM.
+
+\myindex{MIPS!Branch delay slot}
+Je kan je wel afvragen waarom de posities van de load instructie (LI) en de jump instructie (J of JR) omgewisseld zijn. Dit komt door een \ac{RISC} feature genaamd ``branch delay slot''.
+
+De reden dat dit gebeurd is een kronkel in de architectuur van sommige RISC \ac{ISA}s en is niet belangrijk voor onze doeleinden - we dienen enkel te onthouden dat in MIPS, de instructie die volgt op een jump of branch instructie uitgevoerd wordt \IT{voor} de jump/branch instructie zelf.
+
+Bijgevolg verwisselen branch instructies steeds met de instructie die op voorhand moet worden uitgevoerd.
+
+\subsubsection{Nota over MIPS instructies/register benaming}
+
+Register- en instructienamen in de wereld van MIPS zijn traditioneel geschreven in kleine letters.
+Echter, om alles consistent te houden, zullen wij gebruik blijven maken van hoofdletters, aangezien dit de gevolgde afspraken zijn die gevolgd worden door alle andere \ac{ISA}s in dit boek.
+

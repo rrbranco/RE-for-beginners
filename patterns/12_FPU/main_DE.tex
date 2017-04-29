@@ -1,0 +1,127 @@
+\section{\FPUChapterName}
+\label{sec:FPU}
+
+\newcommand{\FNURLSTACK}{\footnote{\href{http://go.yurichev.com/17123}{wikipedia.org/wiki/Stack\_machine}}}
+\newcommand{\FNURLFORTH}{\footnote{\href{http://go.yurichev.com/17124}{wikipedia.org/wiki/Forth\_(programming\_language)}}}
+\newcommand{\FNURLIEEE}{\footnote{\href{http://go.yurichev.com/17125}{wikipedia.org/wiki/IEEE\_floating\_point}}}
+\newcommand{\FNURLSP}{\footnote{\href{http://go.yurichev.com/17126}{wikipedia.org/wiki/Single-precision\_floating-point\_format}}}
+\newcommand{\FNURLDP}{\footnote{\href{http://go.yurichev.com/17127}{wikipedia.org/wiki/Double-precision\_floating-point\_format}}}
+\newcommand{\FNURLEP}{\footnote{\href{http://go.yurichev.com/17128}{wikipedia.org/wiki/Extended\_precision}}}
+
+Die \ac{FPU} is ein Gerät innerhalb der \ac{CPU}, welche speziell für den Umgang
+mit Fließkommazahlen ausgelegt ist. 
+
+In der Vergangenheit wurde die \ac{FPU} auch als \q{Koprozessor} bezeichnet und
+sie befindet sich neben der \ac{CPU}. 
+
+\subsection{IEEE 754}
+
+Eine Zahl besteht gemäß IEEE 754 Format aus einem \IT{Vorzeichne}, einer
+\IT{Mantisse} (auch \IT{Bruch} genannt) und einem \IT{Exponenten}. 
+
+\subsection{x86}
+
+Es lohnt sich einen Blick auf die Stackmaschine \FNURLSTACK zu werfen oder die
+Grundlagen der Sprache Forth \FNURLFORTH zu erlernen, bevor man die \ac{FPU} in
+x86 genauer untersucht. 
+
+\myindex{Intel!80486}
+\myindex{Intel!FPU}
+Es ist interessant zu wissen, dass sich der Koprozessor in der Vergangenheit
+(vor dem 80486 Chip) auf einem separaten Chip befand und nicht immer auf dem
+Mainboard vorinstalliert war. Es war möglich, diesen separat zu kaufen und zu
+installieren\footnote{John Carmack z.B. verwendete Fixpunktarithmetikwerte 
+(\href{http://go.yurichev.com/17356}{wikipedia.org/wiki/Fixed-point\_arithmetic})
+seinem Videospiel Doom, gespeichert in 32-bit \ac{GPR} Registern (16 Bit
+für den Hauptteil und weitere 16 Bit für den gebrochenen Teil), sodass Doom
+auf 32-Bit-Computern ohne FPU, d.h., 80386 und 80486 SX, lauffähig war.}.
+
+Seit der 80486 DX CPU ist die \ac{FPU} in die \ac{CPU} integriert.
+
+\myindex{x86!\Instructions!FWAIT}
+Der Befehl \INS{FWAIT} erinnert uns an diese Tatsache--er lässt die \ac{CPU} in
+einen Wartezustand wechseln, in dem sie verbleibt, bis die \ac{FPU} ihre Arbeit
+beendet hat.
+
+Ein anderes Überbleibsel ist die Tatsache, dass die Opcodes der \ac{FPU} Befehle
+mit sogenannten \q{escape}-Opcodes (\GTT{D8..DF}, d.h. Opcodes, die an einen
+separaten Koprozessor übergeben werden) beginnen.
+
+\myindex{IEEE 754}
+\label{FPU_is_stack}
+Die FPU besitzt einen Stack, auf dem 8 80-bit-Register Platz finden, wobei jedes
+Register eine Zahl im IEEE 754\FNURLIEEE Format aufnehmen kann.
+
+Es gibt \ST{0}..\ST{7}. Verkürzend stellen IDA und \olly \ST{0}, welches in
+manchen (Hand-)büchern als \q{Stack Top} dargestellt wird, als \GTT{ST} dar.
+
+\subsection{ARM, MIPS, x86/x64 SIMD}
+In ARM und MIPS ist die FPU kein Stack, sondern ein Registersatz.
+
+Das gleiche Paradigma wird in den SIMD-Erweiterungen von x86/x64 CPUs verwendet.
+
+\subsection{\CCpp}
+
+\myindex{float}
+\myindex{double}
+Die Standardsparche \CCpp bietet zumindest two unterschiedliche
+Fließkommezahlentypen, \Tfloat (\IT{einfache Genauigkeit}\FNURLSP, 32 Bit)
+\footnote{Fließkommazahlen mit einfacher Genauigkeit werden auch im Abschnitt
+\IT{\WorkingWithFloatAsWithStructSubSubSectionName}~(\myref{sec:floatasstruct})
+behandelt} und \Tdouble (\IT{doppelte Genauigkeit}\FNURLDP, 64 Bit).
+
+In \InSqBrackets{\TAOCPvolII 246} können wir nachlesen, dass \IT{einfache
+Genauigkeit} bedeutet, dass die Fließkommazahl in ein einzelnes (32-Bit)-Wort
+hineinpasst, \IT{doppelte Genauigkeit} bedeutet dagegen, dass die Zahl in zwei
+Worten (64 Bit) abgelegt werden kann.
+
+\myindex{long double}
+GCC unterstützt im Gegensatz zu MSVC ebenfalls den \IT{long double} Typ
+(\IT{erweiterte Genauigkeit}\FNURLEP 80 Bit).
+
+Der \Tfloat Typ benötigt dieselbe Anzahl an Bits wie der \Tint Typ in
+32-Bit-Umgebungen, aber die Darstellung der Zahlen ist komplett verschieden
+voneinander.
+
+\input{patterns/12_FPU/1_simple/main}
+\input{patterns/12_FPU/2_passing_floats/main}
+\input{patterns/12_FPU/3_comparison/main}
+
+\subsection{Einige Konstanten}
+Es ist leicht, in Wikipedia die Darstellungen einiger Konstanten nach dem IEEE
+754 Standard nachzulesen. Es ist interessant zu wissen, dass 0.0 nach IEEE 754
+als 32 Nullbits (in einfacher Genauigkeit) oder 64 Nullbits (in doppelter
+Genauigkeit) dargestellt wird.
+Wenn also eine Fließkommavariable im Register oder Speicher auf 0.0 gesetzt
+werden soll, kann der Befehl \MOV oder \IT{XOR reg, reg} verwendet werden.
+\myindex{\CStandardLibrary!memset()}
+Dies ist geeignet für Strukturen, in denen viele Variable unterschiedlichster
+Datentypen vorhanden sind. Mit der gewöhnlichen memset() Funktion kann man alle
+Integervariablen auf 0, alle Booleschen Variablen auf \IT{false}, alle Pointer
+auf NULL und alle Fließkommavariablen (beliebiger Genauigkeit) auf 0.0 setzen.
+
+\subsection{Kopieren}
+Man könnte fälschlicherweise annehmen, dass die Befehle \INS{FLD}/\INS{FST}
+verwendet werden müssen, um IEEE 754 Werte zu laden oder zu speichern (also
+auch zu kopieren). Nichtsdestotrotz kann dies einfacher durch den Befehl
+\INS{MOV} erreicht werden, welcher, logischerweise, Werte bitweise kopiert.
+
+\subsection{Stack, Taschenrechner und umgekehrte polnische Notation}
+
+\myindex{Reverse Polish notation}
+Jetzt können wir einsehen, warum manche alten Taschenrechner die umgekehrte
+polnische Notation verwenden.\footnote{\href{http://go.yurichev.com/17354}{wikipedia.org/wiki/Reverse\_Polish\_notation}}.
+
+Für die Addition von 12 und 34 muss beispielsweise zuerst 12, dann 34 und dann
+das \q{plus}-Zeichen eingegeben werden. 
+
+Dies liegt daran, dass alte Taschenrechner als einfache Stackmaschinen
+implementiert waren und es auf diese Weise wesentlich einfacher war, mit
+komplexen geklammerten Ausdrücke umzugehen.
+
+\subsection{x64}
+Mehr dazu wie Fließkommazahlen in x86-64 verarbeitet werden unter:
+\myref{floating_SIMD}
+
+% sections
+\input{patterns/12_FPU/exercises}

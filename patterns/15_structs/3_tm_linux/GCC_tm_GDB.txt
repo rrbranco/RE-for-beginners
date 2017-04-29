@@ -3,14 +3,7 @@ Mon Jun  2 18:10:37 EEST 2014
 dennis@ubuntuvm:~/polygon$ gcc GCC_tm.c -o GCC_tm
 dennis@ubuntuvm:~/polygon$ gdb GCC_tm
 GNU gdb (GDB) 7.6.1-ubuntu
-Copyright (C) 2013 Free Software Foundation, Inc.
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-and "show warranty" for details.
-This GDB was configured as "i686-linux-gnu".
-For bug reporting instructions, please see:
-<http://www.gnu.org/software/gdb/bugs/>...
+...
 Reading symbols from /home/dennis/polygon/GCC_tm...(no debugging symbols found)...done.
 (gdb) b printf
 Breakpoint 1 at 0x8048330

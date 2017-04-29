@@ -1,0 +1,58 @@
+\subsection{\Example{} \#2}
+\label{win16_messagebox}
+
+\begin{lstlisting}[style=customc]
+#include <windows.h>
+
+int PASCAL WinMain( HINSTANCE hInstance,
+                    HINSTANCE hPrevInstance,
+                    LPSTR lpCmdLine,
+                    int nCmdShow )
+{
+	MessageBox (NULL, "hello, world", "caption", MB_YESNOCANCEL);
+	return 0;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[style=customasmx86]
+WinMain         proc near
+                push    bp
+                mov     bp, sp
+                xor     ax, ax          ; NULL
+                push    ax
+                push    ds
+                mov     ax, offset aHelloWorld ; 0x18. "hello, world"
+                push    ax
+                push    ds
+                mov     ax, offset aCaption ; 0x10. "caption"
+                push    ax
+                mov     ax, 3           ; MB_YESNOCANCEL
+                push    ax
+                call    MESSAGEBOX
+                xor     ax, ax          ; return 0
+                pop     bp
+                retn    0Ah
+WinMain         endp
+
+dseg02:0010 aCaption        db 'caption',0
+dseg02:0018 aHelloWorld     db 'hello, world',0
+\end{lstlisting}
+
+\myindex{x86!\Instructions!RET}
+\RU{Пара важных моментов: соглашение о передаче аргументов здесь \TT{PASCAL}: оно указывает что самый
+первый аргумент должен передаваться первым}
+\EN{Couple important things here: the \TT{PASCAL} calling convention dictates passing the first argument first} 
+(\TT{MB\_YESNOCANCEL}), \RU{а самый последний аргумент --- последним}\EN{and the last argument\EMDASH{}last} (NULL).
+\RU{Это соглашение также указывает вызываемой функции восстановить}
+\EN{This convention also tells the \gls{callee} to restore the} \gls{stack pointer}:
+\RU{поэтому инструкция}\EN{hence the} \TT{RETN} \RU{имеет аргумент}\EN{instruction has} \TT{0Ah} 
+\RU{означая что указатель нужно сдвинуть вперед на 10 байт во время возврата из функции}
+\EN{as argument, which implies that the pointer has to be increased by 10 bytes when the function exits}.
+\RU{Это как}\EN{It is like} stdcall (\myref{sec:stdcall}), \EN{but the arguments are passed in 
+\q{natural} order}\RU{только аргументы передаются в \q{естественном} порядке}.
+
+\RU{Указатели передаются парами: сначала сегмент данных, потом указатель внутри сегмента}
+\EN{The pointers are passed in pairs: first the data segment is passed, then the pointer inside the segment}.
+\RU{В этом примере только один сегмент, так что \TT{DS} всегда указывает на сегмент данных в исполняемом
+файле}\EN{There is only one segment in this example, so \TT{DS} always points to the data segment of the executable}.
+

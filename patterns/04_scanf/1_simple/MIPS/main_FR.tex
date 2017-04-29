@@ -1,0 +1,21 @@
+\subsubsection{MIPS}
+
+%%A place in the local stack is allocated for the $x$ variable, and it is to be referred as $\$sp+24$.
+Une place est allouée sur la pile locale pour la variable $x$, et elle doit être appelée par $\$sp+24$.
+\myindex{MIPS!\Instructions!LW}
+
+%%Its address is passed to \scanf, and the user input values is loaded using the \INS{LW} (\q{Load Word}) instruction
+%%and then passed to \printf.
+Son adresse est passée à \scanf, et l'entrée de l'utilisateur est chargée en utilisant
+l'instruction \INS{LW} (\q{Load Word}).
+
+%%\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/04_scanf/1_simple/MIPS/ex1.O3_EN.s}
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (\assemblyOutput),style=customasmMIPS]{patterns/04_scanf/1_simple/MIPS/ex1.O3_EN.s}
+
+%%IDA displays the stack layout as follows:
+IDA affiche la disposition de la pile comme suit:
+
+%%\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/04_scanf/1_simple/MIPS/ex1.O3.IDA_EN.lst}
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (IDA),style=customasmMIPS]{patterns/04_scanf/1_simple/MIPS/ex1.O3.IDA_EN.lst}
+
+% TODO non-optimized version?

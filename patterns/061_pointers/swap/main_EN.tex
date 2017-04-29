@@ -1,0 +1,16 @@
+\subsection{Swap input values}
+
+This will do the job:
+
+\lstinputlisting[style=customc]{patterns/061_pointers/swap/5.c}
+
+As we can see, bytes are loaded into lower 8-bit parts of \TT{ECX} and \TT{EBX} using \INS{MOVZX}
+(so higher parts of these registers will be cleared) and then bytes are written back swapped.
+
+\lstinputlisting[style=customasmx86,caption=Optimizing GCC 5.4]{patterns/061_pointers/swap/5_GCC_O3_x86.s}
+
+Addresses of both bytes are taken from arguments and through execution of the function are located
+in \TT{EDX} and \TT{EAX}.
+
+So we use pointers: probably, there is no better way to solve this task without them.
+

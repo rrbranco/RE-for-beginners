@@ -1,0 +1,56 @@
+\subsection{MIPS}
+
+\subsubsection{3 arguments}
+
+\myparagraph{\Optimizing GCC 4.4.5}
+
+The main difference with the \q{\HelloWorldSectionName} example is that in this case \printf is called
+instead of \puts and 3 more arguments are passed through the registers \$5\dots \$7 (or \$A0\dots \$A2).
+That is why these registers are prefixed with A-, which implies they are used for function arguments passing.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O3_EN.s}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O3.IDA_EN.lst}
+
+\IDA has coalesced pair of \INS{LUI} and \INS{ADDIU} instructions into one \INS{LA} pseudo instruction.
+That's why there are no instruction at address 0x1C: because \INS{LA} \IT{occupies} 8 bytes.
+
+\myparagraph{\NonOptimizing GCC 4.4.5}
+
+\NonOptimizing GCC is more verbose:
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O0_EN.s}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O0.IDA_EN.lst}
+
+\subsubsection{8 arguments}
+
+Let's use again the example with 9 arguments from the previous section: \myref{example_printf8_x64}.
+
+\lstinputlisting[style=customc]{patterns/03_printf/2.c}
+
+\myparagraph{\Optimizing GCC 4.4.5}
+
+Only the first 4 arguments are passed in the \$A0 \dots \$A3 registers, the rest are passed via the stack.
+\myindex{MIPS!O32}
+
+This is the O32 calling convention (which is the most common one in the MIPS world).
+Other calling conventions (like N32) may use the registers for different purposes.
+
+\myindex{MIPS!\Instructions!SW}
+
+\INS{SW} abbreviates \q{Store Word} (from register to memory).
+MIPS lacks instructions for storing a value into memory, so an instruction pair has to be used instead (\INS{LI}/\INS{SW}).
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O3_EN.s}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O3.IDA_EN.lst}
+
+\myparagraph{\NonOptimizing GCC 4.4.5}
+
+\NonOptimizing GCC is more verbose:
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O0_EN.s}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O0.IDA_EN.lst}
+

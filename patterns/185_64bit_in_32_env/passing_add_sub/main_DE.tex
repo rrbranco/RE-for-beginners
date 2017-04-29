@@ -1,0 +1,54 @@
+\subsection{Übergabe von Argumenten bei Addition und Subtraktion}
+
+\lstinputlisting[style=customc]{patterns/185_64bit_in_32_env/passing_add_sub/1.c}
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 /Ob1,style=customasmx86]{patterns/185_64bit_in_32_env/passing_add_sub/1_MSVC.asm}
+Wir sehen, dass in der Funktion \GTT{f\_add\_test()} jeder 64-Bit-Wert über zwei 32-Bit-Werten übergeben wird: zuerst
+der höhere Teil, dann der niedere Teil.
+
+Addition und Subtraktion werden auch mit Paaren ausgeführt.
+
+\myindex{x86!\Instructions!ADC}
+Bei einer Addition werden die niederen 32-Bit-Teile zuerst addiert.
+Tritt hierbei ein Übertrag auf, wird das \CF Flag gesetzt.
+
+Der folgende \INS{ADC} Befehl addiert die höheren Teile der Operanden und addiert 1, falls $CF=1$.
+
+\myindex{x86!\Instructions!SBB}
+Subtraktion wird auch mit den Wertepaaren durchgeführt.
+Das erste \SUB setzt ggf. das \CF Flag, das von dem folgenden \INS{SBB} Befehl geprüft wird:
+wenn das Carryflag gesetzt ist, wird am Ende 1 vom Ergebnis abgezogen.
+
+Man erkennt im Code leicht, wie das Ergebnis der Funktion \GTT{f\_add()} an \printf übergeben wird.
+
+\lstinputlisting[caption=GCC 4.8.1 -O1 -fno-inline,style=customasmx86]{patterns/185_64bit_in_32_env/passing_add_sub/1_GCC.asm}
+
+Der Code von GCC ist identisch.
+
+\subsubsection{ARM}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/185_64bit_in_32_env/passing_add_sub/Keil_ARM_O3.s}
+
+\myindex{ARM!\Instructions!ADDS}
+\myindex{ARM!\Instructions!SUBS}
+\myindex{ARM!\Instructions!ADC}
+\myindex{ARM!\Instructions!SBC}
+Der erste 64-Bit-Wert wird über das Registerpaar \Reg{0} und \Reg{1} übergeben, der zweite über \Reg{2} und \Reg{3}.
+ARM verfügt ebenfalls über die Befehle \INS{ADC} und \INS{SBC} (die das Carryflag beachten).
+Man beachte: wenn die niederen Teile addiert bzw. subtrahiert werden, werden \INS{ADDS} und \INS{SUBS} Befehle mit dem
+Suffy -S verwendet. Dieser Suffix steht für \q{set flags} (dt. setze Flags) und wird von den folgenden
+\INS{ADC}/\INS{SBC} Befehlen unbedingt benötigt. Würden die Flags nicht weiter beachtet werden, könnten hier \ADD und
+\SUB verwendet werden.
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA),style=customasmMIPS]{patterns/185_64bit_in_32_env/passing_add_sub/MIPS_O3_IDA_DE.lst}
+MIPS besitzt kein Register für die Flags, sodass keine derartige Information nach der Ausführung von arithmetischen
+Operationen verfügbar ist.
+Es gibt also keine Befehle wie \INS{ADC} oder \INS{SBB} in x86.
+Um zu prüfen, ob das Carryflag gesetzt werden muss, wird ein \INS{SLTU} Befehl verwendet, der das Zielregister auf 1
+oder 0 setzt. Diese 1 oder 0 wird dann zum Ergebnis addiert bzw. davon subtrahiert.
+

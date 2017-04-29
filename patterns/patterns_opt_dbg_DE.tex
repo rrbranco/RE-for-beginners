@@ -1,0 +1,43 @@
+\section{Die Methode}
+
+Als der Autor dieses Buches zunächst C und später \Cpp lernte, schrieb er kleine Codestücke, kompilierte sie und
+untersuchte anschließend den Assembler-Code des Compilers. Dies machte es sehr einfach zu verstehen, was in dem Code
+den er geschrieben hatte passierte.
+\footnote{Tatsächlich tut er dies immer noch wenn er einen bestimmten Code-Teil nicht versteht.} 
+Er hat dies so oft getan, dass der Zusammenhang zwischen dem \CCpp-Code und dem was der Compiler daraus macht tief in
+seinem Verstand verankert ist. % Not very elegant translation to be honest... 
+So ist es einfach sich schnell einen Überblick über das Aussehen und die Funktion einer C-Quelle zu verschaffen. 
+Vielleicht ist diese Vorgehensweise auch für andere hilfreich.
+
+%There are a lot of examples for both x86/x64 and ARM.
+%Those who already familiar with one of architectures, may freely skim over pages.
+
+Gelegentlich werden hier ältere Compiler-Versionen genutzt, um den kürzesten oder einfachsten Code-Ausschnitt zu erhalten.
+\ac{TBT}.
+\section*{\Exercises}
+
+Als der Autor dieses Buches Assembler erlernte, hat er oft kleine C-Funktionen kompiliert und anschließend nach und nach in
+Assembler nachprogrammiert um den Code so klein wie möglich zu machen.
+Dies ist in einer Anwendung in der Praxis heutzutage vielleicht nicht mehr sinnvoll, weil moderne Compiler in der Regel weitaus
+besser optimieren können als ein Mensch. Dennoch ist es ein guter Weg um Assembler besser zu verstehen. Versuchen Sie ruhig
+einmal einen Assembler-Quelltext aus dem Buch bei gleicher Funktionalität kürzer zu schreiben.
+Vergessen Sie aber nicht Dinge die Sie programmiert haben zu testen.
+
+% rewrote to show that debug\release and optimisations levels are orthogonal concepts.
+\section*{Optimierungsstufen und Debug-Informationen}
+
+Quellcode kann von verschiedenen Compilern mit verschiedenen Optimierungsstufen übersetzt werden.
+Üblicherweise hat ein Compiler drei solcher Stufen, wobei Stufe Null eine deaktivierte Optimierung bedeutet.
+Die Optimierung kann sich ebenso auf die Code-Größe als auch auf die Ausführgeschwindigkeit beziehen.
+Ein Nicht-optimierender Compiler ist schneller und erstellt einfacher zu verstehenden (aber auch längeren) Code.
+Demgegenüber ist ein optimierender Compiler langsamer und versucht Code zu erstellen, dessen Ausführgeschwindigkeit
+höher, aber nicht notwendigerweise kompakter, ist.
+Zusätzlich zu diesen Optimierungsmöglichkeiten kann ein Compiler Informationen in den Code einfügen, die das spätere
+Debuggen vereinfachen.
+Eine wichtige Eigenschaft des Debug-Codes ist, dass er gegebenenfalls Links zwischen den Zeilen des Quellcodes und
+den entsprechenden Maschinen-Code-Adressen enthält.
+Optimierende Compiler hingegen tendieren dazu Code zu erzeugen, der ganze Zeilen des Quellcodes wegoptimiert, die dann
+dementsprechend im Maschinencode nicht auftauchen.
+Ein Reverse Engineer kann beiden Varianten begegnen, einfach, weil einige Software-Entwickler die Optimierung des Compilers
+nutzen und andere nicht. Aufgrund dieser Tatsache werden Sie in diesem Buch auch Beispielcode für optimierten und
+nichtoptimierten Compiler-Code finden.

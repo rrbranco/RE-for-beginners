@@ -1,0 +1,102 @@
+\section{\Stack}
+\label{sec:stack}
+\myindex{\Stack}
+
+Der Stack ist eine der Fundamentalen Datenstrukturen in der Informatik.
+\footnote{\href{http://go.yurichev.com/17119}{wikipedia.org/wiki/Call\_Stack}}.
+\ac{AKA} \ac{LIFO}.
+
+Technisch betrachtet ist es ein Stapel Speicher innerhalb des Prozessspeichers der zusammen mit den \ESP (x86), \RSP (x64) oder dem \ac{SP} (ARM) Register als ein Zeiger in diesem Speicherblock fungiert.
+
+\myindex{ARM!\Instructions!PUSH}
+\myindex{ARM!\Instructions!POP}
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!POP}
+
+Die häufigsten Stack-Zugriffsinstruktionen sind die \PUSH und \POP Instruktionen (in beidem x86 und ARM Thumb-Modus). \PUSH subtrahiert vom \ESP/\RSP/\ac{SP} 4 Byte im 32-Bit Modus (oder 8 im 64-Bit Modus) und schreibt dann den Inhalt des Zeigers an die Adresse auf die von \ESP/\RSP/\ac{SP} gezeigt wird.
+
+\POP ist die umgekehrte Operation: Die Daten des Zeigers für die Speicherregion auf die von \ac{SP}
+gezeigt wird werden ausgelesen und die Inhalte in den Instruktionsoperanden geschreiben (oft ist das ein Register). Dann werden 4 (beziehungsweise 8 ) Byte zum \gls{stack pointer} addiert.
+
+Nach der Stackallokation, zeigt der \gls{stack pointer} auf den Boden des Stacks.
+\PUSH verringert den \gls{stack pointer} und \POP erhöht ihn.
+Der Boden des Stacks ist eigentlich der Anfang der Speicherregion die für den Stack reserviert wurde.
+Das wirkt zunächst seltsam, aber so funktioniert es.
+
+ARM unterstützt beides, aufsteigende und absteigende Stacks.
+
+\myindex{ARM!\Instructions!STMFD}
+\myindex{ARM!\Instructions!LDMFD}
+\myindex{ARM!\Instructions!STMED}
+\myindex{ARM!\Instructions!LDMED}
+\myindex{ARM!\Instructions!STMFA}
+\myindex{ARM!\Instructions!LDMFA}
+\myindex{ARM!\Instructions!STMEA}
+\myindex{ARM!\Instructions!LDMEA}
+
+Zum Beispiel die \ac{STMFD}/\ac{LDMFD} und \ac{STMED}/\ac{LDMED} Instruktionen sind alle dafür gedacht mit einem absteigendem Stack zu arbeiten ( wächst nach unten, fängt mit hohen Adressen an und entwickelt sich zu niedrigeren Adressen). Die \ac{STMFA}/\ac{LDMFA} und \ac{STMEA}/\ac{LDMEA} Instruktionen sind dazu gedacht mit einem aufsteigendem Stack zu arbeiten (wächst nach oben und fängt mit niedrigeren Adressen an und wächst nach oben).
+
+% It might be worth mentioning that STMED and STMEA write first,
+% and then move the pointer, and that LDMED and LDMEA move the pointer first, and then read.
+% In other words, ARM not only lets the stack grow in a non-standard direction,
+% but also in a non-standard order.
+% Maybe this can be in the glossary, which would explain why E stands for "empty".
+
+\subsection{Warum wächst der Stack nach unten?}
+\label{stack_grow_backwards}
+
+Intuitiv, würden man annehmen das der Stack nach oben wächst z.B Richtung höherer Adressen, so wie bei jeder anderen Datenstruktur.
+
+Der Grund das der Stack rückwärts wächst ist wohl historisch bedingt. Als Computer so groß waren das sie einen ganzen Raum beansprucht haben war es einfach Speicher in zwei Sektionen zu unterteilen, einen Teil für den \gls{heap} und einen Teil für den Stack. Sicher war zu dieser Zeit nicht bekannt wie groß der \gls{heap} und der Stack wachsen würden, während der Programm Laufzeit, also war die Lösung die einfachste mögliche.
+
+\input{patterns/02_stack/stack_and_heap}
+
+In \RitchieThompsonUNIX können wir folgendes lesen:
+
+\begin{framed}
+\begin{quotation}
+Der user-core eines Programm Images wird in drei logische Segmente unterteilt. Das Programm-Text Segment beginnt bei 0 im virtuellen Adress Speicher. Während der Ausführung wird das Segment als schreibgeschützt markiert und eine einzelne Kopie des Segments wird unter allen Prozessen geteilt die das Programm ausführen. An der ersten 8K grenze über dem Programm Text Segment im Virtuellen Speicher, fängt der ``nonshared'' Bereich an, der nach Bedarf von Syscalls erweitert werden kann. Beginnend bei der höchsten Adresse im Virtuellen Speicher ist das Stack Segment, das Automatisch nach unten wächst während der Hardware Stackpointer sich ändert.
+\end{quotation}
+\end{framed}
+
+Das erinnert daran wie manche Schüler Notizen zu  zwei Vorträgen in einem Notebook dokumentieren:
+Notizen für den ersten Vortrag werden normal notiert, und Notizen zur zum zweiten Vortrag werden 
+ans Ende des Notizbuches geschrieben, indem man das Notizbuch umdreht. Die Notizen treffen sich irgendwann
+im Notizbuch aufgrund des fehlenden Freien Platzes.
+
+% I think if we want to expand on this analogy,
+% one might remember that the line number increases as as you go down a page.
+% So when you decrease the address when pushing to the stack, visually,
+% the stack does grow upwards.
+% Of course, the problem is that in most human languages,
+% just as with computers,
+% we write downwards, so this direction is what makes buffer overflows so messy.
+
+\subsection{Für was wird der Stack benutzt?}
+
+% subsections
+\input{patterns/02_stack/01_saving_ret_addr}
+\input{patterns/02_stack/02_args_passing}
+\EN{\input{patterns/02_stack/03_local_vars_EN}}
+\RU{\input{patterns/02_stack/03_local_vars_RU}}
+\DE{\input{patterns/02_stack/03_local_vars_DE}}
+\PTBR{\input{patterns/02_stack/03_local_vars_PTBR}}
+\input{patterns/02_stack/04_alloca/main}
+\input{patterns/02_stack/05_SEH}
+\input{patterns/02_stack/06_BO_protection}
+
+\subsubsection{Automatisches deallokieren der Daten auf dem Stack}
+
+Vielleicht ist der Grund warum man lokale Variablen und SEH Einträge auf dem Stack speichert, weil sie beim 
+verlassen der Funktion automatisch aufgeräumt werden. Man braucht dabei nur eine Instruktion um die Position
+des Stackpointers zu korrigieren (oftmals ist es die \ADD Instruktion). Funktions Argumente, könnte man sagen 
+werden auch am Ende der Funktion deallokiert. Im Kontrast dazu, alles was auf dem \IT{heap} gespeichert wird muss
+explizit deallokiert werden. 
+
+% sections
+\EN{\input{patterns/02_stack/07_layout_EN}}
+\RU{\input{patterns/02_stack/07_layout_RU}}
+\DE{\input{patterns/02_stack/07_layout_DE}}
+\PTBR{\input{patterns/02_stack/07_layout_PTBR}}
+\input{patterns/02_stack/08_noise/main}
+\input{patterns/02_stack/exercises}

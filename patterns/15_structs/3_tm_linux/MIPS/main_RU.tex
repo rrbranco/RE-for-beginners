@@ -1,0 +1,10 @@
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),numbers=left,style=customasmMIPS]{patterns/15_structs/3_tm_linux/MIPS/MIPS_O3_IDA_RU.lst}
+
+Это тот пример, где branch delay slot-ы могут нас запутать.
+
+Например, в строке 35 есть инструкция \INS{addiu \$a1, 1900}, добавляющая 1900 к числу года.
+
+Но она исполняется перед исполнением соответствующей \INS{JALR} в строке 34, не забывайте.
+

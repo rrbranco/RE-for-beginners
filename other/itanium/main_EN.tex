@@ -1,0 +1,92 @@
+\section{Itanium}
+\label{itanium}
+\myindex{Itanium}
+
+Although almost failed, Intel Itanium (\ac{IA64}) is a very interesting architecture.
+
+While \ac{OOE} CPUs decides how to rearrange their instructions and execute them in parallel,
+\ac{EPIC} was an attempt to shift these decisions to the compiler:
+to let it group the instructions at the compile stage.
+
+This resulted in notoriously complex compilers.
+
+Here is one sample of \ac{IA64} code: simple cryptographic algorithm from the Linux kernel:
+
+\lstinputlisting[caption=Linux kernel 3.2.0.4,style=customc]{other/itanium/tea_from_linux.c}
+
+Here is how it was compiled:
+
+\lstinputlisting[caption=Linux Kernel 3.2.0.4 for Itanium 2 (McKinley)]{other/itanium/ia64_linux_3.2.0.4_mckinley.lst}
+
+First of all, all \ac{IA64} instructions are grouped into 3-instruction bundles.
+
+Each bundle has a size of 16 bytes (128 bits) and consists of template code (5 bits) + 3 instructions (41 bits for each).
+
+\IDA shows the bundles as 6+6+4 bytes~---you can easily spot the pattern.
+
+All 3 instructions from each bundle usually executes simultaneously, unless one of instructions has a \q{stop bit}.
+
+Supposedly, Intel and HP engineers gathered statistics on most frequent instruction patterns and decided to bring
+bundle types (\ac{AKA} \q{templates}): a bundle code defines the instruction types in the bundle.
+There are 12 of them.
+
+For example, the zeroth bundle type is \TT{MII}, which implies 
+the first instruction is Memory (load or store), the second and third ones are I (integer instructions).
+
+Another example is the bundle of type 0x1d: \TT{MFB}:
+the first instruction is Memory (load or store), the second one is Float 
+(\ac{FPU} instruction), and the third is Branch (branch instruction).
+
+If the compiler cannot pick a suitable instruction for the relevant bundle slot, it may insert a \ac{NOP}:
+you can see here the
+\TT{nop.i} instructions (\ac{NOP} at the place where the integer instruction might be) or \TT{nop.m} 
+(a memory instruction might be at this slot).
+
+\ac{NOP}s are inserted automatically when one uses assembly language manually.
+
+And that is not all. Bundles are also grouped.
+
+Each bundle may have a \q{stop bit},
+so all the consecutive bundles with a terminating bundle which has the \q{stop bit} 
+can be executed simultaneously.
+
+In practice, Itanium 2 can execute 2 bundles at once, resulting in the execution of 6 instructions at once.
+
+So all instructions inside a bundle and a bundle group cannot interfere with each other 
+(i.e., must not have data hazards).
+
+If they do, the results are to be undefined.
+
+Each stop bit is marked in assembly language as two semicolons (\TT{;;}) after the instruction.
+
+So, the instructions at [90-ac] may be executed simultaneously:
+they do not interfere. The next group is [b0-cc].
+
+We also see a stop bit at 10c.
+The next instruction at 110 has a stop bit too.
+
+This implies that these instructions must be executed isolated from all others (as in \ac{CISC}).
+
+Indeed: the next instruction at 110 uses the result from the previous one (the value in register r26),
+so they cannot be executed at the same time.
+
+Apparently, the compiler was not able to find a better way to parallelize the instructions,
+in other words, to load \ac{CPU} as much as possible, hence too much stop bits and \ac{NOP}s.
+
+Manual assembly programming is a tedious job as well: the programmer has to group the instructions manually.
+
+The programmer is still able to add stop bits to each instructions, but this will degrade
+the performance that Itanium was made for.
+
+An interesting examples of manual \ac{IA64} assembly code can be found in the Linux kernel's sources:
+
+\url{http://go.yurichev.com/17322}.
+
+Another introductory paper on Itanium assembly:
+[Mike Burrell, \IT{Writing Efficient Itanium 2 Assembly Code} (2010)]\footnote{\AlsoAvailableAs \url{http://yurichev.com/mirrors/RE/itanium.pdf}},
+[papasutra of haquebright, \IT{WRITING SHELLCODE FOR IA-64} (2001)]\footnote{\AlsoAvailableAs \url{http://phrack.org/issues/57/5.html}}.
+
+Another very interesting Itanium feature is the \IT{speculative execution} and the NaT (\q{not a thing}) bit,
+somewhat resembling \gls{NaN} numbers: \\
+\href{http://go.yurichev.com/17323}{MSDN}.
+

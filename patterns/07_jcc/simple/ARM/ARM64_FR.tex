@@ -1,0 +1,16 @@
+\myparagraph{ARM64: GCC (Linaro) 4.9 \Optimizing}
+
+\lstinputlisting[caption=f\_signed(),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM64_GCC_O3_signed_FR.lst}
+
+\lstinputlisting[caption=f\_unsigned(),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM64_GCC_O3_unsigned_FR.lst}
+
+Les commentaires ont été ajoutés par l'auteur de ce livre.
+Ce qui frappe ici, c'est que le compilateur n'est pas au courant que certaines conditions
+ne sont pas possible du tout, donc il y a du code mort par endroit, qui ne sera jamais
+exécuté.
+
+\mysubparagraph{\Exercise}
+
+Essayez d'optimiser manuellement la taille de ces fonctions, en supprimant les instructions
+redondantes, sans en ajouter de nouvelles.
+

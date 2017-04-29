@@ -1,0 +1,67 @@
+\subsection{x64}
+
+\myindex{x86-64}
+
+La situazione e' leggemente diversa in x86-64. Gli argomenti della funzione (i primi 4 o 6) 
+sono passati tramite i registri. La funzione chiamata (\gls{callee}) legge quindi i parametri dai registri anziche' dallo stack.
+
+\subsubsection{MSVC}
+
+\Optimizing MSVC:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{patterns/05_passing_arguments/x64_MSVC_Ox_EN.asm}
+
+Come possiamo vedere, la piccola funzione \ttf prende tutti i suoi argomenti dai registri.
+
+L'istruzione \LEA qui e' usata per l'addizione. Apparentemente il compilatore l'ha ritenuta piu' veloce di \TT{ADD}.
+\myindex{x86!\Instructions!LEA}
+
+\LEA e' anche usata nella funzione \main per preparare il primo e il tezo argomento di \ttf.
+Il compilatore deve aver deciso che questo approccio e' piu' veloce del modo tradizionale di caricare valori nei registri usando l'istruzione \MOV.
+
+Diamo un'occhiata all'output di MSVC senza ottimizzazioni:
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/05_passing_arguments/x64_MSVC_IDA_EN.asm}
+
+L'output puo' lasciarci un po' perplessi in quanto tutti i 3 argomenti nei registri sono anche salvati nello stack per qualche motivo. 
+\myindex{Shadow space}
+\label{shadow_space}
+Cio' e' detto \q{shadow space}
+\footnote{\href{http://go.yurichev.com/17256}{MSDN}}: 
+ogni Win64 potrebbe (ma non deve necessariamente farlo) salvare tutti i 4 vallori dei registri in questo spazio.
+E questo avviene per due ragioni: 
+1) e' eccessivo allocare un intero registro (o addirittura 4) per un argomento in input, pertanto sara' acceduto tramite lo stack.
+2) il debugger sa sempre dove trovare gli argomenti della funzione ad un break
+\footnote{\href{http://go.yurichev.com/17257}{MSDN}}.
+
+Quindi, alcune funzioni piuttosto estese potrebbero salvare i loro argomenti nello \q{shadows space} nel caso in cui 
+abbiano necessita' di utilizzarli durante l'esecuzione della funzione. Altre funzioni piu' piccole (come la nostra) potrebbero non farlo.
+
+Allorace spazio nello \q{shadow space} e' responsabilita' del chiamante (\gls{caller}).
+
+\subsubsection{GCC}
+
+\Optimizing GCC genera codice piu' o meno comprensibile:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.6 x64,style=customasmx86]{patterns/05_passing_arguments/x64_GCC_O3_EN.s}
+
+\NonOptimizing GCC:
+
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{patterns/05_passing_arguments/x64_GCC_EN.s}
+
+\myindex{Shadow space}
+
+In System V *NIX (\SysVABI) non e' richiesto lo \q{shadow space}, ma la funizone chiamata (\gls{callee}) potrebbe aver bisogno di salvare
+i suoi argomenti da qualche parte in caso di scarsita' di registri a disposizione.
+
+\subsubsection{GCC: uint64\_t instead of int}
+
+Il nostro esempio utilizza \Tint a 32-bit, motivo per cui viene usata la parte a 32-bit del registro (con prefisso \TT{E-}).
+
+Puo' essere leggermente modificato per utilizzare valori a 64-bit:
+
+\lstinputlisting[style=customc]{patterns/05_passing_arguments/ex64.c}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.6 x64,style=customasmx86]{patterns/05_passing_arguments/ex64_GCC_O3_IDA_EN.asm}
+
+Il codice e' lo stesso, ma in questo caso vengono usati i registri \IT{completi} (con prefisso \TT{R-}).

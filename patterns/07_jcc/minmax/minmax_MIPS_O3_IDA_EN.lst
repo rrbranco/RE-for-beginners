@@ -1,0 +1,25 @@
+my_max:
+; set $v1 to 1 if $a1<$a0, or clear otherwise (if $a1>$a0):
+                slt     $v1, $a1, $a0
+; jump, if $v1 is 0 (or $a1>$a0):
+                beqz    $v1, locret_10
+; this is branch delay slot
+; prepare $a1 in $v0 in case of branch triggered:
+                move    $v0, $a1 
+; no branch triggered, prepare $a0 in $v0:
+                move    $v0, $a0
+
+locret_10:
+                jr      $ra
+                or      $at, $zero ; branch delay slot, NOP
+
+; the min() function is same, but input operands in SLT instruction are swapped:
+my_min:
+                slt     $v1, $a0, $a1
+                beqz    $v1, locret_28
+                move    $v0, $a1
+                move    $v0, $a0
+
+locret_28:
+                jr      $ra
+                or      $at, $zero ; branch delay slot, NOP

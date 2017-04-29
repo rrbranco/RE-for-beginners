@@ -1,0 +1,76 @@
+\subsubsection{ARM + \OptimizingXcodeIV (\ARMMode)}
+
+\lstinputlisting[caption=\OptimizingXcodeIV (\ARMMode),label=ARM_leaf_example4,style=customasmARM]{patterns/14_bitfields/4_popcnt/ARM_Xcode_O3_RU.lst}
+
+\myindex{ARM!\Instructions!TST}
+\TST это то же что и \TEST в x86.
+
+\myindex{ARM!Optional operators!LSL}
+\myindex{ARM!Optional operators!LSR}
+\myindex{ARM!Optional operators!ASR}
+\myindex{ARM!Optional operators!ROR}
+\myindex{ARM!Optional operators!RRX}
+\myindex{ARM!\Instructions!MOV}
+\myindex{ARM!\Instructions!TST}
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!ADD}
+\myindex{ARM!\Instructions!SUB}
+\myindex{ARM!\Instructions!RSB}
+Как уже было указано~(\myref{shifts_in_ARM_mode}),
+в режиме ARM нет отдельной инструкции для сдвигов.
+
+Однако, модификаторами 
+LSL (\IT{Logical Shift Left}), 
+LSR (\IT{Logical Shift Right}), 
+ASR (\IT{Arithmetic Shift Right}), 
+ROR (\IT{Rotate Right}) и
+RRX (\IT{Rotate Right with Extend}) можно дополнять некоторые инструкции, такие как \MOV, \TST,
+\CMP, \ADD, \SUB, \RSB\footnote{\DataProcessingInstructionsFootNote}.
+
+Эти модификаторы указывают, как сдвигать второй операнд, и на сколько.
+
+\myindex{ARM!\Instructions!TST}
+\myindex{ARM!Optional operators!LSL}
+Таким образом, инструкция  \TT{\q{TST R1, R2,LSL R3}} здесь работает как $R1 \land (R2 \ll R3)$.
+
+\subsubsection{ARM + \OptimizingXcodeIV (\ThumbTwoMode)}
+
+\myindex{ARM!\Instructions!LSL.W}
+\myindex{ARM!\Instructions!LSL}
+Почти такое же, только здесь применяется пара инструкций \INS{LSL.W}/\TST вместо одной \TST,
+ведь в режиме Thumb нельзя добавлять модификатор \LSL прямо в \TST.
+
+\begin{lstlisting}[label=ARM_leaf_example5,style=customasmARM]
+                MOV             R1, R0
+                MOVS            R0, #0
+                MOV.W           R9, #1
+                MOVS            R3, #0
+loc_2F7A
+                LSL.W           R2, R9, R3
+                TST             R2, R1
+                ADD.W           R3, R3, #1
+                IT NE
+                ADDNE           R0, #1
+                CMP             R3, #32
+                BNE             loc_2F7A
+                BX              LR
+\end{lstlisting}
+
+\subsubsection{ARM64 + \Optimizing GCC 4.9}
+
+Возьмем 64-битный пример, который уже был здесь использован: \myref{popcnt_x64_example}.
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.8,style=customasmARM]{patterns/14_bitfields/4_popcnt/ARM64_GCC_O3_RU.s}
+Результат очень похож на тот, что GCC сгенерировал для x64: \myref{shifts64_GCC_O3}.
+
+\myindex{ARM!\Instructions!CSEL}
+Инструкция \CSEL это \q{Conditional SELect} (выбор при условии). 
+Она просто выбирает одну из переменных, в зависимости от флагов выставленных \TST и копирует значение в регистр \RegW{2}, содержащий переменную \q{rt}.
+
+\subsubsection{ARM64 + \NonOptimizing GCC 4.9}
+
+И снова будем использовать 64-битный пример, который мы использовали ранее: \myref{popcnt_x64_example}.
+Код более многословный, как обычно.
+
+\lstinputlisting[caption=\NonOptimizing GCC (Linaro) 4.8,style=customasmARM]{patterns/14_bitfields/4_popcnt/ARM64_GCC_O0_RU.s}
+

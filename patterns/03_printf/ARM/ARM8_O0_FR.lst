@@ -1,0 +1,26 @@
+﻿.LC2:
+	.string	"a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%d; h=%d\n"
+f3:
+; §Réserver plus d'espace dans la pile:§
+	sub	sp, sp, #32
+; sauver FP et LR sur la pile:
+	stp	x29, x30, [sp,16]
+; §définir la pile (FP=SP):§
+	add	x29, sp, 16
+	adrp	x0, .LC2 ; "a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%d; h=%d\n"
+	add	x0, x0, :lo12:.LC2
+	mov	w1, 8		; §9ème argument§
+	str	w1, [sp]	; §stocker le 9ème argument dans la pile§
+	mov	w1, 1
+	mov	w2, 2
+	mov	w3, 3
+	mov	w4, 4
+	mov	w5, 5
+	mov	w6, 6
+	mov	w7, 7
+	bl	printf
+	sub	sp, x29, #16
+; restaurer FP et LR
+	ldp	x29, x30, [sp,16]
+	add	sp, sp, 32
+	ret

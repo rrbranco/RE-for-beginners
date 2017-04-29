@@ -1,0 +1,83 @@
+\section{Systemaufrufe}
+
+\label{syscalls}
+\myindex{syscall}
+
+\myindex{kernel space}
+\myindex{user space}
+Wie bekannt werden alle laufende Prozesse in einem \ac{OS} in zwei Kategorien unterteilt:
+diejenigen, die vollen Zugriff auf die Hardware haben (\q{kernel space}) und diejenigen
+die dies nicht haben (\q{user space}).
+
+Der Kernel des Betriebssystems sowie die Treiber gehören in der Regel zur ersten Kategorie.
+
+Alle Anwendungen gehören in der Regel der zweiten Kategorie an.
+
+\myindex{Glibc}
+Beispielsweise gehört der Linux-Kernel in den \IT{kernel space} während Glibc im \IT{user space}
+ausgeführt wird.
+
+Diese Unterscheidung ist von großer Bedeutung für die Sicherheit eines \ac{OS}:
+es ist sehr wichtig nicht jedem Prozess die Möglichkeit etwas in einem anderen Prozess oder
+sogar im \ac{OS}-Kernel zum Absturz zu bringen.
+\myindex{kernel panic}
+\myindex{BSoD}
+Auf der anderen Seite führt ein Fehler im Treiber oder innerhalb des \ac{OS}-Kernels in der Regel
+zu einem Kernel-Panic oder \ac{BSOD}.
+
+Der Schutz im x86-Prozessor erlaubt die Unterscheidung in vier unterschiedliche Schutzlevel (Ringe).
+Sowohl von Linux als auch von Windows werden jedoch nur zwei genutzt:
+Ring 0 (\q{kernel space}) und Ring 3 (\q{user space}).
+
+Systemaufrufe (syscalls) sind die Stelle an der diese beiden Bereiche miteinander verbunden werden.
+
+In diesem Sinne sind die Systemaufrufe die Haupt-\ac{API} für die Anwendungen.
+
+Unter \gls{Windows NT}, befindet sich die Tabelle mit Systemaufrufen in der \ac{SSDT}.
+
+\myindex{Shellcode}
+
+Die Nutzung von Systemaufrufen ist sehr verbreitet bei Shellcode- und Viren-Programmierern,
+weil es schwieriger ist die Adresse einer benötigten Funktion herauszufinden als einen
+Systemaufruf zu nutzen.
+Die Kehrseite ist, das viel mehr Code geschrieben werden muss, aufgrund dem geringeren Grad
+an Abstraktion der \ac{API}.
+
+Erwähnenswert ist es das die Anzahl der Systemaufrufe bei den unterschiedlichen Betriebssystemen
+variieren kann.
+
+\subsection{Linux}
+\label{linux_syscall}
+
+\myindex{x86!\Instructions!INT!INT 0x80}
+Unter Linux wird ein Systemaufruf in der Regel mit \TT{int 0x80} aufgerufen.
+Die Nummer des Aufrufs wird im \EAX-Register übergeben und die restlichen Parameter in anderen Registern.
+
+%TODO: style=customasm does not compile in german version
+%\lstinputlisting[caption=A simple example of the usage of two syscalls,style=customasm]{OS/linux_syscall.s}
+\lstinputlisting[caption=Ein einfaches Beispiel zur Nutzung zweier Systemaufrufe]{OS/linux_syscall.s}
+
+Kompilation:
+
+\begin{lstlisting}
+nasm -f elf32 1.s
+ld 1.o
+\end{lstlisting}
+
+Eine vollständige Liste von Systemaufrufen unter Linux: \url{http://go.yurichev.com/17319}.
+
+Um Systemaufrufe unter Linux zu unterbrechen und nachverfolgen zu können, kann strace(\myref{strace})
+genutzt werden.
+
+\subsection{Windows}
+
+\myindex{x86!\Instructions!INT!INT 0x2e}
+\myindex{x86!\Instructions!SYSENTER}
+
+Hier werden die Systemaufrufe via \TT{int 0x2e} aufgerufen oder über die spezielle x86-Anweisung \TT{SYSENTER}.
+
+Eine vollständige Liste von Systemaufrufen unter Windows: \url{http://go.yurichev.com/17320}.
+
+Weitere Informationen:
+
+\q{Windows Syscall Shellcode} von Piotr Bania: \url{http://go.yurichev.com/17321}.

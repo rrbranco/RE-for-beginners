@@ -1,0 +1,28 @@
+\subsubsection{MSVC: x86-64}
+
+\myindex{x86-64}
+Essayons MSVC 64-bit:
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/01_helloworld/MSVC_x64.asm}
+
+\myindex{fastcall}
+
+En x86-64, tous les registres ont été étendus à 64-bit et leurs noms ont maintenant le préfixe \TT{R-}.
+Afin d'utiliser la pile moins souvent (en d'autres termes, pour accèder moins souvent à la mémoire externe/au cache),
+il existe un moyen commun de passer les arguments aux fonctions par les registres (\IT{fastcall}) \myref{fastcall}.
+I.e., une partie des arguments de la fonction est passée par les registres, le reste---par la pile.
+En Win64, 4 arguments de fonction sont passés dans les registres \RCX, \RDX, \Reg{8}, \Reg{9}.
+C'est ce que l'on voit ci-dessus: un pointeur sur la chaîne pour \printf est passé non pas par la pile,
+mais par le registre \RCX.
+Les pointeurs font maintenant 64-bit, ils sont donc passés dans les registres 64-bit (qui ont le préfixe \TT{R-}).
+Toutefois, pour la rétrocompatibilité, il est toujours possible d'accèder à la partie 32-bits des registres,
+en utilisant le prefixe \TT{E-}.
+Voici à quoi ressemblent les registres \RAX/\EAX/\AX/\AL en x86-64:
+
+\RegTableOne{RAX}{EAX}{AX}{AH}{AL}
+
+La fonction \main renvoie un type \Tint{}, qui est, en \CCpp, pour une meilleure rétrocompatibilité
+et portabilité, toujours 32-bit, c'est pourquoi le registre \EAX est mis à zéro à la fin de la fonction (i.e., la
+partie 32-bit du registre) au lieu de \RAX{}.
+Il y aussi 40 octets alloués sur la pile locale.
+Cela est appelé le \q{shadow space}, dont nous parlerons plus tard: \myref{shadow_space}.

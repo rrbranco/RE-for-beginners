@@ -1,0 +1,22 @@
+_dst$ = 8		; size = 4
+_src$ = 12		; size = 4
+_cnt$ = 16		; size = 4
+_memcpy	PROC
+	mov	edx, DWORD PTR _cnt$[esp-4]
+	test	edx, edx
+	je	SHORT $LN1@f
+	mov	eax, DWORD PTR _dst$[esp-4]
+	push	esi
+	mov	esi, DWORD PTR _src$[esp]
+	sub	esi, eax
+; ESI=src-dst, i.e., pointers difference
+$LL8@f:
+	mov	cl, BYTE PTR [esi+eax] ; load byte at "esi+dst" or at "src-dst+dst" at the beginning or at just "src"
+	lea	eax, DWORD PTR [eax+1] ; dst++
+	mov	BYTE PTR [eax-1], cl   ; store the byte at "(dst++)--" or at just "dst" at the beginning
+	dec	edx                    ; decrement counter until we finished
+	jne	SHORT $LL8@f
+	pop	esi
+$LN1@f:
+	ret	0
+_memcpy	ENDP

@@ -1,0 +1,4 @@
+﻿TST REG, #0x40
+BNE is_set
+; Bit ist nicht gesetzt
+

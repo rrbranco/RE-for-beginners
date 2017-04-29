@@ -1,0 +1,280 @@
+\section{Breaking simple executable cryptor}
+
+I've got an executable file which is encrypted by relatively simple encryption.
+\href{https://github.com/dennis714/yurichev.com/blob/master/blog/breaking_simple_exec_crypto/files/cipher.bin}{Here is it} (only executable section is left here).
+
+First, all encryption function does is just adds number of position in buffer to the byte.
+Here is how this can be encoded in Python:
+
+\begin{lstlisting}[caption=Python script,style=custompy]
+#!/usr/bin/env python
+def e(i, k):
+    return chr ((ord(i)+k) % 256)
+
+def encrypt(buf):
+    return e(buf[0], 0)+ e(buf[1], 1)+ e(buf[2], 2) + e(buf[3], 3)+ e(buf[4], 4)+ e(buf[5], 5)+ e(buf[6], 6)+ e(buf[7], 7)+
+           e(buf[8], 8)+ e(buf[9], 9)+ e(buf[10], 10)+ e(buf[11], 11)+ e(buf[12], 12)+ e(buf[13], 13)+ e(buf[14], 14)+ e(buf[15], 15)
+\end{lstlisting}
+
+Hence, if you encrypt buffer with 16 zeros, you'll get \IT{0, 1, 2, 3 ... 12, 13, 14, 15}.
+
+\myindex{Propagating Cipher Block Chaining}
+Propagating Cipher Block Chaining (PCBC) is also used, here is how it works:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{examples/simple_exec_crypto/601px-PCBC_encryption.svg.png}
+\caption{Propagating Cipher Block Chaining encryption (image is taken from Wikipedia article)}
+\end{figure}
+
+The problem is that it's too boring to recover IV (Initialization Vector) each time.
+Brute-force is also not an option, because IV is too long (16 bytes).
+Let's see, if it's possible to recover IV for arbitrary encrypted executable file?
+
+Let's try simple frequency analysis.
+This is 32-bit x86 executable code, so let's gather statistics about most frequent bytes and opcodes.
+I tried huge oracle.exe file from Oracle RDBMS version 11.2 for windows x86 and I've found that the most frequent byte (no surprise) is zero (~10\%).
+The next most frequent byte is (again, no surprise) 0xFF (~5\%).
+The next is 0x8B (~5\%).
+
+\myindex{x86!\Instructions!MOV}
+0x8B is opcode for \INS{MOV}, this is indeed one of the most busy x86 instructions.
+Now what about popularity of zero byte?
+If compiler needs to encode value bigger than 127, it has to use 32-bit displacement instead of 8-bit one, but large values are very rare,
+so it is padded by zeros.
+\myindex{x86!\Instructions!LEA}
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!CALL}
+This is at least in \INS{LEA}, \INS{MOV}, \INS{PUSH}, \INS{CALL}.
+
+For example:
+
+\begin{lstlisting}[style=customasmx86]
+8D B0 28 01 00 00                 lea     esi, [eax+128h]
+8D BF 40 38 00 00                 lea     edi, [edi+3840h]
+\end{lstlisting}
+
+Displacements bigger than 127 are very popular, but they are rarely exceeds 0x10000
+(indeed, such large memory buffers/structures are also rare).
+
+Same story with \INS{MOV}, large constants are rare, the most heavily used are 0, 1, 10, 100, $2^n$, and so on.
+Compiler has to pad small constants by zeros to represent them as 32-bit values:
+
+\begin{lstlisting}[style=customasmx86]
+BF 02 00 00 00                    mov     edi, 2
+BF 01 00 00 00                    mov     edi, 1
+\end{lstlisting}
+
+Now about 00 and FF bytes combined: jumps (including conditional) and calls can pass execution flow forward or backwards, but very often,
+within the limits of the current executable module.
+If forward, displacement is not very big and also padded with zeros.
+If backwards, displacement is represented as negative value, so padded with FF bytes.
+For example, transfer execution flow forward:
+
+\begin{lstlisting}[style=customasmx86]
+E8 43 0C 00 00                    call    _function1
+E8 5C 00 00 00                    call    _function2
+0F 84 F0 0A 00 00                 jz      loc_4F09A0
+0F 84 EB 00 00 00                 jz      loc_4EFBB8
+\end{lstlisting}
+
+Backwards:
+
+\begin{lstlisting}[style=customasmx86]
+E8 79 0C FE FF                    call    _function1
+E8 F4 16 FF FF                    call    _function2
+0F 84 F8 FB FF FF                 jz      loc_8212BC
+0F 84 06 FD FF FF                 jz      loc_FF1E7D
+\end{lstlisting}
+
+FF byte is also very often occurred in negative displacements like these:
+
+\begin{lstlisting}[style=customasmx86]
+8D 85 1E FF FF FF                 lea     eax, [ebp-0E2h]
+8D 95 F8 5C FF FF                 lea     edx, [ebp-0A308h]
+\end{lstlisting}
+
+So far so good. Now we have to try various 16-byte keys, decrypt executable section and measure how often 00, FF ad 8B bytes are occurred.
+Let's also keep in sight how PCBC decryption works:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{examples/simple_exec_crypto/640px-PCBC_decryption.svg.png}
+\caption{Propagating Cipher Block Chaining decryption (image is taken from Wikipedia article)}
+\end{figure}
+
+The good news is that we don't really have to decrypt whole piece of data, but only slice by slice, this is exactly how I did in my previous example: \myref{XOR_mask_2}.
+
+Now I'm trying all possible bytes (0..255) for each byte in key and just pick the byte producing maximal amount of 00/FF/8B bytes in a decrypted slice:
+
+\begin{lstlisting}[style=custompy]
+#!/usr/bin/env python
+import sys, hexdump, array, string, operator
+
+KEY_LEN=16
+
+def chunks(l, n):
+    # split n by l-byte chunks
+    # http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
+    n = max(1, n)
+    return [l[i:i + n] for i in range(0, len(l), n)]
+
+def read_file(fname):
+    file=open(fname, mode='rb')
+    content=file.read()
+    file.close()
+    return content
+
+def decrypt_byte (c, key):
+    return chr((ord(c)-key) % 256)
+
+def XOR_PCBC_step (IV, buf, k):
+    prev=IV
+    rt=""
+    for c in buf:
+	new_c=decrypt_byte(c, k)
+        plain=chr(ord(new_c)^ord(prev))
+	prev=chr(ord(c)^ord(plain))
+	rt=rt+plain
+    return rt
+
+each_Nth_byte=[""]*KEY_LEN
+
+content=read_file(sys.argv[1])
+# split input by 16-byte chunks:
+all_chunks=chunks(content, KEY_LEN)
+for c in all_chunks:
+    for i in range(KEY_LEN):
+        each_Nth_byte[i]=each_Nth_byte[i] + c[i]
+
+# try each byte of key
+for N in range(KEY_LEN):
+    print "N=", N
+    stat={}
+    for i in range(256):
+        tmp_key=chr(i)
+	tmp=XOR_PCBC_step(tmp_key,each_Nth_byte[N], N)
+        # count 0, FFs and 8Bs in decrypted buffer:
+	important_bytes=tmp.count('\x00')+tmp.count('\xFF')+tmp.count('\x8B')
+	stat[i]=important_bytes
+    sorted_stat = sorted(stat.iteritems(), key=operator.itemgetter(1), reverse=True)
+    print sorted_stat[0]
+\end{lstlisting}
+
+(Source code can downloaded \href{https://github.com/dennis714/yurichev.com/blob/master/blog/breaking_simple_exec_crypto/files/decrypt.py}{here}.)
+
+I run it and here is a key for which 00/FF/8B bytes presence in decrypted buffer is maximal:
+
+\begin{lstlisting}
+N= 0
+(147, 1224)
+N= 1
+(94, 1327)
+N= 2
+(252, 1223)
+N= 3
+(218, 1266)
+N= 4
+(38, 1209)
+N= 5
+(192, 1378)
+N= 6
+(199, 1204)
+N= 7
+(213, 1332)
+N= 8
+(225, 1251)
+N= 9
+(112, 1223)
+N= 10
+(143, 1177)
+N= 11
+(108, 1286)
+N= 12
+(10, 1164)
+N= 13
+(3, 1271)
+N= 14
+(128, 1253)
+N= 15
+(232, 1330)
+\end{lstlisting}
+
+Let's write decryption utility with the key we got:
+
+\begin{lstlisting}[style=custompy]
+#!/usr/bin/env python
+import sys, hexdump, array
+
+def xor_strings(s,t):
+    # https://en.wikipedia.org/wiki/XOR_cipher#Example_implementation
+    """xor two strings together"""
+    return "".join(chr(ord(a)^ord(b)) for a,b in zip(s,t))
+
+IV=array.array('B', [147, 94, 252, 218, 38, 192, 199, 213, 225, 112, 143, 108, 10, 3, 128, 232]).tostring()
+
+def chunks(l, n):
+    n = max(1, n)
+    return [l[i:i + n] for i in range(0, len(l), n)]
+
+def read_file(fname):
+    file=open(fname, mode='rb')
+    content=file.read()
+    file.close()
+    return content
+
+def decrypt_byte(i, k):
+    return chr ((ord(i)-k) % 256)
+
+def decrypt(buf):
+    return "".join(decrypt_byte(buf[i], i) for i in range(16))
+
+fout=open(sys.argv[2], mode='wb')
+
+prev=IV
+content=read_file(sys.argv[1])
+tmp=chunks(content, 16)
+for c in tmp:
+    new_c=decrypt(c)
+    p=xor_strings (new_c, prev)
+    prev=xor_strings(c, p)
+    fout.write(p)
+fout.close()
+\end{lstlisting}
+
+(Source code can downloaded \href{https://github.com/dennis714/yurichev.com/blob/master/blog/breaking_simple_exec_crypto/files/decrypt2.py}{here}.)
+
+Let's check resulting file:
+
+\lstinputlisting{examples/simple_exec_crypto/objdump_result.txt}
+
+Yes, this is seems correctly disassembled piece of x86 code.
+The whole dectyped file can be downloaded \href{https://github.com/dennis714/yurichev.com/blob/master/blog/breaking_simple_exec_crypto/files/decrypted.bin}{here}.
+
+In fact, this is text section from regedit.exe from Windows 7.
+But this example is based on a real case I encountered, so just executable is different (and key), algorithm is the same.
+
+\subsection{Other ideas to consider}
+
+What if I would fail with such simple frequency analysis?
+There are other ideas on how to measure correctness of decrypted/decompressed x86 code:
+
+\begin{itemize}
+
+\item Many modern compilers aligns functions on 0x10 border.
+So the space left before is filled with NOPs (0x90) or other NOP instructions with known opcodes: \myref{sec:npad}.
+
+\item Perhaps, the most frequent pattern in any assembly language is function call:\\
+\TT{PUSH chain / CALL / ADD ESP, X}.
+This sequence can easily detected and found.
+I've even gathered statistics about average number of function arguments: \myref{args_stat}.
+(Hence, this is average length of PUSH chain.)
+
+\end{itemize}
+
+By the way, 
+it is interesting to know that the fact that function calls (\PUSH/\CALL/\ADD) and \MOV instructions are the most frequently executed pieces of code in almost all
+programs we use.
+In other words, CPU is very busy passing information between levels of abstractions, or, it can be said, it's very busy switching between these levels.
+This is a cost of splitting problems into several levels of abstractions.
+

@@ -1,0 +1,39 @@
+\section{Cabeçalhos e rodapés de funções}
+\label{sec:prologepilog}
+\myindex{\PTBRph{}} % Function epilogue
+\myindex{\PTBRph{}} % Function prologue
+
+Um cabeçalho de uma função é uma sequência de instruções no começo da função. Ele geralmente se parece com algo como o código a seguir:
+
+\begin{lstlisting}[style=customasmx86]
+    push    ebp
+    mov     ebp, esp
+    sub     esp, X
+\end{lstlisting}
+
+O que essas instruções fazem: salvam o valor no registrador \EBP, mudam o valor de \EBP para o valor em \ESP e então aloca espaço na pilha para variáveis locais.
+
+O valor em \EBP continua o mesmo depois do período de execução da função e é para ser usado para variáveis locais e acessos de argumentos.
+Para o mesmo propósito pode ser usado o \ESP, mas considerando que ele muda com o tempo, essa abordagem não é muito conveniente.
+
+O rodapé da função libera o espaço alocado na pilha, retorna o valor do registrador \EBP de volta ao seu estado inicial e retorna o controle de volta para a chamada da função:
+
+\begin{lstlisting}[style=customasmx86]
+    mov    esp, ebp
+    pop    ebp
+    ret    0
+\end{lstlisting}
+
+Os cabeçalhos e rodapés das funções geralmente são detectados na desassemblagem para a delimitação das funções.
+
+\subsection{\Recursion}
+
+\ac{\PTBRph{}}
+
+\myindex{\Recursion}
+\ac{TBT}
+
+Epilogues and prologues can negatively affect the recursion performance.
+
+More about recursion in this book: \myref{Recursion_and_tail_call}.
+

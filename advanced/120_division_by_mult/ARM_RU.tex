@@ -1,0 +1,102 @@
+﻿\subsection{ARM}
+
+В процессоре ARM, как и во многих других \q{чистых} (pure) RISC-процессорах нет инструкции деления.
+Нет также возможности умножения на 32-битную константу одной инструкцией (вспомните что 32-битная
+константа просто не поместится в 32-битных опкод).
+
+При помощи этого любопытного трюка (или \IT{хака})\footnote{hack}, можно обойтись только тремя действиями: 
+сложением, вычитанием и битовыми сдвигами
+~(\myref{sec:bitfields}).
+
+Пример деления 32-битного числа на 10 из
+\InSqBrackets{\ARMCookBook 3.3 Division by a Constant}.
+На выходе и частное и остаток.
+
+\begin{lstlisting}[style=customasmARM]
+; takes argument in a1
+; returns quotient in a1, remainder in a2
+; cycles could be saved if only divide or remainder is required
+    SUB    a2, a1, #10             ; keep (x-10) for later
+    SUB    a1, a1, a1, lsr #2
+    ADD    a1, a1, a1, lsr #4
+    ADD    a1, a1, a1, lsr #8
+    ADD    a1, a1, a1, lsr #16
+    MOV    a1, a1, lsr #3
+    ADD    a3, a1, a1, asl #2
+    SUBS   a2, a2, a3, asl #1      ; calc (x-10) - (x/10)*10
+    ADDPL  a1, a1, #1              ; fix-up quotient
+    ADDMI  a2, a2, #10             ; fix-up remainder
+    MOV    pc, lr
+\end{lstlisting}
+
+\subsubsection{\OptimizingXcodeIV (\ARMMode)}
+
+\begin{lstlisting}[style=customasmARM]
+__text:00002C58 39 1E 08 E3 E3 18 43 E3  MOV    R1, 0x38E38E39
+__text:00002C60 10 F1 50 E7              SMMUL  R0, R0, R1
+__text:00002C64 C0 10 A0 E1              MOV    R1, R0,ASR#1
+__text:00002C68 A0 0F 81 E0              ADD    R0, R1, R0,LSR#31
+__text:00002C6C 1E FF 2F E1              BX     LR
+\end{lstlisting}
+
+Этот код почти тот же, что сгенерирован MSVC и GCC в режиме оптимизации.
+
+Должно быть, LLVM использует тот же алгоритм для поиска констант.
+
+\myindex{ARM!\Instructions!MOV}
+\myindex{ARM!\Instructions!MOVT}
+Наблюдательный читатель может спросить, как \MOV записала в регистр сразу 32-битное число, 
+ведь это невозможно в режиме ARM.
+
+Действительно невозможно, но как мы видим, здесь на инструкцию 8 байт вместо стандартных 4-х,
+на самом деле, здесь 2 инструкции.
+
+Первая инструкция загружает в младшие 16 бит регистра значение \TT{0x8E39}, а вторая инструкция, 
+на самом деле \TT{MOVT}, загружающая в старшие 16 бит регистра значение \TT{0x383E}.
+
+\IDA легко распознала эту последовательность и для краткости, сократила всё это до одной \q{псевдо-инструкции}.
+
+\myindex{ARM!\Instructions!SMMUL}
+Инструкция \TT{SMMUL} (\IT{Signed Most Significant Word Multiply}) 
+умножает числа считая их знаковыми (signed) и оставляет в \Reg{0} старшие 32 бита результата, 
+не сохраняя младшие 32 бита.
+
+\myindex{ARM!Optional operators!ASR}
+Инструкция\TT{\q{MOV R1, R0,ASR\#1}} это арифметический сдвиг право на один бит.
+
+\myindex{ARM!\Instructions!ADD}
+\myindex{ARM!Data processing instructions}
+\myindex{ARM!Optional operators!LSR}
+\TT{\q{ADD R0, R1, R0,LSR\#31}} это $R0=R1 + R0>>31$
+
+% FIXME какие именно инструкции? \myref{} ->
+\label{shifts_in_ARM_mode}
+Дело в том, что в режиме ARM нет отдельных инструкций для битовых сдвигов.
+
+Вместо этого, некоторые инструкции 
+(\MOV, \ADD, \SUB, \TT{RSB})\footnote{\DataProcessingInstructionsFootNote}
+могут быть дополнены суффиксом, сдвигать ли второй операнд и если да, то на сколько и как.
+
+\TT{ASR} означает \IT{Arithmetic Shift Right}, \TT{LSR} --- \IT{Logical Shift Right}.
+
+\subsubsection{\OptimizingXcodeIV (\ThumbTwoMode)}
+
+\begin{lstlisting}[style=customasmARM]
+MOV             R1, 0x38E38E39
+SMMUL.W         R0, R0, R1
+ASRS            R1, R0, #1
+ADD.W           R0, R1, R0,LSR#31
+BX              LR
+\end{lstlisting}
+
+\myindex{ARM!\Instructions!ASRS}
+В режиме Thumb отдельные инструкции для битовых сдвигов есть, и здесь применяется одна из них --- \TT{ASRS}
+(арифметический сдвиг вправо).
+
+\subsubsection{\NonOptimizing Xcode 4.6.3 (LLVM) и Keil 6/2013}
+
+\NonOptimizing LLVM 
+не занимается генерацией подобного кода, а вместо этого просто вставляет вызов
+библиотечной функции \IT{\_\_\_divsi3}.
+
+А Keil во всех случаях вставляет вызов функции \IT{\_\_aeabi\_idivmod}.

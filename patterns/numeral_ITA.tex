@@ -1,0 +1,136 @@
+% TODO to be resynced with EN version
+\subsection{Sistemi di numerazione}
+
+Gli umani si sono abituati ad usare il sistema numerico decimale probabilmente perche' quasi tutti hanno 10 dita.
+Ciononostante, il numero 10 non ha alcun significato rilevante in scienze e in matematica.
+Il sistema di numerazione naturale nell'elettronica digitale e' il binario: 0 per l'assenza di corrente nel filo e 1 per la presenza.
+10 in binario e' 2 in decimale, 100 in binary is 4 in decimale e cosi' via.
+
+Come si fa a convertire un numero da un sistema ad un altro?
+
+La notazione posizionale e' usata quasi dappertutto. Cio' vuol dire che la cifra (numero in un singolo carattere) ha un "peso" diverso in base alla posizone in cui si trova. 
+Se 2 si trova nella parte piu' a destra del numero, e' 2.
+Se si trova di una posizione piu' a destra, e' 20.
+
+Per cosa sta 1234?
+
+$10^3 \cdot 1 + 10^2 \cdot 2 + 10^1 \cdot 3 + 1 \cdot 4$ = 1234 or 
+$1000 \cdot 1 + 100 \cdot 2 + 10 \cdot 3 + 4 = 1234$
+
+Lo stesso vale per i numeri binari, ma la base e' 2 invece di 10.
+Per cosa sta 101011?
+
+$2^5 \cdot 1 + 2^4 \cdot 0 + 2^3 \cdot 1 + 2^2 \cdot 0 + 2^1 \cdot 1 + 2^0 \cdot 1 = 43$ or
+$32 \cdot 1 + 16 \cdot 0 + 8 \cdot 1 + 4 \cdot 0 + 2 \cdot 1 + 1 = 43$
+
+La notazione posizionale e' opposta a quella non-posizionale come il sistema numerico Romano.
+Forse l'umanita' ha deciso di passare alla notazione posizionale perche' e' piu' facile effettuare semplici operazioni (addizione, moltiplicazione, etc.) a mano su carta.
+
+I numeri binari possono essere addizionati, sotratti e cosi' via, nello stesso modo in cui ci e' stato insegnato a scuola, con l'unica differenza chec si sono solo 2 cifre disponibili.
+
+I numeri binary possono risultare ingombranti quando usati in codici sorgenti e dump, ed in questi casi puo' essere usato il sistema esadecimale.
+
+Il sistema esadecimale usa i numeri 0..9 e 6 lettere latine: A..F.
+Ogni cifra esadecimale occupa 4bit o 4 binary digits, ed e; quindi molto facile convertire da binario a esadecimale e viceversa, anche a mente,
+
+\begin{center}
+\begin{longtable}{ | l | l | l | }
+\hline
+\HeaderColor hexadecimal & \HeaderColor binary & \HeaderColor decimal \\
+\hline
+0	&0000	&0 \\
+1	&0001	&1 \\
+2	&0010	&2 \\
+3	&0011	&3 \\
+4	&0100	&4 \\
+5	&0101	&5 \\
+6	&0110	&6 \\
+7	&0111	&7 \\
+8	&1000	&8 \\
+9	&1001	&9 \\
+A	&1010	&10 \\
+B	&1011	&11 \\
+C	&1100	&12 \\
+D	&1101	&13 \\
+E	&1110	&14 \\
+F	&1111	&15 \\
+\hline
+\end{longtable}
+\end{center}
+
+Come identificare quale sistema viene usato?
+
+I numeri decimali sono solitamente scritti cosi' come sono, es. 1234. Alcuni assembler consentono pero' di aggiungere enfasi al sistema decimale ed il numero puo essere scritto con il suffisso "d": 1234d.
+
+I numeri binari sono a volte preceduti dal prefisso "0b": 0b100110111 (\ac{GCC} non ha un'estensione del linguaggio standard per questo\footnote{\url{https://gcc.gnu.org/onlinedocs/gcc/Binary-constants.html}}).
+C'e' anche un altro modo: il suffisso "b" suffix, ad esempio: 100110111b.
+Cerchero' di usare il prefisso "0b" per identificare i numeri binari all'interno del libro.
+
+I numeri esadecimali sono preceduti dal prefisso "0x" in \CCpp e altri \ac{PL}s: 0x1234ABCD.
+Oppure hanno il suffisso "h": 1234ABCDh - questo e' il modo comune di rapressentarli negli assembler e nei debugger.
+Se il numero inizia con una cifra A..F, 0 dovrebbe essere aggiunto all'inizio: 0ABCDEFh.
+% TBT
+Cerchero' di usare il prefisso "0x" per identificare i numeri esadecimali all'interno del libro.
+
+E' il caso di imparare a convertire i numeri a mente? Una tabella di numeri decimali ad una cifra puo' essere memorizzata facilmente.
+Per numeri piu' grandi, probabilmente, non e' il caso di tormentarsi.
+
+\subsubsection{Sistema di numerazione ottale}
+
+Un altro sistema di numerazione molto usato in pasato in programmazione e' l'ottale: ci sono 8 cifre (0..7) e ciascuna e' associata a 3 bit, quindi e' facile convertire da una parte all'altra.
+E' stato comunque rimpiazzato dal sistema esadecimale quasi ovunque, ma sorprendentemente c'e' una utility *NIX usata spesso e da molte persone che ha per argomento un numero ottale: \TT{chmod}.
+
+\myindex{UNIX!chmod}
+Come molti utenti *NIX sanno, l'argomento \TT{chmod} puo' essere un numero di 3 cifre. La prima rappresenta i diritti del proprietario del file, la seconda i diritti del gruppo (a cui il file appartiene), la terza i diritti per chiunque altro.
+E ogni cifra puo' essere rappresentata in forma binaria:
+
+\begin{center}
+\begin{longtable}{ | l | l | l | }
+\hline
+\HeaderColor decimale & \HeaderColor binario & \HeaderColor significato \\
+\hline
+7	&111	&\textbf{rwx} \\
+6	&110	&\textbf{rw-} \\
+5	&101	&\textbf{r-x} \\
+4	&100	&\textbf{r-{}-} \\
+3	&011	&\textbf{-wx} \\
+2	&010	&\textbf{-w-} \\
+1	&001	&\textbf{-{}-x} \\
+0	&000	&\textbf{-{}-{}-} \\
+\hline
+\end{longtable}
+\end{center}
+
+Quindi ogni bit corrisponde ad un flag: read/write/execute.
+
+La ragione per cui sto parlando di \TT{chmod} e' che l'intero numero dell'argomento puo' essere rappresentato in ottale.
+Prendiamo per esempio 644.
+Quando si esegue \TT{chmod 644 file}, si impostano i permessi di lettura/scrittura per il proprietario, il permesso di lettura per il gruppo, e il permesso di lettura per tutti gli altri.
+Convertiamo il numero 644 in ottale a binario, sara' \TT{110100100}, o (in gruppi di 3 bit) \TT{110 100 100}.
+
+Notiamo che ogni tripletta descrive i permessi per proprietario/gruppo/altri (owner/group/others): il primo e' \TT{rw-}, il secondo e' \TT{r--} ed il terzo e' \TT{r--}.
+
+Il sistema ottale era anche molto diffuso nei vecchi computer come PDP-8, perche' una word poteva essere 12, 24 o 36 bit, e questi numeri sono tutti divisibili per 3, quindi il sistema ottale era naturale in quell'ambiente.
+Oggi tutti i computer comuni utilizano word/indirizzi lunghi 16, 32 o 64 bit, e questi numeri sono divisibili per 4, di conseguenza l'esadecimale risulta piu' naturale.
+
+Il sistema ottale e' supportato da tutti i compilatori \CCpp standard.
+Talvolta cio' da' vita a confusione, perche' i numeri ottali sono codificati preponendo uno zero, per esempio 0377 e' 255.
+A volte si potrebbe scrivere per errore "09" invece di 9 , e il compilatore non lo consentirebbe.
+GCC potrebbe presentare un errore del genere:\\
+\TT{error: invalid digit "9" in octal constant}.
+
+\subsubsection{Divisibilita'}
+
+Quando si vede un numero decimale come 120, si puo' velocemente dedurre che e' divisibile per 10, perche' l'ultima cifra e' zero.
+Allo stesso modo, 123400 e' divisibile per 100 perche' le ultime due cifre sono zeri.
+
+
+In maniera simile, il numero esadecimale 0x1230 e' divisible per 0x10 (ovvero 16), 0x123000 e' divisibile per 0x1000 (ovvero 4096), etc.
+
+Il numero binario 0b1000101000 e' dibisibile per 0b1000 (8), etc.
+
+Questa proprieta' puo' essere spesso usata per capire velocemente se la dimensione di un dato blocco di memoria e' "allungata" (padded) per raggiungere un certo confine.
+Per esempio, le sezioni in un file \ac{PE} iniziano quasi sempre ad indirizzi che terminano con 3 zeri esadecimali: 0x41000, 0x10001000, etc.
+La ragione per cui questo accade risiede nel fatto che quasi tutte le sezioni di un \ac{PE} sono allungate per raggiungere un confine di 0x1000 (4096) bytes.
+
+% TBT

@@ -1,0 +1,77 @@
+\section{System calls (syscall-s)}
+
+\label{syscalls}
+\myindex{syscall}
+
+\myindex{kernel space}
+\myindex{user space}
+As we know, all running processes inside an \ac{OS} are divided into two categories:
+those having full access to the hardware (\q{kernel space}) 
+and those that do not (\q{user space}).
+
+The \ac{OS} kernel and usually the drivers are in the first category.
+
+All applications are usually in the second category.
+
+\myindex{Glibc}
+For example, Linux kernel is in \IT{kernel space}, but Glibc in \IT{user space}.
+
+This separation is crucial for the safety of the \ac{OS}: it is very important not to give to any process the possibility to screw up
+something in other processes or even in the \ac{OS} kernel.
+\myindex{kernel panic}
+\myindex{BSoD}
+On the other hand, a failing driver or error inside the \ac{OS}'s kernel usually leads to a kernel panic or \ac{BSOD}.
+
+The protection in the x86 processors allows to separate everything into 4 levels of protection (rings), but both in Linux
+and in Windows only two are used: ring0 (\q{kernel space}) and ring3 (\q{user space}).
+
+System calls (syscall-s)
+are a point where these two areas are connected.
+
+It can be said that this is the main \ac{API} provided to applications.
+
+As in \gls{Windows NT}, the syscalls table resides in the \ac{SSDT}.
+
+\myindex{Shellcode}
+
+The usage of syscalls is very popular among shellcode and computer viruses authors, 
+because it is hard to determine the addresses of
+needed functions in the system libraries, but it is easier to use syscalls. However, much more code has to be
+written due to the lower level of abstraction of the \ac{API}.
+
+It is also worth noting that the syscall numbers may be different in various OS versions.
+
+\subsection{Linux}
+\label{linux_syscall}
+
+\myindex{x86!\Instructions!INT!INT 0x80}
+In Linux, a syscall is usually called via \TT{int 0x80}.
+The call's number is passed in the \EAX register, and any other parameters~---in the other registers.
+
+\lstinputlisting[caption=A simple example of the usage of two syscalls,style=customasmx86]{OS/linux_syscall.s}
+
+Compilation:
+
+\begin{lstlisting}
+nasm -f elf32 1.s
+ld 1.o
+\end{lstlisting}
+
+The full list of syscalls in Linux: \url{http://go.yurichev.com/17319}.
+
+For system calls interception and tracing in Linux, strace(\myref{strace}) can be used.
+
+\subsection{Windows}
+
+\myindex{x86!\Instructions!INT!INT 0x2e}
+\myindex{x86!\Instructions!SYSENTER}
+
+Here they are called via \TT{int 0x2e} 
+or using the special x86 instruction \TT{SYSENTER}.
+
+The full list of syscalls in Windows: \url{http://go.yurichev.com/17320}.
+
+Further reading:
+
+\q{Windows Syscall Shellcode} by Piotr Bania: \url{http://go.yurichev.com/17321}.
+

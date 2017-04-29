@@ -1,0 +1,112 @@
+\subsubsection{x86}
+
+\myparagraph{MSVC}
+
+Here is what we get after compiling with MSVC 2010:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/1_simple/ex1_MSVC_EN.asm}
+
+\TT{x} is a local variable.
+
+According to the \CCpp standard it must be visible only in this function and not from any other external scope. 
+Traditionally, local variables are stored on the stack. 
+There are probably other ways to allocate them, but in x86 that is the way it is.
+
+\myindex{x86!\Instructions!PUSH}
+The goal of the instruction following the function prologue, \TT{PUSH ECX}, is not to save the \ECX state 
+(notice the absence of corresponding \TT{POP ECX} at the function's end).
+
+In fact it allocates 4 bytes on the stack for storing the \TT{x} variable.
+
+\label{stack_frame}
+\myindex{\Stack!Stack frame}
+\myindex{x86!\Registers!EBP}
+\TT{x} is to be accessed with the assistance of the \TT{\_x\$} macro (it equals to -4) and the \EBP register pointing to the current frame.
+
+Over the span of the function's execution, \EBP is pointing to the current \gls{stack frame}
+making it possible to access local variables and function arguments via \TT{EBP+offset}.
+
+\myindex{x86!\Registers!ESP}
+It is also possible to use \ESP for the same purpose, although that is not very convenient since it changes frequently.
+The value of the \EBP could be perceived as a \IT{frozen state} of the value in \ESP at the start of the function's execution.
+
+% FIXME1 это уже было в 02_stack?
+Here is a typical \gls{stack frame} layout in 32-bit environment:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\dots & \dots \\
+\hline
+EBP-8 & local variable \#2, \MarkedInIDAAs{} \TT{var\_8} \\
+\hline
+EBP-4 & local variable \#1, \MarkedInIDAAs{} \TT{var\_4} \\
+\hline
+EBP & saved value of \EBP \\
+\hline
+EBP+4 & return address \\
+\hline
+EBP+8 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+EBP+0xC & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+EBP+0x10 & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+
+The \scanf function in our example has two arguments.
+
+The first one is a pointer to the string containing \TT{\%d} and the second is the address of the \TT{x} variable.
+
+\myindex{x86!\Instructions!LEA}
+First, the \TT{x} variable's address is loaded into the \EAX register by the \\
+\TT{lea eax, DWORD PTR \_x\$[ebp]} instruction.
+
+\LEA stands for \IT{load effective address}, and is often used for forming an address ~(\myref{sec:LEA}).
+
+We could say that in this case \LEA simply stores the sum of the \EBP register value and the \TT{\_x\$} macro in the \EAX register.
+
+This is the same as \INS{lea eax, [ebp-4]}.
+
+So, 4 is being subtracted from the \EBP register value and the result is loaded in the \EAX register.
+Next the \EAX register value is pushed into the stack and \scanf is being called.
+
+\printf is being called after that with its first argument --- a pointer to the string:
+\TT{You entered \%d...\textbackslash{}n}.
+
+The second argument is prepared with: \TT{mov ecx, [ebp-4]}.
+The instruction stores the \TT{x} variable value and not its address, in the \ECX register.
+
+Next the value in the \ECX is stored on the stack and the last \printf is being called.
+
+\input{patterns/04_scanf/1_simple/olly.tex}
+
+\myparagraph{GCC}
+
+Let's try to compile this code in GCC 4.4.1 under Linux:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/1_simple/ex1_GCC.asm}
+
+\myindex{puts() instead of printf()}
+GCC replaced the \printf call with call to \puts. The reason for this was explained in ~(\myref{puts}).
+
+% TODO: rewrite
+%\RU{Почему \scanf переименовали в \TT{\_\_\_isoc99\_scanf}, я честно говоря, пока не знаю.}
+%\EN{Why \scanf is renamed to \TT{\_\_\_isoc99\_scanf}, I do not know yet.}
+% 
+% Apparently it has to do with the ISO c99 standard compliance. By default GCC allows specifying a standard to adhere to.
+% For example if you compile with -std=c89 the outputted assmebly file will contain scanf and not __isoc99__scanf. I guess current GCC version adhares to c99 by default.
+% According to my understanding the two implementations differ in the set of suported modifyers (See printf man page)
+
+As in the MSVC example---the arguments are placed on the stack using the \MOV instruction.
+
+\myparagraph{By the way}
+
+By the way, this simple example is a demonstration of the fact that compiler translates
+list of expressions in \CCpp-block into sequential list of instructions.
+There are nothing between expressions in \CCpp, and so in resulting machine code, 
+there are nothing between, control flow slips from one expression to the next one.
+

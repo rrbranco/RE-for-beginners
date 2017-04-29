@@ -1,0 +1,33 @@
+\subsubsection{GCC: x86-64}
+
+\myindex{x86-64}
+Nachfolgend das Beispiel unter einem 64 Bit-Linux-System mit GCC kompoliert:
+
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{patterns/01_helloworld/GCC_x64_DE.s}
+
+Eine Methode im Funktionsargumente in Registern zu übergeben, wird auch in Linux, *BSD und \MacOSX genutzt und heißt \SysVABI.
+
+Die ersten sechs Argumente sind in den Registern \RDI, \RSI, \RDX, \RCX,\Reg{8} und \Reg{9} übergeben und der Rest---über den Stack.
+
+Der Zeiger zu der Zeichenkette ist in \EDI (also, dem 32-Bit-Teil) gesichert.
+Warum wird nicht der 64-Bit-Teil \RDI genutz?
+
+Es ist wichtig sich zu vergegenwertigen, dass alle \MOV-Anweisungen im 64-Bit-Modus, die etwas in den niederwertigen 32-Bit-Teil eines Registers schreiben,
+auch den höherwertigen 32-Bit-Teil des Registers löschen (siehe Intel-Handbücher: \myref{x86_manuals}).\\
+Die Anweisung \INS{MOV EAX, 011223344h} schreibt also den richtigen Wert in \RAX, weil die höherwetigen Bits auf Null gesetzt werden.
+
+In der Objekt-Datei (.o) eines Kompilats sind ebenfalls alles OpCodes der verwendeten Anweisungen zu sehen.
+\footnote{Dies muss aktiviert werden: \textbf{Optionen $\rightarrow$ Disassembly $\rightarrow$ Number of opcode bytes}}:
+
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{patterns/01_helloworld/GCC_x64.lst}
+
+\label{hw_EDI_instead_of_RDI}
+Wie man sehen kann verändert die Anweisung zum Schreiben in \EDI an der Adresse \TT{0x4004D4} fünf Byte.
+Dieselbe Anweisung die einen 64-Bit-Wert in \RDI schreibt, verändert 7 Bytes.
+Offenstichtlich versucht GCC etwas Speicherplatz zu sparen.
+Nebenbei ist es sicher, dass das Datensegment, welches die Zeichenkette entählt niemals an Adressen höher 4\gls{GiB} reserviert wird.
+
+\label{SysVABI_input_EAX}
+Es ist auch erkennbar, dass das \EAX-Register vor dem Aufruf von \printf zurückgesetzt wurde.
+Dies geschieht, aufgrund der Konvention in der oben genannten \ac{ABI}, dass in *NIX-Systemen auf x86-64-Architektur
+die Anzahl der genutzten Vektor-Register in \EAX übergeben wird.

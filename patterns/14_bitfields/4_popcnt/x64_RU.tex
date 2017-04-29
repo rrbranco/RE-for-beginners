@@ -1,0 +1,100 @@
+\subsubsection{x64}
+\label{subsec:popcnt}
+
+Немного изменим пример, расширив его до 64-х бит:
+
+\lstinputlisting[label=popcnt_x64_example,style=customc]{patterns/14_bitfields/4_popcnt/shifts64.c}
+
+\myparagraph{\NonOptimizing GCC 4.8.2}
+
+Пока всё просто.
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.8.2,style=customasmx86]{patterns/14_bitfields/4_popcnt/shifts64_GCC_O0_RU.s}
+
+\myparagraph{\Optimizing GCC 4.8.2}
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.2,numbers=left,label=shifts64_GCC_O3,style=customasmx86]{patterns/14_bitfields/4_popcnt/shifts64_GCC_O3_RU.s}
+
+Код более лаконичный, но содержит одну необычную вещь.
+Во всех примерах, что мы пока видели, инкремент значения переменной \q{rt} происходит после сравнения 
+определенного бита с единицей, но здесь \q{rt} увеличивается на 1 до этого (строка 6), записывая новое значение
+в регистр \EDX.
+
+Затем, если последний бит был 1, инструкция \CMOVNE\footnote{Conditional MOVe if Not Equal (\MOV если не равно)}
+(которая синонимична \CMOVNZ\footnote{Conditional MOVe if Not Zero (\MOV если не ноль)}) \IT{фиксирует} 
+новое значение \q{rt}
+копируя значение из \EDX (\q{предполагаемое значение rt}) 
+в \EAX (\q{текущее rt} которое будет возвращено в конце функции).
+Следовательно, инкремент происходит на каждом шаге цикла, т.е. 64 раза, вне всякой связи с входным
+значением.
+
+Преимущество этого кода в том, что он содержит только один условный переход (в конце цикла) вместо
+двух (пропускающий инкремент \q{rt} и ещё одного в конце цикла).
+
+И это может работать быстрее на современных CPU с предсказателем переходов: \myref{branch_predictors}.
+
+\label{FATRET}
+\myindex{x86!\Instructions!FATRET}
+Последняя инструкция это \INS{REP RET} (опкод \TT{F3 C3}) 
+которая также называется \INS{FATRET} в MSVC.
+Это оптимизированная версия \RET, рекомендуемая AMD для вставки в конце функции, если \RET идет
+сразу после условного перехода: 
+\InSqBrackets{\AMDOptimization p.15}
+\footnote{Больше об этом: \url{http://go.yurichev.com/17328}}.
+
+\myparagraph{\Optimizing MSVC 2010}
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/14_bitfields/4_popcnt/MSVC_2010_x64_Ox_RU.asm}
+
+\myindex{x86!\Instructions!ROL}
+Здесь используется инструкция \ROL вместо 
+\SHL, которая на самом деле \q{rotate left} (прокручивать влево) 
+вместо \q{shift left} (сдвиг влево),
+но здесь, в этом примере, она работает так же как и  \TT{SHL}.
+
+Об этих \q{прокручивающих} инструкциях больше читайте здесь: \myref{ROL_ROR}.
+
+\Reg{8} здесь считает от 64 до 0. 
+Это как бы инвертированная переменная $i$.
+
+Вот таблица некоторых регистров в процессе исполнения:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor RDX & \HeaderColor R8 \\
+\hline
+0x0000000000000001 & 64 \\
+\hline
+0x0000000000000002 & 63 \\
+\hline
+0x0000000000000004 & 62 \\
+\hline
+0x0000000000000008 & 61 \\
+\hline
+... & ... \\
+\hline
+0x4000000000000000 & 2 \\
+\hline
+0x8000000000000000 & 1 \\
+\hline
+\end{tabular}
+\end{center}
+
+\myindex{x86!\Instructions!FATRET}
+В конце видим инструкцию \INS{FATRET}, которая была описана здесь: \myref{FATRET}.
+
+\myparagraph{\Optimizing MSVC 2012}
+
+\lstinputlisting[caption=MSVC 2012,style=customasmx86]{patterns/14_bitfields/4_popcnt/MSVC_2012_x64_Ox_RU.asm}
+
+\myindex{\CompilerAnomaly}
+\label{MSVC2012_anomaly}
+\Optimizing MSVC 2012 делает почти то же самое что и оптимизирующий MSVC 2010, но почему-то он генерирует 2 идентичных тела цикла и счетчик цикла теперь 32
+вместо 64.
+Честно говоря, нельзя сказать, почему. Какой-то трюк с оптимизацией? Может быть, телу цикла лучше быть
+немного длиннее?
+
+Так или иначе, такой код здесь уместен, чтобы показать, что результат компилятора
+иногда может быть очень странный и нелогичный, но прекрасно работающий, конечно же.
+

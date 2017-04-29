@@ -23,10 +23,10 @@ my_rand	PROC
 	mov	ecx, DWORD PTR _tls_index
 	mov	edx, OFFSET FLAT:rand_state
 	mov	rcx, QWORD PTR [rax+rcx*8]
-	imul	eax, DWORD PTR [rcx+rdx], 1664525	; 0019660dH
-	add	eax, 1013904223				; 3c6ef35fH
+	imul	eax, DWORD PTR [rcx+rdx], 1664525 ; 0019660dH
+	add	eax, 1013904223		; 3c6ef35fH
 	mov	DWORD PTR [rcx+rdx], eax
-	and	eax, 32767				; 00007fffH
+	and	eax, 32767		; 00007fffH
 	ret	0
 my_rand	ENDP
 

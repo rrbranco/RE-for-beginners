@@ -1,0 +1,217 @@
+% !TEX program = XeLaTeX
+% !TEX encoding = UTF-8
+\documentclass[UTF8,nofonts]{ctexart}
+\setCJKmainfont[BoldFont=STHeiti,ItalicFont=STKaiti]{STSong}
+\setCJKsansfont[BoldFont=STHeiti]{STXihei}
+\setCJKmonofont{STFangsong}
+
+\begin{document}
+
+%daveti: translated on Dec 24, 2016
+%NOTE: above is needed for MacTex.
+
+\chapter{工具库 Tools}
+
+\epigraph{
+Dennis Yurichev已经把这本书免费和开源 (libre)，作为对免费知识和教育的贡献。
+同样，因为免费和开源的原则，我们需要免费的 (libre) 逆向工程工具来替代本书中提到
+商业的专有工具。}{Richard M. Stallman}
+
+\section{二进制文件分析 Binary analysis}
+
+不需要运行程序的静态分析工具。
+
+\myindex{Hiew}
+\myindex{UNIX!strings}
+\myindex{UNIX!xxd}
+\myindex{UNIX!od}
+
+\begin{itemize}
+\item
+(免费, 开源) \IT{ent}\footnote{\url{http://www.fourmilab.ch/random/}}: 熵 (entropy) 分析工具。
+更多关于熵: \myref{entropy}.
+
+\item
+\label{Hiew}
+\IT{Hiew}\footnote{\href{http://go.yurichev.com/17035}{hiew.ru}}:
+针对于对二进制文件的小改动。
+
+\item (免费, 开源) \IT{xxd} and \IT{od}: UNIX环境下用来显示二进制文件的标准工具。
+
+\item (免费, 开源) \IT{strings}: *NIX环境下用来在二进制文件中寻找ASCII字符串的工具。
+Sysinternals提供另一个版本\footnote{\url{https://technet.microsoft.com/en-us/sysinternals/strings}}
+支持宽字符串 (UTF-16, Windows中广泛使用)。
+
+\item (免费, 开源) \IT{Binwalk}\footnote{\url{http://binwalk.org/}}: 分析固件镜像的工具。
+
+\item
+\myindex{binary grep}
+(免费, 开源) \IT{binary grep}:
+用来在众多文件中寻找任意字节序列的小工具，
+包括非执行文件: \BGREPURL.
+% TBT
+\end{itemize}
+
+\subsection{反汇编器 Disassemblers}
+
+\myindex{IDA}
+\myindex{Binary Ninja}
+\myindex{BinNavi}
+\myindex{objdump}
+
+\begin{itemize}
+\item \IT{IDA}. 一个老的但是免费的版本可以在这里下载
+\footnote{\href{http://go.yurichev.com/17031}{hex-rays.com/products/ida/support/download\_freeware.shtml}}.
+\ShortHotKeyCheatsheet: \myref{sec:IDA_cheatsheet}
+
+\item \IT{Binary Ninja}\footnote{\url{http://binary.ninja/}}
+
+\item (免费, 开源) \IT{zynamics BinNavi}\footnote{\url{https://www.zynamics.com/binnavi.html}}
+
+\item (免费, 开源) \IT{objdump}: 显示和反汇编二进制文件的小命令行工具。
+
+\item (免费, 开源) \IT{readelf}\footnote{\url{https://sourceware.org/binutils/docs/binutils/readelf.html}}:
+显示ELF文件信息。
+\end{itemize}
+
+\subsection{反编译器 Decompilers}
+
+事实上，只有一个众所周知，可以下载到的高质量C代码反编译器: \IT{Hex-Rays}:\\
+\href{http://go.yurichev.com/17033}{hex-rays.com/products/decompiler/}
+
+\subsection{补丁比较工具 Patch comparison/diffing}
+
+为了弄明白补丁都干了些什么或者为什么这个补丁修补了某个漏洞，你可能需要用补丁比较工具来比较原执行文件和打过补丁文件的区别。
+
+\begin{itemize}
+\item (免费) \IT{zynamics BinDiff}\footnote{\url{https://www.zynamics.com/software.html}}
+
+\item (免费, 开源) \IT{Diaphora}\footnote{\url{https://github.com/joxeankoret/diaphora}}
+\end{itemize}
+
+\section{现场分析 Live analysis}
+
+用来对一个运行系统或者进程的分析工具。
+
+\subsection{调试器 Debuggers}
+
+\myindex{\olly}
+\myindex{Radare}
+\myindex{GDB}
+\myindex{tracer}
+\myindex{LLDB}
+\myindex{WinDbg}
+
+\begin{itemize}
+\item (免费) \IT{OllyDbg}.
+非常流行的win32用户模式调试器\footnote{\href{http://go.yurichev.com/17032}{ollydbg.de}}.
+\ShortHotKeyCheatsheet: \myref{sec:Olly_cheatsheet}
+
+\item (免费, 开源) \IT{GDB}.
+因为主要是给程序员开发使用的工具，所以在逆向工程师中不是太流行。
+部分命令: \myref{sec:GDB_cheatsheet}.
+GDB也有一个图形界面接口, ``GDB dashboard''\footnote{\url{https://github.com/cyrus-and/gdb-dashboard}}.
+
+\item (免费, 开源) \IT{LLDB}\footnote{\url{http://lldb.llvm.org/}}.
+
+\item \IT{WinDbg}\footnote{\url{https://developer.microsoft.com/en-us/windows/hardware/windows-driver-kit}}:
+Windows内核调试器。
+
+\item (免费, 开源) \IT{Radare} \ac{AKA} rada.re \ac{AKA} r2\footnote{\url{http://rada.re/r/}}.
+也有图形界面程序: \IT{ragui}\footnote{\url{http://radare.org/ragui/}}.
+
+\item (免费, 开源) \IT{tracer}.
+\label{tracer}
+本文作者通常使用 \IT{tracer}
+\footnote{\href{http://go.yurichev.com/17338}{yurichev.com}}
+而不是调试器。
+
+本文作者事实上已经不再使用调试器，因为用调试器的主要目的是查看函数运行中的传参，或者是某个时刻的寄存器状态。
+每次启动运行调试器太费时，所以一个小工具 \IT{tracer} 由此而生。
+这是个命令行工具，支持截断函数运行，在任意位置设置断点，读取和改变寄存器状态等。
+
+注意: 没有对 \IT{tracer} 长期维护的计划，因为这个工具是为了用来展示书中例子而开发的，而不是一个每天必备的工具。
+\end{itemize}
+
+\subsection{库函数跟踪 Library calls tracing}
+
+\IT{ltrace}\footnote{\url{http://www.ltrace.org/}}.
+
+\subsection{系统调用跟踪 System calls tracing}
+
+\label{strace}
+\myindex{strace}
+\myindex{dtruss}
+\subsubsection{strace / dtruss}
+
+\myindex{syscall}
+显示进程在运行中调用的系统调用 (syscalls(\myref{syscalls}))。
+
+例如:
+
+\begin{lstlisting}
+# strace df -h
+
+...
+
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+open("/lib/i386-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0\220\232\1\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0755, st_size=1770984, ...}) = 0
+mmap2(NULL, 1780508, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb75b3000
+\end{lstlisting}
+
+\myindex{\MacOSX}
+\MacOSX 中的``strace''是dtruss。
+
+\myindex{Cygwin}
+Cygwin也提供strace，但是只能用于在cygwin环境编译下的可执行文件。
+
+\subsection{网络嗅探 Network sniffing}
+
+\IT{嗅探 Sniffing} 是截断和跟踪你感兴趣的信息。
+
+(免费, 开源) \IT{Wireshark}\footnote{\url{https://www.wireshark.org/}} 用于网络嗅探。
+该工具也支持USB嗅探\footnote{\url{https://wiki.wireshark.org/CaptureSetup/USB}}。
+
+Wireshark还有一个古老的兄弟工具 \IT{tcpdump}\footnote{\url{http://www.tcpdump.org/}}, 一个简单的命令行工具。
+
+\subsection{Sysinternals}
+
+\myindex{Sysinternals}
+(免费) Sysinternals (由Mark Russinovich开发)
+\footnote{\url{https://technet.microsoft.com/en-us/sysinternals/bb842062}}。
+至少以下重要工具值得学习和研究: Process Explorer, Handle, VMMap, TCPView, Process Monitor。
+
+\subsection{Valgrind}
+
+(免费, 开源) 寻找内存泄漏的强大工具: \url{http://valgrind.org/}。
+因为其强大的 \ac{JIT} 机制, Valgrind也是其他各种工具的运行框架。
+
+% TODO network fuzzing
+
+\subsection{模拟器 Emulators}
+
+\begin{itemize}
+\item (免费, 开源) \IT{QEMU}\footnote{\url{http://qemu.org}}: 模拟各种CPU架构。
+
+\item (免费, 开源) \IT{DosBox}\footnote{\url{https://www.dosbox.com/}}: MS-DOS模拟器，主要用来运行老游戏。 
+
+\item (免费, 开源) \IT{SimH}\footnote{\url{http://simh.trailing-edge.com/}}: 恐龙机，大型机等模拟器。
+\end{itemize}
+
+\section{其他 Other tools}
+
+\IT{Microsoft Visual Studio Express}
+\footnote{\href{http://go.yurichev.com/17034}{visualstudio.com/en-US/products/visual-studio-express-vs}}:
+Visual Studio的简化免费版本，对于一些简单的实验，已经足够。
+
+一些有用的选项配置: \myref{sec:MSVC_options}。
+
+\section{遗漏 Something missing here?}
+
+如果你知道还有什么其他有用的工具，和我说一声:\\
+\TT{\EMAIL}.
+
+\end{document}
+

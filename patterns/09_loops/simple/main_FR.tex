@@ -1,0 +1,30 @@
+\subsection{Exemple simple}
+
+% subsections
+\input{patterns/09_loops/simple/x86}
+\input{patterns/09_loops/simple/ARM/main}
+\input{patterns/09_loops/simple/MIPS}
+
+\subsubsection{Encore une chose}
+
+Dans le code généré, nous pouvons voir:
+après avoir initialisé $i$, le corps de la boucle n'est pas exécuté, car la condition
+sur $i$ est d'abord vérifiée, et seulement après le corps de la boucle peut être
+exécuté.
+Et cela est correct.
+
+Ceci car si la condition de boucle n'est pas remplie au début, le corps de la boucle
+ne doit pas être exécuté.
+Ceci est possible dans le cas suivant:
+
+\lstinputlisting[style=customc]{patterns/09_loops/simple/loops_3_FR.c}
+
+Si \IT{nombre\_total\_d\_element\_à\_traiter} est 0, le corps de la boucle ne sera
+pas exécuté du tout.
+
+C'est pourquoi la condition est testée avant l'exécution.
+
+Toutefois, un compilateur qui optimise pourrait échanger le corps de la boucle et
+la condition, si il est certain que la situation que nous venons de décrire n'est
+pas possible (comme dans le cas de notre exemple simple, et en utlisant des compilateurs
+comme Keil, Xcode (LLVM) et MSVC avec le flag d'optimisation.

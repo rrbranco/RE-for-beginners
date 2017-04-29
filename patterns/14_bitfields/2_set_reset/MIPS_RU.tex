@@ -1,0 +1,12 @@
+﻿\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/14_bitfields/2_set_reset/MIPS_O3_IDA_RU.lst}
+
+\myindex{MIPS!\Instructions!ORI}
+\INS{ORI} это, конечно, операция \q{ИЛИ}, \q{I} в имени инструкции означает, что значение встроено в машинный код.
+
+\myindex{MIPS!\Instructions!AND}
+И напротив, есть \AND. Здесь нет возможности использовать \INS{ANDI}, потому что невозможно встроить число 
+0xFFFFFDFF в одну инструкцию, так что компилятору приходится в начале загружать значение 0xFFFFFDFF в регистр \$V0,
+а затем генерировать \AND, которая возьмет все значения из регистров.
+

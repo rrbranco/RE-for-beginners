@@ -1,0 +1,83 @@
+\subsubsection{ARM + \OptimizingXcodeIV (\ARMMode)}
+
+\lstinputlisting[caption=\OptimizingXcodeIV
+(\ARMMode),label=ARM_leaf_example4,style=customasmARM]{patterns/14_bitfields/4_popcnt/ARM_Xcode_O3_DE.lst}
+
+\myindex{ARM!\Instructions!TST}
+\TST entspricht dem Befehl \TEST in x86.
+
+\myindex{ARM!Optional operators!LSL}
+\myindex{ARM!Optional operators!LSR}
+\myindex{ARM!Optional operators!ASR}
+\myindex{ARM!Optional operators!ROR}
+\myindex{ARM!Optional operators!RRX}
+\myindex{ARM!\Instructions!MOV}
+\myindex{ARM!\Instructions!TST}
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!ADD}
+\myindex{ARM!\Instructions!SUB}
+\myindex{ARM!\Instructions!RSB}
+Wie bereits in~(\myref{shifts_in_ARM_mode}) besprochen gibt es zwei verschiedene
+Schiebebefehle im ARM mode.
+Zusätzlich gibt es aber noch die Suffixe
+LSL (\IT{Logical Shift Left}), 
+LSR (\IT{Logical Shift Right}), 
+ASR (\IT{Arithmetic Shift Right}), 
+ROR (\IT{Rotate Right}) und
+RRX (\IT{Rotate Right with Extend}), die an Befehle wie \MOV, \TST,
+\CMP, \ADD, \SUB, \RSB\footnote{\DataProcessingInstructionsFootNote} angehängt
+werden können.
+
+Diese Suffixe legen fest, wie und um wie viele Bits der zweite Operand
+verschoben werden soll.
+
+\myindex{ARM!\Instructions!TST}
+\myindex{ARM!Optional operators!LSL}
+Dadurch entspricht der Befehl \TT{\q{TST R1, R2,LSL R3}} hier 
+$R1 \land (R2 \ll R3)$.
+
+\subsubsection{ARM + \OptimizingXcodeIV (\ThumbTwoMode)}
+
+\myindex{ARM!\Instructions!LSL.W}
+\myindex{ARM!\Instructions!LSL}
+Fast das gleiche, aber hier werden zwei \INS{LSL.W}/\TST Befehle anstelle eines
+einzelnen \TST verwendet, da es im Thumb mode nicht möglich ist, den Suffix \LSL
+direkt in \TST zu definieren.
+
+\begin{lstlisting}[label=ARM_leaf_example5,style=customasmARM]
+                MOV             R1, R0
+                MOVS            R0, #0
+                MOV.W           R9, #1
+                MOVS            R3, #0
+loc_2F7A
+                LSL.W           R2, R9, R3
+                TST             R2, R1
+                ADD.W           R3, R3, #1
+                IT NE
+                ADDNE           R0, #1
+                CMP             R3, #32
+                BNE             loc_2F7A
+                BX              LR
+\end{lstlisting}
+
+\subsubsection{ARM64 + \Optimizing GCC 4.9}
+Betrachten wir ein 64-Bit-Beispiel, das wir bereits
+kennen:\myref{popcnt_x64_example}.
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro)
+4.8,style=customasmARM]{patterns/14_bitfields/4_popcnt/ARM64_GCC_O3_DE.s}
+Das Ergebnis ist ähnlich dem was GCC für x64 erzeugt:\myref{shifts64_GCC_O3}.
+
+\myindex{ARM!\Instructions!CSEL}
+Der Befehl \CSEL steht für \q{Conditional SELect}.
+Er wählt eine von zwei Variablen abhängig von den durch \TST gesetzen Flags aus
+und kopiert deren Wert nach \RegW{2}, wo die Variable \q{rt} gespeichert wird.
+
+\subsubsection{ARM64 + \NonOptimizing GCC 4.9}
+Wieder werden wir hier mit dem bereits bekannten 64-Bit-Beispiel arbeiten:
+\myref{popcnt_x64_example}.
+Der Code ist umfangreicher als gewöhnlich.
+
+\lstinputlisting[caption=\NonOptimizing GCC (Linaro)
+4.8,style=customasmARM]{patterns/14_bitfields/4_popcnt/ARM64_GCC_O0_DE.s}
+

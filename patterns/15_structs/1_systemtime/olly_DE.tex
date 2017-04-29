@@ -1,0 +1,59 @@
+\clearpage
+\subsubsection{\olly}
+\myindex{\olly}
+Kompilieren wir dieses Beispiel in MSVC 2010 mit \TT{/GS- /MD} und laden es in \olly.
+
+Öffnen wir die Fenster für Daten und Stack an der Adresse, die als erstes Argument der Funktion \TT{GetSystemTime()}
+übergeben wird und warten, bis das Programm an dieser Stelle ist. Wir sehen das folgende:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/15_structs/1_systemtime/olly_systemtime1.png}
+\caption{\olly: \TT{GetSystemTime()} wurde gerade ausgeführt}
+\label{fig:struct_olly_1}
+\end{figure}
+Die Systemzeit, die diese Ausführung der Funktion auf meinem Computer liefert, ist 9. Dezember 2014, 22:29:52:
+
+\lstinputlisting[caption=\printf output]{patterns/15_structs/1_systemtime/console.txt}
+Wir sehen also diese 16 Byte im Datenfenster:
+ 
+\begin{lstlisting}
+DE 07 0C 00 02 00 09 00 16 00 1D 00 34 00 D4 03
+\end{lstlisting}
+Je zwei Byte repräsentieren ein Feld des structs. 
+Da die \glslink{endianness}{Endianess} hier \IT{little Endian} ist, finden wir das niederwertige Byte zuerst und danach das
+höherwertige.
+
+Es werden also die folgenden Werte aktuell im Speicher gehalten:
+
+\begin{center}
+\begin{tabular}{ | l | l | l | }
+\hline
+\headercolor{} Hexadezimalzahl & 
+\headercolor{} Dezimalzahl & 
+\headercolor{} Feldname \\
+\hline
+0x07DE & 2014	& wYear \\
+\hline
+0x000C & 12	& wMonth \\
+\hline
+0x0002 & 2	& wDayOfWeek \\
+\hline
+0x0009 & 9	& wDay \\
+\hline
+0x0016 & 22	& wHour \\
+\hline
+0x001D & 29	& wMinute \\
+\hline
+0x0034 & 52	& wSecond \\
+\hline	
+0x03D4 & 980	& wMilliseconds \\
+\hline
+\end{tabular}
+\end{center}
+Wir finden die gleichen Werte im Stackfenster, aber sie werden als 32-Bit-Werte gruppiert.
+
+Die Funktion \printf nimmt sich die Werte, die sie braucht und schreibt sie in die Konsole.
+
+Manche Werte werden von \printf nicht ausgegeben (\TT{wDayOfWeek} und \TT{wMilliseconds}), aber sie sind im Speicher
+jederzeit für uns verfügbar.

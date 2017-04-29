@@ -1,0 +1,255 @@
+% TODO png blur? too wide listings
+% TODO separate section for Mathematica example
+\section[Analyzing using information entropy]{Analyzing unknown binary files using information entropy}
+\label{entropy}
+\myindex{Entropy}
+
+For the sake of simplification, I would say, information entropy is a measure, how tightly some piece of data can be compressed.
+For example, it is usually not possible to compress already compressed archive file, so it has high entropy.
+On the other hand, one megabyte of zero bytes can be compressed to a tiny output file.
+Indeed, in plain English language, one million of zeros can be described just as ``resulting file is one million zero bytes''.
+Compressed files are usually a list of instructions to decompressor, like this: ``put 1000 zeros, then 0x23 byte, then 0x45 byte, then put a block of size 10 bytes which we've seen 500 bytes back, etc.''
+
+Texts written in natural languages are also can be compressed tightly, 
+because natural languages has a lot of redundancy
+(otherwise, a tiny typo will always lead to misunderstanding, 
+like any toggled bit in compressed archive make decompression nearly impossible), 
+some words are used very often, etc.
+It's possible to drop some words and text will be still readable.
+
+Code for CPUs is also can be compressed, because some ISA instructions are used much more often than others.
+\myindex{x86!\Instructions!MOV}
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!CALL}
+In x86, most used instructions are MOV/PUSH/CALL---indeed, most of the time, computer CPU is just shuffling data and switching between
+levels of abstractions.
+If to consider data shuffling as moving data between levels of abstractions, this is also part of switching.
+
+Data compressors and encryptors tend to produce very high entropy results.
+Good pseudorandom number generators also produce data which cannot be compressed 
+(it is possible to measure their quality by this sign).
+
+So, in other words, entropy is a measure which can help to probe unknown data block.
+
+\input{ff/entropy/math_EN}
+
+\subsection{Conclusion}
+
+Information entropy can be used as a quick-n-dirty method for inspecting unknown binary files.
+In particular, it is a very quick way to find compressed/encrypted pieces of data.
+Someone say it's possible to find RSA (and other asymmetric cryptographic algorithms) public/private keys 
+in executable code (which has high entropy as well), but I didn't try this myself.
+
+\subsection{Tools}
+
+Handy Linux \IT{ent} utility to measure entropy of a file\footnote{\url{http://www.fourmilab.ch/random/}}.
+
+There is a great online entropy visualizer made by Aldo Cortesi, 
+which I tried to mimic using Mathematica: \url{http://binvis.io}.
+His articles about entropy visualization are worth reading:
+\url{http://corte.si/posts/visualisation/entropy/index.html},
+\url{http://corte.si/posts/visualisation/malware/index.html},
+\url{http://corte.si/posts/visualisation/binvis/index.html}.
+
+\myindex{radare2}
+radare2 framework has \IT{\#entropy} command for this.
+
+A tool for IDA: IDAtropy\footnote{\url{https://github.com/danigargu/IDAtropy}}.
+
+\subsection{A word about primitive encryption like XORing}
+
+It's interesting that simple XOR encryption doesn't affect entropy of data.
+I've shown this in \IT{Norton Guide} example in the book (\myref{norton_guide}).
+
+Generalizing: encryption by substitution cipher also doesn't affect entropy of data (and XOR can be viewed as substitution cipher).
+The reason of that is because entropy calculation algorithm view data on byte-level.
+On the other hand, the data encrypted by 2 or 4-byte XOR pattern will result in another entropy.
+
+Nevertheless, low entropy is usually a good sign of weak amateur cryptography
+(which is also used in license keys, license files, etc.).
+
+\subsection{More about entropy of executable code}
+
+It is quickly noticeable that probably a biggest source of high-entropy in executable code are relative offsets encoded in opcodes.
+For example, these two consequent instructions will produce different relative offsets in their opcodes, 
+while they are in fact pointing to the same function:
+
+\begin{lstlisting}[style=customasmx86]
+function proc
+...
+function endp
+
+...
+
+CALL function
+...
+CALL function
+\end{lstlisting}
+
+Ideal executable code compressor would encode information like this:
+\IT{there is a CALL to a ``function'' at address X and the same CALL at address Y} without necessity to encode
+address of the \IT{function} twice.
+
+\myindex{UPX}
+To deal with this, executable compressors are sometimes able to reduce entropy here.
+One example is UPX: \url{http://sourceforge.net/p/upx/code/ci/default/tree/doc/filter.txt}.
+
+\subsection{Random number generators}
+
+\myindex{GnuPG}
+When I run GnuPG to generate new secret key, it asking for some entropy...
+
+\begin{lstlisting}
+We need to generate a lot of random bytes. It is a good idea to perform
+some other action (type on the keyboard, move the mouse, utilize the
+disks) during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+
+Not enough random bytes available.  Please do some other work to give
+the OS a chance to collect more entropy! (Need 169 more bytes)
+\end{lstlisting}
+
+This means that good a PRNG produces long high-entropy results, and this is what the secret asymetrical cryptographical key needs.
+But \ac{CPRNG} is tricky (because computer is highly deterministic device itself),
+so the GnuPG asking for some additional randomness from the user.
+
+Here is a case where I made attempt to calculate entropy of some unknown blocks: \myref{encrypted_DB1}.
+
+\subsection{Entropy of various files}
+
+Entropy of random bytes is close to 8:
+
+\begin{lstlisting}[basicstyle=\ttfamily, mathescape]
+$\$$ dd bs=1M count=1 if=/dev/urandom | ent
+Entropy = 7.999803 bits per byte.
+\end{lstlisting}
+
+This means, almost all available space inside of byte is filled with information.
+
+256 bytes in range of 0..255 gives exact value of 8:
+
+\begin{lstlisting}[basicstyle=\ttfamily, mathescape,style=custompy]
+#!/usr/bin/env python
+import sys
+
+for i in range(256):
+    sys.stdout.write(chr(i))
+\end{lstlisting}
+
+\begin{lstlisting}[basicstyle=\ttfamily, mathescape]
+python 1.py | ent
+Entropy = 8.000000 bits per byte.
+\end{lstlisting}
+
+Order of bytes doesn't matter.
+This means, all available space inside of byte is filled.
+
+Entropy of all zero bytes is 0:
+
+\begin{lstlisting}[basicstyle=\ttfamily, mathescape]
+$\$$ dd bs=1M count=1 if=/dev/zero | ent
+Entropy = 0.000000 bits per byte.
+\end{lstlisting}
+
+Entropy of a string costisting of a single (any) byte is 0:
+
+\begin{lstlisting}[basicstyle=\ttfamily, mathescape]
+$\$$ echo -n "aaaaaaaaaaaaaaaaaaa" | ent
+Entropy = 0.000000 bits per byte.
+\end{lstlisting}
+
+\myindex{base64}
+Entropy of base64 string is the same as entropy of source data, but multiplied by $\frac{3}{4}$.
+This is because base64 encoding uses 64 symbols instead of 256.
+
+\begin{lstlisting}[basicstyle=\ttfamily, mathescape]
+$\$$ dd bs=1M count=1 if=/dev/urandom | base64 | ent
+Entropy = 6.022068 bits per byte.
+\end{lstlisting}
+
+Perhaps, 6.02 not that close to 6 because padding symbols (\TT{=}) spoils our statistics for a little.
+
+\myindex{Uuencode}
+Uuencode, also uses 64 symbols:
+
+\begin{lstlisting}[basicstyle=\ttfamily, mathescape]
+$\$$ dd bs=1M count=1 if=/dev/urandom | uuencode - | ent
+Entropy = 6.013162 bits per byte.
+\end{lstlisting}
+
+This means, any base64 and Uuencode strings can be transmitted using 6-bit bytes or characters.
+
+Any random information in hexadecimal form has entropy of 4 bits per byte:
+
+\begin{lstlisting}[basicstyle=\ttfamily, mathescape]
+$\$$ openssl rand -hex $\$$(( 2**16 )) | ent
+Entropy = 4.000013 bits per byte.
+\end{lstlisting}
+
+Entropy of randomly picked English language text from Gutenberg library has entropy ~4.5.
+The reason of this is because English texts uses mostly 26 symbols, and $log_2(26)=~4.7$, i.e., you would need
+5-bit bytes to transmit uncompressed English texts, that would be enough (it was indeed so in teletype era).
+
+Randomly chosen Russian language text from \url{http://lib.ru}
+library is F.M.Dostoevsky ``Idiot''\footnote{\url{http://az.lib.ru/d/dostoewskij_f_m/text_0070.shtml}},
+internally encoded in CP1251 encoding.
+
+And this file has entropy of ~4.98.
+Russian language has 33 characters, and $log_2(33)=~5.04$.
+But it has unpopular and rare ``ё'' character
+% FIXME YO letter isn't rendered in Eng version
+\footnote{When I typed it here in text, I've needed to look down to my keyboard and find it.}.
+And $log_2(32)=5$ (Russian alphabet without this rare character) --- now this close to what we've got.
+
+In fact, the text we studying uses ``ё'' letter, but, probably, it's still rarely used there.
+
+\myindex{UTF-8}
+The very same file transcoded from CP1251 to UTF-8 gave entropy of ~4.23.
+Each Cyrillic character encoded in UTF-8 is usually encoded as a pair,
+and the first byte is always one of: 0xD0 or 0xD1.
+Perhaps, this caused bias.
+
+Let's generate random bits and output them as ``T'' or ``F'' characters:
+
+\begin{lstlisting}[style=custompy]
+#!/usr/bin/env python
+import random, sys
+
+rt=""
+for i in range(102400):
+    if random.randint(0,1)==1:
+        rt=rt+"T"
+    else:
+        rt=rt+"F"
+print rt
+\end{lstlisting}
+
+Sample: \TT{...TTTFTFTTTFFFTTTFTTTTTTFTTFFTTTFTFTTFTTFFFFFF...}.
+
+Entropy is very close to 1 (i.e., 1 bit per byte).
+
+Let's generate random decimal numbers:
+
+\begin{lstlisting}[style=custompy]
+#!/usr/bin/env python
+import random, sys
+
+rt=""
+for i in range(102400):
+    rt=rt+"%d" % random.randint(0,9)
+print rt
+\end{lstlisting}
+
+Sample: \TT{...52203466119390328807552582367031963888032...}.
+
+Entropy will be close to 3.32, indeed, this is $log_2(10)$.
+
+\subsection{Making lower level of entropy}
+
+The author of these lines once saw a software which stored each byte of encrypted data in 3 bytes:
+each has roughly $\frac{byte}{3}$ value, so reconstructing encrypted byte back involving summing up 3 consecutive bytes.
+Looks absurdly.
+
+But some people say this was done in order to conceal the very fact
+the data has something encrypted inside: measuring entropy of such block will show much lower level of it.
+

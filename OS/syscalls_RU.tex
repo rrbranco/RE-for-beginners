@@ -1,0 +1,77 @@
+\section{Системные вызовы (syscall-ы)}
+
+\label{syscalls}
+\myindex{syscall}
+
+\myindex{kernel space}
+\myindex{user space}
+Как известно, все работающие процессы в \ac{OS} делятся на две категории:
+имеющие полный доступ ко всему \q{железу} (\q{kernel space}) 
+и не имеющие (\q{user space}).
+
+В первой категории ядро \ac{OS} и, обычно, драйвера.
+
+Во второй категории всё прикладное ПО.
+
+\myindex{Glibc}
+
+Например, ядро Linux в \IT{kernel space}, но Glibc в \IT{user space}.
+
+Это разделение очень важно для безопасности \ac{OS}:
+очень важно чтобы никакой процесс не мог испортить что-то в других процессах
+или даже в самом ядре \ac{OS}.
+\myindex{kernel panic}
+\myindex{BSoD}
+С другой стороны, падающий драйвер или ошибка внутри ядра \ac{OS} обычно приводит к kernel panic или \ac{BSOD}.
+
+Защита x86-процессора устроена так что возможно разделить всё на 4 слоя защиты (rings), но и в Linux,
+и в Windows, используются только 2: ring0 (\q{kernel space}) и ring3 (\q{user space}).
+
+Системные вызовы (syscall-ы)
+это точка где соединяются вместе оба эти пространства.
+Это, можно сказать, самое главное \ac{API} предоставляемое прикладному ПО.
+
+В \gls{Windows NT} таблица сисколлов находится в \ac{SSDT}.
+
+\myindex{Shellcode}
+Работа через syscall-ы популярна у авторов шеллкодов и вирусов,
+потому что там обычно бывает трудно определить адреса нужных функций в системных библиотеках,
+а syscall-ами проще пользоваться, хотя и придется писать больше
+кода из-за более низкого уровня абстракции этого \ac{API}.
+Также нельзя еще забывать, что номера syscall-ов могут отличаться от версии к версии OS.
+
+\subsection{Linux}
+\label{linux_syscall}
+
+\myindex{x86!\Instructions!INT!INT 0x80}
+В Linux вызов syscall-а обычно происходит через \TT{int 0x80}.
+В регистре \EAX передается номер вызова,
+в остальных регистрах --- параметры.
+
+\lstinputlisting[caption=Простой пример использования пары syscall-ов,style=customasmx86]{OS/linux_syscall.s}
+
+Компиляция:
+
+\begin{lstlisting}
+nasm -f elf32 1.s
+ld 1.o
+\end{lstlisting}
+
+Полный список syscall-ов в Linux: \url{http://go.yurichev.com/17319}.
+
+Для перехвата и трассировки системных вызовов в Linux, можно применять strace(\myref{strace}).
+
+\subsection{Windows}
+
+\myindex{x86!\Instructions!INT!INT 0x2e}
+\myindex{x86!\Instructions!SYSENTER}
+
+Вызов происходит через \TT{int 0x2e} 
+либо используя специальную x86-инструкцию \TT{SYSENTER}.
+
+Полный список syscall-ов в Windows: \url{http://go.yurichev.com/17320}.
+
+Смотрите также:
+
+\q{Windows Syscall Shellcode} by Piotr Bania: \url{http://go.yurichev.com/17321}.
+

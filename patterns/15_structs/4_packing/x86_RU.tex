@@ -1,0 +1,91 @@
+﻿\subsubsection{x86}
+
+Компилируется это все в:
+
+\lstinputlisting[caption=MSVC 2012 /GS- /Ob0,label=src:struct_packing_4,numbers=left,style=customasmx86]{patterns/15_structs/4_packing/packing_RU.asm}
+
+Кстати, мы передаем всю структуру, но в реальности, как видно, структура в начале копируется
+во временную структуру (выделение места под нее в стеке происходит в строке 10,
+а все 4 поля, по одному, копируются в строках 12 \ldots\ 19), 
+затем передается только указатель на нее (или адрес).
+
+Структура копируется, потому что неизвестно, будет ли функция \ttf модифицировать структуру или нет.
+И если да, то структура внутри \main должна остаться той же.
+
+Мы могли бы использовать указатели на \CCpp, и итоговый код был бы почти такой же,
+только копирования не было бы.
+
+Мы видим здесь что адрес каждого поля в структуре выравнивается по 4-байтной границе. 
+Так что каждый \Tchar здесь занимает те же 4 байта что и \Tint. Зачем? 
+Затем что процессору удобнее обращаться по таким адресам и кэшировать данные из памяти.
+
+Но это не экономично по размеру данных.
+
+Попробуем скомпилировать тот же исходник с опцией (\TT{/Zp1}) 
+(\IT{/Zp[n] pack structures on n-byte boundary}).
+
+\lstinputlisting[caption=MSVC 2012 /GS- /Zp1,label=src:struct_packing_1,numbers=left,style=customasmx86]{patterns/15_structs/4_packing/packing_msvc_Zp1_RU.asm}
+
+Теперь структура занимает 10 байт и все \Tchar занимают по байту. Что это дает? 
+Экономию места. Недостаток ~--- процессор будет обращаться к этим полям не так эффективно 
+по скорости, как мог бы.
+
+\label{short_struct_copying_using_MOV}
+Структура так же копируется в \main. Но не по одному полю, а 10 байт, при помощи трех
+пар \MOV.
+
+Почему не 4?
+Компилятор рассудил, что будет лучше скопировать 10 байт
+при помощи 3 пар \MOV, чем копировать два 32-битных слова и два байта при помощи 4 пар \MOV.
+
+Кстати, подобная реализация копирования при помощи \MOV взамен вызова функции \TT{memcpy()}, например, это
+очень распространенная практика, потому что это в любом случае работает быстрее чем вызов \TT{memcpy()} ---
+если речь идет о коротких блоках, конечно: \myref{copying_short_blocks}.
+
+Как нетрудно догадаться, если структура используется много в каких исходниках и объектных файлах, 
+все они должны быть откомпилированы с одним и тем же соглашением об упаковке структур.
+
+\newcommand{\FNURLMSDNZP}{\footnote{\href{http://go.yurichev.com/17067}
+{MSDN: Working with Packing Structures}}}
+\newcommand{\FNURLGCCPC}{\footnote{\href{http://go.yurichev.com/17068}
+{Structure-Packing Pragmas}}}
+
+Помимо ключа MSVC \TT{/Zp}, указывающего, по какой границе упаковывать поля структур, есть также 
+опция компилятора \TT{\#pragma pack}, её можно указывать прямо в исходнике. 
+Это справедливо и для MSVC\FNURLMSDNZP и GCC\FNURLGCCPC{}.
+
+Давайте теперь вернемся к \TT{SYSTEMTIME}, которая состоит из 16-битных полей. 
+Откуда наш компилятор знает что их надо паковать по однобайтной границе?
+
+В файле \TT{WinNT.h} попадается такое:
+
+\begin{lstlisting}[caption=WinNT.h,style=customc]
+#include "pshpack1.h"
+\end{lstlisting}
+
+И такое:
+
+\begin{lstlisting}[caption=WinNT.h,style=customc]
+#include "pshpack4.h"                   // 4 byte packing is the default
+\end{lstlisting}
+
+Сам файл PshPack1.h выглядит так:
+
+\begin{lstlisting}[caption=PshPack1.h,style=customc]
+#if ! (defined(lint) || defined(RC_INVOKED))
+#if ( _MSC_VER >= 800 && !defined(_M_I86)) || defined(_PUSHPOP_SUPPORTED)
+#pragma warning(disable:4103)
+#if !(defined( MIDL_PASS )) || defined( __midl )
+#pragma pack(push,1)
+#else
+#pragma pack(1)
+#endif
+#else
+#pragma pack(1)
+#endif
+#endif /* ! (defined(lint) || defined(RC_INVOKED)) */
+\end{lstlisting}
+
+Собственно, так и задается компилятору, как паковать объявленные после \TT{\#pragma pack} структуры.
+
+\input{patterns/15_structs/4_packing/olly_RU.tex}

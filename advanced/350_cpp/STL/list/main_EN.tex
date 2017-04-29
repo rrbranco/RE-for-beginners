@@ -1,0 +1,149 @@
+\subsubsection{std::list}
+\myindex{\Cpp!STL!std::list}
+\label{std_list}
+% TODO translate:
+\index{Doubly linked list}
+
+This is the well-known doubly-linked list: each element has two pointers, to the previous and next
+elements.
+
+This implies that the memory footprint is enlarged by 2 \glslink{word}{words} for each element (8 bytes in 32-bit environment or 16 bytes in 64-bit).
+
+\Cpp STL just adds the \q{next} and \q{previous} pointers to the existing structure of the type that you want to 
+unite in a list.
+
+Let's work out an example with a simple 2-variable structure that we want to store in a list.
+
+Although the \Cpp standard does not say how to implement it, 
+both MSVC's and GCC's implementations are straightforward and similar, so here is only one
+source code for both:
+
+\lstinputlisting[style=customc]{\CURPATH/STL/list/2_EN.cpp}
+
+\myparagraph{GCC}
+
+Let's start with GCC.
+
+When we run the example, we'll see a long dump, let's work with it in pieces.
+
+\begin{lstlisting}
+* empty list:
+ptr=0x0028fe90 _Next=0x0028fe90 _Prev=0x0028fe90 x=3 y=0
+\end{lstlisting}
+
+Here we see an empty list.
+
+Despite the fact it is empty, it has one element with garbage (\ac{AKA} \IT{dummy node})
+in $x$ and $y$.
+Both the \q{next} and \q{prev} pointers are pointing to the self node:
+
+\input{\CURPATH/STL/list/empty_list}
+
+At this moment, the .begin and .end iterators are equal to each other.
+
+If we push 3 elements, the list internally will be:
+
+\begin{lstlisting}
+* 3-elements list:
+ptr=0x000349a0 _Next=0x00034988 _Prev=0x0028fe90 x=3 y=4
+ptr=0x00034988 _Next=0x00034b40 _Prev=0x000349a0 x=1 y=2
+ptr=0x00034b40 _Next=0x0028fe90 _Prev=0x00034988 x=5 y=6
+ptr=0x0028fe90 _Next=0x000349a0 _Prev=0x00034b40 x=5 y=6
+\end{lstlisting}
+
+The last element is still at 0x0028fe90,
+it not to be moved until the list's disposal.
+
+It still contain random garbage in $x$ and $y$ (5 and 6). 
+By coincidence, these values are the same as in the last element, but it doesn't mean that they are meaningful.
+
+Here is how these 3 elements are stored in memory:
+
+\input{\CURPATH/STL/list/GCC_internals}
+
+The $l$ variable always points to the first node.
+
+The .begin() and .end() iterators are not variables, but functions, 
+which when called return pointers to the corresponding nodes.
+
+Having a dummy element (\ac{AKA} \IT{sentinel node}) is a very popular practice in implementing doubly-linked lists.
+
+Without it, a lot of operations may become slightly more complex and, hence, slower.
+
+The iterator is in fact just a pointer to a node.
+list.begin() and list.end() just return pointers.
+
+\begin{lstlisting}
+node at .begin:
+ptr=0x000349a0 _Next=0x00034988 _Prev=0x0028fe90 x=3 y=4
+node at .end:
+ptr=0x0028fe90 _Next=0x000349a0 _Prev=0x00034b40 x=5 y=6
+\end{lstlisting}
+
+The fact that the last element has a pointer to the first and the first element has a pointer 
+to the last one remind us of circular lists.
+
+This is very helpful here: having a pointer to the first list element,
+i.e., that is in the $l$ variable,
+it is easy to get a pointer to the last one quickly, without the necessity to traverse the whole list.
+
+Inserting an element at the end of the list is also quick, thanks to this feature.
+
+\TT{operator--} and \TT{operator++} just set the current iterator's value to the \\
+\TT{current\_node->prev} or \TT{current\_node->next} values.
+
+The reverse iterators (.rbegin, .rend) work just as the same, but in reverse.
+
+\TT{operator*} just returns a pointer to the point 
+in the node structure, where the user's structure starts, i.e., a pointer to the 
+first element of the structure ($x$).
+
+The list insertion and deletion are trivial: just allocate a new node (or deallocate) and update all pointers
+to be valid.
+
+That's why an iterator may become invalid after element deletion: 
+it may still point to the node that has been already deallocated.
+This is also called a \IT{dangling pointer}.
+
+And of course, the information from the freed node (to which iterator still points) 
+cannot be used anymore.
+
+The GCC implementation (as of 4.8.1) doesn't store the current size of the list: this implies a slow .size() method:
+it has to traverse the whole list to count the elements, because it doesn't have any other way to get the information.
+
+This means that this operation is $O(n)$, i.e., it steadily gets slower as the list grows.
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1 -fno-inline-small-functions,style=customasmx86]{\CURPATH/STL/list/GCC_EN.asm}
+
+\lstinputlisting[caption=The whole output]{\CURPATH/STL/list/GCC.txt}
+
+\myparagraph{MSVC}
+\label{MSVC_std_list}
+
+MSVC's implementation (2012) is just the same, but it also stores the current size of the list.
+
+This implies that the .size() method is very fast ($O(1)$): it just reads one value from memory.
+
+On the other hand, the size variable must be updated at each insertion/deletion.
+
+MSVC's implementation is also slightly different in the way it arranges the nodes:
+
+\input{\CURPATH/STL/list/MSVC_internals}
+
+GCC has its dummy element at the end of the list, while MSVC's is at the beginning.
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 /Fa2.asm /GS- /Ob1,style=customasmx86]{\CURPATH/STL/list/MSVC_EN.asm}
+
+Unlike GCC, MSVC's code allocates the dummy element at the start of the function with the help of the \q{Buynode} function,
+it is also used to allocate the rest of the nodes (
+GCC's code allocates the first element in the local stack).
+
+\lstinputlisting[caption=The whole output]{\CURPATH/STL/list/MSVC.txt}
+
+\myparagraph{C++11 std::forward\_list}
+\myindex{\Cpp!STL!std::forward\_list}
+
+The same thing as std::list, but singly-linked one, i.e., having only the \q{next} field at each node.
+
+It has a smaller memory footprint, but also don't offer the ability to traverse list backwards.
+

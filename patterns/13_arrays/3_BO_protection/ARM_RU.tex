@@ -1,0 +1,27 @@
+\subsubsection{\OptimizingXcodeIV (\ThumbTwoMode)}
+
+Возвращаясь к нашему простому примеру
+ (\myref{arrays_simple}),
+можно посмотреть, как LLVM добавит проверку \q{канарейки}:
+
+% TODO shorten the listing a bit? is full display of unrolled loop necessary?
+\lstinputlisting[style=customasmARM]{patterns/13_arrays/3_BO_protection/simple_Xcode_thumb_O3_RU.asm}
+
+\myindex{Unrolled loop}
+Во-первых, LLVM \q{развернул} цикл и все значения записываются в массив по одному, 
+уже вычисленные, потому что LLVM посчитал что так будет быстрее.
+
+Кстати, инструкции режима ARM позволяют сделать это ещё быстрее и это может быть вашим 
+домашним заданием.
+
+В конце функции мы видим сравнение \q{канареек}~--- той что лежит в локальном стеке и корректной, 
+на которую ссылается регистр \Reg{8}.
+
+\myindex{ARM!\Instructions!IT}
+Если они равны, срабатывает блок из четырех инструкций при помощи \INS{ITTTT EQ}.
+Это запись 0 в \Reg{0}, эпилог функции и выход из нее.
+
+Если \q{канарейки} не равны, блок не срабатывает и происходит
+переход на функцию \TT{\_\_\_stack\_chk\_fail}, которая остановит работу программы.
+
+% TODO1 illustrate this!

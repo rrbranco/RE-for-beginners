@@ -1,0 +1,107 @@
+\section{Basic blocks reordering}
+
+% TODO __builtin_expect in GCC?
+
+\subsection{Profile-guided optimization}
+\label{PGO}
+
+\myindex{\oracle}
+\myindex{Intel C++}
+
+This optimization method can move some \gls{basic block}s to another section of the executable binary file.
+
+Obviously, there are parts of a function which are executed more frequently (e.g., loop bodies)
+and less often (e.g., error reporting code, exception handlers).
+
+The compiler adds instrumentation code into the executable, then the developer runs it with
+a lot of tests to collect statistics.
+
+Then the compiler, with the help of the statistics gathered,
+prepares final the executable file with all infrequently executed code moved into another section.
+
+As a result, all frequently executed function code is compacted, and that is very important
+for execution speed and cache usage.
+
+An example from \oracle code, which was compiled with Intel C++:
+
+\begin{lstlisting}[caption=orageneric11.dll (win32),style=customasmx86]
+                public _skgfsync
+_skgfsync       proc near
+
+; address 0x6030D86A
+
+                db      66h
+                nop
+                push    ebp
+                mov     ebp, esp
+                mov     edx, [ebp+0Ch]
+                test    edx, edx
+                jz      short loc_6030D884
+                mov     eax, [edx+30h]
+                test    eax, 400h
+                jnz     __VInfreq__skgfsync  ; write to log
+continue:
+                mov     eax, [ebp+8]
+                mov     edx, [ebp+10h]
+                mov     dword ptr [eax], 0
+                lea     eax, [edx+0Fh]
+                and     eax, 0FFFFFFFCh
+                mov     ecx, [eax]
+                cmp     ecx, 45726963h
+                jnz     error                ; exit with error
+                mov     esp, ebp
+                pop     ebp
+                retn
+_skgfsync       endp
+
+...
+
+; address 0x60B953F0
+
+__VInfreq__skgfsync:
+                mov     eax, [edx]
+                test    eax, eax
+                jz      continue
+                mov     ecx, [ebp+10h]
+                push    ecx
+                mov     ecx, [ebp+8]
+                push    edx
+                push    ecx
+                push    offset ... ; "skgfsync(se=0x%x, ctx=0x%x, iov=0x%x)\n"
+                push    dword ptr [edx+4]
+                call    dword ptr [eax] ; write to log
+                add     esp, 14h
+                jmp     continue
+
+error:
+                mov     edx, [ebp+8]
+                mov     dword ptr [edx], 69AAh ; 27050 "function called with invalid FIB/IOV structure"
+                mov     eax, [eax]
+                mov     [edx+4], eax
+                mov     dword ptr [edx+8], 0FA4h ; 4004
+                mov     esp, ebp
+                pop     ebp
+                retn
+; END OF FUNCTION CHUNK FOR _skgfsync
+\end{lstlisting}
+
+The distance of addresses between these two code fragments is almost 9 MB.
+
+All infrequently executed code was placed at the end of the code section of the DLL file,
+among all function parts.
+
+This part of the function was marked by the Intel C++ compiler with the \TT{VInfreq} prefix.
+
+Here we see that a part of the function that writes to a log file (presumably in case of error or warning
+or something like that) which was probably not executed very often when Oracle's developers gathered 
+statistics (if it was executed at all).
+
+The writing to log basic block eventually returns the control flow to the \q{hot} part of the function.
+
+Another \q{infrequent} part is the \gls{basic block} returning error code 27050.
+
+In Linux ELF files, all infrequently executed code is moved by Intel C++ into the separate 
+\TT{text.unlikely} section, leaving all \q{hot} code in the \TT{text.hot} section.
+
+From a reverse engineer's perspective, this information may help to split the function
+into its core and error handling parts.

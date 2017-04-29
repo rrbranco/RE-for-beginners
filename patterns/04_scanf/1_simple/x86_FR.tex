@@ -1,0 +1,126 @@
+\subsubsection{x86}
+
+\myparagraph{MSVC}
+
+Voici ce que l'on obtient après avoir compilé avec MSVC 2010:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/1_simple/ex1_MSVC_FR.asm}
+
+\TT{x} est une variable locale.
+
+D'après le standard \CCpp elle ne doit être visible que dans cette fonction et dans
+aucune autre portée.
+Traditionnellement, les variables locales sont stockées dans la pile.
+Il y a probablement d'autres moyens de les allouer, mais en x86, c'est la façon de faire.
+
+\myindex{x86!\Instructions!PUSH}
+Le but de l'instruction suivant le prologue de la fonction, \TT{PUSH ECX}, n'est
+pas de sauver l'état de \ECX (noter l'absence d'un \TT{POP ECX} à la fin de la
+fonction).
+
+En fait, cela alloue 4 octets sur la pile pour stocker la variable \TT{x}.
+
+\label{stack_frame}
+\myindex{\Stack!Stack frame}
+\myindex{x86!\Registers!EBP}
+\TT{x} est accèdée à l'aide de la macro \TT{\_x\$} (qui vaut -4) et du registre \EBP
+qui pointe sur la structure de pile courante.
+
+Pendant la durée de l'exécution de la fonction, \EBP pointe sur la \glslink{stack frame}{structure locale de pile}
+courante, rendant possible l'accès aux variables locales et aux arguments de la
+fonction via \TT{EBP+offset}.
+
+\myindex{x86!\Registers!ESP}
+Il est aussi possible d'utiliser \ESP dans le même but, bien que ça ne soit pas
+très commode, car il change fréquemment.
+La valeur de \EBP peut être perçue comme un \IT{état figé} de la valeur de \ESP
+au début de l'exécution de la fonction.
+
+% FIXME1 это уже было в 02_stack?
+Voici une \glslink{stack frame}{strucutre de pile} typique dans un environnement 32-bit:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\dots & \dots \\
+\hline
+EBP-8 & variable locale \#2, \MarkedInIDAAs{} \TT{var\_8} \\
+\hline
+EBP-4 & variable locale \#1, \MarkedInIDAAs{} \TT{var\_4} \\
+\hline
+EBP & valeur sauvée de \EBP \\
+\hline
+EBP+4 & adresse de retour \\
+\hline
+EBP+8 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+EBP+0xC & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+EBP+0x10 & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+
+La fonction \scanf de notre exemple a deux arguments.
+
+Le premier est un pointeur sur la chaîne contenant \TT{\%d} et le second est l'adresse
+de la variable \TT{x}.
+
+\myindex{x86!\Instructions!LEA}
+Tout d'abord, l'adresse de la variable \TT{x} est chargée dans le registre \EAX
+par l'instruction \\ \TT{lea eax, DWORD PTR \_x\$[ebp]}.
+
+\LEA signifie \IT{load effective address} (charger l'adresse effective) et est souvent
+utilisée pour composer une adresse ~(\myref{sec:LEA}).
+
+Nous pouvons dire que dans ce cas, \LEA stocke simplement la somme de la valeur du
+registre \EBP et de la macro \TT{\_x\$} dans le registre \EAX.
+
+C'est la même chose que \INS{lea eax, [ebp-4]}.
+
+Donc, 4 est soustrait de la valeur du registre \EBP et le résultat est chargé dans
+le registre \EAX.
+Ensuite, la valeur du registre \EAX est poussée sur la pile et \scanf est appelée.
+
+\printf est appelée ensuite avec son premier argument --- un pointeur sur la chaîne:
+\TT{You entered \%d...\textbackslash{}n}.
+
+Le second argument est préparé avec: \TT{mov ecx, [ebp-4]}.
+L'instruction stocke la valeur de la variable \TT{x} et non son adresse, dans le
+registre \ECX.
+
+Puis, la valeur de \ECX est stockée sur la pile et le dernier appel à \printf
+est effectué.
+
+\input{patterns/04_scanf/1_simple/olly.tex}
+
+\myparagraph{GCC}
+
+Compilons ce code avec GCC 4.4.1 sous Linux:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/1_simple/ex1_GCC.asm}
+
+\myindex{puts() instead of printf()}
+GCC a remplacé l'appel à \printf avec un appel à \puts. La raison de cela a été
+expliquée dans ~(\myref{puts}).
+
+% TODO: rewrite
+%\RU{Почему \scanf переименовали в \TT{\_\_\_isoc99\_scanf}, я честно говоря, пока не знаю.}
+%\EN{Why \scanf is renamed to \TT{\_\_\_isoc99\_scanf}, I do not know yet.}
+% 
+% Apparently it has to do with the ISO c99 standard compliance. By default GCC allows specifying a standard to adhere to.
+% For example if you compile with -std=c89 the outputted assmebly file will contain scanf and not __isoc99__scanf. I guess current GCC version adhares to c99 by default.
+% According to my understanding the two implementations differ in the set of suported modifyers (See printf man page)
+
+Comme dans l'exemple avec MSVC---les arguments sont placés dans la pile avec l'instruction
+\MOV.
+
+\myparagraph{By the way}
+
+Á propos, ce simple exemple est la démonstration du fait que le compilateur traduit
+une liste d'expression en bloc-\CCpp en une liste séquentielle d'instructions.
+% TODO FIXME: better translation / clarify ?
+Il n'y a rien entre les expressions en \CCpp, et le résultat en code machine,
+il n'y a rien entre le déroulement du flux de contrôle d'une expression à la suivante.

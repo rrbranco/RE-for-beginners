@@ -1,0 +1,28 @@
+MultiplyTest proc near               ; CODE XREF: Get386Stepping
+             xor     cx, cx
+loc_620555:                          ; CODE XREF: MultiplyTest+E
+             push    cx
+             call    Multiply
+             pop     cx
+             jb      short locret_620563
+             loop    loc_620555
+             clc
+locret_620563:                       ; CODE XREF: MultiplyTest+C
+             retn
+MultiplyTest endp
+
+Multiply     proc near               ; CODE XREF: MultiplyTest+5
+             mov     ecx, 81h
+             mov     eax, 417A000h
+             mul     ecx
+             cmp     edx, 2
+             stc
+             jnz     short locret_62057F
+             cmp     eax, 0FE7A000h
+             stc
+             jnz     short locret_62057F
+             clc
+locret_62057F:                       ; CODE XREF: Multiply+10
+                                     ; Multiply+18
+             retn
+Multiply     endp

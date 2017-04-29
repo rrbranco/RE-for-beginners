@@ -1,0 +1,48 @@
+main:
+
+; IDA ne connait pas le nom des variables dans la pile locale
+; Nous pouvons leurs en donner un manuellement:
+i               = -0x10
+saved_FP        = -8
+saved_RA        = -4
+
+; prologue de la fonction:
+                addiu   $sp, -0x28
+                sw      $ra, 0x28+saved_RA($sp)
+                sw      $fp, 0x28+saved_FP($sp)
+                move    $fp, $sp
+; initialiser le compteur §à§ 2 et stocker cette valeur dans la pile locale
+                li      $v0, 2
+                sw      $v0, 0x28+i($fp)
+; pseudo-instruction. "BEQ $ZERO, $ZERO, loc_9C" c'est en fait:
+                b       loc_9C
+                or      $at, $zero ; slot de §délai§ de branchement, NOP
+
+loc_80:                                  # CODE XREF: main+48
+; charger la valeur du compteur depuis la pile locale et appeler printing_function():
+                lw      $a0, 0x28+i($fp)
+                jal     printing_function
+                or      $at, $zero ; slot de §délai§ de branchement, NOP
+; charger le compteur, l'§incrémenter§, et le stocker de nouveau:
+                lw      $v0, 0x28+i($fp)
+                or      $at, $zero ; NOP
+                addiu   $v0, 1
+                sw      $v0, 0x28+i($fp)
+
+loc_9C:                                  # CODE XREF: main+18
+; tester le compteur, est-ce 10?
+                lw      $v0, 0x28+i($fp)
+                or      $at, $zero ; NOP
+                slti    $v0, 0xA
+; si il est §inférieur à§ 10, sauter en loc_80 (§début§ du corps de la boucle):
+                bnez    $v0, loc_80
+                or      $at, $zero ; slot de §délai§ de branchement, NOP
+; fin, renvoyer 0:
+                move    $v0, $zero
+; §épilogue§ de la fonction:
+                move    $sp, $fp
+                lw      $ra, 0x28+saved_RA($sp)
+                lw      $fp, 0x28+saved_FP($sp)
+                addiu   $sp, 0x28
+                jr      $ra
+                or      $at, $zero ; slot de §délai§ de branchement, NOP

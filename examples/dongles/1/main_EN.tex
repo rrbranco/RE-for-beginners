@@ -1,0 +1,155 @@
+\newcommand{\PPC}{\InSqBrackets{\IT{PowerPC(tm) Microprocessor Family: The Programming Environments for 32-Bit Microprocessors}, (2000)}\footnote{\AlsoAvailableAs \url{http://yurichev.com/mirrors/PowerPC/6xx_pem.pdf}}}
+
+\newcommand{\PPCABI}{[Steve Zucker, SunSoft and Kari Karhi, IBM, \IT{SYSTEM V APPLICATION BINARY INTERFACE: PowerPC Processor Supplement}, (1995)]\footnote{\AlsoAvailableAs \url{http://yurichev.com/mirrors/PowerPC/elfspec_ppc.pdf}}}
+
+\subsection{Example \#1: MacOS Classic and PowerPC}
+
+\myindex{PowerPC}
+\myindex{Mac OS Classic}
+Here is an example of a program for MacOS Classic
+\footnote{pre-UNIX MacOS}, for PowerPC.
+The company who developed the software product
+has disappeared a long time ago, so the (legal) customer was afraid of physical dongle damage.
+
+While running without a dongle connected, a message box with the text
+"Invalid Security Device" appeared.
+
+Luckily, this text string could easily be found in the executable binary file.
+
+Let's pretend we are not very familiar both with Mac OS Classic and PowerPC, but will try anyway.
+
+\ac{IDA} 
+opened the executable file smoothly, reported its type as 
+"PEF (Mac OS or Be OS executable)" (indeed, it is a standard Mac OS Classic file format).
+
+By searching for the text string with the error message, we've got into this code fragment:
+
+\lstinputlisting[style=customasmPPC]{examples/dongles/1/1.lst}
+
+\myindex{ARM}
+\myindex{MIPS}
+Yes, this is PowerPC code.
+
+The CPU is a very typical 32-bit \ac{RISC} of 1990s era.
+
+Each instruction occupies 4 bytes (just as in MIPS and ARM) and the names somewhat resemble
+MIPS instruction names.
+
+\TT{check1()} is a function name we'll give to it later.
+\TT{BL} is \IT{Branch Link} 
+instruction, e.g., intended for calling subroutines.
+
+The crucial point is the \ac{BNE} instruction which jumps if the dongle protection check passes 
+or not if an error occurs: 
+then the address of the text string gets loaded into the r3 register for the subsequent passing into a message box routine.
+
+From the \PPCABI we will found out that the r3 register is used for return values (and r4, in case of 64-bit values).
+
+\myindex{x86!\Instructions!MOVZX}
+Another yet unknown instruction is \TT{CLRLWI}. 
+From \PPC we'll learn that this instruction does both clearing and loading. 
+In our case, it clears the 24 high bits from the value in r3
+and puts them in r0, so it is analogical to \MOVZX in x86 (\myref{movzx}),
+but it also sets the flags, so \ac{BNE} 
+can check them afterwards.
+
+Let's take a look into the \TT{check1()} function:
+
+\lstinputlisting[style=customasmPPC]{examples/dongles/1/check1.lst}
+
+As you can see in \ac{IDA}, that function is called from many places in the program, but only the r3 register's value
+is checked after each call.
+\myindex{thunk-functions}
+
+All this function does is to call the other function, so it is a \gls{thunk function}: 
+there are function prologue and epilogue, but the r3 register is not touched, so \TT{checkl()} 
+returns what \TT{check2()} returns.
+
+\ac{BLR} looks like the return from the function, but since \ac{IDA} does the function layout, we probably do not need
+to care about this.
+
+Since it is a typical \ac{RISC}, it seems that subroutines are called using a \gls{link register},
+just like in ARM.
+
+The \TT{check2()} function is more complex:
+
+\lstinputlisting[style=customasmPPC]{examples/dongles/1/check2.lst}
+
+\myindex{USB}
+
+We are lucky again: some function names are left in the executable 
+(debug symbols section? \\
+Hard to say while we are not very familiar with the file format, maybe it is
+some kind of PE exports? (\myref{PE_exports_imports})),\\
+like \TT{.RBEFINDNEXT()} and \TT{.RBEFINDFIRST()}.
+
+Eventually these functions call other functions with names like \TT{.GetNextDeviceViaUSB()}, 
+\TT{.USBSendPKT()},
+so these are clearly dealing with an USB device.
+
+There is even a function named 
+\TT{.GetNextEve3Device()}---sounds familiar, there was a Sentinel Eve3 
+dongle for ADB port (present on Macs) in 1990s.
+
+Let's first take a look on how the r3 register is set before return, while ignoring everything else.
+
+We know that a \q{good} r3 value has to be non-zero, zero r3 leads the execution
+flow to the message box with an error message.
+
+There are two \TT{li \%r3, 1} 
+instructions present in the function and one \TT{li \%r3, 0} 
+(\IT{Load Immediate}, i.e., loading a value into a register).
+The first instruction is at 
+\TT{0x001186B0}---and frankly speaking, it's hard to say what it means.
+
+What we see next is, however, easier to understand: 
+\TT{.RBEFINDFIRST()} is called:
+if it fails, 0 is written into r3 and we jump to \IT{exit}, otherwise another
+function is called (\TT{check3()})---if it fails too, 
+\TT{.RBEFINDNEXT()} 
+is called, probably in order to look for another USB device.
+
+N.B.: \TT{clrlwi. \%r0, \%r3, 16} it is analogical to what we already saw, but it clears
+16 bits, i.e., \\
+\TT{.RBEFINDFIRST()} 
+probably returns a 16-bit value.
+
+\TT{B} (stands for \IT{branch}) unconditional jump.
+
+\ac{BEQ} is the inverse instruction of \ac{BNE}.
+
+Let's see \TT{check3()}:
+
+\lstinputlisting[style=customasmPPC]{examples/dongles/1/check3.lst}
+
+There are a lot of calls to \TT{.RBEREAD()}. 
+
+Perhaps, the function returns some values from the dongle,
+so they are compared here with some hard-coded variables using \TT{CMPLWI}.
+
+We also see that the r3 register is also filled before each call to \TT{.RBEREAD()} 
+with one of these values: 0, 1, 8, 0xA, 0xB, 0xC, 0xD, 4, 5.
+Probably a memory address or something like that?
+
+Yes, indeed, by googling these function names it is easy to find the Sentinel Eve3 dongle manual!
+
+Perhaps we don't even have to learn any other PowerPC instructions: all this function does is just
+call \TT{.RBEREAD()}, compare its results with the constants and returns 1 if the comparisons
+are fine or 0 otherwise.
+
+OK, all we've got is that \TT{check1()} has always to return 1 or any other non-zero value.
+
+But since we are not very confident in our knowledge of PowerPC instructions, we are going to be careful: we will patch the jumps in \TT{check2()} at
+\TT{0x001186FC} and \TT{0x00118718}.
+
+At \TT{0x001186FC} we'll write bytes 0x48 and 0 thus converting the \ac{BEQ} instruction in an \TT{B} (unconditional jump):
+we can spot its opcode in the code without even referring to \PPC.
+
+At \TT{0x00118718} we'll write 0x60 and 3 zero bytes, thus converting it to a
+\ac{NOP} instruction:
+Its opcode we could spot in the code too.
+
+And now it all works without a dongle connected.
+
+In summary, such small modifications can be done with \ac{IDA} and minimal assembly language knowledge.
+

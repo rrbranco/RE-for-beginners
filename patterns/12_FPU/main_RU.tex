@@ -1,0 +1,111 @@
+\section{\FPUChapterName}
+\label{sec:FPU}
+
+\newcommand{\FNURLSTACK}{\footnote{\href{http://go.yurichev.com/17123}{wikipedia.org/wiki/Stack\_machine}}}
+\newcommand{\FNURLFORTH}{\footnote{\href{http://go.yurichev.com/17124}{wikipedia.org/wiki/Forth\_(programming\_language)}}}
+\newcommand{\FNURLIEEE}{\footnote{\href{http://go.yurichev.com/17125}{wikipedia.org/wiki/IEEE\_floating\_point}}}
+\newcommand{\FNURLSP}{\footnote{\href{http://go.yurichev.com/17126}{wikipedia.org/wiki/Single-precision\_floating-point\_format}}}
+\newcommand{\FNURLDP}{\footnote{\href{http://go.yurichev.com/17127}{wikipedia.org/wiki/Double-precision\_floating-point\_format}}}
+\newcommand{\FNURLEP}{\footnote{\href{http://go.yurichev.com/17128}{wikipedia.org/wiki/Extended\_precision}}}
+
+\ac{FPU}~--- блок в процессоре работающий с числами с плавающей запятой.
+
+Раньше он назывался \q{сопроцессором} и он стоит немного в стороне от \ac{CPU}.
+
+\subsection{IEEE 754}
+
+Число с плавающей точкой в формате IEEE 754 состоит из \IT{знака}, \IT{мантиссы}\footnote{\IT{significand} или \IT{fraction} 
+в англоязычной литературе} и \IT{экспоненты}.
+
+\subsection{x86}
+
+Перед изучением \ac{FPU} в x86 полезно ознакомиться с тем как работают стековые машины\FNURLSTACK 
+или ознакомиться с основами языка Forth\FNURLFORTH.
+
+\myindex{Intel!80486}
+\myindex{Intel!FPU}
+Интересен факт, что в свое время (до 80486) сопроцессор был отдельным чипом на материнской плате, 
+и вследствие его высокой цены, он не всегда присутствовал. Его можно было докупить и установить отдельно
+\footnote{Например, Джон Кармак использовал в своей игре Doom числа с фиксированной запятой 
+(\href{http://go.yurichev.com/17357}{ru.wikipedia.org/wiki/Число\_с\_фиксированной\_запятой}), хранящиеся
+в обычных 32-битных \ac{GPR} (16 бит на целую часть и 16 на дробную),
+чтобы Doom работал на 32-битных компьютерах без FPU, т.е. 80386 и 80486 SX.}.
+Начиная с 80486 DX в состав процессора всегда входит FPU.
+
+\myindex{x86!\Instructions!FWAIT}
+Этот факт может напоминать такой рудимент как наличие инструкции \INS{FWAIT}, которая заставляет
+\ac{CPU} ожидать, пока \ac{FPU} закончит работу.
+Другой рудимент это тот факт, что опкоды \ac{FPU}-инструкций начинаются с т.н. \q{escape}-опкодов 
+(\GTT{D8..DF}) как опкоды, передающиеся в отдельный сопроцессор.
+
+\myindex{IEEE 754}
+\label{FPU_is_stack}
+FPU имеет стек из восьми 80-битных регистров: \ST{0}..\ST{7}.
+Для краткости, IDA и \olly отображают \ST{0} как \GTT{ST},
+что в некоторых учебниках и документациях означает \q{Stack Top} (\q{вершина стека}).
+Каждый регистр может содержать число в формате IEEE 754\FNURLIEEE.
+
+\subsection{ARM, MIPS, x86/x64 SIMD}
+
+В ARM и MIPS FPU это не стек, а просто набор регистров.
+
+Такая же идеология применяется в расширениях SIMD в процессорах x86/x64.
+
+\subsection{\CCpp}
+
+\myindex{float}
+\myindex{double}
+В стандартных \CCpp имеются два типа для работы с числами с плавающей запятой: 
+\Tfloat (\IT{число одинарной точности}\FNURLSP, 32 бита)
+\footnote{Формат представления чисел с плавающей точкой одинарной точности затрагивается в разделе 
+\IT{\WorkingWithFloatAsWithStructSubSubSectionName}~(\myref{sec:floatasstruct}).}
+и \Tdouble (\IT{число двойной точности}\FNURLDP, 64 бита).
+
+В \InSqBrackets{\TAOCPvolII 246} мы можем найти что \IT{single-precision} означает, что значение с плавающей точкой может быть
+помещено в одно [32-битное] машинное слово, а \IT{doulbe-precision} означает, что оно размещено в двух словах (64 бита).
+
+\myindex{long double}
+GCC также поддерживает тип \IT{long double} (\IT{extended precision}\FNURLEP, 80 бит), но MSVC~--- нет.
+
+Несмотря на то, что \Tfloat занимает столько же места, сколько и \Tint на 32-битной архитектуре, 
+представление чисел, разумеется, совершенно другое.
+
+\input{patterns/12_FPU/1_simple/main}
+\input{patterns/12_FPU/2_passing_floats/main}
+\input{patterns/12_FPU/3_comparison/main}
+
+\subsection{Некоторые константы}
+
+В Wikipedia легко найти представление некоторых констант в IEEE 754.
+Любопытно узнать, что 0.0 в IEEE 754 представляется как 32 нулевых бита (для одинарной точности) или 64 нулевых бита
+(для двойной).
+Так что, для записи числа 0.0 в переменную в памяти или регистр, можно пользоваться инструкцией \MOV, или \TT{XOR reg, reg}.
+\myindex{\CStandardLibrary!memset()}
+Это тем может быть удобно, что если в структуре есть много переменных разных типов, то обычной ф-ций memset()
+можно установить все целочисленные переменные в 0, все булевы переменные в \IT{false}, все указатели в NULL,
+и все переменные с плавающей точкой (любой точности) в 0.0.
+
+\subsection{Копирование}
+
+По инерции можно подумать, что для загрузки и сохранения (и, следовательно, копирования) чисел в формате
+IEEE 754 нужно использовать пару инструкций \INS{FLD}/\INS{FST}.
+Тем не менее, этого куда легче достичь используя обычную инструкцию \INS{MOV},
+которая, конечно же, просто копирует значения побитово.
+
+\subsection{Стек, калькуляторы и обратная польская запись}
+
+\myindex{Обратная польская запись}
+Теперь понятно, почему некоторые старые калькуляторы используют обратную польскую запись
+\footnote{\href{http://go.yurichev.com/17355}{ru.wikipedia.org/wiki/Обратная\_польская\_запись}}.
+
+Например для сложения 12 и 34 нужно было набрать 12, потом 34, потом нажать знак \q{плюс}.
+
+Это потому что старые калькуляторы просто реализовали стековую машину и это было куда проще, чем обрабатывать сложные выражения со скобками.
+
+\subsection{x64}
+
+О том, как происходит работа с числами с плавающей запятой в x86-64, читайте здесь: \myref{floating_SIMD}.
+
+% sections
+\input{patterns/12_FPU/exercises}
+

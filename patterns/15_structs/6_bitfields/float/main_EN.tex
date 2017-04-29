@@ -1,0 +1,33 @@
+\subsubsection{\WorkingWithFloatAsWithStructSubSubSectionName}
+\label{sec:floatasstruct}
+
+As we already noted in the section about FPU~(\myref{sec:FPU}), 
+both \Tfloat and \Tdouble types consist of a \IT{sign}, 
+a \IT{significand} (or \IT{fraction}) and an \IT{exponent}.
+But will we be able to work with these fields directly? Let's try this with \Tfloat.
+
+\input{float_IEEE754.tex}
+
+\lstinputlisting[style=customc]{patterns/15_structs/6_bitfields/float/float_EN.c}
+
+The \TT{float\_as\_struct} structure occupies the same amount of  memory as \Tfloat, i.e., 4 bytes or 32 bits.
+
+Now we are setting the negative sign in the input value and also, by adding 2 to the exponent, 
+we thereby multiply the whole number by \TT{$2^2$}, i.e., by 4.
+
+Let's compile in MSVC 2008 without optimization turned on:
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2008,style=customasmx86]{patterns/15_structs/6_bitfields/float/float_msvc_EN.asm}
+
+A bit redundant.
+If it was compiled with \Ox flag there would be no \TT{memcpy()} call,
+the \TT{f} variable is used directly.
+But it is easier to understand by looking at the unoptimized version.
+
+What would GCC 4.4.1 with \Othree do?
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.1,style=customasmx86]{patterns/15_structs/6_bitfields/float/float_gcc_O3_EN.asm}
+
+The \ttf function is almost understandable. However, what is interesting is that GCC was able to calculate
+the result of \TT{f(1.234)} during compilation despite all this hodge-podge with the structure fields
+and prepared this argument to \printf{} as precalculated at compile time!

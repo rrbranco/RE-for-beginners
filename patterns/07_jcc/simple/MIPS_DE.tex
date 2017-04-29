@@ -1,0 +1,36 @@
+\subsubsection{MIPS}
+Ein wesentliches Feature von MIPS ist das Fehlen von Flags.
+Der Grund dafür ist offenbar, dass die Analyse von Datenabhängigeiten dadurch vereinfacht wird.
+
+
+\myindex{x86!\Instructions!SETcc}
+\myindex{MIPS!\Instructions!SLT}
+\myindex{MIPS!\Instructions!SLTU}
+Es gibt Befehle, die Ähnlichkeit mit \INS{SETcc} in x86 haben:\INS{SLT} (\q{Set on Less Than}: vorzeichenbehaftete
+Version) und \INS{SLTU} (Version ohne Vorzeichen).
+Diese Befehle setzen das Zielregister auf den Wert 1, falls die Bedingung wahr ist und ansonsten auf 0.
+
+
+\myindex{MIPS!\Instructions!BEQ}
+\myindex{MIPS!\Instructions!BNE}
+Das Zielregister wird dann mit \INS{BEQ} (\q{Branch on Equal}) oder \INS{BNE} (\q{Branch on Not Equal}) überprüft und
+gegebenenfalls ein Sprung ausgeführt. 
+Dieses Befehlspaar muss also in MIPS für Vergleiche und Verzweigungen verwendet werden.
+Beginnen wir mit der vorzeichenbehafteten Version unserer Funtion:
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5
+(IDA),style=customasmMIPS]{patterns/07_jcc/simple/O0_MIPS_signed_IDA_DE.lst}
+
+\INS{SLT REG0, REG0, REG1} wird von IDA auf seine kürzere Form reduziert:\\
+\INS{SLT REG0, REG1}.
+\myindex{MIPS!\Pseudoinstructions!BEQZ}
+Wir finden dort auch den Pseudo-Befehl \INS{BEQZ} (\q{Branch if Equal to Zero}), die \INS{BEQ REG, \$ZERO, LABEL}
+entspricht.
+
+\myindex{MIPS!\Instructions!SLTU}
+Die vorzeichenlose Version ist identisch, aber \INS{SLTU} (vorzeichenlose Version, daher das \q{U} im Namen) wird
+anstelle von \INS{SLT} verwendet:
+
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/07_jcc/simple/O0_MIPS_unsigned_IDA.lst}
+

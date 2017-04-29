@@ -1,0 +1,54 @@
+\subsection{Calculating absolute value}
+\label{sec:abs}
+
+A simple function:
+
+\lstinputlisting[style=customc]{abs.c}
+
+\subsubsection{\Optimizing MSVC}
+
+This is how the code is usually generated:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{patterns/07_jcc/abs/abs_MSVC2012_Ox_x64_EN.asm}
+
+GCC 4.9 does mostly the same.
+
+\subsubsection{\OptimizingKeilVI: \ThumbMode}
+
+\lstinputlisting[caption=\OptimizingKeilVI: \ThumbMode,style=customasmARM]{patterns/07_jcc/abs/abs_Keil_thumb_O3_EN.s}
+
+\myindex{ARM!\Instructions!RSB}
+
+ARM lacks a negate instruction, so the Keil compiler uses the \q{Reverse Subtract} instruction, which just subtracts with reversed operands.
+
+\subsubsection{\OptimizingKeilVI: \ARMMode}
+
+It is possible to add condition codes to some instructions in ARM mode, so that is what the Keil compiler does:
+
+\lstinputlisting[caption=\OptimizingKeilVI: \ARMMode,style=customasmARM]{patterns/07_jcc/abs/abs_Keil_ARM_O3_EN.s}
+
+Now there are no conditional jumps and this is good: \myref{branch_predictors}.
+
+\subsubsection{\NonOptimizing GCC 4.9 (ARM64)}
+
+\myindex{ARM!\Instructions!XOR}
+
+ARM64 has instruction \INS{NEG} for negating:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 (ARM64),style=customasmARM]{patterns/07_jcc/abs/abs_GCC49_ARM64_O0_EN.s}
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/07_jcc/abs/MIPS_O3_IDA_EN.lst}
+
+\myindex{MIPS!\Instructions!BLTZ}
+Here we see a new instruction: \INS{BLTZ} (\q{Branch if Less Than Zero}).
+\myindex{MIPS!\Instructions!SUBU}
+\myindex{MIPS!\Pseudoinstructions!NEGU}
+
+There is also the \INS{NEGU} pseudo instruction, which just does subtraction from zero.
+The \q{U} suffix in both \INS{SUBU} and \INS{NEGU} implies that no exception to be raised in case of integer overflow.
+
+\subsubsection{Branchless version?}
+
+You could have also a branchless version of this code. This we will review later: \myref{chap:branchless_abs}.

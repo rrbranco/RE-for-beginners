@@ -1,0 +1,40 @@
+\section{Function prologue and epilogue}
+\label{sec:prologepilog}
+\myindex{Function epilogue}
+\myindex{Function prologue}
+
+A function prologue is a sequence of instructions at the start of a function. It often looks something like the following code fragment:
+
+\begin{lstlisting}[style=customasmx86]
+    push    ebp
+    mov     ebp, esp
+    sub     esp, X
+\end{lstlisting}
+
+What these instruction do: save the value in the \EBP register,
+set the value of the \EBP register to the value of the \ESP and then allocate space on the stack 
+for local variables.
+
+The value in the \EBP stays the same over the period of the function execution and is to be used for local variables and 
+arguments access. 
+For the same purpose one can use \ESP, but since it changes over time this approach is not too convenient.
+
+The function epilogue frees the allocated space in the stack, returns the value in the \EBP register back to its initial state 
+and returns the control flow to the \gls{caller}:
+
+\begin{lstlisting}[style=customasmx86]
+    mov    esp, ebp
+    pop    ebp
+    ret    0
+\end{lstlisting}
+
+% what about calling convention?
+Function prologues and epilogues are usually detected in disassemblers for function delimitation.
+
+\subsection{\Recursion}
+
+\myindex{\Recursion}
+Epilogues and prologues can negatively affect the recursion performance.
+
+More about recursion in this book: \myref{Recursion_and_tail_call}.
+

@@ -1,0 +1,16 @@
+\section{Calls to assert()}
+\myindex{\CStandardLibrary!assert()}
+
+Sometimes the presence of the \TT{assert()} macro is useful too: 
+commonly this macro leaves source file name, line number and condition in the code.
+
+The most useful information is contained in the assert's condition, we can deduce variable names or structure field
+names from it. Another useful piece of information are the file names---we can try to deduce what type of
+code is there.
+Also it is possible to recognize well-known open-source libraries by the file names.
+
+\lstinputlisting[caption=Example of informative assert() calls,style=customasmx86]{digging_into_code/assert_examples.lst}
+
+It is advisable to \q{google} both the conditions and file names, which can lead us to an open-source library.
+For example, if we \q{google} \q{sp->lzw\_nbits <= BITS\_MAX}, this predictably 
+gives us some open-source code that's related to the LZW compression.

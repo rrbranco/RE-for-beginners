@@ -1,0 +1,41 @@
+\subsubsection{MIPS}
+
+MIPS может поддерживать несколько сопроцессоров (вплоть до 4), нулевой из которых это специальный
+управляющий сопроцессор, а первый~--- это FPU.
+
+Как и в ARM, сопроцессор в MIPS это не стековая машина. Он имеет 32 32-битных регистра (\$F0-\$F31):
+
+\myref{MIPS_FPU_registers}.
+Когда нужно работать с 64-битными значениями типа \Tdouble, используется пара 32-битных F-регистров.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/12_FPU/1_simple/MIPS_O3_IDA_RU.lst}
+
+Новые инструкции:
+
+\myindex{MIPS!\Instructions!LWC1}
+\myindex{MIPS!\Instructions!DIV.D}
+\myindex{MIPS!\Instructions!MUL.D}
+\myindex{MIPS!\Instructions!ADD.D}
+\begin{itemize}
+
+\item \INS{LWC1} загружает 32-битное слово в регистр первого сопроцессора (отсюда \q{1} в названии инструкции).
+
+\myindex{MIPS!\Pseudoinstructions!L.D}
+Пара инструкций \INS{LWC1} может быть объединена в одну псевдоинструкцию \INS{L.D}.
+
+\item \INS{DIV.D}, \INS{MUL.D}, \INS{ADD.D} производят деление, умножение и сложение соответственно 
+(\q{.D} в суффиксе означает двойную точность, \q{.S}~--- одинарную точность)
+
+\end{itemize}
+
+\myindex{MIPS!\Instructions!LUI}
+\myindex{\CompilerAnomaly}
+\label{MIPS_FPU_LUI}
+Здесь также имеется странная аномалия компилятора: инструкция \INS{LUI} помеченная нами вопросительным знаком.%
+
+Мне трудно понять, зачем загружать часть 64-битной константы типа \Tdouble в регистр \$V0.
+
+От этих инструкций нет толка.
+% TODO did you try checking out compiler source code?
+Если кто-то об этом что-то знает, пожалуйста, напишите автору емейл \footnote{\EMAIL}.
+

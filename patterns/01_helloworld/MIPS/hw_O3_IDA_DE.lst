@@ -1,0 +1,30 @@
+.text:00000000 main:
+.text:00000000
+.text:00000000 var_10          = -0x10
+.text:00000000 var_4           = -4
+.text:00000000
+; Funktionsprolog:
+; GP setzen:
+.text:00000000                 lui     $gp, (__gnu_local_gp >> 16)
+.text:00000004                 addiu   $sp, -0x20
+.text:00000008                 la      $gp, (__gnu_local_gp & 0xFFFF)
+; RA auf lokalem Stack sichern:
+.text:0000000C                 sw      $ra, 0x20+var_4($sp)
+; GP auf lokalem Stack sichern:
+; diese Anweisung fehlt aus irgendeinem Grund bei GCC:
+.text:00000010                 sw      $gp, 0x20+var_10($sp)
+; Lade Adresse von puts() von GP in $t9:
+.text:00000014                 lw      $t9, (puts & 0xFFFF)($gp)
+; Adresse der Zeichenkette in $a0 hinterlegen:
+.text:00000018                 lui     $a0, ($LC0 >> 16)  # "Hello, world!"
+; Springe zu puts(), speichere Ruecksprungadresse im link register:
+.text:0000001C                 jalr    $t9
+.text:00000020                 la      $a0, ($LC0 & 0xFFFF)  # "Hello, world!"
+; RA wiederherstellen:
+.text:00000024                 lw      $ra, 0x20+var_4($sp)
+; 0 von $zero zu $v0 kopieren:
+.text:00000028                 move    $v0, $zero
+; Ruecksrpung zu RA:
+.text:0000002C                 jr      $ra
+; Funktionsepilog:
+.text:00000030                 addiu   $sp, 0x20

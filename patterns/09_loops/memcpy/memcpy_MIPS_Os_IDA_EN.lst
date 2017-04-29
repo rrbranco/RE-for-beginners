@@ -1,0 +1,28 @@
+my_memcpy:
+; jump to loop check part:
+                b       loc_14
+; initialize counter (i) at 0
+; it will always reside in $v0:
+                move    $v0, $zero ; branch delay slot
+
+loc_8:                                   # CODE XREF: my_memcpy+1C
+; load byte as unsigned at address in $t0 to $v1:
+                lbu     $v1, 0($t0)
+; increment counter (i):
+                addiu   $v0, 1
+; store byte at $a3
+                sb      $v1, 0($a3)
+
+loc_14:                                  # CODE XREF: my_memcpy
+; check if counter (i) in $v0 is still less then 3rd function argument ("cnt" in $a2):
+                sltu    $v1, $v0, $a2
+; form address of byte in source block:
+                addu    $t0, $a1, $v0
+; $t0 = $a1+$v0 = src+i
+; jump to loop body if counter sill less then "cnt":
+                bnez    $v1, loc_8
+; form address of byte in destination block ($a3 = $a0+$v0 = dst+i):
+                addu    $a3, $a0, $v0 ; branch delay slot
+; finish if BNEZ wasnt triggered:
+                jr      $ra
+                or      $at, $zero ; branch delay slot, NOP

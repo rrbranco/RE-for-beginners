@@ -1,0 +1,26 @@
+\subsubsection{MSVC: x86-64}
+
+\myindex{x86-64}
+Proviamo anche con MSVC a 64-bit:
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/01_helloworld/MSVC_x64.asm}
+
+\myindex{fastcall}
+
+In x86-64, tutti i registri sono stati estesi a 64-bit ed il loro nome ha il prefisso \TT{R-}.
+Per usare lo stack meno spesso (in altre parole, per accedere meno spesso alla memoria esterna/cache), esiste un metodo molto diffuso per passare gli argomenti delle funzioni tramite i registri (\IT{fastcall})
+\myref{fastcall}.
+Ovvero, una parte degli argomenti è passata attraverso i registri, il resto ---attraverso lo stack.
+In Win64, 4 argpmenti di funzione sono passati nei registri \RCX, \RDX, \Reg{8}, \Reg{9}.
+Questo è ciò che vediamo qui: un puntatore alla stringa per \printf è adesso passato nel registro \RCX anziché tramite lo stack.
+I puntatori adesso sono a 64-bit , quindi sono passati nei registri a 64-bit (aventi il prefisso \TT{R-}).
+E' comunque possibile, per retrocompatibilità, accedere alle parti a 32-bit parts, usando il prefisso \TT{E-}.
+I registri \RAX/\EAX/\AX/\AL in x86-64 appaiono così:
+
+\RegTableOne{RAX}{EAX}{AX}{AH}{AL}
+
+La funzione \main restituisce un valore di tipo \Tint{}, che in \CCpp, per migliore retrocompatibilità e portabilità, resta ancora a 32-bit, motivo per cui il registro \EAX viene svuotato invece di \RAX{} alla fine della funzione (i.e., la parte a 32-bit
+del registro).
+Ci sono anche 40 byte allocati nello stack locale.
+Questo spazio è detto \q{shadow space}, di cui parleremo più avanti: \myref{shadow_space}.
+

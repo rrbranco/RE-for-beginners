@@ -1,0 +1,185 @@
+\subsection{Array von Stringpointern}
+\label{array_of_pointers_to_strings}
+Hier ist ein Beispiel für ein Array aus Pointern.
+
+\lstinputlisting[caption=Get month name,label=get_month1,style=customc]{patterns/13_arrays/45_month_1D/month1_DE.c}
+
+\subsubsection{x64}
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{patterns/13_arrays/45_month_1D/month1_MSVC_2013_x64_Ox.asm}
+
+Der Code ist sehr einfach:
+
+\begin{itemize}
+
+\item
+\myindex{x86!\Instructions!MOVSXD}
+
+Der erste \INS{MOVSXD} Befehl kopiert einen 32-Bit-Wert aus \ECX (wohin das $month$ Argument übergeben wird) nach \RAX
+und erweitert ihn um ein Vorzeichen (da $month$ vom Typ \Tint ist).
+
+Der Grund für die Erweiterung ist, dass dieser 32-Bit-Wert in Berechnungen mit anderen 64-Bit-Werten zusammen verwendet
+wird.
+\footnote{Es ist seltsam, aber negative Arrayindizes für $month$ können hier verwendet werden
+(negative Arrayindizes werden später erklärt: \myref{negative_array_indices}).
+Wenn dies passiert, wird der negative Eingabewert vom Typ \Tint korrekt um ein Vorzeichen erweitert und das zugehörige
+Element vor der Tabelle wird ausgewählt. Ohne Vorzeichenerweiterung würde es nicht korrekt funktionieren.}. 
+
+\item
+Danach wird die Adresse der Pointertabelle nach \RCX geladen.
+
+\item
+Schließlich wird der Eingabewert ($month$) mit 9 multipliziert und zur Adresse addiert.
+Es gilt: wir befinden uns in einer 64-Bit-Umgebung und alle Adressen (oder Pointer) benötigen genau 64 Bit (oder 8 Byte)
+zum Speichern.
+Deshalb ist jedes Element der Tabelle 8 Byte breit.
+Ebenfalls deshalb müssen, um ein spezifisches Element auszuwählen $month\cdot 8$ Bytes vom Start weg übersprungen
+werden.
+Genau das tut \MOV. Zusätzlich lädt dieser Befehl auch ein Element in diese Adresse.
+Für 1 würde das Element ein Pointer auf den String \q{Februar} sein, etc.
+
+\end{itemize}
+
+\Optimizing GCC 4.9 ist noch effizienter:
+\footnote{\q{0+} blieb im Listing,da der GCC Assembler-Output nicht sauber genug ist, um es zu eliminieren.}:
+
+\begin{lstlisting}[caption=\Optimizing GCC 4.9 x64,style=customasmx86]
+	movsx	rdi, edi
+	mov	rax, QWORD PTR month1[0+rdi*8]
+	ret
+\end{lstlisting}
+
+\myparagraph{32-bit MSVC}
+Kompilieren wir den Code mit dem 32-Bit-MSVC-Compiler:
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x86,style=customasmx86]{patterns/13_arrays/45_month_1D/month1_MSVC_2013_x86_Ox.asm}
+Der Eingabewert darf nicht zu einem 64-Bit-Wert erweitert werden und wird so wie er ist verwendet.
+
+Er wird mit 4 multipliziert, da die Tabellenelemente 32 Bit (oder 4 Byte) breit sind.
+
+% FIXME1 move to another file
+\subsubsection{32-bit ARM}
+
+\myparagraph{ARM im ARM mode}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/13_arrays/45_month_1D/month1_Keil_ARM_O3.s}
+
+% TODO Fix R1s
+Die Adresse der Tabelle wird nach R1 geladen.
+
+\myindex{ARM!\Instructions!LDR}
+Der ganze Rest wird mit lediglich einem \LDR Befehl erledigt.
+
+Danach wird der Eingabewert $month$ um zwei Bit nach links verschoben (dies entspricht einer Multiplikation mit 4),
+schließlich zu R1 addiert (wo sich die Adresse der Tabelle befindet) und schlußendlich wird ein Tabellenelement aus
+dieser Adresse geladen.
+
+Das 32-Bit-Tabellenelement wird aus der Tabelle nach R0 geladen.
+
+\myparagraph{ARM im Thumb mode}
+Der Code ist fast identisch, aber weniger dicht, denn der \LSL Suffix kann hier nicht an den \LDR Befehl angehängt
+werden:
+
+\begin{lstlisting}[style=customasmARM]
+get_month1 PROC
+        LSLS     r0,r0,#2
+        LDR      r1,|L0.64|
+        LDR      r0,[r1,r0]
+        BX       lr
+        ENDP
+\end{lstlisting}
+
+\subsubsection{ARM64}
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 ARM64,style=customasmARM]{patterns/13_arrays/45_month_1D/month1_GCC49_ARM64_O3.s}
+
+\myindex{ARM!\Instructions!ADRP/ADD pair}
+Die Adresse der Tabelle wird mit \ADRP/\ADD nach X1 geladen.
+
+Dann wird das zugehörige Element mit einem \LDR ausgewählt, das W0 nimmt (das Register, in dem sich der Eingabewert
+$month$ befindet), es um 3 Bit nach links verschiebt (was einer Multiplikation mit 8 entspricht), um ein Vorzeichen
+erweitert (das bedeutet der Suffix \q{sxtw}) und dann zu X0 addiert.
+Schließlich wird der 64-Bit-Wert aus der Tabelle nach X0 geladen.
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA),style=customasmMIPS]{patterns/13_arrays/45_month_1D/MIPS_O3_IDA_DE.lst}
+
+\subsubsection{Array Overflow}
+Unsere Funktion akzeptiert Werte im Bereich von 0 bis 11, aber was, wenn 12 übergeben wird?
+Es gibt an dieser Stelle in der Tabelle kein Element.
+
+Die Funktion wird also irgendeinen dort befindlichen Wert laden und ihn zurückgeben.
+
+Kurz danach kann eine andere Funktion versuchen, einen Textstring von dieser Adresse zu laden und könnte abstürzen.
+
+Kompilieren wir das Beipsiel mit MSVC für win64 und öffnen es in \IDA, um zu sehen was der Linker hinter der Tabelle
+angelegt hat:
+
+\lstinputlisting[caption=Executable file in IDA,style=customasmx86]{patterns/13_arrays/45_month_1D/MSVC2012_win64_1.lst}
+Die Monatsnamen befinden sich direkt dahinter.
+
+Unser Programm ist winzig, sodass hier nicht viele Daten im Datensegment abgelegt werden müssen, nur die Monatsnamen,
+Wir stellen aber fest, dass sich hier irgendetwas befinden könnte, was der Linker hier zufällig platziert hat.
+
+Was also, falls 12 an die Funktion übergeben wird? Das 13. Element wird zurückgegeben.
+
+Schauen wir uns an, wie die CPU die Bytes dort wie einen 64-Bit-Wert behandelt:
+
+\lstinputlisting[caption=Executable file in IDA,style=customasmx86]{patterns/13_arrays/45_month_1D/MSVC2012_win64_2.lst}
+
+Dieser Wert ist 0x797261756E614A.
+
+Kurz danach könnte eine andere Funktion (möglicherweise eine, die Strings verarbeitet) versuchen, Bytes von dieser
+Adresse zu lesen, weil sie hier einen C-String erwartet.
+
+Höchstwahrscheinlich wird dies zu einem Absturz führen, da der Wert keine gültige Adresse sein wird.
+
+\myparagraph{Schutz vor Array Overflows}
+
+\epigraph{Alles, was schiefgehen kann, wird auch schiefgehen}{Murphy's Law}
+Es ist ein wenig naiv zu erwarten, dass jeder Programmierer, der diese Funktion oder Bibliotek verwendet, nie ein
+größeres Argument als 11 übergeben wird.
+
+Es gibt einen Ansatz, der besagt \q{scheitere früh und laut} oder \q{scheitere schnell}, und dessen Aussage es ist, dass
+Probleme so früh wie möglich gemeldet werden und das Programm angehalten werden sollte.
+
+\myindex{\CStandardLibrary!assert()}
+Eine solche Methode in \CCpp sind Assertions.
+
+Wir modifizieren unser Programm, sodass es einen Fehler liefert, wenn ein falscher Wert übergeben wird:
+
+\lstinputlisting[caption=assert() added,style=customc]{patterns/13_arrays/45_month_1D/month1_assert.c}
+
+Das Assertionmakro prüft zu Beginn der Funktion auf valide Werte und liefert einen Fehler, wenn der Ausdruck falsch ist.
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{patterns/13_arrays/45_month_1D/MSVC2013_x64_Ox_checked.asm}
+Tatsächlich ist assert() keine Funktion, sondern ein Makro. Es prüft auf eine Bedingung und übergibt dann auch die
+Zeilennummer und den Dateinamen an eine andere Funktion, die diese Informationen an den Benutzer weiterleitet.
+
+Wir erkennen hier, dass sowohl Dateiname als auch Bedingung in UTF-16 kodiert sind.
+Die Zeilennummer wird ebenfalls übergeben (hier: 29).
+
+Dieser Mechanismus ist möglicherweise in allen Compilern der gleiche. 
+GCC erzeugt den folgenden Code:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 x64,style=customasmx86]{patterns/13_arrays/45_month_1D/GCC491_x64_O3_checked.s}
+Das Makro übergibt praktischerweise in GCC auch den Funktionsnamen.
+
+Es gibt aber nichts umsonst und das gilt auch für solche Überprüfungen.
+
+Sie machen das Programm langsamer, vor allem, wenn das assert() Makro in kleinen zeitkritischen Funktionen verwendet
+wird.
+
+MSVC zum Beispiel verwendet die Checks in den Debug Builds, aber lässt sie in den Release Builds weg.
+ 
+Microsoft \gls{Windows NT} kernels gibt es als \q{geprüfte} und \q{freie} Builds
+\footnote{\href{http://go.yurichev.com/17259}{msdn.microsoft.com/en-us/library/windows/hardware/ff543450(v=vs.85).aspx}}.
+Die erste Variante enthält Validierungsprüfungen (daher \q{geprüft}), die zweite nicht (daher \q{frei} von
+Überprüfungen).
+
+Natürlich arbeitet der \q{geprüfte} Kernel wegen der vielen Überprüfungen langsamer, sodass es normalerweise nur zum
+Debuggen verwendet wird.
+
+% FIXME: ARM? MIPS?

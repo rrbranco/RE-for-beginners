@@ -9,7 +9,7 @@ node at .begin:
 ptr=0x000349a0 _Next=0x00034988 _Prev=0x0028fe90 x=3 y=4
 node at .end:
 ptr=0x0028fe90 _Next=0x000349a0 _Prev=0x00034b40 x=5 y=6
-* let's count from the begin:
+* let's count from the beginning:
 1st element: 3 4
 2nd element: 1 2
 3rd element: 5 6

@@ -1,0 +1,12 @@
+﻿    MOV [counter], 2 ; initialisation
+    JMP label_check
+label_increment:
+    ADD [counter], 1 ; §incrémenter§ 
+label_check:
+    CMP [counter], 10
+    JGE exit
+    ; corps de la boucle
+    ; faire quelque cose ici
+    ; utiliser la variable compteur dans la pile locale
+    JMP label_increment
+exit:

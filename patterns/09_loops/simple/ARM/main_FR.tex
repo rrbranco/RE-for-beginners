@@ -1,0 +1,56 @@
+\subsubsection{ARM}
+
+\myparagraph{\NonOptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[label=Keil_number_sign,style=customasmARM]{patterns/09_loops/simple/ARM/Keil_ARM_O0.asm}
+
+Le compteur de boucle $i$ est stocké dans le registre \Reg{4}.
+L'instruction \INS{MOV R4, \#2} initialise $i$.
+Les instructions \INS{MOV R0, R4} et \INS{BL printing\_function} composent le corps
+de la boucle, la première instruction préparant l'argument pour la fonction \ttf
+et la seconde l'appellant.
+\myindex{ARM!\Instructions!ADD}
+L'instruction \INS{ADD R4, R4, \#1} ajoute 1 à la variable $i$ à chaque itération.
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!BLT}
+\INS{CMP R4, \#0xA} compare $i$ avec \TT{0xA} (10). 
+L'instruction suivante, \INS{BLT} (\IT{Branch Less Than}) saute si $i$ est inférieur
+à 10.
+Autrement, 0 est écrit dans \Reg{0} (puisque notre fonction renvoie 0) et l'exécution
+de la fonction se termine.
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/09_loops/simple/ARM/Keil_thumb_O3.asm}
+
+Pratiquement la même chose.
+
+\myparagraph{\OptimizingXcodeIV (\ThumbTwoMode)}
+\label{ARM_unrolled_loops}
+
+\lstinputlisting[style=customasmARM]{patterns/09_loops/simple/ARM/xcode_thumb_O3.asm}
+
+En fait, ceci était dans ma fonction \ttf:
+
+\begin{lstlisting}[style=customc]
+void printing_function(int i)
+{
+    printf ("%d\n", i);
+};
+\end{lstlisting}
+
+\myindex{Unrolled loop}
+\myindex{Inline code}
+Donc, non seulement LLVM \IT{déroule} la boucle, mais aussi \IT{inline} ma très
+simple fonction et insère son corps 8 fois au lieu de l'appeler.
+
+Ceci est possible lorsque la fonction est très simple (comme la mienne) et lorsqu'elle
+n'est pas trop appelée (comme ici).
+
+\myparagraph{ARM64: GCC 4.9.1 \Optimizing}
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1,style=customasmARM]{patterns/09_loops/simple/ARM/ARM64_GCC491_O3_FR.s}
+
+\myparagraph{ARM64: GCC 4.9.1 \NonOptimizing}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1 -fno-inline,style=customasmARM]{patterns/09_loops/simple/ARM/ARM64_GCC491_O3_FR.s}

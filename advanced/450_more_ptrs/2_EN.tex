@@ -1,0 +1,59 @@
+\subsection{Passing values as pointers; tagged unions}
+
+Here is an example on how to pass values in pointers:
+
+\begin{lstlisting}[label=unsigned_multiply_C,style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+uint64_t multiply1 (uint64_t a, uint64_t b)
+{
+	return a*b;
+};
+
+uint64_t* multiply2 (uint64_t *a, uint64_t *b)
+{
+	return (uint64_t*)((uint64_t)a*(uint64_t)b);
+};
+
+int main()
+{
+	printf ("%d\n", multiply1(123, 456));
+	printf ("%d\n", (uint64_t)multiply2((uint64_t*)123, (uint64_t*)456));
+};
+\end{lstlisting}
+
+It works smoothly and GCC 4.8.4 compiles both multiply1() and multiply2() functions identically!
+
+\begin{lstlisting}[label=unsigned_multiply_lst,style=customasmx86]
+multiply1:
+	mov	rax, rdi
+	imul	rax, rsi
+	ret
+
+multiply2:
+	mov	rax, rdi
+	imul	rax, rsi
+	ret
+\end{lstlisting}
+
+As long as you do not dereference pointer (in other words, you don't read any data from the address stored in pointer), everything will work fine.
+Pointer is a variable which can store anything, like usual variable.
+
+\myindex{x86!\Instructions!MUL}
+\myindex{x86!\Instructions!IMUL}
+Signed multiplication instruction (\IMUL) is used here instead of unsigned one (\MUL), read more about it here:
+\ref{IMUL_over_MUL}.
+
+\myindex{Tagged pointers}
+By the way, it's well-known hack to abuse pointers a little called \IT{tagged pointers}.
+In short, if all your pointers points to blocks of memory with size of, let's say, 16 bytes (or it is always aligned on 16-byte boundary), 4 lowest bits of pointer is always zero bits and this space
+can be used somehow.
+\myindex{LISP}
+It's very popular in LISP compilers and interpreters.
+They store cell/object type in these unused bits, this can save some memory.
+Even more, you can judge about cell/object type using just pointer, with no additional memory access.
+Read more about it: \InSqBrackets{\CNotes 1.3}.
+
+% TODO Example of tagged ptrs here
+

@@ -1,50 +1,7 @@
-\chapter{\HelloWorldSectionName}
-\label{sec:helloworld}
-
-\RU{Продолжим, используя знаменитый пример из книги}
-\EN{Let's use the famous example from the book}
-\PTBR{Vamos utilizar um exemplo famoso do livro}
-``The C programming Language''\cite{Kernighan:1988:CPL:576122}:
-
-\lstinputlisting{patterns/01_helloworld/hw.c}
-
-\section{x86}
-
-\input{patterns/01_helloworld/MSVC_x86}
-\ifdefined\IncludeGCC
-\input{patterns/01_helloworld/GCC_x86}
-\fi
-
-\section{x86-64}
-\input{patterns/01_helloworld/MSVC_x64}
-\ifdefined\IncludeGCC
-\input{patterns/01_helloworld/GCC_x64}
-\fi
-
-\ifdefined\IncludeGCC
-\input{patterns/01_helloworld/GCC_one_more}
-\fi
-\ifdefined\IncludeARM
-\input{patterns/01_helloworld/ARM/main}
-\fi
-\ifdefined\IncludeMIPS
-\input{patterns/01_helloworld/MIPS/main}
-\fi
-
-\section{\Conclusion{}}
-
-\RU{Основная разница между кодом x86/ARM и x64/ARM64 в том, что указатель на строку теперь 64-битный.}
-\EN{The main difference between x86/ARM and x64/ARM64 code is that the pointer to the string is now 64-bits in length.}
-\PTBR{A principal diferença entre códigos x86/ARM e x64/ARM64 é que os ponteiros para string tem 64-bits de tamanho.}
-\RU{Действительно, ведь для того современные \ac{CPU} и стали 64-битными, потому что подешевела память,
-её теперь можно поставить в компьютер намного больше, и чтобы её адресовать, 32-х бит уже
-недостаточно.}
-\EN{Indeed, modern \ac{CPU}s are now 64-bit due to both the reduced cost of memory and the greater demand for it by modern applications. 
-We can add much more memory to our computers than 32-bit pointers are able to address.}
-\PTBR{De fato, \ac{CPU}s modernas são 64-bit devido a redução do custo de memória e o aumento da demanda gerado por aplicações modernas. }
-\RU{Поэтому все указатели теперь 64-битные.}\EN{As such, all pointers are now 64-bit.}
-\PTBR{Como tal, todos os ponteiros agora são de 64 bits.}
-% sections
-\ifdefined\IncludeExercises
-\input{patterns/01_helloworld/exercises}
-\fi
+\EN{\input{patterns/01_helloworld/main_EN}}
+\RU{\input{patterns/01_helloworld/main_RU}}
+\NL{\input{patterns/01_helloworld/main_NL}}
+\ITA{\input{patterns/01_helloworld/main_ITA}}
+\PTBR{\input{patterns/01_helloworld/main_PTBR}}
+\DE{\input{patterns/01_helloworld/main_DE}}
+\FR{\input{patterns/01_helloworld/main_FR}}

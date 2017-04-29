@@ -1,0 +1,30 @@
+\subsubsection{ARM}
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/04_scanf/1_simple/ARM_IDA.lst}
+
+\myindex{\CLanguageElements!\Pointers}
+Damit \scanf Elemente einlesen kann, benötigt die Funktion einen Paramter--einen Pointer vom Typ \Tint.
+\Tint hat die Größe 32 Bit, wir benötigen also 4 Byte, um den Wert im Speicher abzulegen, und passt daher genau in ein 32-Bit-Register.
+\myindex{IDA!var\_?}
+Auf dem Stack wird Platz für die lokalen Variable \GTT{x} reserviert und IDA bezeichnet diese Variable mit \IT{var\_8}. 
+Eigentlich ist aber an dieser Stelle gar nicht notwendig, Platz auf dem Stack zu reservieren, da \ac{SP} (\gls{stack pointer} 
+bereits auf die Adresse zeigt und auch direkt verwendet werden kann.
+
+Der Wert von \ac{SP} wird also in das \Reg{1} Register kopiert und zusammen mit dem Formatierungsstring an \scanf übergeben.
+\myindex{ARM!\Instructions!LDR}
+Später wird mithilfe des \INS{LDR} Befehls dieser Wert vom Stack in das \Reg{1} Register verschoben um an \printf übergeben werden zu können.
+
+\myparagraph{ARM64}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1 ARM64,numbers=left,style=customasmARM]{patterns/04_scanf/1_simple/ARM64_GCC491_O0_DE.s}
+
+Im Stack Frame werden 32 Byte reserviert, was deutlich mehr als benötigt ist. Vielleicht handelt es sich um eine Frage des Aligning (dt. Angleichens) von Speicheradressen.
+Der interessanteste Teil ist, im Stack Frame einen Platz für die Variable $x$ zu finden (Zeile 22).
+Warum 28? Irgendwie hat der Compiler entschieden die Variable am Ende des Stack Frames anstatt an dessen Beginn abzulegen.
+Die Adresse wird an \scanf übergeben; diese Funktion speichert den Userinput an der genannten Adresse im Speicher.
+Es handelt sich hier um einen 32-Bit-Wert vom Typ \Tint. 
+Der Wert wird in Zeile 27 abgeholt und dann an \printf übergeben.
+
+

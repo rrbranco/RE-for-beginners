@@ -1,0 +1,170 @@
+\subsubsection{Passing function arguments}
+
+The most popular way to pass parameters in x86 is called \q{cdecl}:
+
+\begin{lstlisting}[style=customasmx86]
+push arg3
+push arg2
+push arg1
+call f
+add esp, 12 ; 4*3=12
+\end{lstlisting}
+
+\Gls{callee} functions get their arguments via the stack pointer.
+
+Therefore, this is how the argument values are located in the stack before the execution of the \ttf{} function's very first instruction:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+ESP & return address \\
+\hline
+ESP+4 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+ESP+8 & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+ESP+0xC & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+
+For more information on other calling conventions see also section~(\myref{sec:callingconventions}).
+
+\par
+By the way, the \gls{callee} function does not have any information about how many arguments were passed.
+C functions with a variable number of arguments (like \printf) determine their number using format string specifiers (which begin with the \% symbol).
+
+If we write something like:
+
+\begin{lstlisting}
+printf("%d %d %d", 1234);
+\end{lstlisting}
+
+\printf will print 1234, and then two random numbers\footnote{Not random in strict sense, but rather unpredictable: \myref{noise_in_stack}}, which were lying next to it in the stack.
+
+\par
+That's why it is not very important how we declare the \main function: as \main, \\
+\TT{main(int argc, char *argv[])} or \TT{main(int argc, char *argv[], char *envp[])}.
+
+In fact, the \ac{CRT}-code is calling \main roughly as:
+	
+\begin{lstlisting}[style=customasmx86]
+push envp
+push argv
+push argc
+call main
+...
+\end{lstlisting}
+
+If you declare \main as \main without arguments, they are, nevertheless, still present in the stack, but are not used.
+If you declare \main as  \TT{main(int argc, char *argv[])},
+you will be able to use first two arguments, and the third will remain \q{invisible} for your function.
+Even more, it is possible to declare \TT{main(int argc)}, and it will work.
+
+\myparagraph{Alternative ways of passing arguments}
+
+It is worth noting that nothing obliges programmers to pass arguments through the stack. It is not a requirement.
+One could implement any other method without using the stack at all.
+
+A somewhat popular way among assembly language newbies is to pass arguments via global variables, like:
+
+\lstinputlisting[caption=Assembly code,style=customasmx86]{patterns/02_stack/global_args.asm}
+
+But this method has obvious drawback: \IT{do\_something()} function cannot call itself recursively (or via another function),
+because it has to zap its own arguments.
+The same story with local variables: if you hold them in global variables, the function couldn't call itself.
+And this is also not thread-safe
+\footnote{Correctly implemented, each thread would have its own stack with its own arguments/variables.}.
+A method to store such information in stack makes this easier---it can hold as many function arguments and/or values,
+as much space it has.
+
+\InSqBrackets{\TAOCPvolI{}, 189} mentions even weirder schemes particularly convenient on IBM System/360.
+
+\myindex{MS-DOS}
+\myindex{x86!\Instructions!INT}
+
+MS-DOS had a way of passing all function arguments via registers, for example, this is piece of
+code for ancient 16-bit MS-DOS prints ``Hello, world!'':
+
+\begin{lstlisting}[style=customasmx86]
+mov  dx, msg      ; address of message
+mov  ah, 9        ; 9 means "print string" function
+int  21h          ; DOS "syscall"
+
+mov  ah, 4ch      ; "terminate program" function
+int  21h          ; DOS "syscall"
+
+msg  db 'Hello, World!\$'
+\end{lstlisting}
+
+\myindex{fastcall}
+This is quite similar to \myref{fastcall} method.
+And also it's very similar to calling syscalls in Linux (\myref{linux_syscall}) and Windows.
+
+\myindex{x86!\Flags!CF}
+If a MS-DOS function is going to return a boolean value (i.e., single bit, usually indicating error state),
+\TT{CF} flag was often used.
+
+For example:
+
+\begin{lstlisting}[style=customasmx86]
+mov ah, 3ch       ; create file
+lea dx, filename
+mov cl, 1
+int 21h
+jc  error
+mov file_handle, ax
+...
+error:
+...
+\end{lstlisting}
+
+In case of error, \TT{CF} flag is raised. Otherwise, handle of newly created file is returned via \TT{AX}.
+
+This method is still used by assembly language programmers.
+In Windows Research Kernel source code (which is quite similar to Windows 2003) we can find something like this
+(file \IT{base/ntos/ke/i386/cpu.asm}):
+
+\begin{lstlisting}[style=customasmx86]
+        public  Get386Stepping
+Get386Stepping  proc
+
+        call    MultiplyTest            ; Perform multiplication test
+        jnc     short G3s00             ; if nc, muttest is ok
+        mov     ax, 0
+        ret
+G3s00:
+        call    Check386B0              ; Check for B0 stepping
+        jnc     short G3s05             ; if nc, it's B1/later
+        mov     ax, 100h                ; It is B0/earlier stepping
+        ret
+
+G3s05:
+        call    Check386D1              ; Check for D1 stepping
+        jc      short G3s10             ; if c, it is NOT D1
+        mov     ax, 301h                ; It is D1/later stepping
+        ret
+
+G3s10:
+        mov     ax, 101h                ; assume it is B1 stepping
+        ret
+
+	...
+
+MultiplyTest    proc
+
+        xor     cx,cx                   ; 64K times is a nice round number
+mlt00:  push    cx
+        call    Multiply                ; does this chip's multiply work?
+        pop     cx
+        jc      short mltx              ; if c, No, exit
+        loop    mlt00                   ; if nc, YEs, loop to try again
+        clc
+mltx:
+        ret
+
+MultiplyTest    endp
+\end{lstlisting}
+

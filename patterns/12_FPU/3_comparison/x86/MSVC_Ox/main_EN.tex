@@ -1,0 +1,35 @@
+\myparagraph{\Optimizing MSVC 2010}
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{patterns/12_FPU/3_comparison/x86/MSVC_Ox/MSVC_EN.asm}
+
+\myindex{x86!\Instructions!FCOM}
+
+\FCOM differs from \FCOMP in the sense that it just compares the values and doesn't change the FPU stack. 
+Unlike the previous example, here the operands are in reverse order, 
+which is why the result of the comparison in \CThreeBits is different:
+
+\begin{itemize}
+\item If $a>b$ in our example, then \CThreeBits bits are to be set as: 0, 0, 0.
+\item If $b>a$, then the bits are: 0, 0, 1.
+\item If $a=b$, then the bits are: 1, 0, 0.
+\end{itemize}
+% TODO: table?
+
+The \INS{test ah, 65} instruction leaves just two bits~---\Cthree and \Czero. 
+Both will be zero if $a>b$: in that case the \JNE jump will not be triggered. 
+Then \INS{FSTP ST(1)} follows~---this instruction copies the value from \ST{0} to the operand and 
+pops one value from the FPU stack.
+In other words, the instruction copies \ST{0} (where the value of \GTT{\_a} is now) into \ST{1}.
+After that, two copies of {\_a} are at the top of the stack. 
+Then, one value is popped.
+After that, \ST{0} contains {\_a} and the function is finishes.
+
+The conditional jump \JNE is triggering in two cases: if $b>a$ or $a=b$. 
+\ST{0} is copied into \ST{0}, it is just like an idle (\ac{NOP}) operation, then one value 
+is popped from the stack and the top of the stack (\ST{0}) is contain what has been in \ST{1} before 
+(that is {\_b}). 
+Then the function finishes. 
+The reason this instruction is used here probably is because the \ac{FPU} 
+has no other instruction to pop a value from the stack and discard it.
+
+\input{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly_EN.tex}

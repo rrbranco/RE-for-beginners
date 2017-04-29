@@ -1,0 +1,94 @@
+\subsection{Schutz vor Buffer Overflows}
+\label{subsec:BO_protection}
+Es gibt verschiedene Möglichkeiten um sich vor solchen Problemen zu schützen, unabhängig von der Unachtsamkeit des \CCpp
+Programmierers. MSVC kennt Optionen wie\footnote{Compilerseitiger Schutz vor Buffer Overflows:
+\href{http://go.yurichev.com/17133}{wikipedia.org/wiki/Buffer\_overflow\_protection}}:
+
+\begin{lstlisting}
+ /RTCs Stack Frame runtime checking
+ /GZ Enable stack checks (/RTCs)
+\end{lstlisting}
+
+\myindex{x86!\Instructions!RET}
+\myindex{Function prologue}
+\myindex{Security cookie}
+Eine Methode ist eine Zufallszahl zwischen die lokalen Variablen auf dem Stack am Funktionsprolog zu schreiben und
+diesen im Funktionsepilog vor dem Beenden der Funktion zu überprüfen.
+Wenn der Wert nicht identisch ist, sollte der letzte \RET Befehl nicht ausgeführt werden, sondern das Programm
+angehalten werden. Der Prozess wird anhalten, aber das ist deutlich besser als eine Fernattacke auf Ihren Rechner.
+    
+\newcommand{\CANARYURL}{\href{http://go.yurichev.com/17134}{wikipedia.org/wiki/Domestic\_canary\#Miner.27s\_canary}}
+
+\myindex{Canary}
+Die Zufallszahl wird auch \q{canary} (dt. Kanarienvogel) genannt. Der Begriff stammt von den Kanarienvögeln der
+Minenarbeiter\footnote{\CANARYURL}, die früher benutzt wurde, um giftige Gase schnell zu erkennen
+
+Kanarienvögel reagieren sehr sensibel auf Grubengase und werden bei Gefahr sehr nervös oder sterben sogar.
+
+Wenn wir unser einfaches Arraybeispiel in \ac{MSVC} mit Optionen RTC1 und RTCs kompilieren~(\myref{arrays_simple})
+finden wir einen Aufruf von \TT{@\_RTC\_CheckStackVars@8}, eine Funktion am Ende der Funktion, die prüft, ob der
+\q{canary} korrekt ist.
+
+Schauen wir uns an, wie GCC die Sache handhabt.
+Betrachten wir ein Beispiel mit \TT{alloca()}~(\myref{alloca}):
+
+\lstinputlisting[style=customc]{patterns/02_stack/04_alloca/2_1.c}
+Ohne zusätzliche Optionen fügt GCC 4.7.3 standardmäßig dem Code einen \q{canary} zum Überprüfen hinzu:
+
+\lstinputlisting[caption=GCC 4.7.3,style=customasmx86]{patterns/13_arrays/3_BO_protection/gcc_canary_DE.asm}
+
+\myindex{x86!\Registers!GS}
+Der Zufallswert befindet sich in \TT{gs:20}.
+Er wird auf den Stack geschrieben und am Ende der Funktion wird der Wert auf dem Stack mit dem korrekten \q{canary} in
+\TT{gs:20} verglichen.
+Wenn die Werte ungleich sind, wird die Funktion \TT{\_\_stack\_chk\_fail} aufgerufen und wir erkennen in der Konsole in
+etwa das Folgende (Ubuntu 13.04 x86):
+
+\begin{lstlisting}
+*** buffer overflow detected ***: ./2_1 terminated
+======= Backtrace: =========
+/lib/i386-linux-gnu/libc.so.6(__fortify_fail+0x63)[0xb7699bc3]
+/lib/i386-linux-gnu/libc.so.6(+0x10593a)[0xb769893a]
+/lib/i386-linux-gnu/libc.so.6(+0x105008)[0xb7698008]
+/lib/i386-linux-gnu/libc.so.6(_IO_default_xsputn+0x8c)[0xb7606e5c]
+/lib/i386-linux-gnu/libc.so.6(_IO_vfprintf+0x165)[0xb75d7a45]
+/lib/i386-linux-gnu/libc.so.6(__vsprintf_chk+0xc9)[0xb76980d9]
+/lib/i386-linux-gnu/libc.so.6(__sprintf_chk+0x2f)[0xb7697fef]
+./2_1[0x8048404]
+/lib/i386-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0xb75ac935]
+======= Memory map: ========
+08048000-08049000 r-xp 00000000 08:01 2097586    /home/dennis/2_1
+08049000-0804a000 r--p 00000000 08:01 2097586    /home/dennis/2_1
+0804a000-0804b000 rw-p 00001000 08:01 2097586    /home/dennis/2_1
+094d1000-094f2000 rw-p 00000000 00:00 0          [heap]
+b7560000-b757b000 r-xp 00000000 08:01 1048602    /lib/i386-linux-gnu/libgcc_s.so.1
+b757b000-b757c000 r--p 0001a000 08:01 1048602    /lib/i386-linux-gnu/libgcc_s.so.1
+b757c000-b757d000 rw-p 0001b000 08:01 1048602    /lib/i386-linux-gnu/libgcc_s.so.1
+b7592000-b7593000 rw-p 00000000 00:00 0
+b7593000-b7740000 r-xp 00000000 08:01 1050781    /lib/i386-linux-gnu/libc-2.17.so
+b7740000-b7742000 r--p 001ad000 08:01 1050781    /lib/i386-linux-gnu/libc-2.17.so
+b7742000-b7743000 rw-p 001af000 08:01 1050781    /lib/i386-linux-gnu/libc-2.17.so
+b7743000-b7746000 rw-p 00000000 00:00 0
+b775a000-b775d000 rw-p 00000000 00:00 0
+b775d000-b775e000 r-xp 00000000 00:00 0          [vdso]
+b775e000-b777e000 r-xp 00000000 08:01 1050794    /lib/i386-linux-gnu/ld-2.17.so
+b777e000-b777f000 r--p 0001f000 08:01 1050794    /lib/i386-linux-gnu/ld-2.17.so
+b777f000-b7780000 rw-p 00020000 08:01 1050794    /lib/i386-linux-gnu/ld-2.17.so
+bff35000-bff56000 rw-p 00000000 00:00 0          [stack]
+Aborted (core dumped)
+\end{lstlisting}
+
+\myindex{MS-DOS}
+gs ist das sogenannte Segmentregister. Diese Register wurden zu Zeiten von MS-DOS und DOS-Erweiterungen häufig
+verwendet. Heute ist sein Zweck ein anderer:
+\myindex{TLS}
+\myindex{Windows!TIB}
+Kurz gesagt, zeigt das \TT{gs} Register in Linux stets auf den \ac{TLS}~(\myref{TLS})--hier werden threadspezifische
+Informationen gespeichert. In win32 spielt das \TT{fs} Register übrigens die gleiche Rolle und zeigt stets auf
+\ac{TIB}\footnote{\href{http://go.yurichev.com/17104}{wikipedia.org/wiki/Win32\_Thread\_Information\_Block}}.
+
+Mehr Informationen finden sich im Quellcode des Linux Kernels (zumindest in der Version 3.11), in\\
+\IT{arch/x86/include/asm/stackprotector.h} wird diese Variable in den Kommentaren beschrieben.
+
+\input{patterns/13_arrays/3_BO_protection/ARM_DE.tex}
+

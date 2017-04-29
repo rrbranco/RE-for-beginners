@@ -1,0 +1,101 @@
+\subsubsection{ARM64}
+
+\myparagraph{GCC}
+
+Compiliamo l'esempio con GCC 4.8.1 per ARM64:
+
+\lstinputlisting[numbers=left,label=hw_ARM64_GCC,caption=\NonOptimizing GCC 4.8.1 + objdump,style=customasmARM]{patterns/01_helloworld/ARM/hw.lst}
+
+In ARM64 non ci sono le modalita' Thumb e Thumb-2, solo ARM, quindi soltanto istruzioni a 32-bit.
+Il numero di registri e' raddoppiato: \myref{ARM64_GPRs}.
+I registri a 64-bit hanno il prefisso \TT{X-} prefixes, mentre le loro parti a 32-bit hanno il prefisso --- \TT{W-}.
+
+\myindex{ARM!\Instructions!STP}
+L'istruzione \TT{STP} (\IT{Store Pair}) 
+salva simultaneamente due registri nello stack: \RegX{29} e \RegX{30}.
+
+Questa istruzione puo' ovviamente salvare la coppia di valori in una posizione arbitraria in memoria, tuttavia in questo caso e'
+specificato il registro \ac{SP} , e di conseguenza la coppia viene salvata nello stack.
+
+I registri ARM64 sono a 64-bit, ognuno di essi ha dimensione pari a 8 bytes, quindi sono necessari 16 bytes per salvare i due registri.
+
+Il punto esclamativo (``!'') dopo l'operando sta a significare che 16 deve esse prima sottratto da \ac{SP} , e solo successivamente
+i valori devono essere scritti nello stack.
+
+Questo e' anche detto \IT{pre-index}.
+Per le differenze tra \IT{post-index} e \IT{pre-index} 
+leggere qui: \myref{ARM_postindex_vs_preindex}.
+
+Quindi, in termini del piu' familiare x86, la prima istruzione e' semplicamente l'analogo della coppia
+\TT{PUSH X29} e \TT{PUSH X30}.
+\RegX{29} in ARM64 e' usato come \ac{FP} , e \RegX{30} 
+come \ac{LR}, e questo spiega perche' sono salvati nel prologo di funzione e ripristinati nell'epilogo.
+
+La seconda istruzione copia \ac{SP} in \RegX{29} (o \ac{FP}).
+Cio' viene fatto per impostare lo stack frame della funzione.
+
+\label{pointers_ADRP_and_ADD}
+\myindex{ARM!\Instructions!ADRP/ADD pair}
+Le istruzioni \TT{ADRP} e \ADD sono usate per inserire
+l'indirizzo della stringa \q{Hello!} nel registro \RegX{0} , 
+poiche' il primo argomento della funzione viene passato in questo registro.
+
+Non esiste alcun tipo di istruzione in ARM in grado di salvare un numero molto grande in un registro (perche' la lunghezza delle
+istruzioni e' limitata a 4 byte, maggiori informazioni qui: \myref{ARM_big_constants_loading}).
+Percio' devono essere utilizzate piu' istruzioni. La prima (\TT{ADRP}) , scrive l'indirizzo della pagina di 4KiB (4KiB page)
+,in cui si trova la stringa, nel registro \RegX{0}, e la seconda (\ADD) aggiunge semplicemente il resto dell'indirizzo.
+Maggiori informazioni su questo tema: \myref{ARM64_relocs}.
+
+\TT{0x400000 + 0x648 = 0x400648}, e vediamo la nostra C-string \q{Hello!} nel \TT{.rodata} data segment a questo indirizzo.
+
+\myindex{ARM!\Instructions!BL}
+
+\puts viene chiamata subito dopo usando l'istruzione \TT{BL}. Questo e' stato gia' discusso: \myref{puts}.
+
+\MOV scrive 0 in \RegW{0}. 
+\RegW{0} e' la parte bassa a 32 bits del registro a 64-bit \RegX{0}:
+
+\input{ARM_X0_register}
+
+Il risultato della funzione e' restituito tramite \RegX{0} e \main restituisce 0, quindi e' cosi' che viene preparato 
+il valore da restituire.
+Ma perche' usare la parte a 32-bit?
+
+Perche' il tipo \Tint in ARM64, esattamente come in x86-64, e' a 32-bit, per maggiore compatibilita'.
+Quindi se una funzione restituisce un \Tint a 32-bit, solo la parte piu' bassa a 32 bits del registro \RegX{0} sara' valorizzata.
+
+Per verificare quanto detto, cambiamo leggermente l'esempio e ricompiliamolo.
+Adesso \main restituisce un valore a 64-bit:
+
+\begin{lstlisting}[caption=\main returning a value of \TT{uint64\_t} type,style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+uint64_t main()
+{
+        printf ("Hello!\n");
+        return 0;
+}
+\end{lstlisting}
+
+Il risultato e' lo stesso, ma quell'istruzione MOV adesso appare cosi': 
+
+\begin{lstlisting}[caption=\NonOptimizing GCC 4.8.1 + objdump]
+  4005a4:       d2800000        mov     x0, #0x0      // #0
+\end{lstlisting}
+
+\myindex{ARM!\Instructions!LDP}
+
+\INS{LDP} (\IT{Load Pair}) infine riprisina i registri \RegX{29} e \RegX{30}.
+
+Non c'e' il punto esclamativo dopo l'istruzione: cio' implica che il valore viene prima caricato dallo stack, e solo successivamente 
+\ac{SP} e' incrementato di 16.
+Cio' e' detto \IT{post-index}.
+
+\myindex{ARM!\Instructions!RET}
+Una nuova istruzione e' apparsa in ARM64: \RET. 
+Funziona esattamente come \TT{BX LR}, con l'aggiunta di uno speciale \IT{hint} bit, che informa la \ac{CPU}
+del fatto che si tratta di un ritorno da una funzione, e non soltanto una normale istruzione jump, cosi' che possa 
+essere eseguita in modo ottimale.
+
+A causa della semplicita' della funzione, GCC con le opzioni di ottimizzazione genera esattamente lo stesso codice.

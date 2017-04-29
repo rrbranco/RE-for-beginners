@@ -1,0 +1,138 @@
+\clearpage
+\mysubparagraph{Erstes \olly Beispiel: a=1.2 und b=3.4}
+\myindex{\olly}
+
+Laden wir das Beispiel in \olly:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC/olly1_1.png}
+\caption{\olly: erstes \FLD wurde ausgeführt}
+\label{fig:FPU_comparison_case1_olly1}
+\end{figure}
+Die aktuellen Parameter der Funktion sind: $a=1.2$ und $b=3.4$ (Wir finden sie
+auf dem Stack zwei 32-Bit-Werte). $b$ (3.4) wurde bereits nach \ST{0} geladen.
+Jetzt wird \FCOMP ausgeführt. 
+\olly zeigt das zweite Argument von \FCOMP, welches sich jetzt auf dem Stack
+befindet.
+
+\clearpage
+\FCOMP wurde ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC/olly1_2.png}
+\caption{\olly: \FCOMP wurde ausgeführt}
+\label{fig:FPU_comparison_case1_olly2}
+\end{figure}
+Wir sehen den Status der Flags der \ac{FPU}: sämtlich null. 
+Den geholten Wert finden wir unter \ST{7} wieder, auf die Gründe dafür sind
+wir bereits eingegangen:\myref{FPU_is_rather_circular_buffer}.
+
+\clearpage
+\FNSTSW wurde ausgeführt:
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC/olly1_3.png}
+\caption{\olly: \FNSTSW wurde ausgeführt}
+\label{fig:FPU_comparison_case1_olly3}
+\end{figure}
+Wir sehen, dass das \GTT{AX} Register Nullen enthält: das passt, da alle Flag
+auf Null gesetzt sind. (\olly disassembliert hier den Befehl \FNSTSW als
+\INS{FSTSW}--die beiden sind synonym).
+
+\clearpage
+\TEST wurde ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC/olly1_4.png}
+\caption{\olly: \TEST wurde ausgeführt}
+\label{fig:FPU_comparison_case1_olly4}
+\end{figure}
+
+Das \GTT{PF} Flag ist auf 1 gesetzt.
+
+Begründung: die Anzahö der auf null gesetzten Bits ist null, und Null ist eine
+gerade Zahl.
+\olly disassembliert \INS{JP} als \ac{JPE}--die beiden sind synonym--und dieser
+Befehl wird als nächstes ausgeführt.
+
+\clearpage
+\ac{JPE} wird ausgeführt, \FLD lädt den Wert von $b$ (3.4) nach \ST{0}:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC/olly1_5.png}
+\caption{\olly: das zweite \FLD wurde ausgeführt}
+\label{fig:FPU_comparison_case1_olly5}
+\end{figure}
+
+Die Funktion beendet ihre Arbeit.
+
+\clearpage
+\mysubparagraph{Zweites \olly Beispiel: a=5.6 und b=-4}
+
+Laden wir unser Beispiel in \olly:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC/olly2_1.png}
+\caption{\olly: erstes \FLD ausgeführt}
+\label{fig:FPU_comparison_case2_olly1}
+\end{figure}
+Die aktuellen Funktionsparameter sind: $a=5.6$ und $b=-4$.
+$b$ (-4) wurde bereits nach \ST{0} geladen.
+\FCOMP wird jetzt ausgeführt.
+\olly zeigt das zweite Argument von \FCOMP, welches sich jetzt auf dem Stack
+befindet.
+
+\clearpage
+\FCOMP wird ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC/olly2_2.png}
+\caption{\olly: \FCOMP wird ausgeführt}
+\label{fig:FPU_comparison_case2_olly2}
+\end{figure}
+Wir betrachten den Status der \ac{FPU} Flas: alle null, außer \Czero.
+
+\clearpage
+\FNSTSW wird ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC/olly2_3.png}
+\caption{\olly: \FNSTSW wird ausgeführt}
+\label{fig:FPU_comparison_case2_olly3}
+\end{figure}
+Wir sehen, dass das \GTT{AX} Register den Wert \GTT{0x100} enthält: das \Czero
+Flag sitzt auf dem achten Bit.
+
+\clearpage
+\TEST wird ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC/olly2_4.png}
+\caption{\olly: \TEST wird ausgeführt}
+\label{fig:FPU_comparison_case2_olly4}
+\end{figure}
+
+Das \GTT{PF}  Flag wird gelöscht. 
+Begründung: die Anzahl der gesetzten Bits in \GTT{0x100} ist 1 und 1 ist eine
+ungerade Zahl. \ac{JPE} wird jetzt übersprungen.
+
+\clearpage
+\ac{JPE} wurde nicht ausgelöst, sodass \FLD den Wert von $a$ (5.6) nach
+\ST{0} lädt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC/olly2_5.png}
+\caption{\olly: zweites \FLD wurde ausgeführt}
+\label{fig:FPU_comparison_case2_olly5}
+\end{figure}
+
+Die Funktion beendet ihre Arbeit.

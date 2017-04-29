@@ -1,0 +1,184 @@
+\subsubsection{x64: 8 arguments}
+
+\myindex{x86-64}
+\label{example_printf8_x64}
+Pour voir comment les autres arguments sont passés par la pile, changeons encore
+notre exemple en incrémentant le nombre d'argument à 9 (chaîne de format de
+\printf + 8 variables \Tint):
+
+\lstinputlisting[style=customc]{patterns/03_printf/2.c}
+
+\myparagraph{MSVC}
+
+Comme il a déjà été mentionné, les 4 premiers arguments sont passés par les registres
+\RCX, \RDX, \Reg{8}, \Reg{9} sous Win64, tandis les autres le sont---par la pile.
+C'est exactement de que l'on voit ici.
+Toutefois, l'instruction \MOV est utilisée ici à la place de \PUSH, donc les valeurs
+sont stockées sur la pile d'une manière simple.
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/03_printf/x86/2_MSVC_x64_FR.asm}
+
+Le lecteur observateur pourrait demander pourquoi 8 octets sont alloués sur la
+pile pour les valeurs \Tint, alors que 4 suffisent?
+Oui, il faut se rappeler: 8 octets sont alloués pour tout type de données plus
+petit que 64 bits.
+Ceci est instauré pour des raisons de commodités: cela rend facile le calcul
+de l'adresse de n'importe quel argument.
+En outre, ils sont tous situés à des adresses mémoires alignées.
+Il en est de même dans les environnements 32-bit: 4 octets sont réservés pour tout
+types de données.
+
+% also for local variables?
+
+\myparagraph{GCC}
+
+Le tableau est similaire pour les OS x86-64 *NIX, excepté que les 6 premiers arguments
+sont passés par les registres \RDI, \RSI, \RDX, \RCX, \Reg{8}, \Reg{9}.
+Tout les autres---par la pile.
+GCC génère du code stockant le pointeur de chaîne dans \EDI au lieu de \RDI{}---nous
+l'avons noté précédemment:
+\myref{hw_EDI_instead_of_RDI}.
+
+Nous avions également noté que le registre \EAX a été vidé avant l'appel à
+\printf: \myref{SysVABI_input_EAX}.
+
+\lstinputlisting[caption=GCC 4.4.6 x64 \Optimizing,style=customasmx86]{patterns/03_printf/x86/2_GCC_x64_FR.s}
+
+\myparagraph{GCC + GDB}
+\myindex{GDB}
+
+Essayons cet exemple dans \ac{GDB}.
+
+\begin{lstlisting}
+$ gcc -g 2.c -o 2
+\end{lstlisting}
+
+\begin{lstlisting}
+$ gdb 2
+GNU gdb (GDB) 7.6.1-ubuntu
+...
+Reading symbols from /home/dennis/polygon/2...done.
+\end{lstlisting}
+
+\begin{lstlisting}[caption=mettons le point d'arrêt à \printf{,} et lançons]
+(gdb) b printf
+Breakpoint 1 at 0x400410
+(gdb) run
+Starting program: /home/dennis/polygon/2 
+
+Breakpoint 1, __printf (format=0x400628 "a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%d; h=%d\n") at printf.c:29
+29	printf.c: No such file or directory.
+\end{lstlisting}
+
+Les registres \RSI/\RDX/\RCX/\Reg{8}/\Reg{9} ont les valeurs attendues.
+\RIP contient l'adresse de la toute première instruction de la fonction \printf.
+
+\begin{lstlisting}
+(gdb) info registers
+rax            0x0	0
+rbx            0x0	0
+rcx            0x3	3
+rdx            0x2	2
+rsi            0x1	1
+rdi            0x400628	4195880
+rbp            0x7fffffffdf60	0x7fffffffdf60
+rsp            0x7fffffffdf38	0x7fffffffdf38
+r8             0x4	4
+r9             0x5	5
+r10            0x7fffffffdce0	140737488346336
+r11            0x7ffff7a65f60	140737348263776
+r12            0x400440	4195392
+r13            0x7fffffffe040	140737488347200
+r14            0x0	0
+r15            0x0	0
+rip            0x7ffff7a65f60	0x7ffff7a65f60 <__printf>
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=inspectons la chaîne de format]
+(gdb) x/s $rdi
+0x400628:	"a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%d; h=%d\n"
+\end{lstlisting}
+
+Affichons la pile avec la commande x/g cette fois---\IT{g} est l'unité pour \IT{giant words}, i.e., mots de 64-bit.
+
+\begin{lstlisting}
+(gdb) x/10g $rsp
+0x7fffffffdf38:	0x0000000000400576	0x0000000000000006
+0x7fffffffdf48:	0x0000000000000007	0x00007fff00000008
+0x7fffffffdf58:	0x0000000000000000	0x0000000000000000
+0x7fffffffdf68:	0x00007ffff7a33de5	0x0000000000000000
+0x7fffffffdf78:	0x00007fffffffe048	0x0000000100000000
+\end{lstlisting}
+
+Le tout premier élément de la pile, comme dans le cas précédent, est \ac{RA}.
+3 valeurs sont aussi passées par la pile: 6, 7, 8.
+Nous voyons également que 8 est passé avec les 32-bits de poids fort non
+éffacés: \GTT{0x00007fff00000008}.
+C'est en ordre, car les valeurs sont d'un type \Tint, qui est 32-bit.
+Donc, la partie haute du registre ou l'élément de la pile peuvent contenir des
+\q{restes de données aléatoires}.
+
+%%If you take a look at where the control will return after the \printf execution,
+%%\ac{GDB} will show the entire \main function:
+Si vous regardez où le contrôle reviendra après l'exécution de \printf,
+\ac{GDB} affiche la fonction \main en entier:
+
+\begin{lstlisting}[style=customasmx86]
+(gdb) set disassembly-flavor intel
+(gdb) disas 0x0000000000400576
+Dump of assembler code for function main:
+   0x000000000040052d <+0>:	push   rbp
+   0x000000000040052e <+1>:	mov    rbp,rsp
+   0x0000000000400531 <+4>:	sub    rsp,0x20
+   0x0000000000400535 <+8>:	mov    DWORD PTR [rsp+0x10],0x8
+   0x000000000040053d <+16>:	mov    DWORD PTR [rsp+0x8],0x7
+   0x0000000000400545 <+24>:	mov    DWORD PTR [rsp],0x6
+   0x000000000040054c <+31>:	mov    r9d,0x5
+   0x0000000000400552 <+37>:	mov    r8d,0x4
+   0x0000000000400558 <+43>:	mov    ecx,0x3
+   0x000000000040055d <+48>:	mov    edx,0x2
+   0x0000000000400562 <+53>:	mov    esi,0x1
+   0x0000000000400567 <+58>:	mov    edi,0x400628
+   0x000000000040056c <+63>:	mov    eax,0x0
+   0x0000000000400571 <+68>:	call   0x400410 <printf@plt>
+   0x0000000000400576 <+73>:	mov    eax,0x0
+   0x000000000040057b <+78>:	leave  
+   0x000000000040057c <+79>:	ret    
+End of assembler dump.
+\end{lstlisting}
+
+Laissons se terminer l'exécution de \printf, exécutez l'instruction mettant \EAX
+à zéro, et notez que le registre \EAX à une valeur d'exactement zéro.
+\RIP pointe maintenant sur l'instruction \INS{LEAVE}, i.e, la pénultième de la
+fonction \main.
+
+\begin{lstlisting}
+(gdb) finish
+Run till exit from #0  __printf (format=0x400628 "a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%d; h=%d\n") at printf.c:29
+a=1; b=2; c=3; d=4; e=5; f=6; g=7; h=8
+main () at 2.c:6
+6		return 0;
+Value returned is $1 = 39
+(gdb) next
+7	};
+(gdb) info registers
+rax            0x0	0
+rbx            0x0	0
+rcx            0x26	38
+rdx            0x7ffff7dd59f0	140737351866864
+rsi            0x7fffffd9	2147483609
+rdi            0x0	0
+rbp            0x7fffffffdf60	0x7fffffffdf60
+rsp            0x7fffffffdf40	0x7fffffffdf40
+r8             0x7ffff7dd26a0	140737351853728
+r9             0x7ffff7a60134	140737348239668
+r10            0x7fffffffd5b0	140737488344496
+r11            0x7ffff7a95900	140737348458752
+r12            0x400440	4195392
+r13            0x7fffffffe040	140737488347200
+r14            0x0	0
+r15            0x0	0
+rip            0x40057b	0x40057b <main+78>
+...
+\end{lstlisting}

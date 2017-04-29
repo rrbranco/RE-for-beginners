@@ -1,5 +1,5 @@
-\index{x86!\Instructions!RET}
-\index{MS-DOS}
+\myindex{x86!\Instructions!RET}
+\myindex{MS-DOS}
 \item[RET] \RU{возврат из процедуры}\EN{return from subroutine}: \TT{POP tmp; JMP tmp}.
 
 \RU{В реальности}\EN{In fact}, RET 
@@ -10,10 +10,9 @@ RETN (\q{return near})
 \EN{or, in MS-DOS times, where the memory was addressed differently}
 (\myref{8086_memory_model}), \RU{в}\EN{into} RETF (\q{return far}).
 
-\RU{\TT{RET} может иметь операнд.}
-\EN{\TT{RET} can have an operand.}
-\RU{Тогда его работа будет такой}
-\EN{Then it works like this}: \TT{POP tmp; ADD ESP op1; JMP tmp}.
+\RU{\TT{RET} может иметь операнд.}\EN{\TT{RET} can have an operand.}
+\RU{Тогда его работа будет такой}\EN{Then it works like this}:\\
+\TT{POP tmp; ADD ESP op1; JMP tmp}.
 \TT{RET} \RU{с операндом обычно завершает функции с соглашением о вызовах \IT{stdcall}, см. также}
 \EN{with an operand usually ends functions in the \IT{stdcall} calling convention, see also}: \myref{sec:stdcall}.
 

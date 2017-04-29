@@ -1,0 +1,130 @@
+﻿\subsection{Loading a 32-bit constant into register}
+\label{MIPS_big_constants}
+
+\begin{lstlisting}[style=customc]
+unsigned int f()
+{
+	return 0x12345678;
+};
+\end{lstlisting}
+
+All instructions in MIPS, just like ARM, have a size of 32-bit, so it's not possible to
+embed a 32-bit constant into one instruction.
+\myindex{MIPS!\Instructions!LI}
+\myindex{MIPS!\Instructions!ORI}
+
+So one have to use at least two instructions: 
+the first loads the high part of the 32-bit number and the second
+one applies an OR operation, which effectively sets the low 16-bit part of the target register:
+
+\begin{lstlisting}[caption=GCC 4.4.5 -O3 (\assemblyOutput),style=customasmMIPS]
+        li      $2,305397760  # 0x12340000
+        j       $31
+        ori     $2,$2,0x5678 ; branch delay slot
+\end{lstlisting}
+
+\IDA is fully aware of such frequently encountered code patterns, 
+so, for convenience it shows the last \INS{ORI} instruction as the \INS{LI} pseudo instruction,
+which allegedly loads a full 32-bit number into the \$V0 register.
+
+\myindex{MIPS!\Instructions!LUI}
+
+\begin{lstlisting}[caption=GCC 4.4.5 -O3 (IDA),style=customasmMIPS]
+         lui     $v0, 0x1234
+         jr      $ra
+         li      $v0, 0x12345678 ; branch delay slot
+\end{lstlisting}
+
+The GCC assembly output has the LI pseudo instruction, but in fact, \INS{LUI} (\q{Load Upper Immediate}) is there,
+which stores a 16-bit value into the high part of the register.
+
+Let's see in \IT{objdump} output:
+
+\begin{lstlisting}[caption=objdump,style=customasmMIPS]
+00000000 <f>:
+   0:   3c021234        lui     v0,0x1234
+   4:   03e00008        jr      ra
+   8:   34425678        ori     v0,v0,0x5678
+\end{lstlisting}
+
+\subsubsection{Loading a 32-bit global variable into register}
+
+\begin{lstlisting}[style=customc]
+unsigned int global_var=0x12345678;
+
+unsigned int f2()
+{
+        return global_var;
+};
+\end{lstlisting}
+
+\myindex{MIPS!\Instructions!LW}
+
+This is slightly different: \INS{LUI} loads upper 16-bit from \IT{global\_var} into \$2 (or \$V0) and then \INS{LW} loads lower 16-bits summing it with the contents of \$2:
+
+\begin{lstlisting}[caption=GCC 4.4.5 -O3 (\assemblyOutput),style=customasmMIPS]
+f2:
+        lui     $2,%hi(global_var)
+        lw      $2,%lo(global_var)($2)
+        j       $31
+        nop	; branch delay slot
+
+	...
+
+global_var:
+        .word   305419896
+\end{lstlisting}
+
+\IDA is fully aware of often used \INS{LUI}/\INS{LW} instruction pair, so it coalesces both into a single \INS{LW} instruction:
+
+\begin{lstlisting}[caption=GCC 4.4.5 -O3 (IDA),style=customasmMIPS]
+_f2:
+                lw      $v0, global_var
+                jr      $ra
+                or      $at, $zero	; branch delay slot
+
+		...
+
+                .data
+                .globl global_var
+global_var:     .word 0x12345678         # DATA XREF: _f2
+\end{lstlisting}
+
+\IT{objdump}'s output is the same as GCC's assembly output.
+Let's also dump relocs of the object file:
+
+\begin{lstlisting}[caption=objdump,style=customasmMIPS]
+objdump -D filename.o
+
+...
+
+0000000c <f2>:
+   c:   3c020000        lui     v0,0x0
+  10:   8c420000        lw      v0,0(v0)
+  14:   03e00008        jr      ra
+  18:   00200825        move    at,at	; branch delay slot
+  1c:   00200825        move    at,at
+
+Disassembly of section .data:
+
+00000000 <global_var>:
+   0:   12345678        beq     s1,s4,159e4 <f2+0x159d8>
+
+...
+
+objdump -r filename.o
+
+...
+
+RELOCATION RECORDS FOR [.text]:
+OFFSET   TYPE              VALUE
+0000000c R_MIPS_HI16       global_var
+00000010 R_MIPS_LO16       global_var
+
+...
+
+\end{lstlisting}
+
+We can see that address of \IT{global\_var} is to be written right into \INS{LUI} and \INS{LW} instructions during executable file loading:
+high 16-bit part of \IT{global\_var} goes into the first one (\INS{LUI}), lower 16-bit part goes into the second one (\INS{LW}).
+

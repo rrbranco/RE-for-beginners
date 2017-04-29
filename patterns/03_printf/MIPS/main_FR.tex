@@ -1,0 +1,59 @@
+\subsection{MIPS}
+
+\subsubsection{3 arguments}
+
+\myparagraph{GCC 4.4.5 \Optimizing}
+
+La différence principale avec l'exemple \q{\HelloWorldSectionName} est que dans ce cas, \printf est appelée
+à la place de \puts et 3 arguments de plus sont passés à travers les registres \$5\dots \$7 (ou \$A0\dots \$A2).
+C'est pourquoi ces registres sont préfixés avec A-, ceci sous-entend qu'ils
+sont utilisés pour le passage des arguments aux fonctions.
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O3_FR.s}
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O3.IDA_FR.lst}
+
+\IDA a concaténé la paire d'instructions \INS{LUI} et \INS{ADDIU} en une pseudo instruction \INS{LA}.
+C'est pourquoi il n'y a pas d'instruction à l'adresse 0x1C: car \INS{LA} \IT{occupe} 8 octets.
+
+\myparagraph{GCC 4.4.5 \NonOptimizing}
+
+GCC \NonOptimizing est plus verbeux:
+
+\lstinputlisting[caption=GCC 4.4.5 \NonOptimizing (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O0_FR.s}
+
+\lstinputlisting[caption=GCC 4.4.5 \NonOptimizing (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O0.IDA_FR.lst}
+
+\subsubsection{8 arguments}
+
+Utilisons encore l'exemple de la section précédente avec 9 arguments: \myref{example_printf8_x64}.
+
+\lstinputlisting[style=customc]{patterns/03_printf/2.c}
+
+\myparagraph{GCC 4.4.5 \Optimizing}
+
+Seul les 4 premiers arguments sont passés dans les registres \$A0 \dots \$A3,
+les autres sont passés par la pile.
+\myindex{MIPS!O32}
+
+C'est la convention d'appel O32 (qui est la plus commune dans le monde MIPS).
+D'autres conventions d'appel (comme N32) peuvent utiliser les registres à d'autres fins.
+
+\myindex{MIPS!\Instructions!SW}
+
+\INS{SW} est l'abbréviation de \q{Store Word} (depuis un registre vers la mémoire).
+En MIPS, il manque une instructions pour stocker une valeur dans la mémoire, donc
+une paire d'instruction doit être utilisée à la place (\INS{LI}/\INS{SW}).
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O3_FR.s}
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O3.IDA_FR.lst}
+
+\myparagraph{GCC 4.4.5 \NonOptimizing}
+
+GCC \NonOptimizing est plus verbeux:
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O0_FR.s}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O0.IDA_FR.lst}
+

@@ -1,0 +1,25 @@
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (IDA),style=customasmMIPS]{patterns/08_switch/1_few/MIPS_O3_IDA_FR.lst}
+
+\myindex{MIPS!\Instructions!JR}
+
+La fonction se termine toujours en appelant \puts, donc nous voyons un saut à \puts
+(\INS{JR}: \q{Jump Register}) au lieu de \q{jump and link}.
+Nous avons parlé de ceci avant: \myref{JMP_instead_of_RET}.
+
+\myindex{MIPS!Load delay slot}
+Nous voyons aussi souvent l'instruction \INS{NOP} après \INS{LW}.
+Ceci est le slot de délai de chargement (\q{load delay slot}): un autre slot de
+délai (\IT{delay slot}) en MIPS.
+\myindex{MIPS!\Instructions!LW}
+
+Une instruction suivant \INS{LW} peut s'exécuter pendant que \INS{LW} charge une
+valeur depuis la mémoire.
+
+Toutefois, l'instruction suivante ne doit pas utiliser le résultat de \INS{LW}.
+
+Les CPU MIPS modernes ont la capacité d'attendre si l'instruction suivante utilise
+le résultat de \INS{LW}, donc ceci est un peu démodé, mais GCC ajoute toujours
+des NOPs pour les anciens CPU MIPS.
+En général, ça peut être ignoré.

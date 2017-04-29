@@ -1,0 +1,95 @@
+﻿\subsection{Режимы адресации}
+\myindex{ARM!Режимы адресации}
+\label{ARM_postindex_vs_preindex}
+\myindex{\CLanguageElements!\PostIncrement}
+\myindex{\CLanguageElements!\PostDecrement}
+\myindex{\CLanguageElements!\PreIncrement}
+\myindex{\CLanguageElements!\PreDecrement}
+
+В ARM64 возможна такая инструкция:
+
+\myindex{ARM!\Instructions!LDR}
+\begin{lstlisting}[style=customasmARM]
+ldr	x0, [x29,24]
+\end{lstlisting}
+
+И это означает прибавить 24 к значению в X29 и загрузить значение по этому адресу.
+Обратите внимание что 24 внутри скобок.
+
+А если снаружи скобок, то весь смысл меняется:
+
+\begin{lstlisting}[style=customasmARM]
+ldr	w4, [x1],28
+\end{lstlisting}
+
+Это означает, загрузить значение по адресу в X1, затем прибавить 28 к X1.
+
+\myindex{PDP-11}
+ARM позволяет прибавлять некоторую константу к адресу, с которого происходит загрузка, либо вычитать.
+
+Причем, позволяет это делать до загрузки или после.
+
+Такого режима адресации в x86 нет, но он есть в некоторых других процессорах, даже на PDP-11.
+
+Существует байка, что режимы пре-инкремента, пост-инкремента, 
+пре-декремента и пост-декремента адреса в PDP-11,
+были \q{виновны} в появлении таких конструкций языка Си (который разрабатывался на PDP-11) как
+*ptr++, *++ptr, *ptr-{}-, *-{}-ptr. 
+Кстати, это является трудно запоминаемой особенностью в Си.
+
+Дела обстоят так:
+
+% FIXME: add ARM assembly...
+\small
+\begin{center}
+\begin{tabular}{ | l | l | l | l | }
+\hline
+\headercolor{} термин в Си & 
+\headercolor{} термин в ARM & 
+\headercolor{} выражение Си & 
+\headercolor{} как это работает \\
+\hline
+\PostIncrement & 
+post-indexed addressing & 
+\TT{*ptr++} & 
+использовать значение \TT{*ptr}, \\
+& & & затем инкремент \\
+& & & указателя \TT{ptr} \\
+\hline
+\PostDecrement & 
+post-indexed addressing & 
+\TT{*ptr-{}-} & 
+использовать значение \TT{*ptr}, \\
+& & & затем \glslink{decrement}{декремент} \\
+& & & указателя \TT{ptr} \\
+\hline
+\PreIncrement & 
+pre-indexed addressing & 
+\TT{*++ptr} & 
+инкремент указателя \TT{ptr}, \\
+& & & затем использовать \\
+& & & значение \TT{*ptr} \\
+\hline
+\PreDecrement & 
+pre-indexed addressing & 
+\TT{*-{}-ptr} & 
+\glslink{decrement}{декремент} указателя \TT{ptr}, \\
+& & & затем использовать \\
+& & & значение \TT{*ptr} \\
+\hline
+\end{tabular}
+\end{center}
+\normalsize
+
+Pre-indexing маркируется как 
+восклицательный знак в ассемблере ARM.
+Для примера, смотрите строку 2 в \lstref{hw_ARM64_GCC}.
+
+Деннис Ритчи (один из создателей ЯП Си) указывал, что, это, вероятно, придумал Кен Томпсон 
+(еще один создатель Си),
+потому что подобная возможность процессора имелась еще в PDP-7
+\footnote{\url{http://yurichev.com/mirrors/C/c_dmr_postincrement.txt}}, \RitchieDevC{}.
+Таким образом, компиляторы с ЯП Си на тот процессор, где это есть, могут использовать это.
+
+Всё это очень удобно для работы с массивами.
+

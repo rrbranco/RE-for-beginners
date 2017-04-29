@@ -1,0 +1,38 @@
+\section{Prologo ed epilogo delle funzioni}
+\label{sec:prologepilog}
+\myindex{Function epilogue}
+\myindex{Function prologue}
+
+Il prologo (o preambolo) di una funzione e' una sequenza di istruzioni all'inizio della funzione stessa.
+Spesso ha una forma simile al seguente frammento di codice:
+
+\begin{lstlisting}[style=customasmx86]
+    push    ebp
+    mov     ebp, esp
+    sub     esp, X
+\end{lstlisting}
+
+Cosa fanno queste istruzioni: salvano il valore del registro \EBP,
+impostano il valore del registro \EBP con il valore di \ESP e allocano spazio sullo stack per le variabili locali.
+
+Il valore di \EBP resta costante durante il periodo di esecuzione della funzione, ed e' usato per accede a variabili locali e argomenti.
+Per lo stesso scopo si puo' usare \ESP, ma siccome cambia nel tempo non e' un approccio molto conveniente.
+
+L'epilogo della funzione libera lo spazio allocato nello stack, ripristina il valore nel registro \EBP al suo stato iniziale e restituisce
+il controllo al \glslink{caller}{chiamante}:
+
+\begin{lstlisting}[style=customasmx86]
+    mov    esp, ebp
+    pop    ebp
+    ret    0
+\end{lstlisting}
+
+% what about calling convention?
+Prologo ed epilogo di funzioni sono solitamente identificati nei disassemblatori per delimitare le funzioni.
+
+\subsection{\Recursion}
+
+\myindex{\Recursion}
+Epiloghi e prologhi possono avere un effetto negativo sulla performance in caso di ricorsione.
+
+Maggiori informazioni sulla ricorsione in questo libro: \myref{Recursion_and_tail_call}.

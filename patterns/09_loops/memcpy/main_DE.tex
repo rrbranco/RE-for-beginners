@@ -1,0 +1,55 @@
+\subsection{Funktion zum Kopieren von Speicherblöcken}
+\label{loop_memcpy}
+
+Echte Funktionen zum Kopieren von Speicherblöcken kopieren in jedem Schritt 4
+oder 8 Byte und verwenden \ac{SIMD}, Vektorisierung, etc.
+Aber um einen Eindruck zu erhalten betrachte dieses einfachstmögliche Beispiel.
+
+\lstinputlisting[style=customc]{memcpy.c}
+
+\subsubsection{Grundlegende Implementierung}
+
+\lstinputlisting[caption=GCC 4.9 x64 optimized for size (-Os),style=customasmx86]{patterns/09_loops/memcpy/memcpy_GCC49_x64_Os_DE.s}
+
+\lstinputlisting[caption=GCC 4.9 ARM64 optimized for size (-Os),style=customasmARM]{patterns/09_loops/memcpy/memcpy_GCC49_ARM64_Os_DE.s}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/09_loops/memcpy/memcpy_Keil_Thumb_O3_DE.s}
+
+\subsubsection{ARM in ARM mode}
+
+Keil in ARM mode macht Gebrauch von konditionalen Suffixen:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/09_loops/memcpy/memcpy_Keil_ARM_O3_DE.s}
+
+Deshalb gibt es hier nur einen Verzweigungsbefehl anstatt deren zwei.
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=GCC 4.4.5 optimized for size (-Os)
+(IDA)]{patterns/09_loops/memcpy/memcpy_MIPS_Os_IDA_DE.lst}
+
+\myindex{MIPS!\Instructions!LBU}
+\myindex{MIPS!\Instructions!SB}
+
+Hier tauchen zwei neue Befehle auf: \INS{LBU} (\q{Load Byte Unsigned}) und
+\INS{SB} (\q{Store Byte}).
+
+Wie in ARM haben alle MIPS Register eine Breite von 32 bit, es gibt keine
+byte-breiten Teile wie bei x86.
+
+Wenn wir also mit einzelnen Bytes arbeiten, müssen wir stets ein komplettes
+32-bit-Register hierfür verwenden.
+
+\INS{LBU} lädt ein Byte und löscht alle anderen Bits (\q{Unsigned}).
+\myindex{MIPS!\Instructions!LB}
+
+Der Befehl \INS{LB} (\q{Load Byte}) dagegen erweitert das geladene Byte zu einem
+vorzeichenbehafteten 32-bit-Wert.
+
+\INS{SB} schreibt ein Byte der niederwertigsten 8 Bit des Registers in den
+Speicher.
+
+
+\subsubsection{Vektorisierung}
+
+\Optimizing GCC kann viel mehr; siehe dieses Beispiel: \myref{vec_memcpy}.

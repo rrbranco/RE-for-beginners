@@ -1,0 +1,33 @@
+\subsubsection{ARM + \NonOptimizingXcodeIV (\ThumbTwoMode)}
+\label{FPU_passing_floats_ARM}
+
+\lstinputlisting[style=customasmARM]{patterns/12_FPU/2_passing_floats/Xcode_thumb_O0.asm}
+
+Как уже было указано, 64-битные числа с плавающей точкой передаются в парах R-регистров.
+
+Этот код слегка избыточен (наверное, потому что не включена оптимизация), ведь можно было бы 
+загружать значения напрямую в R-регистры минуя загрузку в D-регистры.
+
+Итак, видно, что функция \GTT{\_pow} получает первый аргумент в \Reg{0} и \Reg{1}, а второй в \Reg{2} и \Reg{3}. 
+Функция оставляет результат в \Reg{0} и \Reg{1}.
+Результат работы \GTT{\_pow} перекладывается в \GTT{D16}, 
+затем в пару \Reg{1} и \Reg{2}, откуда 
+\printf берет это число-результат.
+
+\subsubsection{ARM + \NonOptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/12_FPU/2_passing_floats/Keil_ARM_O0.asm}
+
+Здесь не используются D-регистры, используются только пары R-регистров.
+
+\subsubsection{ARM64 + \Optimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.9,style=customasmARM]{patterns/12_FPU/2_passing_floats/ARM64_RU.s}
+
+Константы загружаются в \RegD{0} и \RegD{1}: 
+функция \TT{pow()} берет их оттуда.
+Результат в \RegD{0} после исполнения \TT{pow()}.
+Он пропускается в \printf без всякой модификации и перемещений, 
+потому что \printf берет аргументы \glslink{integral type}{интегральных типов} и указатели 
+из X-регистров, а аргументы типа плавающей точки из D-регистров.
+

@@ -1,0 +1,83 @@
+\section{Opérateur GOTO}
+
+L'opérateur GOTO est en général considéré comme un anti-pattern, voir
+[Edgar Dijkstra, \IT{Go To Statement Considered Harmful} (1968)\footnote{\url{http://yurichev.com/mirrors/Dijkstra68.pdf}}].
+Néanmoins, il peut être utilisé raisonnablement, voir
+[Donald E. Knuth, \IT{Structured Programming with go to Statements} (1974)\footnote{\url{http://yurichev.com/mirrors/KnuthStructuredProgrammingGoTo.pdf}}]
+\footnote{\InSqBrackets{\CNotes} a aussi quelques exemples.}.
+
+Voici un exemple très simple:
+
+\lstinputlisting[style=customc]{patterns/065_GOTO/goto.c}
+
+Voici ce que nous obtenons avec MXVC 2012:
+
+\lstinputlisting[caption=MSVC 2012,style=customasmx86]{patterns/065_GOTO/MSVC_goto.asm}
+
+L'instruction \IT{goto} a simplement été remplacée par une instruction \JMP, qui
+a le même effet: saut inconditionnel à un autre endroit.
+Le second \printf peut seulement être exécuté avec une intervention humaine, en
+utilisant un débogueur or en modifiant le code.
+
+\par
+
+\clearpage
+
+Cela peut-être utile comme exercice simple de patching. Ouvrons l'exécutable généré
+dans Hiew:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/065_GOTO/hiew1.png}
+\caption{Hiew}
+\label{fig:goto_hiew1}
+\end{figure}
+
+\clearpage
+Placez le curseur à l'adresse du \JMP (\TT{0x410}),
+pressez F3 (edit), pressez deux fois zéro, donc l'opcode devient \TT{EB 00}:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/065_GOTO/hiew2.png}
+\caption{Hiew}
+\label{fig:goto_hiew2}
+\end{figure}
+
+Le second octet de l'opcode de \JMP indique l'offset relatif du saut, 0 signifie
+le point juste après l'instruction courante.
+
+Donc maintenant \JMP n'évite plus le second \printf.
+
+Pressez F9 (save) et quittez. Maintenant, si nous lançons l'exécutable, nous verrons
+ceci:
+
+\lstinputlisting[caption=Sortie de l'exécutable modifié]{patterns/065_GOTO/console.txt}
+
+Le même résultat peut être obtenu en remplaçant l'instruction \JMP par 2 instructions
+\NOP.
+
+\NOP a un opcode de \TT{0x90} et une longueur de 1 octet, donc nous en avons besoin
+de 2 pour remplacer \JMP (qui a une taille de 2 octets).
+
+\subsection{Code mort}
+
+Le second appel à \printf est aussi appelé \q{code mort} en terme de compilateur.
+
+Cela signifie que le code ne sera jamais exécuté.
+Donc lorsque vous compilez cet exemple avec les optimisations, le compilateur supprime
+le \q{code mort}, n'en laissant aucune trace:
+
+\lstinputlisting[caption=MSVC 2012 \Optimizing,style=customasmx86]{patterns/065_GOTO/MSVC_goto_Ox.asm}
+
+Toutefois, le compilateur a oublié de supprimer la chaîne \q{skip me!}.
+
+%Note: cl "/Ox" option for maximum optimisation does get rid of "skip me" string as well
+
+\subsection{\Exercise}
+
+% TODO debugger example can fit here
+
+Essayez d'obtenir le même résultat en utilisant votre compilateur et votre débogueur
+favorits.
+

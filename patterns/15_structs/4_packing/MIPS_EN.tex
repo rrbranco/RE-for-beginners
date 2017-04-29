@@ -1,0 +1,18 @@
+\subsubsection{MIPS}
+\label{MIPS_structure_big_endian}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),numbers=left,style=customasmMIPS]{patterns/15_structs/4_packing/MIPS_O3_IDA.lst}
+
+Structure fields come in registers \$A0..\$A3 and then get reshuffled into \$A1..\$A3 for \printf,
+while 4th field (from \$A3) is passed via local stack using \INS{SW}.
+
+But there are two SRA (\q{Shift Word Right Arithmetic}) instructions, which prepare \Tchar fields.
+Why?
+
+MIPS is a big-endian architecture by default \myref{sec:endianness}, and the Debian Linux we work in is big-endian as well.
+
+So when byte variables are stored in 32-bit structure slots, they occupy the high 31..24 bits.
+
+And when a \Tchar variable needs to be extended into a 32-bit value, it must be shifted right by 24 bits.
+
+\Tchar is a signed type, so an arithmetical shift is used here instead of logical.

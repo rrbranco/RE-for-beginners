@@ -1,0 +1,104 @@
+\section{\Stack}
+\label{sec:stack}
+\myindex{\Stack}
+
+Стек в информатике~--- это одна из наиболее фундаментальных структур данных
+\footnote{\href{http://go.yurichev.com/17119}{wikipedia.org/wiki/Call\_stack}}.
+\ac{AKA} \ac{LIFO}.
+
+Технически это просто блок памяти в памяти процесса + регистр \ESP в x86 или \RSP в x64, либо \ac{SP} в ARM, который указывает где-то в пределах этого блока.
+
+\myindex{ARM!\Instructions!PUSH}
+\myindex{ARM!\Instructions!POP}
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!POP}
+Часто используемые инструкции для работы со стеком~--- это \PUSH и \POP (в x86 и Thumb-режиме ARM). 
+\PUSH уменьшает \ESP/\RSP/\ac{SP} на 4 в 32-битном режиме (или на 8 в 64-битном),
+затем записывает по адресу, на который указывает \ESP/\RSP/\ac{SP}, содержимое своего единственного операнда.
+
+\POP это обратная операция~--- сначала достает из \glslink{stack pointer}{указателя стека} значение и помещает его в операнд 
+(который очень часто является регистром) и затем увеличивает указатель стека на 4 (или 8).
+
+В самом начале \glslink{stack pointer}{регистр-указатель} указывает на конец стека.
+Конец стека находится в начале блока памяти, выделенного под стек. Это странно, но это так.
+\PUSH уменьшает \glslink{stack pointer}{регистр-указатель}, а \POP~--- увеличивает.
+
+В процессоре ARM, тем не менее, есть поддержка стеков, растущих как в сторону уменьшения, так и в сторону увеличения.
+
+\myindex{ARM!\Instructions!STMFD}
+\myindex{ARM!\Instructions!LDMFD}
+\myindex{ARM!\Instructions!STMED}
+\myindex{ARM!\Instructions!LDMED}
+\myindex{ARM!\Instructions!STMFA}
+\myindex{ARM!\Instructions!LDMFA}
+\myindex{ARM!\Instructions!STMEA}
+\myindex{ARM!\Instructions!LDMEA}
+
+Например, инструкции \ac{STMFD}/\ac{LDMFD}, \ac{STMED}/\ac{LDMED} предназначены для descending-стека (растет назад, начиная с высоких адресов в сторону низких).\\
+Инструкции \ac{STMFA}/\ac{LDMFA}, \ac{STMEA}/\ac{LDMEA} предназначены для ascending-стека (растет вперед, начиная с низких адресов в сторону высоких).
+
+% It might be worth mentioning that STMED and STMEA write first,
+% and then move the pointer,
+% and that LDMED and LDMEA move the pointer first, and then read.
+% In other words, ARM not only lets the stack grow in a non-standard direction,
+% but also in a non-standard order.
+% Maybe this can be in the glossary, which would explain why E stands for "empty".
+
+\subsection{Почему стек растет в обратную сторону?}
+\label{stack_grow_backwards}
+
+Интуитивно мы можем подумать, что, как и любая другая структура данных, стек мог бы расти вперед, т.е. в сторону увеличения адресов.
+
+Причина, почему стек растет назад, видимо, историческая.
+Когда компьютеры были большие и занимали целую комнату, было очень легко разделить сегмент на две части: для \glslink{heap}{кучи} и для стека.
+Заранее было неизвестно, насколько большой может быть \glslink{heap}{куча} или стек, так что это решение было самым простым.
+
+\input{patterns/02_stack/stack_and_heap}
+
+В \RitchieThompsonUNIX можно прочитать:
+
+\begin{framed}
+\begin{quotation}
+The user-core part of an image is divided into three logical segments. The program text segment begins at location 0 in the virtual address space. During execution, this segment is write-protected and a single copy of it is shared among all processes executing the same program. At the first 8K byte boundary above the program text segment in the virtual address space begins a nonshared, writable data segment, the size of which may be extended by a system call. Starting at the highest address in the virtual address space is a stack segment, which automatically grows downward as the hardware's stack pointer fluctuates.
+\end{quotation}
+\end{framed}
+
+Это немного напоминает как некоторые студенты
+пишут два конспекта в одной тетрадке:
+первый конспект начинается обычным образом, второй пишется с конца, перевернув тетрадку.
+Конспекты могут встретиться где-то посредине, в случае недостатка свободного места.
+
+% I think if we want to expand on this analogy,
+% one might remember that the line number increases as as you go down a page.
+% So when you decrease the address when pushing to the stack, visually,
+% the stack does grow upwards.
+% Of course, the problem is that in most human languages,
+% just as with computers,
+% we write downwards, so this direction is what makes buffer overflows so messy.
+
+\subsection{Для чего используется стек?}
+
+% subsections
+\input{patterns/02_stack/01_saving_ret_addr}
+\input{patterns/02_stack/02_args_passing}
+\EN{\input{patterns/02_stack/03_local_vars_EN}}
+\RU{\input{patterns/02_stack/03_local_vars_RU}}
+\PTBR{\input{patterns/02_stack/03_local_vars_PTBR}}
+\input{patterns/02_stack/04_alloca/main}
+\input{patterns/02_stack/05_SEH}
+\input{patterns/02_stack/06_BO_protection}
+
+\subsubsection{Автоматическое освобождение данных в стеке}
+
+Возможно, причина хранения локальных переменных и SEH-записей в стеке в том, что после выхода из функции, всё эти данные освобождаются автоматически,
+используя только одну инструкцию корректирования указателя стека (часто это \ADD).
+Аргументы функций, можно сказать, тоже освобождаются автоматически в конце функции.
+А всё что хранится в куче (\IT{heap}) нужно освобождать явно.
+
+% sections
+\EN{\input{patterns/02_stack/07_layout_EN}}
+\RU{\input{patterns/02_stack/07_layout_RU}}
+\PTBR{\input{patterns/02_stack/07_layout_PTBR}}
+\input{patterns/02_stack/08_noise/main}
+\input{patterns/02_stack/exercises}
+

@@ -1,0 +1,64 @@
+<put_to_array>:
+W0 = idx
+W1 = val
+  54:           lsr     w3, w0, #1
+; W3 = W0>>1 = idx>>1
+  58:           lsl     w2, w3, #2
+; W2 = W3<<2 = (W0>>1)<<2 = (idx&(~1))<<1
+  5c:           sub     w2, w2, w3
+; W2 = W2-W3 = (idx&(~1))<<1 - idx>>1 = idx*1.5
+; jump if lowest bit in idx is 1:
+  60:           tbnz    w0, #0, 94 <put_to_array+0x40>
+  
+; idx is even, go on:
+  64:           adrp    x0, page of array
+  68:           add     w3, w2, #0x1
+; W3 = W2+1 = idx*1.5+1, i.e., offset of middle byte
+  6c:           add     x0, x0, offset of array within page
+; X0 = address of array
+  70:           lsr     w4, w1, #4
+; W4 = W1>>4 = val>>4
+  74:           sxtw    x3, w3
+; X3 = sign-extended 32-bit W3 (idx*1.5+1) to 64-bit
+; sign-extension is needed here because the value will be used as offset within array,
+; and negative offsets are possible in standard C/C++
+  78:           ubfiz   w1, w1, #4, #4
+; W1 = W1<<4 = val<<4
+; store W4 (val>>4) at X0+W2 = array + idx*1.5, i.e., address of left byte:
+  7c:           strb    w4, [x0,w2,sxtw]
+; load middle byte at X0+X3 = array+idx*1.5+1
+  80:           ldrb    w2, [x0,x3]
+; W2 = middle byte
+  84:           and     w2, w2, #0xf
+; W2 = W2&0xF = middle_byte&0xF (high 4 bits in middle byte are dropped)
+; merge parts of new version of middle byte:
+  88:           orr     w1, w2, w1
+; W1 = W2|W1 = middle_byte&0xF | val<<4
+; store W2 (new middle byte) at X0+X3 = array+idx*1.5+1
+  8c:           strb    w1, [x0,x3]
+  90:           ret
+
+; idx is odd, go on:
+  94:           add     w4, w2, #0x1
+; W4 = W2+1 = idx*1.5+1, i.e., offset of middle byte
+  98:           adrp    x0, page of array
+  9c:           add     x0, x0, offset of array within page
+; X0 = address of array
+  a0:           add     w2, w2, #0x2
+; W2 = W2+2 = idx*1.5+2, i.e., offset of right byte
+  a4:           sxtw    x4, w4
+; X4 = sign-extended 64-bit version of 32-bit W4
+; load at X0+X4 = array+idx*1.5+1:
+  a8:           ldrb    w3, [x0,x4]
+; W3 = middle byte
+  ac:           and     w3, w3, #0xfffffff0
+; W3 = W3&0xFFFFFFF0 = middle_byte&0xFFFFFFF0, i.e., clear lowest 4 bits
+  b0:           orr     w3, w3, w1, lsr #8
+; W3 = W3|W1>>8 = middle_byte&0xFFFFFFF0 | val>>8
+; store new version of middle byte at X0+X4=array+idx*1.5+1:
+  b4:           strb    w3, [x0,x4]
+; now store lowest 8 bits of val (in W1) at X0+W2=array+idx*1.5+2, i.e., place of right byte
+; SXTW suffix means W2 will be sign-extended to 64-bit value before summing with X0
+  b8:           strb    w1, [x0,w2,sxtw]
+  bc:           ret
+

@@ -1,0 +1,36 @@
+﻿MOV REG, input
+CMP REG, 4 ; maximal number of cases
+JA default
+SHL REG, 2 ; find element in table. shift for 3 bits in x64.
+MOV REG, jump_table[REG]
+JMP REG
+
+case1:
+    ; do something
+    JMP exit
+case2:
+    ; do something
+    JMP exit
+case3:
+    ; do something
+    JMP exit
+case4:
+    ; do something
+    JMP exit
+case5:
+    ; do something
+    JMP exit
+
+default:
+
+    ...
+
+exit:
+
+    ....
+
+jump_table dd case1
+           dd case2
+           dd case3
+           dd case4
+           dd case5

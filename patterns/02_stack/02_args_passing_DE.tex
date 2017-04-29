@@ -1,0 +1,174 @@
+\subsubsection{Funktion Argumente übergeben}
+
+Der übliche weg Argumente in x86 zu übergeben ist die \q{cdecl} Methode:
+
+\begin{lstlisting}[style=customasmx86]
+push arg3
+push arg2
+push arg1
+call f
+add esp, 12 ; 4*3=12
+\end{lstlisting}
+
+Die \Gls{callee} Funktionen bekommen ihre Argumente über den Stackpointer. 
+
+So werden die Argumente auf dem Stack gefunden, noch vor der Ausführung der ersten Instruktion der \ttf{} Funktion:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+ESP & return address \\
+\hline
+ESP+4 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+ESP+8 & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+ESP+0xC & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+
+
+Für mehr Informationen über andere Aufrufs Konventionen siehe Sektion:~(\myref{sec:callingconventions}).
+
+\par
+Übrigens, die \gls{callee} Funktion hat keine Informationen wie viele Argumente übergeben wurden.
+C Funktionen mit einer variablen Anzahl an Argumenten (wie z.B \printf) errechnen die zahl der Argumente anhand der 
+Formatstring spezifizier-er (alle spezifizier-er die mit dem \% beginnen).
+
+Wenn wir etwas schreiben wie z.B:
+
+\begin{lstlisting}
+printf("%d %d %d", 1234);
+\end{lstlisting}
+
+\printf wird die Zahlen 1234 ausgeben und dann zwei Zufalls zahlen, welche direkt neben dem Zahlen
+Werten auf dem Stack lagen\footnote{\ac{TBT}}.
+
+\par
+Das ist auch der Grund warum es nicht wichtig ist wie die \main Funktion definiert ist: Als \main, \\
+\TT{main(int argc, char *argv[])} oder \TT{main(int argc, char *argv[], char *envp[])}.
+
+Tatsächlich ruf der \ac{CRT}-Code die \main Funktion um Grunde so auf:
+	
+\begin{lstlisting}[style=customasmx86]
+push envp
+push argv
+push argc
+call main
+...
+\end{lstlisting}
+
+Wenn man \main als \main Funktion ohne Argumente definiert, dann liegen sie trotzdem auf dem Stack auch wenn sie 
+nicht benutzt werden. Wenn man \main als \TT{main(int argc, char *argv[])}, definiert kann man auf die ersten beiden
+Argumente der Funktion zugreifen, das dritte bleibt aber weiterhin ``Unsichtbar'' für andere Funktionen.
+Es ist aber auch u.a möglich die Main Funktion als \TT{main(int argc)} schreiben und sie wird noch immer funktionieren.
+
+\myparagraph{Alternative Wege Argumente zu übergeben}
+
+Es sollte bemerkt werden das nichts einen Programmierer dazu zwingt Argumente über den Stack zu übergeben. Das ist
+keine generelle Anforderung. Jemand könnte auch einfach eine andere Methode implementieren ohne den Stack überhaupt zu benutzen.
+
+Ein ziemlich beliebter Weg Argumente zu übergeben unter Assembler Neulingen ist über globale Variablen wie z.B:
+
+\lstinputlisting[caption=Assembly code]{patterns/02_stack/global_args.asm}
+
+Aber diese Methode hat Nachteile: Die \IT{do\_something()} Funktion kann sich selbst nicht rekursiv aufrufen (aber auch keine andere Funktion),
+weil sie ihre eigenen Argumente löschen muss.
+Die gleiche Geschichte mit lokalen Variablen: Wenn die Werte in globalen Variablen gespeichert sind, kann die Funktion sich nicht selbst aufrufen.
+Und das bedeutet wiederum das die Funktion nicht thread-Safe ist.
+\footnote{Korrekt implementiert, hat jeder Thread seinen eigenen Stack und seine eigenen Argumente/Variablen}.
+Eine Methode solche Informationen auf dem Stack zu speichern macht die Dinge einfacher--- Der Stack kann so viele Funktion Arguemente und/oder Werte speichern,
+so viel Speicher wie der Computer hat.
+
+\InSqBrackets{\TAOCPvolI{}, 189} nennt sogar noch verrückter Methoden die speziell auf IBM System/360 benutzt werden.
+
+\myindex{MS-DOS}
+\myindex{x86!\Instructions!INT}
+
+Auf MS-DOS gab es einen Weg Funktion Argumente über Register zu übergeben, zum Beispiel dies 
+ist ein Stück Code einer veralteten 16-Bit MS-DOS ``Hallo, Welt!'' Funktion:
+
+\begin{lstlisting}[style=customasmx86]
+mov  dx, msg      ; Adresse der Naricht
+mov  ah, 9        ; 9 bedeutet ``print string''
+int  21h          ; DOS "syscall"
+
+mov  ah, 4ch      ; ``Terminiere Programm'' Funktion
+int  21h          ; DOS "syscall"
+
+msg  db 'Hello, World!\$' 
+\end{lstlisting}
+
+\myindex{fastcall}
+Diese Methode ist der \myref{fastcall} Methode sehr ähnlich. Sie ähnelt aber auch der Methode
+wie man auf Linux (\myref{linux_syscall}) und Windows syscalls ausführt.
+
+\myindex{x86!\Flags!CF}
+Wenn eine MS-DOS Funktion einen Bool'schen Wert zurück gibt (z.B., Single Bit bedeutet ein Fehler ist aufgetreten), wird dafür das \TT{CF} Flag benutzt.
+
+Zum Beispiel:
+
+\begin{lstlisting}[style=customasmx86]
+mov ah, 3ch       ; create file
+lea dx, filename
+mov cl, 1
+int 21h
+jc  error
+mov file_handle, ax
+...
+error:
+...
+\end{lstlisting}
+
+Im Falle eines Fehlers, wird das \TT{CF} Flag gesetzt. Anderenfalls wird ein handle für die neu erstellte Datei über \TT{AX} zurück gegeben. 
+
+
+Diese Methode wird heute immer noch von Assembler Programmierern benutzt.
+Im Windows Reseearch Kernel source Code (der sehr ähnlich zum Windows 2003 Kernel ist) können wir folgenden Code
+finden (file \IT{base/ntos/ke/i386/cpu.asm}):
+
+% muss noch die kommentare geändert werden
+\begin{lstlisting}[style=customasmx86]
+        public  Get386Stepping
+Get386Stepping  proc
+
+        call    MultiplyTest            ; Muliplikations Test durchführen
+        jnc     short G3s00             ; wenn nc, ist muttest ok
+        mov     ax, 0
+        ret
+G3s00:
+        call    Check386B0              ; Prüfe das B0 stepping
+        jnc     short G3s05             ; wenn nc, ist es B1/later
+        mov     ax, 100h                ; It is B0/earlier stepping
+        ret
+
+G3s05:
+        call    Check386D1              ; Prüfe das D1 stepping
+        jc      short G3s10             ; wenn c, iust es NICHT NOT D1
+        mov     ax, 301h                ; Es ist das D1/later stepping
+        ret
+
+G3s10:
+        mov     ax, 101h                ; annahme das es das it is B1 stepping ist
+        ret
+
+	...
+
+MultiplyTest    proc
+
+        xor     cx,cx                   ; 64K durchläufe ist eine nette runde Nummer
+mlt00:  push    cx
+        call    Multiply                ; Funktioniert dis multiplikation auf diesem Chip?
+        pop     cx
+        jc      short mltx              ; wenn c c, Nein, exit
+        loop    mlt00                   ; Wenn nc, Ja, weitere iteration für nächsten versuch
+        clc
+mltx:
+        ret
+
+MultiplyTest    endp
+\end{lstlisting}
+

@@ -1,0 +1,10 @@
+    MOV EBX, 2 ; initialization
+    JMP check
+body:
+    ; loop body
+    ; do something here
+    ; use counter in EBX, but do not modify it!
+    INC EBX ; increment
+check:
+    CMP EBX, 9
+    JLE body

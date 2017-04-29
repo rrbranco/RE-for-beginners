@@ -1,0 +1,98 @@
+\subsubsection{x64}
+\label{subsec:popcnt}
+
+Let's modify the example slightly to extend it to 64-bit:
+
+\lstinputlisting[label=popcnt_x64_example,style=customc]{patterns/14_bitfields/4_popcnt/shifts64.c}
+
+\myparagraph{\NonOptimizing GCC 4.8.2}
+
+So far so easy.
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.8.2,style=customasmx86]{patterns/14_bitfields/4_popcnt/shifts64_GCC_O0_EN.s}
+
+\myparagraph{\Optimizing GCC 4.8.2}
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.2,numbers=left,label=shifts64_GCC_O3,style=customasmx86]{patterns/14_bitfields/4_popcnt/shifts64_GCC_O3_EN.s}
+
+This code is terser, but has a quirk.
+
+In all examples that we see so far, we were incrementing the \q{rt} value after comparing a specific bit,
+but the code here increments \q{rt} before (line 6), writing the new value into register \EDX .
+Thus, if the last bit is 1, the \CMOVNE\footnote{Conditional MOVe if Not Equal} instruction
+(which is a synonym for \CMOVNZ\footnote{Conditional MOVe if Not Zero}) \IT{commits} 
+the new value of \q{rt}
+by moving \EDX (\q{proposed rt value}) into \EAX (\q{current rt} to be returned at the end).
+
+Hence, the incrementing is performed at each step of loop, i.e., 64 times, without any relation to the input value.
+
+The advantage of this code is that it contain only one conditional jump (at the end of the loop) instead of 
+two jumps (skipping the \q{rt} value increment and at the end of loop).
+And that might work faster on the modern CPUs with branch predictors: \myref{branch_predictors}.
+
+\label{FATRET}
+\myindex{x86!\Instructions!FATRET}
+The last instruction is \INS{REP RET} (opcode \TT{F3 C3}) 
+which is also called \INS{FATRET} by MSVC.
+This is somewhat optimized version of \RET, 
+which is recommended by AMD to be placed at the end of function, if \RET goes right after conditional jump: 
+\InSqBrackets{\AMDOptimization p.15}
+\footnote{More information on it: \url{http://go.yurichev.com/17328}}.
+
+\myparagraph{\Optimizing MSVC 2010}
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/14_bitfields/4_popcnt/MSVC_2010_x64_Ox_EN.asm}
+
+\myindex{x86!\Instructions!ROL}
+Here the \ROL instruction is used instead of 
+\SHL, which is in fact \q{rotate left} 
+instead of \q{shift left},
+but in this example it works just as \TT{SHL}.
+
+You can read more about the rotate instruction here: \myref{ROL_ROR}.
+
+\Reg{8} here is counting from 64 to 0.
+It's just like an inverted $i$.
+
+Here is a table of some registers during the execution:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor RDX & \HeaderColor R8 \\
+\hline
+0x0000000000000001 & 64 \\
+\hline
+0x0000000000000002 & 63 \\
+\hline
+0x0000000000000004 & 62 \\
+\hline
+0x0000000000000008 & 61 \\
+\hline
+... & ... \\
+\hline
+0x4000000000000000 & 2 \\
+\hline
+0x8000000000000000 & 1 \\
+\hline
+\end{tabular}
+\end{center}
+
+\myindex{x86!\Instructions!FATRET}
+At the end we see the \INS{FATRET} instruction, which was explained here: \myref{FATRET}.
+
+\myparagraph{\Optimizing MSVC 2012}
+
+\lstinputlisting[caption=MSVC 2012,style=customasmx86]{patterns/14_bitfields/4_popcnt/MSVC_2012_x64_Ox_EN.asm}
+
+\myindex{\CompilerAnomaly}
+\label{MSVC2012_anomaly}
+\Optimizing MSVC 2012 does almost the same job as 
+optimizing MSVC 2010, but somehow, it generates two identical loop bodies and the loop count is now 32 instead of 64.
+
+To be honest, it's not possible to say why. Some optimization trick? Maybe it's better for the loop body to be slightly 
+longer?
+
+Anyway, such code is relevant here to show that sometimes the compiler output may be really weird and 
+illogical, but perfectly working.
+

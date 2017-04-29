@@ -1,0 +1,155 @@
+\subsubsection{MSVC: x86}
+Wir erhalten den folgenden Assembleroutput (MSVC 2010):
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/3_checking_retval/ex3_MSVC_x86.asm}
+
+\myindex{x86!\Registers!EAX}
+Die aufrufende Funktion (\main) benötigt das Ergebnis der aufgerufenen Funktion (\scanf), weshalb diese es über das
+Register \EAX zurückgibt.
+
+\myindex{x86!\Instructions!CMP}
+Wir prüfen mithilfe des Befehls \TT{CMP EAX, 1} (\IT{CoMPare}). Mit anderen Worten, wir vergleichen den Wert in \EAX mit
+1.
+
+\myindex{x86!\Instructions!JNE}
+Ein bedingter \JNE Sprung folgt auf den \CMP Befehl. \JNE steht für \IT{Jump if Not Equal}.
+
+Wenn also der Wert in \EAX ungleich 1 ist, wird die \ac{CPU} die Ausführung an der Stelle fortsetzen, die im Operanden
+von \JNE steht, in unserem Fall \TT{\$LN2@main}.
+Den Control Flow an diese Adresse zu übergeben hat zur Folge, dass die Funktion \printf mit dem Argument \TT{What you
+entered? Huh?} aufgerufen wird.
+Wenn aber alles funktioniert und der bedingte Sprung nicht ausgeführt wird, wird ein anderer Aufruf von \printf mit zwei
+Argumenten ausgeführt:\\
+\TT{'You entered \%d...'} und dem Wert von \TT{x}.
+
+
+\myindex{x86!\Instructions!XOR}
+\myindex{\CLanguageElements!return}
+Da in diesem Fall das zweite \printf nicht ausgeführt werden darf, befindet sich davor ein \JMP (unbedingter Sprung).
+Dieser gibt den Control Flow ab an den Punkt nach dem zweiten \printf, genau vor dem \TT{XOR EAX EAX} Befehl, welcher
+die Rückgabe von 0 implementiert.
+
+% FIXME internal \ref{} to x86 flags instead of wikipedia
+\myindex{x86!\Registers!\Flags}
+Man kann also festhalten, dass der Vergleich von zwei Werten gewöhnlich durch ein \CMP/\Jcc Befehlspaar implementiert
+wird, wobei \IT{cc} für \IT{condition code}, also Sprungbedingung, steht. 
+\CMP vergleicht zwei Werte und setzt die Flags des Prozessors\footnote{zu x86 Flags, siehe auch:
+\href{http://go.yurichev.com/17120}{wikipedia}.}.
+\Jcc prüft diese Flags und entscheidet entweder den Control Flow an die angegebene Adresse zu übergeben oder nicht.
+
+\myindex{x86!\Instructions!CMP}
+\myindex{x86!\Instructions!SUB}
+\myindex{x86!\Instructions!JNE}
+\myindex{x86!\Registers!ZF}
+\label{CMPandSUB}
+Es klingt möglicherweise paradox, aber der \CMP Befehl ist tatsächlich ein \SUB (subtract).
+Alle arithmetischen Befehle setzen die Flags des Prozessors, nicht nur \CMP.
+Wenn wir 1 und 1 vergleichen, ist $1-1=0$ und daher wird das \ZF Flag gesetzt (gleichbedeutend damit, dass das Ergebnis
+der letzten Berechnung 0 ergeben hat).
+\ZF kann nur durch diesen Umstand gesetzt werden, nämlich, dass zwei Operanden gleich sind.
+\JNE prüft nur das \ZF Flag und springt nur, wenn dieses nicht gesetzt ist. \JNE ist daher ein Synonym für \JNZ
+(\IT{Jump if Not Zero}).
+Der Assembler übersetzt \JNE und \JNZ in den gleichen Opcode.
+Der \CMP Befehl kann also durch ein \SUB ersetzt werden, aber mit dem Unterschied, dass \SUB den Wert des ersten
+Operanden verändert. \CMP bedeutet also \IT{SUB ohne Speichern des Ergebnisses, aber mit Setzen der Flags}.
+
+\subsubsection{MSVC: x86: IDA}
+
+\myindex{IDA}
+Es ist an der Zeit \IDA auszuprobieren und etwas damit zu machen.
+Für Anfänger ist es übrigens eine gute Idee, die \TT{/MD} Option in MSVC zu verwenden, da diese bewirkt, dass alle
+Standardfunktionen nicht mit der ausführbaren Datei verlinkt werden, sondern aus der Datei \TT{MSVCR*.DLL} importiert
+werden. Dadurch ist es einfacher zu erkennen, welche Standardfunktionen verwendet werden und wo dies geschieht.
+
+Bei der Codeanalyse in \IDA ist es hilfreich Notizen für sich selbst (und andere) zu hinterlassen.
+Bei der Analyse dieses Beispiels sehen wir, dass \TT{JNZ} im Falle eines Fehlers ausgeführt wird.
+Es ist nun möglich den Cursor auf das Label zu setzen, \q{n} zu drücken und es in \q{error} umzubenennen.
+Wir erstellen noch ein Label---in \q{exit}.
+Hier ist das Ergebnis:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/3_checking_retval/ex3.lst}
+So ist es etwas einfacher den Code zu verstehen. Natürlich ist es aber auch keine gute Idee, jeden Befehl zu
+kommentieren.
+
+% FIXME draw button?
+Man kann Teile einer Funktion in \IDA auch einklappen. Um dies zu tun, markiert man den Block und drückt dann \q{--} auf
+dem Zahlenblock der Tastatur und gibt den stattdessen anzuzeigenden Text ein.
+
+Verstecken wir zwei Blöcke und geben ihnen Namen:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/3_checking_retval/ex3_2.lst}
+
+% FIXME draw button?
+Um eingeklappte Teile des Code wieder auszuklappen, verwendet man \q{+} auf dem Zahlenblock der Tastatur.
+
+\clearpage
+Durch Drücken von der \q{Leertaste} sehen wir, wie \IDA die Funktion als Graph darstellt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/IDA.png}
+\caption{Graph Modus in IDA}
+\label{fig:ex3_IDA_1}
+\end{figure}
+Es gibt hinter jedem bedingten Sprung zwei Pfeile: einen grünen und einen roten.
+Der grüne Pfeil zeigt auf den Codeblock der ausgeführt wird, wenn der Sprung ausgeführt wird und der rote den Codeblock,
+der ausgeführt wird, falls nicht gesprungen wird.
+
+\clearpage
+In diesem Modus ist es möglich, Knoten einzuklappen und ihnen auch Namen zu geben (\q{group nodes}).
+Wir probieren das mit 3 Blöcken aus:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/IDA2.png}
+\caption{Graph Modus in IDA mit 3 eingeklappten Knoten}
+\label{fig:ex3_IDA_2}
+\end{figure}
+
+Das ist sehr nützlich.
+Man kann sagen, dass ein großer Teil der Arbeit eines Reverse Engineers (und eines jeden anderen Forsches) darin
+besteht, die Menge der zur Verfügung stehenden Informationen zu reduzieren.
+
+\input{patterns/04_scanf/3_checking_retval/olly_DE.tex}
+
+\clearpage
+\subsubsection{MSVC: x86 + Hiew}
+\myindex{Hiew}
+Unser Programm kann auch als einfaches Beispel für das Patchen einer Executable dienen.
+Wir könnten versuchen, die Executable so zu patchen, dass das Programm unabhängig vom Input diesen stets auszugeben.
+
+Angenommen, dass die Executable mit externer \TT{MSVCR*.DLL} (d.h. mit der Option \TT{MD}) kompiliert
+wurde\footnote{dieser Vorgang wird auch \q{dynamisches Verlinken genannt}}, finden wir die Funktion \main am Anfang des
+\TT{.text} Segments. 
+Öffnen wir die Executable in Hiew und schauen uns den Anfang des \TT{.text} Segments an (Enter, F8, F6, Enter, Enter).
+
+Wir sehen das Folgende:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/hiew_1.png}
+\caption{Hiew: \main Funktion}
+\label{fig:scanf_ex3_hiew_1}
+\end{figure}
+
+Hiew erkennt \ac{ASCIIZ} Strings und die Namen importierter Funktionen und zeigt diese an.
+
+\clearpage
+Setzen wir den Cursor auf die Adresse \TT{.00401027}, an der sich der \TT{JNZ} Befehl, den wir umgehen müssen, befindet,
+drücken F3 und fügen dann \q{9090} (zwei \ac{NOPS}s) ein. 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/hiew_2.png}
+\caption{Hiew: ersetzen von \TT{JNZ} durch zwei \ac{NOP}s}
+\label{fig:scanf_ex3_hiew_2}
+\end{figure}
+Wir drücken F9 (update). Die Executable wird gespeichert und verhält sich wie gewünscht.
+
+Zwei \ac{NOP}s sind wahrscheinlich nicht der ästhetischte Ansatz. Ein anderer Weg die Executable zu patchen besteht
+darin, das zweite Byte des Opcodes (den \gls{jump offset}) auf 0 zu setzen, sodass \TT{JNZ} immer zum nächsten Befehl
+springt.
+
+Wir könnten auch das Gegenteil tun: das erste Byte durch \TT{EB} ersetzen und das zweite (\gls{jump offset})
+unangetastet lassen. Wir würde einen unbedingten Sprung erhalten, der stets ausgeführt wird.
+In diesem Fall würde unabhängig vom Input stets die Fehlermeldung ausgegeben.

@@ -1,0 +1,29 @@
+\subsubsection{ARM}
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/04_scanf/1_simple/ARM_IDA.lst}
+
+\myindex{\CLanguageElements!\Pointers}
+
+In order for \scanf to be able to read item it needs a parameter---pointer to an \Tint.
+\Tint is 32-bit, so we need 4 bytes to store it somewhere in memory, and it fits exactly in a 32-bit register.
+\myindex{IDA!var\_?}
+A place for the local variable \GTT{x} is allocated in the stack and \IDA
+has named it \IT{var\_8}. It is not necessary, however, to allocate a such since \ac{SP} (\gls{stack pointer}) is already pointing to that space and it can be used directly.
+
+So, \ac{SP}'s value is copied to the \Reg{1} register and, together with the format-string, passed to \scanf.
+\myindex{ARM!\Instructions!LDR}
+Later, with the help of the \INS{LDR} instruction, this value is moved from the stack to the \Reg{1} register in order to be passed to \printf.
+
+\myparagraph{ARM64}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1 ARM64,numbers=left,style=customasmARM]{patterns/04_scanf/1_simple/ARM64_GCC491_O0_EN.s}
+
+There is 32 bytes are allocated for stack frame, which is bigger than it needed. Perhaps some memory aligning issue?
+The most interesting part is finding space for the $x$ variable in the stack frame (line 22).
+Why 28? Somehow, compiler decided to place this variable at the end of stack frame instead of beginning.
+The address is passed to \scanf, which just stores the user input value in the memory at that address.
+This is 32-bit value of type \Tint.
+The value is fetched at line 27 and then passed to \printf.
+

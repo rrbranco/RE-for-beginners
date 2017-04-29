@@ -1,0 +1,193 @@
+\subsection{Example \#2: SCO OpenServer}
+
+\label{examples_SCO}
+\myindex{SCO OpenServer}
+An ancient software for SCO OpenServer from 1997 
+developed
+by a company that disappeared a long time ago.
+
+
+There is a special dongle driver to be installed in the system, that contains the following text strings:
+\q{Copyright 1989, Rainbow Technologies, Inc., Irvine, CA}
+and
+\q{Sentinel Integrated Driver Ver. 3.0 }.
+
+After the installation of the driver in SCO OpenServer, these device files appear in the /dev filesystem:
+
+\begin{lstlisting}
+/dev/rbsl8
+/dev/rbsl9
+/dev/rbsl10
+\end{lstlisting}
+
+The program reports an error without dongle connected, but the error string cannot be found in the executables.
+
+\myindex{COFF}
+
+Thanks to \ac{IDA}, it is easy to load the COFF executable used in SCO OpenServer.
+
+Let's also try to find \q{rbsl} string and indeed, found it in this code fragment:
+
+\lstinputlisting[style=customasmx86]{examples/dongles/2/1.lst}
+
+Yes, indeed, the program needs to communicate with the driver somehow.
+
+\myindex{thunk-functions}
+The only place where the \TT{SSQC()}
+function is called is the \gls{thunk function}:
+
+\lstinputlisting[style=customasmx86]{examples/dongles/2/2.lst}
+
+SSQ() can be called from at least 2 functions.
+
+One of these is:
+
+\lstinputlisting[style=customasmx86]{examples/dongles/2/check1.lst}
+
+\q{\TT{3C}} and \q{\TT{3E}} sound familiar: there was a Sentinel Pro dongle by Rainbow with no memory,
+providing only one crypto-hashing secret function.
+
+You can read a short description
+of what hash function is here: \myref{hash_func}.
+
+But let's get back to the program.
+
+So the program can only check the presence or absence of a connected dongle.
+
+No other information can be written to such dongle, as it has no memory.
+The two-character codes are commands
+(we can see how the commands are handled in the 
+\TT{SSQC()} function) 
+and all other strings are hashed inside the dongle, being transformed into a 16-bit number.
+The algorithm was secret,
+so it was not possible to write a driver replacement or to remake the dongle hardware that would emulate it perfectly.
+
+However, it is always possible to intercept all accesses to it and to find what constants
+the hash function results are compared to.
+
+But we need to say that it is possible to build a robust software copy protection scheme based on secret
+cryptographic hash-function: let it encrypt/decrypt the data files your software uses.
+
+But let's get back to the code.
+
+Codes 51/52/53 
+are used for LPT printer port selection.
+3x/4x are used for \q{family} 
+selection (that's how Sentinel Pro dongles are differentiated from each other: more than one
+dongle can be connected to a LPT port).
+
+The only non-2-character string passed to the hashing function is "0123456789".
+
+Then, the result is compared against the set of valid results.
+
+If it is correct, 0xC or 0xB is to be written into the global variable \TT{ctl\_model}.%
+
+Another text string that gets passed is
+"PRESS ANY KEY TO CONTINUE: ", but the result is not checked.
+Hard to say why, probably by mistake
+\footnote{What a strange feeling: to find bugs in such ancient software.}.
+
+Let's see where the value from the global variable \TT{ctl\_mode} is used.
+
+One such place is:
+
+\lstinputlisting[style=customasmx86]{examples/dongles/2/4.lst}
+
+If it is 0, an encrypted error message is passed to a decryption routine and printed.
+
+\myindex{x86!\Instructions!XOR}
+
+The error string decryption routine seems a simple \gls{xoring}:
+
+\lstinputlisting[style=customasmx86]{examples/dongles/2/err_warn.lst}
+
+That's why we were unable to find the error messages in the executable files, because they are encrypted
+(which is is popular practice).
+
+Another call to the \TT{SSQ()} hashing function passes the
+\q{offln} string to it and compares the result with
+\TT{0xFE81} and \TT{0x12A9}.
+
+If they don't match, it works with some \TT{timer()} 
+function (maybe waiting for a poorly
+connected dongle to be reconnected and check again?) and then decrypts another error message to dump.
+
+\lstinputlisting[style=customasmx86]{examples/dongles/2/check2.lst}
+
+Bypassing the dongle is pretty straightforward: just patch all jumps after the relevant \CMP instructions.
+
+Another option is to write our own SCO OpenServer driver, containing a table of questions and answers, all of those which present in the program.
+
+\subsubsection{Decrypting error messages}
+
+By the way, we can also try to decrypt all error messages.
+The algorithm that is located in the \TT{err\_warn()} function is very simple, indeed:
+
+\lstinputlisting[caption=Decryption function,style=customasmx86]{examples/dongles/2/decrypting_EN.lst}
+
+As we can see, 
+not just string is supplied to the decryption function, but also the key:
+
+\begin{lstlisting}[style=customasmx86]
+.text:0000DAF7 error:                                  ; CODE XREF: sync_sys+255j
+.text:0000DAF7                                         ; sync_sys+274j ...
+.text:0000DAF7                 mov     [ebp+var_8], offset encrypted_error_message2
+.text:0000DAFE                 mov     [ebp+var_C], 17h ; decrypting key
+.text:0000DB05                 jmp     decrypt_end_print_message
+
+...
+
+; this name we gave to label manually:
+.text:0000D9B6 decrypt_end_print_message:              ; CODE XREF: sync_sys+29Dj
+.text:0000D9B6                                         ; sync_sys+2ABj
+.text:0000D9B6                 mov     eax, [ebp+var_18]
+.text:0000D9B9                 test    eax, eax
+.text:0000D9BB                 jnz     short loc_D9FB
+.text:0000D9BD                 mov     edx, [ebp+var_C] ; key
+.text:0000D9C0                 mov     ecx, [ebp+var_8] ; string
+.text:0000D9C3                 push    edx
+.text:0000D9C4                 push    20h
+.text:0000D9C6                 push    ecx
+.text:0000D9C7                 push    18h
+.text:0000D9C9                 call    err_warn
+\end{lstlisting}
+
+The algorithm is a simple \gls{xoring}: each 
+byte is xored with a key, but the key is increased by 3 after the processing of each byte.
+
+We can write a simple Python script to check our hypothesis:
+
+\lstinputlisting[caption=Python 3.x]{examples/dongles/2/decr1.py}
+
+And it prints: \q{check security device connection}.
+So yes, this is the decrypted message.
+
+There are also 
+other encrypted messages with their corresponding keys.
+But needless to say, it is possible 
+to decrypt them without their keys.
+First, we can see that the key 
+is in fact a byte.
+It is because the core decryption instruction
+(\XOR) works on byte level. 
+The key is located in the \ESI register, but only one byte part of \ESI is used.
+Hence, a key may be greater than 255, 
+but its value is always to be rounded.
+
+As a consequence, we can just try brute-force, trying all possible keys in the 0..255 range.
+We are also going to skip 
+the messages that has unprintable characters.
+
+\lstinputlisting[caption=Python 3.x]{examples/dongles/2/decr2.py}
+
+And we get:
+
+\lstinputlisting[caption=Results]{examples/dongles/2/decr2_result.txt}
+
+There 
+is some garbage, but we can quickly find the English-language messages!
+
+By the way, since the algorithm is a simple xoring encryption, the very same function can be used
+to encrypt messages.
+If needed, we can encrypt our own messages, and patch the program by inserting them.
+

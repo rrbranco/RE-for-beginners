@@ -1,0 +1,36 @@
+﻿\subsection{Converting 32-bit value into 64-bit one}
+\label{subsec:sign_extending_32_to_64}
+
+\lstinputlisting[style=customc]{patterns/185_64bit_in_32_env/conversion/4.c}
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012,style=customasmx86]{patterns/185_64bit_in_32_env/conversion/MSVC2012_Ox.asm}
+
+Here we also run into necessity to extend a 32-bit signed value into a 64-bit signed one.
+Unsigned values are converted straightforwardly: all bits in the higher part must be set to 0.
+But this is not appropriate for signed data types: the sign has to be copied into the higher part of the resulting number.
+\myindex{x86!\Instructions!CDQ}
+
+The \INS{CDQ} instruction does that here, it takes its input value in \EAX{}, extends it to 64-bit and leaves it
+in the \EDX{}:\EAX{} register pair.
+In other words, \INS{CDQ} gets the number sign from \EAX{} (by getting the
+most significant bit in \EAX{}), and depending of it, sets all 32 bits in \EDX{} to 0 or 1.
+Its operation is somewhat
+similar to the \MOVSX{} instruction.
+
+\subsubsection{ARM}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/185_64bit_in_32_env/conversion/Keil_ARM_O3.s}
+
+Keil for ARM is different: it just arithmetically shifts right the input value by 31 bits.
+As we know, the sign bit is \ac{MSB}, and the arithmetical shift copies the sign bit into the \q{emerged} bits.
+So after \q{ASR r1,r0,\#31}, \Reg{1} containing 0xFFFFFFFF if the input value has been negative and 0 otherwise.
+\Reg{1} contains the high part of the resulting 64-bit value.
+In other words, this code just copies the \ac{MSB} (sign bit) from the input value in \Reg{0} to all bits of the high 32-bit part of the resulting 64-bit value.
+
+\subsubsection{MIPS}
+
+GCC for MIPS does the same as Keil did for ARM mode:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/185_64bit_in_32_env/conversion/MIPS_O3_IDA.lst}

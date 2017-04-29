@@ -1,0 +1,40 @@
+\subsection{x86}
+
+\subsubsection{MSVC}
+
+Рассмотрим пример, скомпилированный в (MSVC 2010 Express):
+
+\lstinputlisting[label=src:passing_arguments_ex_MSVC_cdecl,caption=MSVC 2010 Express,style=customasmx86]{patterns/05_passing_arguments/msvc_RU.asm}
+
+\myindex{x86!\Registers!EBP}
+Итак, здесь видно: в функции \main заталкиваются три числа в стек и вызывается функция \TT{f(int,int,int)}.
+ 
+Внутри \ttf доступ к аргументам, также как и к локальным переменным, происходит через макросы: 
+\TT{\_a\$ = 8}, но разница в том, что эти смещения со знаком \IT{плюс}, 
+таким образом если прибавить макрос \TT{\_a\$} к указателю на \EBP, то адресуется \IT{внешняя} 
+часть \glslink{stack frame}{фрейма} стека относительно \EBP.
+
+\myindex{x86!\Instructions!IMUL}
+\myindex{x86!\Instructions!ADD}
+Далее всё более-менее просто: значение $a$ помещается в \EAX. 
+Далее \EAX умножается при помощи инструкции \IMUL на то, что лежит в \TT{\_b}, 
+и в \EAX остается \glslink{product}{произведение} этих двух значений.
+
+Далее к регистру \EAX прибавляется то, что лежит в \TT{\_c}.
+
+Значение из \EAX никуда не нужно перекладывать, оно уже лежит где надо. 
+Возвращаем управление вызываемой функции~--- она возьмет значение из \EAX и отправит его в \printf.
+
+\input{patterns/05_passing_arguments/olly_RU}
+
+\subsubsection{GCC}
+
+Скомпилируем то же в GCC 4.4.1 и посмотрим результат в \IDA:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/05_passing_arguments/gcc_RU.asm}
+
+Практически то же самое, если не считать мелких отличий описанных ранее.
+
+После вызова обоих функций \glslink{stack pointer}{указатель стека} не возвращается назад, 
+потому что предпоследняя инструкция \TT{LEAVE} (\myref{x86_ins:LEAVE}) делает это за один раз, в конце исполнения.
+

@@ -1,0 +1,54 @@
+\section{Branchless \IT{abs()} function}
+\label{chap:branchless_abs}
+
+Let's revisit an example we considered earlier \myref{sec:abs} and ask ourselves, is it possible
+to make a branchless version of the function in x86 code?
+
+\lstinputlisting[style=customc]{abs.c}
+
+And the answer is yes.
+
+\subsection{\Optimizing GCC 4.9.1 x64}
+
+We could see it if we compile it using optimizing GCC 4.9:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 x64,style=customasmx86]{\CURPATH/abs_GCC491_x64_O3_EN.asm}
+
+This is how it works:
+
+Arithmetically shift the input value right by 31.
+
+Arithmetical shift implies sign extension, so if the \ac{MSB} is 1, 
+all 32 bits are to be filled with 1, or with 0 if otherwise.
+\myindex{x86!\Instructions!SAR}
+
+In other words, the \TT{SAR REG, 31} instruction makes \TT{0xFFFFFFFF} if the sign has been negative or 0 if positive.
+
+After the execution of \TT{SAR}, we have this value in \EDX.
+\myindex{x86!\Instructions!XOR}
+
+Then, if the value is \TT{0xFFFFFFFF} (i.e., the sign is negative), the input value is inverted \\
+(because \TT{XOR REG, 0xFFFFFFFF} is effectively an inverse all bits operation).
+
+Then, again, if the value is \TT{0xFFFFFFFF} (i.e., the sign is negative), 1 is added to the final result (because
+subtracting $-1$ from some value resulting in incrementing it).
+
+Inversion of all bits and incrementing is exactly how two's complement value is negated: 
+\myref{sec:signednumbers}.
+
+We may observe that the last two instruction do something if the sign of the input value is negative.
+
+Otherwise (if the sign is positive) they do nothing at all, leaving the input value untouched.
+
+The algorithm is explained in \InSqBrackets{\HenryWarren 2-4}.
+
+It's hard to say, how GCC did it, deduced it by itself or found a suitable pattern among known ones?
+
+\subsection{\Optimizing GCC 4.9 ARM64}
+
+GCC 4.9 for ARM64 generates mostly the same, just decides to use the full 64-bit registers.
+
+There are less instructions, because the input value can be shifted using a suffixed instruction (\q{asr})
+instead of using a separate instruction.
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 ARM64,style=customasmARM]{\CURPATH/abs_GCC49_ARM64_O3_EN.s}

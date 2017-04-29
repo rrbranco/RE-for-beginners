@@ -1,0 +1,42 @@
+\subsubsection{ARM}
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/15_structs/4_packing/packing_Keil_thumb.asm}
+
+As we may recall, here a structure is passed instead of pointer to one,
+and since the first 4 function arguments in ARM are passed via registers,
+the structure's fields are passed via \TT{R0-R3}.
+
+\myindex{ARM!\Instructions!LDRB}
+\myindex{x86!\Instructions!MOVSX}
+\TT{LDRB} loads one byte from memory and extends it to 32-bit, taking its sign into account.
+This is similar to \MOVSX in x86.
+Here it is used to load fields $a$ and $c$ from the structure.
+
+\myindex{Function epilogue}
+
+One more thing we spot easily is that instead of function epilogue, there is jump to another function's epilogue!
+Indeed, that was quite different function, not related in any way to ours, however, it has exactly
+the same epilogue 
+(probably because, it hold 5 local variables too 
+($5*4=0x14$)).
+
+Also it is located nearby (take a look at the addresses).
+
+Indeed, it doesn't matter which epilogue gets executed,
+if it works just as we need.
+
+Apparently, Keil decides to reuse a part of another function to economize.
+
+The epilogue takes 4 bytes while jump---only 2.
+
+\myparagraph{ARM + \OptimizingXcodeIV (\ThumbTwoMode)}
+
+\lstinputlisting[caption=\OptimizingXcodeIV (\ThumbTwoMode),style=customasmARM]{patterns/15_structs/4_packing/packing_Xcode_thumb.asm}
+
+\myindex{ARM!\Instructions!SXTB}
+\myindex{x86!\Instructions!MOVSX}
+\TT{SXTB} (\IT{Signed Extend Byte}) is analogous to \MOVSX in x86.
+All the rest---just the same.
+

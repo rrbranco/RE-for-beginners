@@ -1,0 +1,128 @@
+% TODO: add ROL/ROR
+\subsection{\Conclusion{}}
+
+\myindex{x86!\Instructions!SHR}
+\myindex{x86!\Instructions!SHL}
+\myindex{x86!\Instructions!SAR}
+Analog zu den Schiebebefehlen \TT{$\ll$} und \TT{$\gg$} in \CCpp gibt es in
+x86 die Befehle \SHR/\SHL (für vorzeichenlose Werte) und \SAR/\SHL (für
+vorzeichenbehaftete Werte).
+
+\myindex{ARM!\Instructions!LSR}
+\myindex{ARM!\Instructions!LSL}
+\myindex{ARM!\Instructions!ASR}
+Die Schiebebefehle in ARM sind \LSR/\LSL (für vorzeichenlose Werte) und
+\ASR/\LSL (für vorzeichenbehaftete Werte).
+
+Es sind bei manchen Befehlen auch mögliche Suffixe für die Verschiebung
+anzuhängen (diese heiße \q{data processing instructions}).
+% FIXME: which instructions?
+
+\subsubsection{Prüfung auf spezifisches Bit (zur Compilezeit bekannt)}
+Prüfung, ob das Bit 0b10000000 (0x40) sich im Registerwert befindet:
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet0.c}
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/14_bitfields/TEST_JNZ_DE.lst}
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/14_bitfields/TEST_JZ_DE.lst}
+
+\lstinputlisting[caption=ARM
+(\ARMMode),style=customasmARM]{patterns/14_bitfields/TST_BNE_DE.lst}
+
+\myindex{x86!\Instructions!AND}
+\myindex{x86!\Instructions!TEST}
+Manchmal wird \AND anstelle von \TEST verwendet, aber die gesetzten Flags sind
+die gleichen.
+
+\subsubsection{Prüfung auf spezifisches Bit (zur Laufzeit angegeben)}
+Dies wird normalerweise durch den folgenden \CCpp Code gelöst (verschiebe Wert
+um $n$ Bits nach rechts und schneide dann niederwertigstes Bit ab):
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet1.c}
+In x86 Code wird dies gewöhnlich wie folgt implementiert:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; REG=input_value
+; CL=n
+SHR REG, CL
+AND REG, 1
+\end{lstlisting}
+Eine andere Möglichkeit: (verschiebe 1 Bit $n$-mal nach links, isoliere dieses
+Bit im Eingabewert und prüfe, ob es nicht 0 ist):
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet2.c}
+
+In x86 Code wird dies gewöhnlich wie folgt implementiert:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; CL=n
+MOV REG, 1
+SHL REG, CL
+AND input_value, REG
+\end{lstlisting}
+
+\subsubsection{Setzen eines spezifischen Bits (zur Compilerzeit bekannt)}
+
+\begin{lstlisting}[caption=\CCpp]
+value=value|0x40;
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+OR REG, 40h
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ARM (\ARMMode) and ARM64,style=customasmARM]
+ORR R0, R0, #0x40
+\end{lstlisting}
+
+\subsubsection{Setzen eines spezifischen Bits (zur Laufzeit angegeben)}
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet3.c}
+
+In x86 Code wird dies gewöhnlich wie folgt implementiert:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; CL=n
+MOV REG, 1
+SHL REG, CL
+OR input_value, REG
+\end{lstlisting}
+
+\subsubsection{Löschen eines spezifischen Bits (zur Compilezeit bekannt)}
+Man verwendet einfach den \AND Befehl mit dem invertierten Wert:
+
+\begin{lstlisting}[caption=\CCpp,style=customc]
+value=value&(~0x40);
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+AND REG, 0FFFFFFBFh
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x64,style=customasmx86]
+AND REG, 0FFFFFFFFFFFFFFBFh
+\end{lstlisting}
+
+Dies sorgt dafür, dass alle Bits bis auf eines gesetzt werden.
+
+\myindex{ARM!\Instructions!BIC}
+
+ARM im ARM mode verfügt über den Befehl \BIC, der wie ein \NOT+\AND Befehlspaar
+arbeitet:
+
+\begin{lstlisting}[caption=ARM (\ARMMode),style=customasmARM]
+BIC R0, R0, #0x40
+\end{lstlisting}
+
+\subsubsection{Löschen eines spezifischen Bits (zur Laufzeit angegeben)}
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet4.c}
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; CL=n
+MOV REG, 1
+SHL REG, CL
+NOT REG
+AND input_value, REG
+\end{lstlisting}

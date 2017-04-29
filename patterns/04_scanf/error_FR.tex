@@ -1,0 +1,29 @@
+\subsection{Erreur courante}
+
+C'est une erreur très courante (et/ou une typo) de passer la valeur de \IT{x} au
+lieu d'un pointeur sur \IT{x}:
+
+\lstinputlisting[style=customc]{patterns/04_scanf/error.c}
+
+Donc que se passe-t-il ici?
+\IT{x} n'est pas non-initialisée et contient des données aléatoires de la pile
+locale.
+Lorsque \scanf est appelée, elle prend la chaîne de l'utilisateur, la convertit
+en nombre et essaye de l'écrire dans \IT{x}, la considérant comme une adresse en
+mémoire.
+Mais il s'agit de bruit aléatoire, donc \scanf va essayer d'écrire à une adresse
+aléatoire.
+Très probablement, le processus va planter.
+
+\myindex{0xCCCCCCCC}
+\myindex{0x0BADF00D}
+Assez intéressant, certaines bibliothèques \ac{CRT} compilées en debug, mettent
+un signe distinctif lors de l'allocation de la mémoire, comme 0xCCCCCCCC ou
+0x0BADF00D etc.
+Dans ce cas, \IT{x} peut contenir 0xCCCCCCCC, et \scanf va essayer d'écrire à
+l'adresse 0xCCCCCCCC.
+Et si vous remarquez que quelque chose dans votre processus essaye d'écrire à
+l'adresse 0xCCCCCCCC, vous saurez qu'une variable non initialisée (ou un pointeur)
+a été utilisée sans initialisation préalable.
+C'est mieux que si la mémoire nouvellement allouée est juste mise à zéro.
+

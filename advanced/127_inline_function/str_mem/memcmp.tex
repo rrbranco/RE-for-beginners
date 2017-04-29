@@ -1,9 +1,9 @@
-\subsection{memcmp()}
-\index{\CStandardLibrary!memcmp()}
+\subsubsection{memcmp()}
+\myindex{\CStandardLibrary!memcmp()}
 
-\lstinputlisting[caption=\RU{пример с memcmp()}\EN{memcmp() example}]{\CURPATH/str_mem/memcmp.c}
+\lstinputlisting[caption=\RU{пример с memcmp()}\EN{memcmp() example},style=customc]{\CURPATH/str_mem/memcmp.c}
 
-\RU{Для блоков разной длины, MSVC 2010 вставляет одну и ту же универсальную функцию:}
-\EN{For any block size, MSVC 2010 inserts the same universal function:}
+\RU{Для блоков разной длины, MSVC 2013 вставляет одну и ту же универсальную функцию:}%
+\EN{For any block size, MSVC 2013 inserts the same universal function:}
 
-\lstinputlisting[caption=\Optimizing MSVC 2010]{\CURPATH/str_mem/memcmp_MSVC_2010_Ox.asm}
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{\CURPATH/str_mem/memcmp_MSVC_2013_Ox.asm}

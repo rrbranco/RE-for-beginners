@@ -1,0 +1,58 @@
+\subsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/145_LCG/MIPS_O3_IDA_EN.lst}
+
+Wow, here we see only one constant (0x3C6EF35F or 1013904223).
+Where is the other one (1664525)?
+
+It seems that multiplication by 1664525 is performed by just using shifts and additions!
+Let's check this assumption:
+
+\lstinputlisting[style=customc]{patterns/145_LCG/test.c}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/145_LCG/test_O3_MIPS.lst}
+
+Indeed!
+
+\subsubsection{MIPS relocations}
+
+We will also focus on how such operations as load from memory and store to memory actually work.
+
+The listings here are produced by IDA, which hides some details.
+
+We'll run objdump twice: to get a disassembled listing and also relocations list:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (objdump)]{patterns/145_LCG/MIPS_O3_objdump.txt}
+
+Let's consider the two relocations for the \TT{my\_srand()} function.
+
+The first one, for address 0 has a type of \TT{R\_MIPS\_HI16}
+and the second one for address 8 has a type of \TT{R\_MIPS\_LO16}.
+
+That implies that address of the beginning of the .bss segment is to be written into the instructions at
+address of 0 (high part of address) and 8 (low part of address).
+
+The \TT{rand\_state} variable is at the very start of the .bss segment.
+
+So we see zeros in the operands of instructions \LUI and \SW, because nothing is there yet---
+the compiler don't know what to write there.
+
+The linker will fix this, and the high part of the address will be written into the operand of \LUI and
+the low part of the address---to the operand of \SW.
+
+\SW will sum up the low part of the address and what is in register \$V0 (the high part is there).
+
+It's the same story with the my\_rand() function: R\_MIPS\_HI16 relocation instructs the linker to write the high part
+of the .bss segment address into instruction \LUI.
+
+So the high part of the rand\_state variable address is residing in register \$V1.
+
+The \LW instruction at address 0x10 sums up the high and low parts and loads the value of the rand\_state 
+variable into \$V0.
+
+The \SW instruction at address 0x54 do the summing again and then stores the new value 
+to the rand\_state global variable.
+
+IDA processes relocations while loading, thus hiding these details, but we should keep them in mind.
+
+% TODO add example of compiled binary, GDB example, etc...
