@@ -1,0 +1,99 @@
+\subsubsection{Multiple inheritance}
+
+
+Multiple inheritance is creating a class which inherits fields and methods from two or more classes.
+
+Let's write a simple example again:
+
+\lstinputlisting[style=customc]{\CURPATH/classes/classes3_multiple.cpp}
+
+
+Let's compile it in MSVC 2008 with the \Ox and \Obzero options and see the code of \TT{box::dump()},\\
+\TT{solid\_object::dump()} and \TT{solid\_box::dump()}:
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_1.asm}
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_2.asm}
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_3.asm}
+
+
+So, the memory layout for all three classes is:
+
+\IT{box} class:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \tableheader{} \\
+\hline
+  +0x0 & width \\
+\hline
+  +0x4 & height \\
+\hline
+  +0x8 & depth \\
+\hline
+\end{tabular}
+\end{center}
+
+\IT{solid\_object} class:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \tableheader{} \\
+\hline
+  +0x0 & density \\
+\hline
+\end{tabular}
+\end{center}
+
+
+It can be said that the \IT{solid\_box} class memory layout is \IT{united}:
+
+\IT{solid\_box} class:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \tableheader{} \\
+\hline
+  +0x0 & width \\
+\hline
+  +0x4 & height \\
+\hline
+  +0x8 & depth \\
+\hline
+  +0xC & density \\
+\hline
+\end{tabular}
+\end{center}
+
+
+The code of the \TT{box::get\_volume()} and \TT{solid\_object::get\_density()} methods is trivial:
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_4.asm}
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_5.asm}
+
+
+But the code of the \TT{solid\_box::get\_weight()} method is much more interesting:
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_6.asm}
+
+
+\TT{get\_weight()} just calls two methods, but for \TT{get\_volume()} it just passes pointer to \TT{this},
+and for \TT{get\_density()} it passes a pointer to \TT{this} incremented by 12 (or \TT{0xC}) bytes, and there,
+in the \TT{solid\_box}
+class memory layout, the fields of the \TT{solid\_object} class start.
+
+
+Thus, the \TT{solid\_object::get\_density()} method will believe like it is dealing with the usual \TT{solid\_object} class,
+and the \TT{box::get\_volume()} method will work with its three fields, believing this is just the usual object of class \TT{box}.
+
+
+Thus, we can say, an object of a class,
+that inherits from several other classes, is representing in memory as a \IT{united} class, that contains all inherited fields.
+And each inherited method is called with a pointer to 
+the corresponding structure's part.
+

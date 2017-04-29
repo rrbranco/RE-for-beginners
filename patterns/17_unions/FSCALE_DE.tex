@@ -1,0 +1,16 @@
+\section{FSCALE Ersatz}
+\myindex{x86!\Instructions!FSCALE}
+Agner Fog schreibt in seiner Abhandlung \IT{Optimizing subroutines in assembly language / An optimization guide for x86
+platforms} \footnote{\url{http://www.agner.org/optimize/optimizing_assembly.pdf}} , dass der Befehl \INS{FSCALE}
+\ac{FPU} (der $2^n$ berechnet) auf vielen CPUs langsam ist und bietet einen schnelleren Ersatz an.
+
+Hier ist meine Übersetzung von seinem Assemblercode in \CCpp:
+
+\lstinputlisting[style=customc]{patterns/17_unions/FSCALE.c}
+Der Befehl \INS{FSCALE} kann zwar in bestimmten Umgebungen schneller sein, ist aber vor allem ein gutes Beispiel für
+\IT{unions} und die Tatsache, dass der Exponent in der Form $2^n$ gespeichert wird, sodass ein Eingabewert $n$ zum
+Exponenten nach IEEE 754 Standard verschoben wird.
+Der Exponent wird dann durch Addition von 0x3f800000 oder 0x3ff0000000000000 korrigiert.
+
+Das gleiche kann ohne Verschiebung durch ein \IT{struct} erreicht werden, aber intern werden stets Schiebebefehle
+verwendet.

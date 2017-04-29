@@ -1,0 +1,109 @@
+\section{Endianness}
+\label{sec:endianness}
+
+The endianness is a way of representing values in memory.
+
+\subsection{Big-endian}
+
+The \TT{0x12345678} value is represented in memory as:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor address in memory & \HeaderColor byte value \\
+\hline
++0 & 0x12 \\
+\hline
++1 & 0x34 \\
+\hline
++2 & 0x56 \\
+\hline
++3 & 0x78 \\
+\hline
+\end{tabular}
+\end{center}
+
+Big-endian CPUs include Motorola 68k, IBM POWER.
+
+\subsection{Little-endian}
+
+The \TT{0x12345678} value is represented in memory as:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor address in memory & \HeaderColor byte value \\
+\hline
++0 & 0x78 \\
+\hline
++1 & 0x56 \\
+\hline
++2 & 0x34 \\
+\hline
++3 & 0x12 \\
+\hline
+\end{tabular}
+\end{center}
+
+Little-endian CPUs include Intel x86.
+
+\subsection{\Example}
+
+Let's take big-endian MIPS Linux installed and ready in QEMU
+\footnote{Available for download here: \url{http://go.yurichev.com/17008}}.
+
+And let's compile this simple example:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+	int v, i;
+
+	v=123;
+
+	printf ("%02X %02X %02X %02X\n", 
+		*(char*)&v,
+		*(((char*)&v)+1),
+		*(((char*)&v)+2),
+		*(((char*)&v)+3));
+};
+\end{lstlisting}
+
+After running it we get:
+
+\begin{lstlisting}
+root@debian-mips:~# ./a.out 
+00 00 00 7B
+\end{lstlisting}
+
+That is it.
+0x7B is 123 in decimal.
+In little-endian architectures, 7B is the first byte (you can check on x86 or x86-64), 
+but here it is the last one, because the highest byte goes first.
+
+That's why there are separate Linux distributions for MIPS
+(\q{mips} (big-endian) and \q{mipsel} (little-endian)).
+It is impossible for a binary compiled for one endianness to work on an \ac{OS} with different endianness. 
+
+There is another example of MIPS big-endiannes in this book: \myref{MIPS_structure_big_endian}.
+
+\subsection{Bi-endian}
+
+CPUs that may switch between endianness are ARM, PowerPC, SPARC, MIPS, \ac{IA64}, etc.
+
+\subsection{Converting data}
+
+\myindex{x86!\Instructions!BSWAP}
+The \TT{BSWAP} instruction can be used for conversion.
+
+\myindex{TCP/IP}
+TCP/IP network data packets use the big-endian conventions, so that is why a program working on a little-endian architecture
+has to convert the values.
+The \TT{htonl()} and \TT{htons()} functions are usually used.
+
+In TCP/IP, big-endian is also called \q{network byte order}, while byte order on the computer \q{host byte order}.
+\q{host byte order} is little-endian on Intel x86 and other little-endian architectures,
+but it is big-endian on IBM POWER, so \TT{htonl()} and \TT{htons()} don't shuffle any bytes on the latter.
+

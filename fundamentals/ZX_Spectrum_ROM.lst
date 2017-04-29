@@ -1,0 +1,10 @@
+L048C:  DEFM "MERGE erro"           ; Report 'a'.
+       	DEFB 'r'+$80
+L0497:  DEFM "Wrong file typ"       ; Report 'b'.
+       	DEFB 'e'+$80
+L04A6:  DEFM "CODE erro"            ; Report 'c'.
+       	DEFB 'r'+$80
+L04B0:  DEFM "Too many bracket"     ; Report 'd'.
+       	DEFB 's'+$80
+L04C1:  DEFM "File already exist"   ; Report 'e'.
+       	DEFB 's'+$80

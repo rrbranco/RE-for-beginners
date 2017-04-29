@@ -1,0 +1,43 @@
+\subsubsection{x86: a função alloca()}
+\label{alloca}
+\myindex{\CStandardLibrary!alloca()}
+
+\newcommand{\AllocaSrcPath}{C:\textbackslash{}Program Files (x86)\textbackslash{}Microsoft Visual Studio 10.0\textbackslash{}VC\textbackslash{}crt\textbackslash{}src\textbackslash{}intel}
+
+A função \TT{alloca()}
+\footnote{No MSVC, a implementação da função pode ser encontrada nos arquivos \TT{alloca16.asm} e \TT{chkstk.asm} em \\
+\TT{\AllocaSrcPath{}}}
+funciona da mesma maneira que \TT{malloc()}, mas aloca memória diretamente na pilha.
+O bloco de memória alocado não precisa ser limpo através da chamada da função free(),
+desde que o rodapé da função (\myref{sec:prologepilog}) retorna \ESP de volta para seu estado inicial e a memória alocada é simplesmente desassociada.
+Sobre como a função \TT{alloca()} é implementada, em termos simples, essa função só desloca \ESP para baixo 
+(em direção ao fundo da pilha) pelo número de bytes que você precisa e define o ESP como um ponteiro para o bloco alocado.
+
+\RU{Попробуем:}\EN{Let's try:}\PTBR{Vamos tentar:}
+
+\lstinputlisting[style=customc]{patterns/02_stack/04_alloca/2_1.c}
+
+A função \TT{\_snprintf()} funciona exatamente como \printf, mas ao invés de jogar o resultado em stdout
+(terminal ou console, por exemplo), ela escreve no buffer buf.
+A função \puts copia o conteúdo para um buf do stdout.
+Lógico, essas duas chamadas de funções podem ser substituídas por um \printf, mas nós temos que ilustrar o uso pequeno do buffer.
+
+\myparagraph{MSVC}
+
+Vamos compilar (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/02_stack/04_alloca/2_2_msvc.asm}
+
+\myindex{Compiler intrinsic}
+O único argumento da função alloca() é passado via EAX (ao invés de ser empurrado na pilha)
+\footnote{Isso é devido ao fato de que alloca() é mais nativa do compilador do que uma função normal (\myref{sec:compiler_intrinsic}).
+Um dos motivos que se faz necessário o separamento da função ao invés de um pouco de linhas de código no código,
+é porque a implementação da alloca() no MSVC também tem código que é lido da memória que acabou de ser alocada,
+para deixar o sistema operacional mapear a memória física para essa região da memória virtual.}.
+
+Depois da chamada de \TT{alloca()}, \ESP aponta para o bloco de 600 bytes que nós podemos usar como memória para o array.
+
+\myparagraph{GCC + \IntelSyntax}
+
+\PTBRph{}
+

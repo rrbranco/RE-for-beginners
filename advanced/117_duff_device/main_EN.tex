@@ -1,0 +1,122 @@
+\section{Duff's device}
+\myindex{Duff's device}
+\myindex{Unrolled loop}
+
+Duff's device 
+\footnote{\href{http://go.yurichev.com/17137}{wikipedia}}
+is an unrolled loop with the possibility to jump to the middle of it.
+The unrolled loop is implemented using a fallthrough switch() statement.
+We would use here a slightly simplified version of Tom Duff's original code.
+Let's say, we have to write a function that clears a region in memory.
+One can come with a simple loop, clearing byte by byte.
+It's obviously slow, since all modern computers have much wider memory bus.
+So the better way is to clear the memory region using 4 or 8 byte blocks.
+Since we are going to work with a 64-bit example here, we are going to clear the memory in 8 byte blocks.
+So far so good.
+But what about the tail? 
+Memory clearing routine can also be called for regions of size that's not a multiple of 8.
+So here is the algorithm:
+
+\begin{itemize}
+\item calculate the number of 8-byte blocks, clear them using 8-byte (64-bit) memory accesses;
+
+\item calculate the size of the tail, clear it using 1-byte memory accesses.
+\end{itemize}
+
+The second step can be implemented using a simple loop.
+But let's implement it as an unrolled loop:
+
+\lstinputlisting[style=customc]{\CURPATH/duff_EN.c}
+
+Let's first understand how the calculation is performed.
+The memory region size comes as a 64-bit value.
+And this value can be divided in two parts:
+
+% .... 7 6 5 4 3 2 1 0
+%|....|B|B|B|B|B|S|S|S|
+
+\begin{center}
+\begin{bytefield}[endianness=big,bitwidth=0.03\linewidth]{11}
+\bitheader{7,6,5,4,3,2,1,0} \\
+\bitbox{3}{\dots} & 
+\bitbox{1}{B} & 
+\bitbox{1}{B} & 
+\bitbox{1}{B} & 
+\bitbox{1}{B} & 
+\bitbox{1}{B} & 
+\bitbox{1}{S} & 
+\bitbox{1}{S} & 
+\bitbox{1}{S}
+\end{bytefield}
+\end{center}
+
+( \q{B} is number of 8-byte blocks and \q{S} is length of the tail in bytes ).
+
+When we divide the input memory region size by 8, the value is just shifted right by 3 bits.
+But to calculate the remainder, we can just to isolate the lowest 3 bits!
+So the number of 8-byte blocks is calculated as $count>>3$ and remainder as $count \& 7$.
+We also have to find out if we are going to execute the 8-byte procedure at all, so we need
+to check if the value of $count$ is greater than 7.
+We do this by clearing the 3 lowest bits and comparing the resulting number with zero, because 
+all we need here is to answer the question, is the high part of $count$ non-zero.
+Of course, this works because 8 is $2^{3}$ and division by numbers that are $2^n$ is easy.
+It's not possible for other numbers.
+It's actually hard to say if these hacks are worth using, because they lead
+to hard-to-read code.
+However, these tricks are very popular and a practicing programmer, 
+even if he/she is not using them, nevertheless has to understand them.
+
+So the first part is simple: get the number of 8-byte blocks and write 64-bit zero values to memory.
+The second part is an unrolled loop implemented as fallthrough switch() statement.
+
+First, let's express in plain English what we have to do here.
+
+We have to \q{write as many zero bytes in memory, as $count\&7$ value tells us}.
+If it's 0, jump to the end, there is no work to do.
+If it's 1, jump to the place inside switch() statement where only one storage operation
+is to be executed.
+If it's 2, jump to another place, where two storage operation are to be executed, etc.
+7 as input value leads to the execution of all 7 operations.
+There is no 8, because a memory region of 8 bytes is to be processed by the first part of our function.
+So we wrote an unrolled loop.
+It was definitely faster on older computers than normal loops (and conversely,
+latest \ac{CPU}s works better for short loops than for unrolled ones).
+Maybe this is still meaningful on modern low-cost embedded \ac{MCU}s.
+
+Let's see what the optimizing MSVC 2012 does:
+
+\lstinputlisting[style=customasmx86]{\CURPATH/duff_MSVC2012_x64_Ox_EN.asm}
+
+The first part of the function is predictable.
+The second part is just an unrolled loop and a jump passing control flow to the correct instruction
+inside it.
+There is no other code between the \TT{MOV}/\TT{INC} instruction pairs, 
+so the execution is to fall until the very end, executing as many pairs as needed.
+By the way, we can observe that the \TT{MOV}/\TT{INC} pair consumes a fixed number of bytes (3+3).
+So the pair consumes 6 bytes.
+Knowing that, we can get rid of the switch() jumptable, we can just multiple the input value by 6
+and jump to $current\_RIP + input\_value * 6$.
+
+This can also be faster because we are not in need to fetch a value from the jumptable.
+
+It's possible that 6 probably is not a very good constant for fast multiplication and maybe it's not worth it,
+but you get the idea\footnote{As an exercise, you can try to rework the code to get rid of 
+the jumptable. 
+\myindex{x86!\Instructions!STOSB}
+The instruction pair can be rewritten in a way that it will consume 4 bytes or maybe 8. 
+1 byte is also possible (using \TT{STOSB} instruction).}.
+
+That is what old-school demomakers did in the past with unrolled loops.
+
+\subsection{Should one use unrolled loops?}
+\myindex{Unrolled loop}
+
+Unrolled loops can have benefits if there is no fast cache memory between \ac{RAM} and \ac{CPU}, and the \ac{CPU},
+in order to get the code of the next instruction, must load it from \ac{RAM} each time.
+This is a case of modern low-cost \ac{MCU} and old \ac{CPU}s.
+
+Unrolled loops are slower than short loops if there is a fast cache between \ac{RAM} and \ac{CPU} and the body of loop
+can fit into cache, and \ac{CPU} will load the code from it not touching the \ac{RAM}.
+Fast loops are the loops which body's size can fit into L1 cache, but even faster loops are those small ones
+which can fit into micro-operation cache.
+

@@ -1,0 +1,65 @@
+\subsection{对CPU的简单介绍}
+
+程序由机器码组成，而\ac{CPU}正是执行这些机器码的硬件。
+
+\textbf{术语表:}
+
+\begin{description}
+\item[指令(Instruction)]: 原生的\ac{CPU}命令(意即，可以被CPU直接执行)。
+一些简单的例子如下: 在寄存器之间拷贝(转移)数据、对内存数据进行操作、基本的运算操作等等。
+通常来说，每个\ac{CPU}都有它自己的指令集架构(\ac{ISA}, Instruction Set Architecture)。
+
+\item[机器码(Machine Code)]: 能被\ac{CPU}直接处理的代码。
+每条指令通常被编码为数个字节。
+\item[汇编语言(Assembly language)]: 为简化程序员的工作，将机器码编码为有意义的助记符，并提供了一些扩展功能(例如宏)的语言。
+\item[CPU寄存器(CPU register)]: 每种\ac{CPU}都有固定数量的通用寄存器(\ac{GPR})。
+在x86架构的CPU中$\approx 8$个，在x86-64架构的CPU中$\approx 16$个，在ARM架构的CPU中$\approx 16$个。
+想理解寄存器，最简单的方式就是，把它们看做一个个无类型的临时变量。
+不妨考虑成，你在使用一种高级\ac{程序语言}，并且只能使用8个32位(64位)的变量。
+然而就算这样，还是可以做很多事的！
+\end{description}
+
+% TODO1 add about linker: "компоновщик" и "редактор связей" в русскоязычной лит-ре
+
+% A note on the experiments in this area (like the LISP machines http://en.wikipedia.org/wiki/Lisp_machine
+% might be useful
+
+% I replaced \ac{PL} with "程序语言" (which means "Programming Language" in Chinese)
+% As "PL" is not commonly used as an abbreviation of "Programming Language" in most Chinese textbooks
+
+有些人可能对“为什么有了机器码，还需要有\ac{程序语言}”感到困惑。这是因为，人类的大脑与\ac{CPU}的能力并不相似---%
+对于人类来说，像\CCpp、Java、Python等等一样的\ac{程序语言}更容易使用，然而，对于\ac{CPU}来说，使用更低等级的抽象模型更为简单。
+或许可以发明一种能够执行高级\ac{程序语言}代码的\ac{CPU}，但是它可能将比我们现有的\ac{CPU}复杂数倍。
+相似地，对于人类来说，汇编语言也是非常不方便的，因为它本身过于底层，并且很难不制造大量令人烦躁的错误。
+将高等级的\ac{程序语言}代码转换成汇编语言代码的程序，被称作\IT{编译器(compiler)}。
+\footnote{旧版本的俄语教材通常使用\q{翻译器(translator)}一词。}
+
+\myindex{ARM!\ARMMode}%
+\myindex{ARM!\ThumbMode}%
+\myindex{ARM!\ThumbTwoMode}%
+
+\subsubsection{一些关于不同\ac{ISA}的讨论}
+x86\ac{ISA}不使用固定的长度编码指令，所以当64位时代到来时，x64扩展并没有对原有的\ac{ISA}造成巨大影响。事实上，x86\ac{ISA}还包含了大量的在16位8086 CPU上就出现了的指令，并且这些指令在现在的CPU中依旧存在。
+ARM是一种基于\ac{RISC}的\ac{CPU}。在一开始就设计成固定长度的指令，这在过去(的硬件资源条件下)是有一定益处的。
+起初，所有的ARM指令都被编码为4个字节%
+\footnote{
+顺带一提，固定长度的指令在计算下一条(或上一条)指令的地址时是很方便的。这一功能将在switch()语句~(\myref{sec:SwitchARMLot})一节被提及。
+}。
+如今，这种模式被称作\q{ARM模式}。
+在后来，语言设计者们认为这种模式(译者注: 指编码为4字节)并不像他们最初想象的那样节省资源。
+事实上，在应用程序中最常用的\ac{CPU}指令\footnote{这些指令是MOV/PUSH/CALL/Jcc}通常可以用更少的信息来编码。
+因此，设计者们增加了一种新的\ac{ISA}，称为Thumb，Thumb指令集架构使用2个字节来编码每条指令。
+如今，这种模式被称作\q{Thumb模式}。
+然而，并不是\IT{全部的}ARM指令都能仅被编码为2个字节的，所以Thumb指令集多少还是有一点限制的。
+值得一提的是，在一个单独的程序中，以ARM模式编译的代码和以Thumb模式编译的代码是可以同时存在的。
+ARM的创始人们认为Thumb具有扩展的空间，这导致了Thumb-2的诞生 —— 它在ARMv7中首次出现。
+Thumb-2如今仍旧使用2个字节的指令，但是有一些新添加的指令需要占用4个字节。
+许多人误认为Thumb-2是Thumb和ARM的混合体，这是错误的。实际上，Thumb-2扩展了Thumb，支持了处理器的全部功能，所以它是可以和ARM模式相媲美的模式 —— 事实上这一目标它已经很明显达成了，因为\idevices上的大多数应用程序都使用了Thumb-2指令集进行编译(必须承认，很大程度上是因为Xcode的默认设置如此)。
+后来64位的ARM诞生了。这一\ac{ISA}使用了4字节的指令，并且没有任何使用Thumb模式的必要了。
+然而，64位ARM有一些要满足的条件，这对\ac{ISA}造成了影响。因此我们现在有了3个ARM指令集: ARM模式、Thumb模式(包括Thumb-2)和ARM64模式。
+这些\ac{ISA}彼此之间存在交集，但是他们都可以被认为是不同的\ac{ISA}，而不是互相看作是某一\ac{ISA}的变种。
+因此，我们会将书中的每一段代码编译为3种ARM\ac{ISA}对应的代码。
+\myindex{PowerPC}%
+\myindex{MIPS}%
+\myindex{Alpha AXP}%
+顺带一提，还有许多基于\ac{RISC}的\ac{ISA}使用了固定32位长度的指令，例如MIPS、PowerPC和Alpha AXP。

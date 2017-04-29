@@ -1,0 +1,62 @@
+\subsubsection{ARM: \OptimizingKeilVI (\ARMMode)}
+\myindex{\CLanguageElements!switch}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/few_ARM_ARM_O3.asm}
+
+Мы снова не сможем сказать, глядя на этот код, был ли в оригинальном исходном коде switch() 
+либо же несколько операторов if().
+
+\myindex{ARM!\Instructions!ADRcc}
+Так или иначе, мы снова видим здесь инструкции с предикатами, например, \ADREQ (\IT{(Equal)}), 
+которая будет исполняться только
+если $R0=0$, и тогда в \Reg{0} будет загружен адрес строки \IT{<<zero\textbackslash{}n>>}.
+
+\myindex{ARM!\Instructions!BEQ}
+Следующая инструкция \ac{BEQ} перенаправит исполнение на \TT{loc\_170}, если $R0=0$.
+
+Кстати, наблюдательный читатель может спросить, сработает ли \ac{BEQ} нормально,
+ведь \ADREQ перед ним уже заполнила регистр \Reg{0} чем-то другим?
+
+Сработает, потому что \ac{BEQ} проверяет флаги, установленные инструкцией \CMP, 
+а \ADREQ флаги никак не модифицирует.
+
+Далее всё просто и знакомо. 
+Вызов \printf один, и в самом конце, мы уже рассматривали подобный трюк~(\myref{ARM_B_to_printf}).
+К вызову функции \printf{} в конце ведут три пути.
+
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!CMP}
+Последняя инструкция \TT{CMP R0, \#2} здесь нужна, чтобы узнать $a=2$ или нет.
+
+Если это не так, то при помощи \ADRNE (\IT{Not Equal}) в \Reg{0} будет загружен указатель на 
+строку \IT{<<something unknown \textbackslash{}n>>}, ведь $a$ уже было проверено на 0 и 1 до этого, 
+и здесь $a$ точно не попадает под эти константы.
+
+Ну а если $R0=2$, в \Reg{0} будет загружен указатель на строку \IT{<<two\textbackslash{}n>>} при помощи инструкции \ADREQ.
+
+\subsubsection{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/few_ARM_thumb_O3.asm}
+
+% FIXME а каким можно? к каким нельзя? \myref{} ->
+Как уже было отмечено, в Thumb-режиме нет возможности добавлять условные предикаты к большинству инструкций,
+так что Thumb-код вышел похожим на код x86 в стиле \ac{CISC}, вполне понятный.
+
+\subsubsection{ARM64: \NonOptimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/ARM64_GCC_O0_RU.lst}
+
+Входное значение имеет тип \Tint, поэтому для него используется регистр \RegW{0},
+а не целая часть регистра \RegX{0}.
+
+Указатели на строки передаются в \puts при помощи пары инструкций ADRP/ADD, как было показано в примере
+\q{\HelloWorldSectionName}:~\myref{pointers_ADRP_and_ADD}.
+
+\subsubsection{ARM64: \Optimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/ARM64_GCC_O3_RU.lst}
+
+Фрагмент кода более оптимизированный.
+Инструкция \TT{CBZ} (\IT{Compare and Branch on Zero}~--- сравнить и перейти если ноль) совершает переход если \RegW{0} ноль.
+Здесь также прямой переход на \puts вместо вызова, как уже было описано:~\myref{JMP_instead_of_RET}.
+

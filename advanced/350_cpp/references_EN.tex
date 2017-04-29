@@ -1,0 +1,50 @@
+\subsection{References}
+\myindex{\Cpp!References}
+\label{cpp_references}
+
+In \Cpp, references are pointers (\myref{label_pointers}) as well, but they are called \IT{safe}, because it is harder to make a mistake while
+dealing with them (C++11 8.3.2). % FIXME link
+
+For example, reference must always be pointing to an object of the corresponding type and cannot be NULL
+\InSqBrackets{\ParashiftCPPFAQ 8.6}.
+
+Even more than that, references cannot be changed, it is impossible to point them to another object (reseat)
+\InSqBrackets{\ParashiftCPPFAQ 8.5}.
+
+If we are going to try to change the example with pointers (\myref{label_pointers}) 
+to use references instead \dots
+
+\begin{lstlisting}[style=customc]
+void f2 (int x, int y, int & sum, int & product)
+{
+	sum=x+y;
+	product=x*y;
+};
+\end{lstlisting}
+
+\dots then we can see that the compiled code is just the same 
+as in the pointers example (\myref{label_pointers}):
+
+\begin{lstlisting}[caption=\Optimizing MSVC 2010,style=customasmx86]
+_x$ = 8		; size = 4
+_y$ = 12	; size = 4
+_sum$ = 16	; size = 4
+_product$ = 20	; size = 4
+?f2@@YAXHHAAH0@Z PROC	; f2
+	mov	ecx, DWORD PTR _y$[esp-4]
+	mov	eax, DWORD PTR _x$[esp-4]
+	lea	edx, DWORD PTR [eax+ecx]
+	imul eax, ecx
+	mov ecx, DWORD PTR _product$[esp-4]
+	push esi
+	mov	esi, DWORD PTR _sum$[esp]
+	mov	DWORD PTR [esi], edx
+	mov	DWORD PTR [ecx], eax
+	pop	esi
+	ret	0
+?f2@@YAXHHAAH0@Z ENDP	; f2
+\end{lstlisting}
+
+(The reason why \Cpp functions has such strange names is explained here: \myref{namemangling}.)
+
+Hence, C++ references are as much efficient as usual pointers.

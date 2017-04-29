@@ -1,0 +1,40 @@
+f:
+                lui     $gp, (__gnu_local_gp >> 16)
+; est-ce 1?
+                li      $v0, 1
+                beq     $a0, $v0, loc_60
+                la      $gp, (__gnu_local_gp & 0xFFFF) ; §slot de délai de branchement§
+; est-ce 2?
+                li      $v0, 2
+                beq     $a0, $v0, loc_4C
+                or      $at, $zero ; §slot de délai de branchement, NOP§
+; jump, if not equal to 0:
+                bnez    $a0, loc_38
+                or      $at, $zero ; §slot de délai de branchement, NOP§
+; §cas zéro§:
+                lui     $a0, ($LC0 >> 16)  # "zero"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; §slot de délai de branchement, NOP§
+                jr      $t9 ; §slot de délai de branchement, NOP§
+                la      $a0, ($LC0 & 0xFFFF)  # "zero" ; §slot de délai de branchement§
+
+loc_38:                                  # CODE XREF: f+1C
+                lui     $a0, ($LC3 >> 16)  # "something unknown"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; §slot de délai de branchement, NOP§
+                jr      $t9
+                la      $a0, ($LC3 & 0xFFFF)  # "something unknown" ; §slot de délai de branchement§
+
+loc_4C:                                  # CODE XREF: f+14
+                lui     $a0, ($LC2 >> 16)  # "two"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; §slot de délai de branchement, NOP§
+                jr      $t9
+                la      $a0, ($LC2 & 0xFFFF)  # "two" ; §slot de délai de branchement§
+
+loc_60:                                  # CODE XREF: f+8
+                lui     $a0, ($LC1 >> 16)  # "one"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; §slot de délai de branchement, NOP§
+                jr      $t9
+                la      $a0, ($LC1 & 0xFFFF)  # "one" ; §slot de délai de branchement§

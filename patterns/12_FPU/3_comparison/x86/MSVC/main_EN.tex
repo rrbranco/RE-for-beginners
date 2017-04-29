@@ -1,0 +1,102 @@
+\myparagraph{\NonOptimizing MSVC}
+
+MSVC 2010 generates the following:
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2010,style=customasmx86]{patterns/12_FPU/3_comparison/x86/MSVC/MSVC_EN.asm}
+
+\myindex{x86!\Instructions!FLD}
+
+So, \FLD loads \GTT{\_b} into \ST{0}.
+
+\label{Czero_etc}
+\newcommand{\Czero}{\GTT{C0}\xspace}
+\newcommand{\Ctwo}{\GTT{C2}\xspace}
+\newcommand{\Cthree}{\GTT{C3}\xspace}
+\newcommand{\CThreeBits}{\Cthree/\Ctwo/\Czero}
+
+\myindex{x86!\Instructions!FCOMP}
+
+\FCOMP compares the value in \ST{0} with what is in \GTT{\_a} 
+and sets \CThreeBits bits in FPU status word register, accordingly. 
+This is a 16-bit register that reflects the current state of the FPU.
+
+After the bits are set, the \FCOMP instruction also pops one variable from the stack. 
+This is what distinguishes it from \FCOM, which is just compares values, leaving the stack in the same state.
+
+Unfortunately, CPUs before Intel P6
+\footnote{Intel P6 is Pentium Pro, Pentium II, etc.} don't have any conditional 
+jumps instructions which check the \CThreeBits bits. 
+Perhaps, it is a matter of history (recall: FPU was a separate chip in past).\\
+Modern CPU starting at Intel P6 have \FCOMI/\FCOMIP/\FUCOMI/\FUCOMIP 
+instructions~---which do the same, but modify the \ZF/\PF/\CF CPU flags.
+
+\myindex{x86!\Instructions!FNSTSW}
+
+The \FNSTSW instruction copies FPU the status word register to \AX. 
+\CThreeBits bits are placed at positions 14/10/8, 
+they are at the same positions in the \AX register and all they are placed in the high part of \AX{}~---\AH{}.
+
+\begin{itemize}
+\item If $b>a$ in our example, then \CThreeBits bits are to be set as following: 0, 0, 0.
+\item If $a>b$, then the bits are: 0, 0, 1.
+\item If $a=b$, then the bits are: 1, 0, 0.
+\item
+
+If the result is unordered (in case of error), then the set bits are: 1, 1, 1.
+\end{itemize}
+% TODO: table here?
+
+This is how \CThreeBits bits are located in the \AX register:
+
+\input{C3_in_AX}
+
+This is how \CThreeBits bits are located in the \AH register:
+
+\input{C3_in_AH}
+
+After the execution of \INS{test ah, 5}\footnote{5=101b}, 
+only \Czero and \Ctwo bits (on 0 and 2 position) are considered, all other bits are just
+ignored.
+
+\label{parity_flag}
+\myindex{x86!\Registers!\Flags!Parity flag}
+
+Now let's talk about the \IT{parity flag}, another notable historical rudiment.
+
+This flag is set to 1 if the number of ones in the result of the last calculation is even, and to 0 if it is odd.
+
+Let's look into Wikipedia\footnote{\href{http://go.yurichev.com/17131}{wikipedia.org/wiki/Parity\_flag}}:
+
+\begin{framed}
+\begin{quotation}
+One common reason to test the parity flag actually has nothing to do with parity. The FPU has four condition flags 
+(C0 to C3), but they cannot be tested directly, and must instead be first copied to the flags register. 
+When this happens, C0 is placed in the carry flag, C2 in the parity flag and C3 in the zero flag. 
+The C2 flag is set when e.g. incomparable floating point values (NaN or unsupported format) are compared 
+with the FUCOM instructions.
+\end{quotation}
+\end{framed}
+
+As noted in Wikipedia, the parity flag used sometimes in FPU code, let's see how.
+
+\myindex{x86!\Instructions!JP}
+
+The \PF flag is to be set to 1 if both \Czero and \Ctwo are set to 0 or both are 1, in which case
+the subsequent \JP (\IT{jump if PF==1}) is triggering. 
+If we recall the values of \CThreeBits for various cases,
+we can see that the conditional jump 
+\JP is triggering in two cases: if $b>a$ or $a=b$ 
+(\Cthree bit is not considered here, since it has been cleared by the \INS{test ah, 5} instruction).
+
+It is all simple after that. 
+If the conditional jump has been triggered, 
+\FLD loads the value of \GTT{\_b} 
+in \ST{0}, and if it hasn't been triggered, the value of \GTT{\_a} is loaded there.
+
+\mysubparagraph{And what about checking \Ctwo?}
+
+The \Ctwo flag is set in case of error (\gls{NaN}, etc.), but our code doesn't check it.
+
+If the programmer cares about FPU errors, he/she must add additional checks.
+
+\input{patterns/12_FPU/3_comparison/x86/MSVC/olly_EN.tex}

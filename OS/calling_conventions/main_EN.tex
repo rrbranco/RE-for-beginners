@@ -1,0 +1,284 @@
+\section{Arguments passing methods (calling conventions)}
+\label{sec:callingconventions}
+
+\subsection{cdecl}
+\myindex{cdecl}
+\label{cdecl}
+
+This is the most popular method for passing arguments to functions in the \CCpp languages.
+
+The gls{caller} also must return the value of the \gls{stack pointer} (\ESP) to its initial state after the \gls{callee} function exits.
+
+\begin{lstlisting}[caption=cdecl,style=customasmx86]
+push arg3
+push arg2
+push arg1
+call function
+add esp, 12 ; returns ESP
+\end{lstlisting}
+
+\subsection{stdcall}
+\label{sec:stdcall}
+\myindex{stdcall}
+
+\newcommand{\SIZEOFINT}{The size of an \Tint type variable is 4 in x86 systems and 8 in x64 systems}
+
+It's almost the same as \IT{cdecl}, with the exception that the \gls{callee} must set \ESP to the initial state by executing the \TT{RET x} instruction instead of \RET, \\
+where \TT{x = arguments number * sizeof(int)\footnote{\SIZEOFINT}}.
+The \gls{caller} is not adjusting the \gls{stack pointer}, 
+there are no \TT{add esp, x} instruction.
+
+\begin{lstlisting}[caption=stdcall,style=customasmx86]
+push arg3
+push arg2
+push arg1
+call function
+
+function:
+... do something ...
+ret 12
+\end{lstlisting}
+
+The method is ubiquitous in win32 standard libraries, but not in win64 (see below about win64).
+
+\par For example, we can take the function from \myref{src:passing_arguments_ex} and change it slightly by adding the \TT{\_\_stdcall} modifier:
+
+\begin{lstlisting}[style=customc]
+int __stdcall f2 (int a, int b, int c)
+{
+	return a*b+c;
+};
+\end{lstlisting}
+
+It is to be compiled in almost the same way as \myref{src:passing_arguments_ex_MSVC_cdecl}, but you will see \TT{RET 12} instead of \TT{RET}.
+\ac{SP} is not updated in the \gls{caller}.
+
+As a consequence, 
+the number of function arguments can be easily deduced from the \TT{RETN n} instruction: just divide $n$ by 4.
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{OS/calling_conventions/stdcall_ex.asm}
+
+\subsubsection{Functions with variable number of arguments}
+
+\printf-like functions are, probably, the only case of functions with a variable number of arguments in \CCpp,
+but it is easy to illustrate an important difference between \IT{cdecl} and \IT{stdcall} with their help.
+Let's start with the idea that the compiler knows the argument count of each \printf function call.
+
+However, the called \printf, which is already compiled and located in MSVCRT.DLL (if we talk about Windows),
+does not have any information about how much arguments were passed, however it can determine it from the format string.
+
+Thus, if \printf would be a \IT{stdcall} function and restored \gls{stack pointer} to its initial state by counting
+the number of arguments in the format string, this could be a dangerous situation, when one programmer's typo can
+provoke a sudden program crash.
+Thus it is not suitable for such functions to use \IT{stdcall}, \IT{cdecl} is better.
+
+\subsection{fastcall}
+\label{fastcall}
+\myindex{fastcall}
+
+That's the general naming for the method of passing some arguments via registers and the 
+rest via the stack. It worked faster than \IT{cdecl}/\IT{stdcall} on older CPUs 
+(because of smaller stack pressure).
+It may not help to gain any significant performance on latest (much more complex) \ac{CPU}s, however.
+
+It is not standardized, so the various compilers can do it differently.
+It's a well known caveat: if you have two DLLs and the one uses another one, and they are built by different compilers with 
+different \IT{fastcall} calling conventions, you can expect problems.
+
+Both MSVC and GCC pass the first and second arguments via \ECX and \EDX and the rest of the arguments via the stack.
+
+The \gls{stack pointer} must be restored to its initial state by the \gls{callee} (like in \IT{stdcall}).
+
+\begin{lstlisting}[caption=fastcall,style=customasmx86]
+push arg3
+mov edx, arg2
+mov ecx, arg1
+call function
+
+function:
+.. do something ..
+ret 4
+\end{lstlisting}
+
+For example, we may take the function from \myref{src:passing_arguments_ex} and change it slightly by adding a \TT{\_\_fastcall} modifier:
+
+\begin{lstlisting}[style=customc]
+int __fastcall f3 (int a, int b, int c)
+{
+	return a*b+c;
+};
+\end{lstlisting}
+
+Here is how it is to be compiled:
+
+\lstinputlisting[caption=\Optimizing MSVC 2010 /Ob0,style=customasmx86]{OS/calling_conventions/fastcall_ex.asm}
+
+We see that the \gls{callee} returns \ac{SP} by using the \TT{RETN} instruction with an operand.
+
+Which implies that the number of arguments can be deduced easily here as well.
+
+\subsubsection{GCC regparm}
+
+\newcommand{\URLREGPARMM}{\url{http://go.yurichev.com/17040}}
+
+It is the evolution of \IT{fastcall}\footnote{\URLREGPARMM} in some sense.
+With the \TT{-mregparm} option it is possible to set how many arguments are to be passed via registers (3 is the maximum).
+Thus, the \EAX, \EDX and \ECX registers are to be used.
+
+Of course, if the number the of arguments is less than 3, not all 3 registers are to be used.
+
+The \gls{caller} restores the \gls{stack pointer} to its initial state.
+
+For example, see (\myref{regparm}).
+
+\subsubsection{Watcom/OpenWatcom}
+\myindex{OpenWatcom}
+
+Here it is called \q{register calling convention}.
+The first 4 arguments are passed via the \EAX, \EDX, \EBX and \ECX registers.
+All the rest---via the stack.
+
+These functions has an underscore appended to the function name in order to distinguish them from 
+those having a different calling convention.
+
+\subsection{thiscall}
+\myindex{thiscall}
+
+This is passing the object's \ITthis pointer to the function-method, in \Cpp.
+
+In MSVC, \ITthis is usually passed in the \ECX register.
+
+In GCC, the \ITthis pointer is passed as the first function-method argument.
+Thus it will be very visible that internally: all function-methods have an extra argument.
+
+For an example, see (\myref{thiscall}).
+
+\subsection{x86-64}
+\myindex{x86-64}
+
+\subsubsection{Windows x64}
+\label{sec:callingconventions_win64}
+
+The method of for passing arguments in Win64 somewhat resembles \TT{fastcall}.
+The first 4 arguments are passed via \RCX, \RDX, \Reg{8} and \Reg{9}, the rest---via the stack.
+The \gls{caller} also must prepare space for 32 bytes or 4 64-bit values,
+so then the \gls{callee} can save there the first 4 arguments.
+Short functions may use the arguments' values just from the registers,
+but larger ones may save their values for further use.
+
+The \gls{caller} also must return the \gls{stack pointer} into its initial state.
+
+This calling convention is also used in Windows x86-64 system DLLs 
+(instead of \IT{stdcall} in win32).
+
+Example:
+
+\lstinputlisting[style=customc]{OS/calling_conventions/x64.c}
+
+\lstinputlisting[caption=MSVC 2012 /0b,style=customasmx86]{OS/calling_conventions/x64_MSVC_Ob.asm}
+
+\myindex{Scratch space}
+
+Here we clearly see how 7 arguments are passed: 4 via registers and the remaining 3 via the stack.
+
+The code of the f1() function's prologue saves the arguments in the \q{scratch space}---a space in the stack
+intended exactly for this purpose.
+
+This is arranged so because the compiler cannot be sure that there will be enough registers to use without these 4,
+which will otherwise be occupied by the arguments until the function's execution end.
+
+The \q{scratch space} allocation in the stack is the caller's duty.
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 /0b,style=customasmx86]{OS/calling_conventions/x64_MSVC_Ox_Ob.asm}
+
+If we compile the example with optimizations, it is to be almost the same, 
+but the \q{scratch space} will not be used, because it won't be needed.
+
+\myindex{x86!\Instructions!LEA}
+\label{using_MOV_and_pack_of_LEA_to_load_values}
+
+Also take a look on how MSVC 2012 optimizes the loading of primitive values into registers by using \LEA (\myref{sec:LEA}).
+\INS{MOV} would be 1 byte longer here (5 instead of 4).
+
+Another example of such thing is: \myref{TaskMgr_LEA}.
+
+\myparagraph{Windows x64: Passing \ITthis (\CCpp)}
+
+The \ITthis pointer is passed in \RCX, the first argument of the method is in \RDX, etc.
+For an example see: \myref{simple_CPP_MSVC_x64}.
+ 
+\subsubsection{Linux x64}
+
+The way arguments are passed in Linux for x86-64 is almost the same as in Windows, but 6 registers are
+used instead of 4 (\RDI, \RSI, \RDX, \RCX, \Reg{8}, \Reg{9}) and there is no \q{scratch space}, 
+although the \gls{callee} may save the register values in the stack, if it needs/wants to.
+
+\lstinputlisting[caption=\Optimizing GCC 4.7.3,style=customasmx86]{OS/calling_conventions/x64_linux_O3.s}
+
+\myindex{AMD}
+
+N.B.: here the values are written into the 32-bit parts of the registers (e.g., EAX) but not in the whole 64-bit 
+register (RAX).
+This is because each write to the low 32-bit part of a register automatically clears the high 32 bits.
+Supposedly, it was decided in AMD to do so to simplify porting code to x86-64.
+
+\subsection{Return values of \Tfloat and \Tdouble type}
+\myindex{float}
+\myindex{double}
+
+In all conventions except in Win64, the values of type \Tfloat or \Tdouble are returned via the FPU register \ST{0}.
+
+In Win64, the values of \Tfloat and \Tdouble types are returned 
+in the low 32 or 64 bits of the \XMM{0} register.
+
+\subsection{Modifying arguments}
+
+Sometimes, \CCpp{} programmers (not limited to these \ac{PL}s, though),
+may ask, what can happen if they modify the arguments?
+
+The answer is simple: the arguments are stored in the stack, 
+that is where the modification takes place.
+
+The calling functions is not using them after the \gls{callee}'s exit (the author of these lines has never seen any such case in his practice).
+
+\lstinputlisting[style=customc]{OS/calling_conventions/change_arguments.c}
+
+\lstinputlisting[caption=MSVC 2012,style=customasmx86]{OS/calling_conventions/change_arguments.asm}
+
+% TODO (OllyDbg) пример как в стеке меняется $a$
+
+So yes, one can modify the arguments easily.
+Of course, if it is not \IT{references} in \Cpp{} (\myref{cpp_references}),
+and if you don't modify data to which a pointer points to, 
+then the effect will not propagate outside the current function.
+
+Theoretically, after the \gls{callee}'s return, 
+the \gls{caller} could get the modified argument and use it somehow.
+Maybe if it is written directly in assembly language.
+
+For example, code like this will be generated by usual \CCpp compiler:
+
+\begin{lstlisting}[style=customasmx86]
+	push	456	; will be b
+	push	123	; will be a
+	call	f	; f() modifies its first argument
+	add	esp, 2*4
+\end{lstlisting}
+
+We can rewrite this code like:
+
+\begin{lstlisting}[style=customasmx86]
+	push	456	; will be b
+	push	123	; will be a
+	call	f	; f() modifies its first argument
+	pop	eax
+	add	esp, 4
+	; EAX=1st argument of f() modified in f()
+\end{lstlisting}
+
+Hard to imagine, why anyone would need this, but this is possible in practice.
+Nevertheless, the \CCpp languages standards don't offer any way to do so.
+
+% sections
+\input{OS/calling_conventions/ptr_to_argument/main_EN}
+

@@ -1,0 +1,36 @@
+\subsection{Einen Zeiger auf ein Argument verarbeiten}
+\label{pointer_to_argument}
+
+\dots mehr als das ist es sogar möglich, einen Zeiger auf ein Funktionsargument
+zu nehmen und an eine weitere Funktion zu übergeben:
+
+\lstinputlisting[style=customc]{OS/calling_conventions/ptr_to_argument/10.c}
+
+Es ist schwierig die Funktionsweise zu verstehen, aber der folgende Code bring Klarheit:
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{OS/calling_conventions/ptr_to_argument/MSVC_2010_O3.asm}
+
+Die Adresse der Stelle im Stack an der $a$ übergeben wird, wird lediglich an eine
+weitere Funktion übergeben.
+Diese verändert den Wert der mit dem Zeiger übergeben wird und \printf gibt anschließend
+den veränderten Wert aus.
+
+\par Der aufmerksame Leser mag sich fragen, was mit der Aufrufkonvention ist, in der
+Funktionsargumente in Registern übergeben werden.
+
+Das ist eine Situation, in der \IT{Shadow Space} genutzt wird.
+
+Der Eingangswert wird vom Register in den \IT{Shadow Space} des lokalen Stacks
+kopiert und dann diese Adresse an die andere Funktion übergeben:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{OS/calling_conventions/ptr_to_argument/MSVC_2012_x64_O3.asm}
+
+GCC sichert den Eingangswert ebenfalls auf dem lokalen Stack:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 x64,style=customasmx86]{OS/calling_conventions/ptr_to_argument/GCC491_x64_O3.s}
+
+GCC für ARM64 tut genau das gleiche, allerdings wird hier der Platz \IT{Register Save Area} genannt:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 ARM64,style=customasmARM]{OS/calling_conventions/ptr_to_argument/GCC49_ARM64_O3.s}
+
+Übrigens eine gleiche Nutzung des \IT{Shadow Space} wird auch hier beschrieben: \myref{variadic_arith_registers}.

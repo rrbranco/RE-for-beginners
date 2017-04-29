@@ -1,0 +1,47 @@
+.text:004006C0 main:
+.text:004006C0
+.text:004006C0 var_10          = -0x10
+.text:004006C0 var_4           = -4
+.text:004006C0
+; prologue de la fonction:
+.text:004006C0                 lui     $gp, 0x42
+.text:004006C4                 addiu   $sp, -0x20
+.text:004006C8                 li      $gp, 0x418940
+.text:004006CC                 sw      $ra, 0x20+var_4($sp)
+.text:004006D0                 sw      $gp, 0x20+var_10($sp)
+; appel de puts():
+.text:004006D4                 la      $t9, puts
+.text:004006D8                 lui     $a0, 0x40
+.text:004006DC                 jalr    $t9 ; puts
+.text:004006E0                 la      $a0, aEnterX     # "Enter X:" ; §slot de délai de branchement§
+; appel de scanf():
+.text:004006E4                 lw      $gp, 0x20+var_10($sp)
+.text:004006E8                 lui     $a0, 0x40
+.text:004006EC                 la      $t9, __isoc99_scanf
+; §préparer l'adresse de x:§
+.text:004006F0                 la      $a1, x
+.text:004006F4                 jalr    $t9 ; __isoc99_scanf
+.text:004006F8                 la      $a0, aD          # "%d"       ; §slot de délai de branchement§
+; appel de printf():
+.text:004006FC                 lw      $gp, 0x20+var_10($sp)
+.text:00400700                 lui     $a0, 0x40
+; prendre l'adresse de x:
+.text:00400704                 la      $v0, x
+.text:00400708                 la      $t9, printf
+; §charger la valeur de la variable "x" et la passer à printf() dans§ $a1:
+.text:0040070C                 lw      $a1, (x - 0x41099C)($v0)
+.text:00400710                 jalr    $t9 ; printf
+.text:00400714                 la      $a0, aYouEnteredD___  # "You entered %d...\n" ; §slot de délai de branchement§
+; §épilogue de la fonction:§
+.text:00400718                 lw      $ra, 0x20+var_4($sp)
+.text:0040071C                 move    $v0, $zero
+.text:00400720                 jr      $ra
+.text:00400724                 addiu   $sp, 0x20  ; §slot de délai de branchement§
+
+...
+
+.sbss:0041099C  # §Type de segment: Non initialisé§
+.sbss:0041099C                 .sbss
+.sbss:0041099C                 .globl x
+.sbss:0041099C x:              .space 4
+.sbss:0041099C

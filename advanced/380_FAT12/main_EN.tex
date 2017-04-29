@@ -1,0 +1,348 @@
+% TODO TikZ
+\section[Packing 12-bit values into array]{Packing 12-bit values into array using bit operations (x64, ARM/ARM64, MIPS)}
+
+(This part has been first appeared in my blog at 4-Sep-2015.)
+
+\subsection{Introduction}
+
+File Allocation Table (FAT) was a widely popular filesystem.
+Hard to believe, but it's still used on flash drives, perhaps, for the reason of simplicity and compatibility.
+The FAT table itself is array of elements, each of which points to the next cluster number of a file 
+(FAT supports files scattered across the whole disk).
+That implies that maximum of each element is maximum number of clusters on the disk.
+In MS-DOS era, most hard disks has FAT16 filesystem, because cluster number could be packed into 16-bit value.
+Hard disks then become cheaper, and FAT32 emerged, where 32-bit value was allocated for cluster number.
+But there were also a times, when floppy diskettes were not that cheap and has no much space, so FAT12 were used on them,
+for the reason of packing all filesystem structures as tight as possible.
+
+So the FAT table in FAT12 filesystem is an array where each two subsequent 12-bit elements are stored into 3 bytes (triplet).
+Here is how 6 12-bit values (AAA, BBB, CCC, DDD, EEE and FFF) are packed into 9 bytes:
+
+\begin{lstlisting}
+ +0 +1 +2 +3 +4 +5 +6 +7 +8
+|AA|AB|BB|CC|CD|DD|EE|EF|FF|...
+\end{lstlisting}
+
+Pushing values into array and pulling them back can be good example of bit twiddling operations (in both C/C++ and low-level machine code),
+so that's why I'll use FAT12 as an example here.
+
+\subsection{Data structure}
+
+We can quickly observe that each byte triplet will store 2 12-bit values: the first one is located at the left side, second one is at right:
+
+\begin{lstlisting}
+ +0 +1 +2
+|11|12|22|...
+\end{lstlisting}
+
+We will pack nibbles (4 bit chunks) in the following way (1 - highest nibble, 3 - lowest):
+
+(Even)
+
+\begin{lstlisting}
+ +0 +1 +2
+|12|3.|..|...
+\end{lstlisting}
+
+(Odd)
+
+\begin{lstlisting}
+ +0 +1 +2
+|..|.1|23|...
+\end{lstlisting}
+
+\subsection{The algorithm}
+
+So the algorithm can be as follows: if the element's index is even, put it at left side, if the index is odd, place it at right side.
+The middle byte: if the element's index is even, place part of it in high 4 bits, if it's odd, place its part in low 4 bits.
+But first, find the right triplet, this is easy: $\frac{index}{2}$.
+Finding the address of right byte in array of bytes is also easy: $\frac{index}{2} \cdot 3$ or $index \cdot \frac{3}{2}$ or just $index \cdot 1.5$.
+
+Pulling values from array: if index is even, get leftmost and middle bytes and combine its parts.
+If index is odd, get middle and rightmost bytes and combine them.
+Do not forget to isolate unneeded bits in middle byte.
+
+Pushing values is almost the same, but be careful not to overwrite some \IT{other's} bits in the middle byte, correcting only \IT{yours}.
+
+\subsection{The C/C++ code}
+
+\lstinputlisting[style=customc]{advanced/380_FAT12/FAT12.c}
+
+During test, all 12-bit elements are filled with values in 0..0xFFF range.
+And here is a dump of all triplets, each line has 3 bytes:
+
+\begin{lstlisting}
+0x000001
+0x002003
+0x004005
+0x006007
+0x008009
+0x00A00B
+0x00C00D
+0x00E00F
+0x010011
+0x012013
+0x014015
+
+...
+
+0xFECFED
+0xFEEFEF
+0xFF0FF1
+0xFF2FF3
+0xFF4FF5
+0xFF6FF7
+0xFF8FF9
+0xFFAFFB
+0xFFCFFD
+0xFFEFFF
+\end{lstlisting}
+
+Here is also GDB byte-level output of 300 bytes (or 100 triplets) started at 512/2*3, i.e., it's address where 512th element (0x200) is beginning.
+I added square brackets in my text editor to show triplets explicitly.
+Take a notice at the middle bytes, where the last element is ended and the next is started.
+In other words, each middle byte has lowest 4 bits of even element and highest 4 bits of odd element.
+
+\lstinputlisting{advanced/380_FAT12/gdb.txt}
+
+\subsection{How it works}
+
+Let array be a global buffer to make simpler access to it.
+
+\subsubsection{Getter}
+
+Let's first start at the function getting values from the array, because it's simpler.
+
+The method of finding triplet's number is just division input index by 2, but we can do it just by shifting right by 1 bit.
+This is a very common way of dividing/multiplication by numbers in form of $2^n$.
+
+I can demonstrate how it works. Let's say, you want to divide 123 by 10.
+Just drop last digit (3, which is remainder of division) and 12 is left.
+Division by 2 is just dropping least significant bit. Dropping can be done by shifting right.
+
+Now the functions must decide if the input index even (so 12-bit value is placed at the left) or odd (at the right).
+Simplest way to do so is to isolate lowest bit (x\&1). If it's zero, our value is even, otherwise it's odd.
+
+This fact can be illustrated easily, take a look at the lowest bit:
+
+\begin{lstlisting}
+decimal binary even/odd
+
+0       0000   even
+1       0001   odd
+2       0010   even
+3       0011   odd
+4       0100   even
+5       0101   odd
+6       0110   even
+7       0111   odd
+8       1000   even
+9       1001   odd
+10      1010   even
+11      1011   odd
+12      1100   even
+13      1101   odd
+14      1110   even
+15      1111   odd
+...
+\end{lstlisting}
+
+Zero is also even number, it's so in two's complement system,
+where it's located between two odd numbers (-1 and 1).
+
+For math geeks, I could also say that even or odd sign is also remainder of division by 2.
+Division of a number by 2 is merely dropping the last bit, which is remainder of division.
+Well, we do not have to do shifts here, just isolate lowest bit.
+
+If the element is odd, we take middle and right bytes (\IT{array[array\_idx+1]} and \IT{array[array\_idx+2]}).
+Lowest 4 bits of the middle byte is isolated.
+Right byte is taken as a whole.
+Now we have to combine these parts into 12-bit value.
+To do so, shift 4 bits from the middle byte by 8 bits left, so these 4 bits will be allocated right behind highest 8th bit of byte.
+Then, using OR operation, we just add these parts.
+
+If the element is even, high 8 bits of 12-bit value is located in left byte, while lowest 4 bits are located in the high 4 bits of middle byte.
+We isolate highest 4 bits in the middle byte by shifting it 4 bits right and then applying AND operation, just to be sure that nothing is left there.
+We also take left byte and shift its value 4 bits left, because it has bits from 11th to 4th (inclusive, starting at 0),
+Using OR operation, we combine these two parts.
+
+\subsubsection{Setter}
+
+Setter calculates triplet's address in the same way.
+It also operates on left/right bytes in the same way.
+But it's not correct just to write to the middle byte, because write operation will destroy the information related to the other element.
+So the common way is to load byte, drop bits where you'll write, write it there, but leave other part intact.
+Using AND operation (\TT{\&} in C/C++), we drop everything except \IT{our} part.
+Using OR operation (\TT{|} in C/C++), we then update the middle byte.
+
+\subsection{Optimizing GCC 4.8.2 for x86-64}
+
+Let's see what optimizing GCC 4.8.2 for Linux x64 will do.
+I added comments.
+Sometimes readers are confused because instructions order is not logical.
+It's OK, because optimizing compilers take CPU out-of-order-execution mechanisms into considerations, and sometimes,
+swapped instructions performing better.
+
+\subsubsection{Getter}
+
+\lstinputlisting[style=customasmx86]{advanced/380_FAT12/GCC_getter.asm}
+
+\subsubsection{Setter}
+
+\lstinputlisting[style=customasmx86]{advanced/380_FAT12/GCC_setter.asm}
+
+\subsubsection{Other comments}
+
+All addresses in Linux x64 are 64-bit ones, so during pointer arithmetic, all values should also be 64-bit.
+The code calculating offsets inside of array operates on 32-bit values (input \IT{idx} argument has type of \IT{int}, which has width of 32 bits),
+and so these values must be converted to 64-bit addresses before actual memory load/store.
+So there are a lot of sign-extending instructions (like \INS{CDQE}, \INS{MOVSX}) used for conversion.
+Why to extend sign? By C/C++ standards, pointer arithmetic can operate on negative values 
+(it's possible to access array using negative index like \IT{array[-123]}, see: \myref{negative_array_indices}).
+Since GCC compiler cannot be sure if all indices are always positive, it adds sign-extending instructions.
+
+\subsection{Optimizing Keil 5.05 (Thumb mode)}
+
+\subsubsection{Getter}
+
+The following code has final OR operation in the function epilogue.
+Indeed, it executes at the end of both branches, so it's possible to save some space.
+
+\lstinputlisting[style=customasmARM]{advanced/380_FAT12/Keil_thumb_O3_getter.asm}
+
+There are at least of redundancy: \IT{idx*1.5} is calculated twice.
+As an exercise, reader may try to rework assembly function to make it shorter. Do not forget about testing!
+
+Another thing to mention is that it's hard to generate big constants in 16-bit Thumb instructions, so Keil compiler often generates
+tricky code using shifting instructions to achieve the same effect.
+For example, it's tricky to generate \INS{AND Rdest, Rsrc, 1} or \INS{TST Rsrc, 1} code in Thumb mode, 
+so Keil generates the code which shifts input \IT{idx} by 31 bits left and then check, if the resulting value zero or not.
+
+\subsubsection{Setter}
+
+The first half of setter code is very similar to getter, address of triplet is calculated first,
+then the jump is occurred in order to dispatch to the right handler's code.
+
+\lstinputlisting[style=customasmARM]{advanced/380_FAT12/Keil_thumb_O3_setter.asm}
+
+\subsection{Optimizing Keil 5.05 (ARM mode)}
+
+\subsubsection{Getter}
+
+Getter function for ARM mode has no conditional branches at all!
+Thanks to the suffixes (like \IT{-EQ}, \IT{-NE}), which can be supplied to many instructions in ARM mode,
+so the instruction will be only executed if the corresponding flag(s) are set.
+
+Many arithmetical instructions in ARM mode can have shifting suffix like \INS{LSL \#1}
+(it means, the last operand is shifted left by 1 bit).
+
+\lstinputlisting[style=customasmARM]{advanced/380_FAT12/Keil_ARM_O3_getter.asm}
+
+\subsubsection{Setter}
+
+\lstinputlisting[style=customasmARM]{advanced/380_FAT12/Keil_ARM_O3_setter.asm}
+
+Value of \IT{idx*1.5} is calculated twice, this is redundancy Keil compiler produced can be eliminated.
+You can rework assembly function as well to make it shorter. Do not forget about tests!
+
+\subsection{(32-bit ARM) Comparison of code density in Thumb and ARM modes}
+
+Thumb mode in ARM CPUs was introduced to make instructions shorter (16-bits) instead of 32-bit instructions in ARM mode.
+But as we can see, it's hard to say, if it was worth it: code in ARM mode is always shorter (however, instructions are longer).
+
+\subsection{Optimizing GCC 4.9.3 for ARM64}
+
+\subsubsection{Getter}
+
+\lstinputlisting[style=customasmARM]{advanced/380_FAT12/ARM64_getter.lst}
+
+ARM64 has new cool instruction \INS{UBFIZ} (\IT{Unsigned bitfield insert in zero, with zeros to left and right}), 
+which can be used to place specified number of bits from one register to another.
+It's alias of another instruction, \INS{UBFM} (\IT{Unsigned bitfield move, with zeros to left and right}).
+\INS{UBFM} is the instruction used internally in ARM64 instead of \INS{LSL/LSR} (bit shifts).
+
+\subsubsection{Setter}
+
+\lstinputlisting[style=customasmARM]{advanced/380_FAT12/ARM64_setter.lst}
+
+\subsection{Optimizing GCC 4.4.5 for MIPS}
+
+Needless to keep in mind that each instruction after jump/branch instruction is executed first.
+It's called \IT{branch delay slot} in RISC CPUs lingo.
+To make things simpler, just swap instructions (mentally) in each instruction pair which is started with branch or jump instruction.
+
+MIPS has no flags (apparently, to simplify data dependencies), so branch instructions (like \INS{BNE}) does both comparison and branching.
+
+There is also GP (Global Pointer) set up code in the function prologue, which can be ignored so far.
+
+\subsubsection{Getter}
+
+\lstinputlisting[style=customasmMIPS]{advanced/380_FAT12/MIPS_getter.asm}
+
+\subsubsection{Setter}
+
+\lstinputlisting[style=customasmMIPS]{advanced/380_FAT12/MIPS_setter.asm}
+
+\subsection{Difference from the real FAT12}
+
+The real FAT12 table is slightly different: \url{https://en.wikipedia.org/wiki/Design_of_the_FAT_file_system\#Cluster_map}.
+
+For even elements:
+
+\begin{lstlisting}
+ +0 +1 +2
+|23|.1|..|..
+\end{lstlisting}
+
+For odd elements:
+
+\begin{lstlisting}
+ +0 +1 +2
+|..|3.|12|..
+\end{lstlisting}
+
+Here are FAT12-related functions in Linux Kernel:\\
+\href{https://github.com/torvalds/linux/blob/de182468d1bb726198abaab315820542425270b7/fs/fat/fatent.c#L117}{fat12\_ent\_get()},
+\href{https://github.com/torvalds/linux/blob/de182468d1bb726198abaab315820542425270b7/fs/fat/fatent.c#L153}{fat12\_ent\_put()}.
+
+Nevertheless, I did as I did because values are better visible and recognizable in byte-level GDB dump, for the sake of demonstration.
+
+\subsection{Exercise}
+
+Perhaps, there could be a way to store data in a such way, so getter/setter functions would be faster.
+If we would place values in this way:
+
+(Even elements)
+
+\begin{lstlisting}
+ +0 +1 +2
+|23|1.|..|..
+\end{lstlisting}
+
+(Odd elements)
+
+\begin{lstlisting}
+ +0 +1 +2
+|..|.1|23|..
+\end{lstlisting}
+
+This schema of storing data will allow to eliminate at least one shift operation.
+As an exercise, you may rework my C/C++ code in that way and see what compiler will produce.
+
+\subsection{Summary}
+
+Bit shifts (\TT{<<} and \TT{>>} in C/C++, \INS{SHL}/{SHR}/{SAL}/{SAR} in x86, \INS{LSL}/\INS{LSR} in ARM, \INS{SLL}/\INS{SRL} in MIPS) are used 
+to place bit(s) to specific place.
+
+AND operation (\TT{\&} in C/C++, \INS{AND} in x86/ARM) is used to drop unneeded bits, also during isolation.
+
+OR operation (\TT{|} in C/C++, \INS{OR} in x86/ARM) is used to merge or combine several values into one.
+One input value must have zero space at the place where another value has its information-caring bits.
+
+ARM64 has new instructions \INS{UBFM}, \INS{UFBIZ} to move specific bits from one register to another.
+
+\subsection{Conclusion}
+
+FAT12 is hardly used somewhere nowadays, but if you have space constraints and you have to store values limited to 12 bits,
+you may consider tightly-packed array in the manner it's done in FAT12 table.
+

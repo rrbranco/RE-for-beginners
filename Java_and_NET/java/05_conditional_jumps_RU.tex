@@ -1,0 +1,170 @@
+% TODO proof-reading
+\subsection{Условные переходы}
+
+Перейдем к условным переходам.
+
+\begin{lstlisting}[style=customjava]
+public class abs
+{
+	public static int abs(int a)
+	{
+		if (a<0)
+			return -a;
+		return a;
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static int abs(int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=1, locals=1, args_size=1
+         0: iload_0       
+         1: ifge          7
+         4: iload_0       
+         5: ineg          
+         6: ireturn       
+         7: iload_0       
+         8: ireturn       
+\end{lstlisting}
+
+
+\TT{ifge} переходит на смещение 7 если значение на \ac{TOS} больше или равно 0.
+
+Не забывайте, любая инструкция \TT{ifXX} выталкивает значение (с которым будет производиться
+сравнение) из стека.
+
+
+\TT{ineg} просто меняет знак значения на \ac{TOS}.
+
+Еще пример:
+
+\begin{lstlisting}[style=customjava]
+	public static int min (int a, int b)
+	{
+		if (a>b)
+			return b;
+		return a;
+	}
+\end{lstlisting}
+
+Получаем:
+
+\begin{lstlisting}
+  public static int min(int, int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=2, args_size=2
+         0: iload_0       
+         1: iload_1       
+         2: if_icmple     7
+         5: iload_1       
+         6: ireturn       
+         7: iload_0       
+         8: ireturn       
+\end{lstlisting}
+
+\TT{if\_icmple} выталкивает два значения и сравнивает их.
+
+Если второе меньше первого (или равно), происходит переход на смещение 7.
+
+
+Когда мы определяем функцию \TT{max()} \dots
+
+\begin{lstlisting}[style=customjava]
+	public static int max (int a, int b)
+	{
+		if (a>b)
+			return a;
+		return b;
+	}
+\end{lstlisting}
+
+
+\dots итоговый код точно такой же, только последние инструкции \TT{iload} 
+(на смещениях 5 и 7) поменяны местами:
+
+\begin{lstlisting}
+  public static int max(int, int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=2, args_size=2
+         0: iload_0       
+         1: iload_1       
+         2: if_icmple     7
+         5: iload_0       
+         6: ireturn       
+         7: iload_1       
+         8: ireturn       
+\end{lstlisting}
+
+Более сложный пример:
+
+\begin{lstlisting}[style=customjava]
+public class cond
+{
+	public static void f(int i)
+	{
+		if (i<100)
+			System.out.print("<100");
+		if (i==100)
+			System.out.print("==100");
+		if (i>100)
+			System.out.print(">100");
+		if (i==0)
+			System.out.print("==0");
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void f(int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: iload_0       
+         1: bipush        100
+         3: if_icmpge     14
+         6: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+         9: ldc           #3        // String <100
+        11: invokevirtual #4        // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+        14: iload_0       
+        15: bipush        100
+        17: if_icmpne     28
+        20: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+        23: ldc           #5        // String ==100
+        25: invokevirtual #4        // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+        28: iload_0       
+        29: bipush        100
+        31: if_icmple     42
+        34: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+        37: ldc           #6        // String >100
+        39: invokevirtual #4        // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+        42: iload_0       
+        43: ifne          54
+        46: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+        49: ldc           #7        // String ==0
+        51: invokevirtual #4        // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+        54: return        
+\end{lstlisting}
+
+\TT{if\_icmpge} Выталкивает два значения и сравнивает их.
+
+Если второй больше первого, происходит переход на смещение 14.
+
+\TT{if\_icmpne} и \TT{if\_icmple} работают одинаково, но используются разные условия.
+
+
+По смещению 43 есть также инструкция \TT{ifne}.
+
+Название неудачное, её было бы лучше назвать \TT{ifnz} 
+(переход если переменная на \ac{TOS} не равна нулю).
+
+И вот что она делает: производит переход на смещение 54, если входное значение не ноль.
+
+Если ноль, управление передается на смещение 46, где выводится строка \q{==0}.
+
+
+N.B.: В \ac{JVM} нет беззнаковых типов данных, так что инструкции сравнения работают
+только с знаковыми челочисленными значениями.

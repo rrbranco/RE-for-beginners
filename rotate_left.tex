@@ -1,0 +1,42 @@
+\begin{center}
+	\begin{tikzpicture}[scale=0.7, every node/.style={scale=0.7}]
+	\edef\bitsize{1cm}
+	\tikzstyle{byte}=[draw,minimum size=\bitsize]	
+	\tikzstyle{every path}=[thick]
+
+	\node [draw,rectangle,minimum size=\bitsize] (a1) {7};
+	\node [draw,rectangle,minimum size=\bitsize] (a2) [right of=a1] {6};
+	\node [draw,rectangle,minimum size=\bitsize] (a3) [right of=a2] {5};
+	\node [draw,rectangle,minimum size=\bitsize] (a4) [right of=a3] {4};
+	\node [draw,rectangle,minimum size=\bitsize] (a5) [right of=a4] {3};
+	\node [draw,rectangle,minimum size=\bitsize] (a6) [right of=a5] {2};
+	\node [draw,rectangle,minimum size=\bitsize] (a7) [right of=a6] {1};
+	\node [draw,rectangle,minimum size=\bitsize] (a8) [right of=a7] {0};
+
+	\node (empty) [below of=a1] {};
+
+	\node [draw,rectangle,minimum size=\bitsize] (b1) [below of=empty] {7};
+	\node [draw,rectangle,minimum size=\bitsize] (b2) [right of=b1] {6};
+	\node [draw,rectangle,minimum size=\bitsize] (b3) [right of=b2] {5};
+	\node [draw,rectangle,minimum size=\bitsize] (b4) [right of=b3] {4};
+	\node [draw,rectangle,minimum size=\bitsize] (b5) [right of=b4] {3};
+	\node [draw,rectangle,minimum size=\bitsize] (b6) [right of=b5] {2};
+	\node [draw,rectangle,minimum size=\bitsize] (b7) [right of=b6] {1};
+	\node [draw,rectangle,minimum size=\bitsize] (b8) [right of=b7] {0};
+	
+	\node [shape=rectangle,draw,minimum size=\bitsize] (cf) [left=of b1] {CF};
+	
+	\draw [->] (a1.south) -- (b8.north);
+	\draw [->] (a2.south) -- (b1.north);
+	\draw [->] (a3.south) -- (b2.north);
+	\draw [->] (a4.south) -- (b3.north);
+	\draw [->] (a5.south) -- (b4.north);
+	\draw [->] (a6.south) -- (b5.north);
+	\draw [->] (a7.south) -- (b6.north);
+	\draw [->] (a8.south) -- (b7.north);
+	
+	\draw [->] (a1.south) -- (cf.north);
+
+	\end{tikzpicture}
+\end{center}
+

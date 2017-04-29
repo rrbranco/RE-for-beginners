@@ -1,0 +1,35 @@
+\subsection{Taking a pointer to function argument}
+\label{pointer_to_argument}
+
+\dots even more than that, it's possible to take a pointer to the function's argument and pass
+it to another function:
+
+\lstinputlisting[style=customc]{OS/calling_conventions/ptr_to_argument/10.c}
+
+It's hard to understand how it works until we can see the code:
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{OS/calling_conventions/ptr_to_argument/MSVC_2010_O3.asm}
+
+The address of the place in the stack where $a$ has been passed is just passed to another function.
+It modifies the value addressed by the pointer and then \printf prints the modified value.
+
+\par The observant reader might ask, what about calling conventions where the function's arguments are
+passed in registers?
+
+That's a situation where the \IT{Shadow Space} is used.
+
+The input value is copied from the register
+to the \IT{Shadow Space} in the local stack, and then this address is passed to the other function:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{OS/calling_conventions/ptr_to_argument/MSVC_2012_x64_O3.asm}
+
+GCC also stores the input value in the local stack:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 x64,style=customasmx86]{OS/calling_conventions/ptr_to_argument/GCC491_x64_O3.s}
+
+GCC for ARM64 does the same, but this space is called \IT{Register Save Area} here:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 ARM64,style=customasmARM]{OS/calling_conventions/ptr_to_argument/GCC49_ARM64_O3.s}
+
+By the way, a similar usage of the \IT{Shadow Space} is also considered here: \myref{variadic_arith_registers}.
+

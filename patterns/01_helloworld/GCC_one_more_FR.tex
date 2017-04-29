@@ -1,0 +1,72 @@
+\subsection{GCC---encore une chose}
+\label{use_parts_of_C_strings}
+
+Le fait est qu'une chaîne C \IT{anonyme} a un type \IT{const} (\myref{string_is_const_char}),
+et que les chaînes C allouées dans le segment des constantes sont garanties d'être immuables, ce qui a pour
+conséquence:
+Le compilateur peut utiliser une partie spécifique de la chaîne.
+
+Voyons cela avec un exemple:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int f1()
+{
+	printf ("world\n");
+}
+
+int f2()
+{
+	printf ("hello world\n");
+}
+
+int main()
+{
+	f1();
+	f2();
+}
+\end{lstlisting}
+
+La pluplart des compilateurs \CCpp{} (incluant MSVC) allouent deux chaînes, mais voyons ce que fait GCC 4.8.1:
+
+\begin{lstlisting}[caption=GCC 4.8.1 + IDA listing,style=customasmx86]
+f1              proc near
+
+s               = dword ptr -1Ch
+
+                sub     esp, 1Ch
+                mov     [esp+1Ch+s], offset s ; "world\n"
+                call    _puts
+                add     esp, 1Ch
+                retn
+f1              endp
+
+f2              proc near
+
+s               = dword ptr -1Ch
+
+                sub     esp, 1Ch
+                mov     [esp+1Ch+s], offset aHello ; "hello "
+                call    _puts
+                add     esp, 1Ch
+                retn
+f2              endp
+
+aHello          db 'hello '
+s               db 'world',0xa,0
+\end{lstlisting}
+
+Effectivement: lorsque nous affichons la chaîne \q{hello world} ses deux mots sont positionnés
+consécutivement en mémoire et l'appel à \puts depuis la fonction \GTT{f2()}
+n'est pas au courant que la chaîne est divisée.
+En fait, elle n'est pas divisée; elle l'est \q{virtuellement}, dans ce listing.
+
+Lorsque \puts est appelé depuis \GTT{f1()}, il utilise la chaîne \q{world} ainsi qu octet à zéro. \puts ne sait pas
+qu'il y a quelque chose avant cette chaîne!
+
+Cette astuce est souvent utilisée, au moins par GCC, et permet d'éconimiser de la mémoire.
+C'est proche de \IT{string interning}. % TODO clarify imbrication de chaînes ?
+
+Un autre exemple concernant ceci est là: \myref{strstr_example}.
+

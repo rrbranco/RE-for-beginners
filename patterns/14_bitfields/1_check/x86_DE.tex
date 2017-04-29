@@ -1,0 +1,159 @@
+\subsubsection{x86}
+\myindex{Windows!Win32}
+
+Win32 API Beipsiel:
+
+\begin{lstlisting}[style=customc]
+	HANDLE fh;
+
+	fh=CreateFile ("file", GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+\end{lstlisting}
+
+We get (MSVC 2010):
+
+\begin{lstlisting}[caption=MSVC 2010,style=customasmx86]
+	push	0
+	push	128		; 00000080H
+	push	4
+	push	0
+	push	1
+	push	-1073741824	; c0000000H
+	push	OFFSET $SG78813
+	call	DWORD PTR __imp__CreateFileA@28
+	mov	DWORD PTR _fh$[ebp], eax
+\end{lstlisting}
+
+Schauen wir uns WinNT.h genauer an:
+
+\begin{lstlisting}[caption=WinNT.h,style=customc]
+#define GENERIC_READ                     (0x80000000L)
+#define GENERIC_WRITE                    (0x40000000L)
+#define GENERIC_EXECUTE                  (0x20000000L)
+#define GENERIC_ALL                      (0x10000000L)
+\end{lstlisting}
+Alles eindeutig beschrieben: GENERIC\_READ | GENERIC\_WRITE = 0x80000000 |
+0x40000000 = 0xC0000000. Dieser Wert wird als zweites Argument für die Funktion
+\TT{CreateFile()}\footnote{\href{http://go.yurichev.com/17065}{msdn.microsoft.com/en-us/library/aa363858(VS.85).aspx}}
+verwendet.
+
+Wie würde \TT{CreateFile()} diese Flags überprüfen?
+\myindex{Windows!KERNEL32.DLL}
+Wenn wir und die KERNEL32.DLL in Windows XP SP3 x86 anschauen, finden wir dieses
+Codefragment in \TT{CreateFileW}:
+
+\begin{lstlisting}[caption=KERNEL32.DLL (Windows XP SP3 x86),style=customasmx86]
+.text:7C83D429     test    byte ptr [ebp+dwDesiredAccess+3], 40h
+.text:7C83D42D     mov     [ebp+var_8], 1
+.text:7C83D434     jz      short loc_7C83D417
+.text:7C83D436     jmp     loc_7C810817
+\end{lstlisting}
+
+\myindex{x86!\Instructions!TEST}
+Wir finden hier den \TEST Befehl, aber dieser nimmt nicht das ganze zweite
+Argument, sonder nur das MSB (\TT{ebp+dwDesiredAccess+3}) und prüft es auf das
+Flag \TT{0x40} (welches hier dem \TT{GENERIC\_WRITE} Flag entspricht).
+
+\myindex{x86!\Instructions!AND}
+\TEST ist prinzipiell der gleiche Befehl wie \AND, aber das Ergebnis wird nicht
+gespeichert. (Erinnern wir uns, dass \CMP das gleiche macht wie \SUB, aber auch
+ohne das Ergebnis zu speichern~(\myref{CMPandSUB})).
+
+Die Logik dieses Codefragments ist die folgende:
+
+\begin{lstlisting}[style=customc]
+if ((dwDesiredAccess&0x40000000) == 0) goto loc_7C83D417
+\end{lstlisting}
+
+\myindex{x86!\Instructions!AND}
+\myindex{x86!\Registers!ZF}
+Wennn der \AND Befehl dieses Bit hinterlässt, wird das \ZF Flag gelöscht und der
+bedingte Sprung \JZ wird nicht ausgeführt.
+Der bedingte Sprung wird nur dann ausgeführt, wenn das Bit \TT{0x40000000} in
+der Variable \TT{dwDesiredAccess} fehlt~---dann ist das Ergebnis von \AND 0, \ZF
+wird gesetzt und der bedingte Sprung wird ausgeführt.
+
+Schauen wir es uns mit GCC 4.4.1 unter Linux an:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <fcntl.h>
+
+void main()
+{
+	int handle;
+
+	handle=open ("file", O_RDWR | O_CREAT);
+};
+\end{lstlisting}
+
+Wir erhalten folgenden Code:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/14_bitfields/1_check/check.asm}
+
+\myindex{Linux!libc.so.6}
+\myindex{syscall}
+Wenn wir uns die Funktion \TT{open()} in der Bibliothek \TT{libc.so.6}
+anschauen, gibt es nur einen syscall:
+
+\begin{lstlisting}[caption=open() (libc.so.6),style=customasmx86]
+.text:000BE69B     mov     edx, [esp+4+mode] ; mode
+.text:000BE69F     mov     ecx, [esp+4+flags] ; flags
+.text:000BE6A3     mov     ebx, [esp+4+filename] ; filename
+.text:000BE6A7     mov     eax, 5
+.text:000BE6AC     int     80h             ; LINUX - sys_open
+\end{lstlisting}
+
+Die Bitfields für \TT{open()} werden also offenbar irgendwo im Linux Kernel
+geprüft.
+
+Natürlich ist es ein Leichtes sowohl GLibc als auch den Quellcode des Linux
+Kernels herunterzuladen, aber wir wollen wir Sache ohne den Quellcode verstehen.
+
+Wenn also in Linux 2.6 der syscall \TT{sys\_open} verwendet wird, wird die
+Kontrolle an \TT{do\_sys\_open} übergeben und anschließend von dort aus---an die
+Funktion \TT{do\_filp\_open()} (diese befindet sich im Verzeichnisbaum des
+Kernel-Quellcodes in \TT{fs/namei.c}).
+
+\newcommand{\URLREGPARM}{\href{http://go.yurichev.com/17040}{ohse.de/uwe/articles/gcc-attributes.html\#func-regparm}}
+
+\myindex{fastcall}
+\label{regparm}
+Neben der Übergabe von Argumenten über den Stack gibt es auch die Möglichkeit
+einige von ihnen direkt über Register zu übergeben. Dies wird auch
+fastcall~(\myref{fastcall}) genannt. 
+Es ist schneller, da die CPU nicht auf den Stack im Speicher zugreifen muss, um
+die Funktionsargumente einzulesen.
+GCC kennt dafür die Option \IT{regparm}\footnote{\URLREGPARM}, mithilfe derer es
+möglich ist, die Anzahl der Argumente anzugeben, die über Register übergeben
+werden sollen.
+
+\newcommand{\URLKERNELNEWB}{\href{http://go.yurichev.com/17066}{kernelnewbies.org/Linux\_2\_6\_20\#head-042c62f290834eb1fe0a1942bbf5bb9a4accbc8f}}
+\newcommand{\CALLINGHFILE}{arch/x86/include/asm/calling.h}
+
+Der Linux 2.6 Kernel wird mit der Option \TT{-mregparm=3}
+kompiliert~\footnote{\URLKERNELNEWB} \footnote{Siehe auch die \TT{\CALLINGHFILE}
+Datei im Kernel Verzeichnisbaum}.
+
+Dies bedeutet, dass die erste 3 Argumente über die Register \EAX, \EDX und \ECX
+übergeben werden und der Rest über den Stack. Ist die Anzahl der Argumente
+kleiner als 3 wird natürlich nur ein Teil der genannten Register verwendet.
+
+Laden wir also den Linux Kernel 2.6.31 herunter, kompilieren ihn in Ubuntu
+(\TT{make vmlinux}) und öffnen ihn in \IDA, so finden wir die Funktion
+\TT{do\_filp\_open()}. Am Beginn derselben finden wir den folgenden Code (die
+Kommentare stammen vom Autor):
+
+\lstinputlisting[caption=do\_filp\_open() (Linux Kernel
+2.6.31),style=customasmx86]{patterns/14_bitfields/1_check/check2_DE.asm}
+GCC speichert die Werte der ersten drei Argumente auf dem lokalen Stack.
+Der Compiler würde diese Register ansonsten nicht verwenden und das wäre für den
+\gls{register allocator} des Compilers nicht umsetzbar.
+
+Finden wir dieses Codefragment:
+
+\lstinputlisting[caption=do\_filp\_open() (Linux Kernel
+2.6.31),style=customasmx86]{patterns/14_bitfields/1_check/check3.asm}
+
+\TT{0x40}---enspricht dem \TT{O\_CREAT} Makro.
+\TT{open\_flag} wird auf Anwesenheit des \TT{0x40} Bits hin überprüft und, wenn
+das Bit 1 ist, wird der folgende \JNZ Befehl ausgelöst.

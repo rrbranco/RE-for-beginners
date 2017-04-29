@@ -1,0 +1,87 @@
+\subsubsection{ARM64}
+
+\myparagraph{\Optimizing GCC (Linaro) 4.9}
+
+\myindex{Fused multiply–add}
+\myindex{ARM!\Instructions!MADD}
+
+Hier ist alles ganz einfach. 
+\TT{MADD} ist einfach eine Instruktion die Multiplikation/Addition verschmelzt ( ähnlich wie wir es bei \TT{MLA}
+gesehen haben)
+
+Alle drei Argumente werden über den 32-Bit Part des X-Registers übergeben.
+In der tat, die Argumente sind 32-Bit \IT{int}'s.
+Das Ergebnis wird in \TT{W0} gespeichert.
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.9]{patterns/05_passing_arguments/ARM/ARM64_O3_EN.s}
+
+Lasst uns nun alle Datentypen nach 64-Bit \TT{uint64\_t} konvertieren und testen:
+
+\lstinputlisting{patterns/05_passing_arguments/ex64.c}
+
+\begin{lstlisting}[style=customasmARM]
+f:
+	madd	x0, x0, x1, x2
+	ret
+main:
+	mov	x1, 13396
+	adrp	x0, .LC8
+	stp	x29, x30, [sp, -16]!
+	movk	x1, 0x27d0, lsl 16
+	add	x0, x0, :lo12:.LC8
+	movk	x1, 0x122, lsl 32
+	add	x29, sp, 0
+	movk	x1, 0x58be, lsl 48
+	bl	printf
+	mov	w0, 0
+	ldp	x29, x30, [sp], 16
+	ret
+
+.LC8:
+	.string	"%lld\n"
+\end{lstlisting}
+
+Die \ttf{} Funktion ist die gleiche, nur das jetzt alle 64-Bit X-Register benutzt werden.
+Lange 64-Bit Werte werden Stückweise in die Register geladen, genauer beschrieben hier: \myref{ARM_big_constants_loading}.
+
+\myparagraph{\NonOptimizing GCC (Linaro) 4.9}
+
+Der nicht optimierte Compiler lauf ist redundanter:
+
+\begin{lstlisting}[style=customasmARM]
+f:
+	sub	sp, sp, #16
+	str	w0, [sp,12]
+	str	w1, [sp,8]
+	str	w2, [sp,4]
+	ldr	w1, [sp,12]
+	ldr	w0, [sp,8]
+	mul	w1, w1, w0
+	ldr	w0, [sp,4]
+	add	w0, w1, w0
+	add	sp, sp, 16
+	ret
+\end{lstlisting}
+
+Der Code speichert seine Eingabe Argumente auf dem lokalen Stack,
+für den Fall das die Funktion die \TT{W0..W2} Register benutzen muss
+das verhindert das überschreiben der Original Argumente, die vielleicht
+noch in Zukunft gebraucht werden.
+
+Das bezeichnet man auch als \IT{Register Save Area.} (\ARMPCS).
+Der Callee, ist hier nicht in der Pflicht die Werte zu speichern.
+So Ähnlich wie beim \q{Shadow Space}: \myref{shadow_space}.
+
+
+Warum hat der optimierte GCC 4.9 Aufruf dieses Argument weg gelassen?
+Weil der Compiler in dem Fall zusätzliche Optimierungen gemacht hat. Und
+erkannt hat das die zusätzlichen Argumente in der weiteren Ausführung des 
+Codes nicht mehr benötigt werden. Und auch das die Register \TT{W0..W2} auch 
+nicht weiter benötigt werden.
+
+\myindex{ARM!\Instructions!MUL}
+\myindex{ARM!\Instructions!ADD}
+
+Wir können auch ein \TT{MUL}/\TT{ADD} Instruktions paar sehen anstatt einem einzelnen
+\TT{MADD}.
+

@@ -1,0 +1,155 @@
+% TODO proof-reading
+\subsubsection{Variadic functions}
+
+Variadic functions actually use arrays:
+
+
+\begin{lstlisting}[style=customjava]
+	public static void f(int... values)
+	{
+		for (int i=0; i<values.length; i++)
+			System.out.println(values[i]);
+	}
+
+	public static void main(String[] args) 
+	{
+		f (1,2,3,4,5);
+	}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void f(int...);
+    flags: ACC_PUBLIC, ACC_STATIC, ACC_VARARGS
+    Code:
+      stack=3, locals=2, args_size=1
+         0: iconst_0      
+         1: istore_1      
+         2: iload_1       
+         3: aload_0       
+         4: arraylength   
+         5: if_icmpge     23
+         8: getstatic     #2       // Field java/lang/System.out:Ljava/io/PrintStream;
+        11: aload_0       
+        12: iload_1       
+        13: iaload        
+        14: invokevirtual #3       // Method java/io/PrintStream.println:(I)V
+        17: iinc          1, 1
+        20: goto          2
+        23: return        
+\end{lstlisting}
+
+\ttf just takes an array of integers using \TT{aload\_0} at offset 3.
+
+Then it gets the array's size, etc.
+
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=4, locals=1, args_size=1
+         0: iconst_5      
+         1: newarray       int
+         3: dup           
+         4: iconst_0      
+         5: iconst_1      
+         6: iastore       
+         7: dup           
+         8: iconst_1      
+         9: iconst_2      
+        10: iastore       
+        11: dup           
+        12: iconst_2      
+        13: iconst_3      
+        14: iastore       
+        15: dup           
+        16: iconst_3      
+        17: iconst_4      
+        18: iastore       
+        19: dup           
+        20: iconst_4      
+        21: iconst_5      
+        22: iastore       
+        23: invokestatic  #4       // Method f:([I)V
+        26: return        
+\end{lstlisting}
+
+The array is constructed in \main using the \TT{newarray} instruction, 
+then it's filled, and \ttf is called.
+
+
+Oh, by the way, array object is not destroyed at the end of \main.
+
+\myindex{Garbage collector}
+There are no destructors in Java at all, because the JVM has a garbage collector which does this
+automatically, when it feels it needs to.
+
+
+What about the \TT{format()} method?
+
+It takes two arguments at input: a string and an array of objects:
+
+
+\begin{lstlisting}
+	public PrintStream format(String format, Object... args)
+\end{lstlisting}
+( \url{http://docs.oracle.com/javase/tutorial/java/data/numberformat.html} )
+
+Let's see:
+
+\begin{lstlisting}[style=customjava]
+	public static void main(String[] args)
+	{
+		int i=123;
+		double d=123.456;
+		System.out.format("int: %d double: %f.%n", i, d);
+	}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=7, locals=4, args_size=1
+         0: bipush        123
+         2: istore_1      
+         3: ldc2_w        #2         // double 123.456d
+         6: dstore_2      
+         7: getstatic     #4         // Field java/lang/System.out:Ljava/io/PrintStream;
+        10: ldc           #5         // String int: %d double: %f.%n
+        12: iconst_2      
+        13: anewarray     #6         // class java/lang/Object
+        16: dup           
+        17: iconst_0      
+        18: iload_1       
+        19: invokestatic  #7         // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+        22: aastore       
+        23: dup           
+        24: iconst_1      
+        25: dload_2       
+        26: invokestatic  #8         // Method java/lang/Double.valueOf:(D)Ljava/lang/Double;
+        29: aastore       
+        30: invokevirtual #9         // Method java/io/PrintStream.format:(Ljava/lang/String;[Ljava/lang/Object;)Ljava/io/PrintStream;
+        33: pop           
+        34: return        
+\end{lstlisting}
+
+So values of the \IT{int} and \IT{double} types are first promoted to \TT{Integer} and \TT{Double} 
+objects using the \TT{valueOf} methods.
+
+The \TT{format()} method needs objects of type \TT{Object} at input, and since the \TT{Integer} and 
+\TT{Double} classes are derived from the root \TT{Object} class, they suitable for elements 
+in the input array.
+
+On the other hand, an array is always homogeneous, i.e., it can't hold elements of 
+different types, which makes it impossible to push \IT{int} and \IT{double} values in it.
+
+
+An array of \TT{Object} objects is created at offset 13, 
+an \TT{Integer} object is added to the array at offset 22, 
+and a \TT{Double} object is added to the array at offset 29.
+
+
+The penultimate \TT{pop} instruction discards the element at \ac{TOS}, 
+so when \TT{return} is executed, the stack becomes empty (or balanced).
+

@@ -1,0 +1,143 @@
+\subsection{Renvoyer des valeurs}
+
+Les pointeurs sont souvent utilisés pour renvoyer des valeurs depuis les fonctions
+(rappelez-vous le cas~(\myref{label_scanf}) de \scanf).
+
+Par exemple, lorsqu'une fonction doit renvoyer deux valeurs.
+
+\subsubsection{Exemple avec des variables globales}
+
+\lstinputlisting[style=customc]{patterns/061_pointers/2/global.c}
+
+Ceci ce compile en:
+
+\lstinputlisting[caption=MSVC 2010 \Optimizing (/Ob0),style=customasmx86]{patterns/061_pointers/2/global.asm}
+
+\myindex{\olly}
+\clearpage
+Regardons ceci dans \olly:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_global1.png}
+\caption{\olly: 
+les adresses des variables globales sont passées à \ttfone}
+\label{fig:pointers_olly_global_1}
+\end{figure}
+
+Tout d'abord, les adresses des variables globales sont passées à \ttfone.
+Nous pouvons cliquer sur \q{Follow in dump}
+sur l'élément de la pile, et nous voyons l'espace alloué dans le segment de données
+pour les deux variables.
+
+\clearpage
+Ces variables sont mises à zéro, car les données non-initialisées (de
+\ac{BSS}) sont éffacées avant\\
+le début de l'exécution, [voir \CNineNineStd{} 6.7.8p10].
+
+Elles se trouvent dans le segment de données, nous pouvons le vérifier en appuyant
+sur Alt-M et en regardant la carte de la mémoire:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_global5.png}
+\caption{\olly: carte de la mémoire}
+\label{fig:pointers_olly_global_5}
+\end{figure}
+
+\clearpage
+Traçons l'exécution (F7) jusqu'au début de \ttfone:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_global2.png}
+\caption{\olly: \ttfone commence}
+\label{fig:pointers_olly_global_2}
+\end{figure}
+
+Deux valeurs sont visibles sur la pile 456 (\TT{0x1C8}) et 123 (\TT{0x7B}), et aussi
+les adresses des deux variables globales.
+
+\clearpage
+Traçons l'exécution jusqu'à la fin de \ttfone.
+Dans la fenêtre en bas à gauche, nous voyons comment le résultat du calcul apparaît
+dans les variables globales:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_global3.png}
+\caption{\olly: l'exécution de \ttfone est terminée}
+\label{fig:pointers_olly_global_3}
+\end{figure}
+
+\clearpage
+
+Maintenant les valeurs des variables globales sont chargées dans des registres prêtes
+à etre passées à \printf (via la pile):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_global4.png}
+\caption{\olly: 
+les adresses des variables globales sont passées à \printf}
+\label{fig:pointers_olly_global_4}
+\end{figure}
+
+\subsubsection{Exemple avec des variables locales}
+
+Modifions légèrement notre exemple:
+
+\lstinputlisting[caption=maintenant les variables \TT{sum} et \TT{product} sont locales,style=customc]{patterns/061_pointers/2/local_FR.c}
+
+Le code de \ttfone ne va pas changer.
+Seul celui de \main va changer:
+
+\lstinputlisting[caption=MSVC 2010 \Optimizing (/Ob0),style=customasmx86]{patterns/061_pointers/2/local.asm}
+
+\newcommand{\PtrsAddresses}{\TT{0x2EF854} et \TT{0x2EF858}\xspace}
+
+\clearpage
+Regardons à nouveau avec \olly.
+Les adresses des variables locales dans la pile sont \PtrsAddresses.
+Regardons comment elles sont poussées sur la pile:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_stk1.png}
+\caption{\olly: les adresses des variables locales sont poussées sur la pile}
+\label{fig:pointers_olly_stk_1}
+\end{figure}
+
+\clearpage
+\ttfone commence.
+Jusqu'ici, il n'y a que des restes de données sur la pile en \PtrsAddresses :
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_stk2.png}
+\caption{\olly: \ttfone commence}
+\label{fig:pointers_olly_stk_2}
+\end{figure}
+
+\clearpage
+\ttfone se termine:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_stk3.png}
+\caption{\olly: \ttfone termine son exécution}
+\label{fig:pointers_olly_stk_3}
+\end{figure}
+
+Nous trouvons maintenant \TT{0xDB18} et \TT{0x243} aux adresses \PtrsAddresses.
+Ces valeurs sont les résultats de \ttfone.
+
+\subsubsection{\Conclusion{}}
+ 
+\ttfone peut renvoyer des pointeurs sur n'importe qu'elle endroit en mémoire, situés
+n'importe oú.
+
+C'est par essence l'utilité des pointeurs.
+
+A propos, les \IT{references} \Cpp fonctionnent exactement pareil. Voir à ce propos:
+(\myref{cpp_references}).

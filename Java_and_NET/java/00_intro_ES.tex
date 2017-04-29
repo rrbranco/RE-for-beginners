@@ -1,0 +1,19 @@
+\subsection{Introducción}
+
+Hay algunos descompiladores conocidos para Java (o bytecode JVM en general).
+La razón es porque la descompilación de bytecode JVM es algo mas fácil que código x86 de bajo nivel:
+
+\begin{itemize}
+\item Hay mucha mas información sobre los tipos de datos.
+
+\item El modelo de memoria de JVM es mucho mas riguroso y delineado.
+
+\item El compilador Java no hace ninguna optimización (la JVM las hace en tiempo de ejecución), así que el byte
+		code de archivos class es usualmente bastante legible.
+
+\end{itemize}
+
+Cuándo el conocimiento de JVM es útil?
+
+\item Tareas rápidas y sucias de parcheo de archivos class
+

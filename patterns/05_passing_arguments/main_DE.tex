@@ -1,0 +1,16 @@
+\section{Zugriff auf übergebene Argumente}
+\myindex{\Stack}
+
+Nun haben wir heraus gefunden das die \gls{caller} Funktion die Argumente zur \gls{callee} Funtktion über
+den Stack schiebt.
+Aber wie greift die \gls{callee} Funktion auf sie zu?
+
+\lstinputlisting[label=src:passing_arguments_ex,caption=simple example]{patterns/05_passing_arguments/ex.c}
+
+% sections
+\input{patterns/05_passing_arguments/x86_DE}
+\input{patterns/05_passing_arguments/x64_DE}
+\input{patterns/05_passing_arguments/ARM/main.tex}
+\input{patterns/05_passing_arguments/MIPS_DE}
+
+

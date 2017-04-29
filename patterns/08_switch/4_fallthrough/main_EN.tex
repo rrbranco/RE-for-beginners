@@ -1,0 +1,21 @@
+﻿\subsection{Fall-through}
+
+Another popular usage of \TT{switch()} operator is so-called \q{fallthrough}.
+Here is simple example\footnote{Copypasted from \url{https://github.com/azonalon/prgraas/blob/master/prog1lib/lecture_examples/is_whitespace.c}}:
+
+\lstinputlisting[numbers=left,style=customc]{patterns/08_switch/4_fallthrough/fallthrough1.c}
+
+Slightly harder, from Linux kernel\footnote{Copypasted from \url{https://github.com/torvalds/linux/blob/master/drivers/media/dvb-frontends/lgdt3306a.c}}:
+
+\lstinputlisting[numbers=left,style=customc]{patterns/08_switch/4_fallthrough/fallthrough2.c}
+
+\lstinputlisting[caption=Optimizing GCC 5.4.0 x86,numbers=left,style=customasmx86]{patterns/08_switch/4_fallthrough/fallthrough2.s}
+
+We can get to \TT{.L5} label if there is number 3250 at function's input.
+But we can get to this label from the other side:
+we see that there are no jumps between \printf call and \TT{.L5} label.
+
+Now we can understand why \IT{switch()} statement is sometimes a source of bugs:
+one forgotten \IT{break} will transform your
+\IT{switch()} statement into \IT{fallthrough} one, and several blocks will be executed instead of single one.
+

@@ -1,0 +1,32 @@
+\subsubsection{MSVC + \olly}
+\myindex{\olly}
+Illustrons ceci dans \olly.
+Lorsque nous traçons jusqu'à la première instruction de \ttf qui utilise un des
+arguments (le premier), nous voyons qu'\EBP pointe sur la \glslink{stack frame}{structure de pile locale},
+qui est entourée par un rectangle rouge. 
+
+Le premier élément de la \glslink{stack frame}{structure de pile locale} est la
+valeur sauvegardée de \EBP, le second est \ac{RA}, le troisième est le premier
+argument de la fonction, puis le second et le troisième.
+
+Pour accèder au premier argument de la fonction, on doit ajouter exactement 8 (2
+mots de 32-bit) à \EBP.
+
+\olly est au courant de cela, c'est pourquoi il a ajouté des commentaires aux éléments
+de la pile comme
+
+\q{RETURN from} et \q{Arg1 = \dots}, etc.
+
+N.B.: Les arguments de la fonction ne font pas partie de la structure de pile de
+la fonction, ils font plutôt partie de celle de la fonction \glslink{caller}{appelante}.
+
+Par conséquent, \olly a marqué les éléments comme appartenant à une autre structure
+de pile.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/05_passing_arguments/olly.png}
+\caption{\olly: à l'intérieur de la fonction \ttf{}}
+\label{fig:passing_arguments_olly}
+\end{figure}
+

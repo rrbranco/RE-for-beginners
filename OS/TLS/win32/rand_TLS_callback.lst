@@ -1,0 +1,20 @@
+.text:00401020 TlsCallback_0   proc near               ; DATA XREF: .rdata:TlsCallbacks
+.text:00401020                 call    ds:GetTickCount
+.text:00401026                 push    eax
+.text:00401027                 call    my_srand
+.text:0040102C                 pop     ecx
+.text:0040102D                 retn    0Ch
+.text:0040102D TlsCallback_0   endp
+
+...
+
+.rdata:004020C0 TlsCallbacks    dd offset TlsCallback_0 ; DATA XREF: .rdata:TlsCallbacks_ptr
+
+...
+
+.rdata:00402118 TlsDirectory    dd offset TlsStart
+.rdata:0040211C TlsEnd_ptr      dd offset TlsEnd
+.rdata:00402120 TlsIndex_ptr    dd offset TlsIndex
+.rdata:00402124 TlsCallbacks_ptr dd offset TlsCallbacks
+.rdata:00402128 TlsSizeOfZeroFill dd 0
+.rdata:0040212C TlsCharacteristics dd 300000h

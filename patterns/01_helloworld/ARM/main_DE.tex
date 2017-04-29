@@ -1,0 +1,29 @@
+\subsection{ARM}
+\label{sec:hw_ARM}
+
+\myindex{\idevices}
+\myindex{Raspberry Pi}
+\myindex{Xcode}
+\myindex{LLVM}
+\myindex{Keil}
+Für die Experimente mit ARM-Prozessoren wurden verschiedene Compiler genutzt:
+
+\begin{itemize}
+\item Verbreitet im Embedded-Bereich: Keil Release 6/2013.
+
+\item Apple Xcode 4.6.3 IDE mit dem LLVM-GCC 4.2-Compiler
+\footnote{Tatsächlich nutzt Apple Xcode 4.6.3 GCC als Front-End-Compiler und LLVM 
+Code Generator}.
+
+\item GCC 4.9 (Linaro) (für ARM64), verfügbar als Win32-Executable unter \url{http://go.yurichev.com/17325}.
+
+\end{itemize}
+Wenn nicht anders angegeben wird immer der 32-Bit ARM-Code (inklusive Thumb und Thumb-2-Mode) genutzt.
+Wenn von 64-Bit ARM die Rede ist, dann wird ARM64 geschrieben.
+
+% subsections
+\input{patterns/01_helloworld/ARM/keil_ARM_DE}
+\input{patterns/01_helloworld/ARM/keil_T_DE}
+\input{patterns/01_helloworld/ARM/xcode_ARM_DE}
+\input{patterns/01_helloworld/ARM/xcode_T2_DE}
+\input{patterns/01_helloworld/ARM/ARM64_DE}

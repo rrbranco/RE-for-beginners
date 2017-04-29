@@ -1,0 +1,296 @@
+\section{\oracle: .SYM-файлы}
+\myindex{\oracle}
+\label{Oracle_SYM_files_example}
+
+Когда процесс в \oracle терпит серьезную ошибку (crash), он записывает массу информации в лог-файлы,
+включая состояние стека, вроде:
+
+\begin{lstlisting}
+----- Call Stack Trace -----
+calling              call     entry                argument values in hex      
+location             type     point                (? means dubious value)     
+-------------------- -------- -------------------- ----------------------------
+_kqvrow()                     00000000             
+_opifch2()+2729      CALLptr  00000000             23D4B914 E47F264 1F19AE2
+                                                   EB1C8A8 1
+_kpoal8()+2832       CALLrel  _opifch2()           89 5 EB1CC74
+_opiodr()+1248       CALLreg  00000000             5E 1C EB1F0A0
+_ttcpip()+1051       CALLreg  00000000             5E 1C EB1F0A0 0
+_opitsk()+1404       CALL???  00000000             C96C040 5E EB1F0A0 0 EB1ED30
+                                                   EB1F1CC 53E52E 0 EB1F1F8
+_opiino()+980        CALLrel  _opitsk()            0 0
+_opiodr()+1248       CALLreg  00000000             3C 4 EB1FBF4
+_opidrv()+1201       CALLrel  _opiodr()            3C 4 EB1FBF4 0
+_sou2o()+55          CALLrel  _opidrv()            3C 4 EB1FBF4
+_opimai_real()+124   CALLrel  _sou2o()             EB1FC04 3C 4 EB1FBF4
+_opimai()+125        CALLrel  _opimai_real()       2 EB1FC2C
+_OracleThreadStart@  CALLrel  _opimai()            2 EB1FF6C 7C88A7F4 EB1FC34 0
+4()+830                                            EB1FD04
+77E6481C             CALLreg  00000000             E41FF9C 0 0 E41FF9C 0 EB1FFC4
+00000000             CALL???  00000000             
+\end{lstlisting}
+
+Но конечно, для этого исполняемые файлы \oracle должны содержать некоторую отладочную информацию,
+либо map-файлы с информацией о символах или что-то в этом роде.
+
+\oracle для Windows NT содержит информацию о символах в файлах с расширением .SYM, но его формат закрыт.
+
+(Простые текстовые файлы --- это хорошо, но они требуют дополнительной обработки (парсинга), и из-за этого доступ
+к ним медленнее.)
+
+Посмотрим, сможем ли мы разобрать его формат.
+Выберем самый короткий файл \TT{orawtc8.sym}, поставляемый с файлом \TT{orawtc8.dll} в Oracle 8.1.7
+\footnote{Будем использовать древнюю версию \oracle сознательно, из-за более короткого размера его модулей}.
+
+\clearpage
+Вот я открываю этот файл в Hiew:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_SYM/whole1.png}
+\caption{Весь файл в Hiew}
+\label{fig:oracle_SYM_whole1}
+\end{figure}
+
+Сравнивая этот файл с другими .SYM-файлами, мы можем быстро заметить, что \TT{OSYM} всегда является
+заголовком (и концом), так что это, наверное, сигнатура файла.
+
+Мы также видим, что в общем-то, формат файла это: OSYM + какие-то бинарные данные + 
+текстовые строки разделенные нулем + OSYM.
+
+Строки --- это, очевидно, имена функций и глобальных переменных.
+
+\clearpage
+Отметим сигнатуры OSYM и строки здесь: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_SYM/whole2.png}
+\caption{Сигнатура OSYM и текстовые строки}
+\label{fig:oracle_SYM_whole2}
+\end{figure}
+
+Посмотрим. 
+В Hiew отметим весь блок со строками (исключая оконечивающую сигнатуру OSYM) и сохраним его в отдельный
+файл.
+
+Затем запустим UNIX-утилиты \IT{strings} и \IT{wc} для подсчета текстовых строк:%
+
+\begin{lstlisting}
+strings strings_block | wc -l
+66
+\end{lstlisting}
+
+Так что здесь 66 текстовых строк.  Запомните это число.
+
+Можно сказать, что в общем, как правило, количество \IT{чего-либо} часто сохраняется в бинарном
+файле отдельно.
+
+Это действительно так, мы можем найти значение 66 (0x42) в самом начале файла, прямо после сигнатуры OSYM:
+
+\lstinputlisting{ff/Oracle_SYM/dump1.txt}
+
+Конечно, 0x42 здесь это не байт, но скорее всего, 32-битное значение, запакованное как little-endian,
+поэтому мы видим 0x42 и затем как минимум 3 байта.
+
+Почему мы полагаем, что оно 32-битное?
+Потому что файлы с символами в \oracle могут быть очень большими.
+oracle.sym для главного исполняемого файла oracle.exe (версия 10.2.0.4) содержит \TT{0x3A38E} (238478) 
+символов.
+
+16-битного значения тут недостаточно.
+
+Проверим другие .SYM-файлы как этот и это подтвердит нашу догадку: значение после 32-битной сигнатуры OSYM
+всегда отражает количество текстовых строк в файле.
+
+Это общая особенность почти всех бинарных файлов: заголовок с сигнатурой плюс некоторая дополнительная
+информация о файле.
+
+Рассмотрим бинарный блок поближе.
+Снова используя Hiew, сохраним блок начиная с адреса 8 (т.е. после 32-битного значения,
+отражающего количество) до блока со строками, в отдельный файл.%
+
+\clearpage
+Посмотрим этот блок в Hiew:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_SYM/binary1.png}
+\caption{Бинарный блок}
+\label{fig:oracle_SYM_binary1}
+\end{figure}
+
+Тут явно есть какая-то структура. 
+
+\clearpage
+Добавим красные линии, чтобы разделить блок: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_SYM/binary2.png}
+\caption{Структура бинарного блока}
+\label{fig:oracle_SYM_binary2}
+\end{figure}
+
+Hiew, как и многие другие шестнадцатеричные редакторы, показывает 16 байт на строку.
+
+Так что структура явно видна: здесь 4 32-битных значения на строку.
+
+Эта структура видна визуально потому что некоторые значения здесь (вплоть до адреса \TT{0x104}) 
+всегда в виде \TT{0x1000xxxx}, так что начинаются с байт 0x10 и 0.
+
+Другие значения (начинающиеся на \TT{0x108}) всегда в виде \TT{0x0000xxxx}, так что начинаются с двух
+нулевых байт.
+
+Посмотрим на этот блок как на массив 32-битных значений:
+
+\lstinputlisting[caption=первый столбец --- это адрес]{ff/Oracle_SYM/dump2.txt}
+
+Здесь 132 значения, а это 66*2.
+Может быть здесь 2 32-битных значения на каждый символ, а может быть здесь два массива? 
+Посмотрим.
+
+Значения, начинающиеся с \TT{0x1000} могут быть адресами.
+В конце концов, этот .SYM-файл для DLL, а базовый адрес для DLL в win32 это \TT{0x10000000}, и сам код
+обычно начинается по адресу \TT{0x10001000}.
+
+Когда открываем файл orawtc8.dll в \IDA, базовый адрес другой, но тем не менее, первая функция это:
+
+\begin{lstlisting}[style=customasmx86]
+.text:60351000 sub_60351000    proc near
+.text:60351000
+.text:60351000 arg_0    = dword ptr  8
+.text:60351000 arg_4    = dword ptr  0Ch
+.text:60351000 arg_8    = dword ptr  10h
+.text:60351000
+.text:60351000          push    ebp
+.text:60351001          mov     ebp, esp
+.text:60351003          mov     eax, dword_60353014
+.text:60351008          cmp     eax, 0FFFFFFFFh
+.text:6035100B          jnz     short loc_6035104F
+.text:6035100D          mov     ecx, hModule
+.text:60351013          xor     eax, eax
+.text:60351015          cmp     ecx, 0FFFFFFFFh
+.text:60351018          mov     dword_60353014, eax
+.text:6035101D          jnz     short loc_60351031
+.text:6035101F          call    sub_603510F0
+.text:60351024          mov     ecx, eax
+.text:60351026          mov     eax, dword_60353014
+.text:6035102B          mov     hModule, ecx
+.text:60351031
+.text:60351031 loc_60351031:    ; CODE XREF: sub_60351000+1D
+.text:60351031          test    ecx, ecx
+.text:60351033          jbe     short loc_6035104F
+.text:60351035          push    offset ProcName ; "ax_reg"
+.text:6035103A          push    ecx             ; hModule
+.text:6035103B          call    ds:GetProcAddress
+...
+\end{lstlisting}
+
+Ух ты, \q{ax\_reg} звучит знакомо. 
+Действительно, это самая первая строка в блоке строк!
+
+Так что имя этой функции, похоже \q{ax\_reg}.
+
+Вторая функция:
+
+\begin{lstlisting}[style=customasmx86]
+.text:60351080 sub_60351080    proc near
+.text:60351080
+.text:60351080 arg_0    = dword ptr  8
+.text:60351080 arg_4    = dword ptr  0Ch
+.text:60351080
+.text:60351080          push    ebp
+.text:60351081          mov     ebp, esp
+.text:60351083          mov     eax, dword_60353018
+.text:60351088          cmp     eax, 0FFFFFFFFh
+.text:6035108B          jnz     short loc_603510CF
+.text:6035108D          mov     ecx, hModule
+.text:60351093          xor     eax, eax
+.text:60351095          cmp     ecx, 0FFFFFFFFh
+.text:60351098          mov     dword_60353018, eax
+.text:6035109D          jnz     short loc_603510B1
+.text:6035109F          call    sub_603510F0
+.text:603510A4          mov     ecx, eax
+.text:603510A6          mov     eax, dword_60353018
+.text:603510AB          mov     hModule, ecx
+.text:603510B1
+.text:603510B1 loc_603510B1:    ; CODE XREF: sub_60351080+1D
+.text:603510B1          test    ecx, ecx
+.text:603510B3          jbe     short loc_603510CF
+.text:603510B5          push    offset aAx_unreg ; "ax_unreg"
+.text:603510BA          push    ecx             ; hModule
+.text:603510BB          call    ds:GetProcAddress
+...
+\end{lstlisting}
+
+Строка \q{ax\_unreg} также это вторая строка в строке блок!
+
+Адрес начала второй функции это \TT{0x60351080}, а второе значение в бинарном блоке это \TT{10001080}.
+
+Так что это адрес, но для DLL с базовым адресом по умолчанию.
+
+Мы можем быстро проверить и убедиться, что первые 66 значений в массиве (т.е. первая половина)
+это просто адреса функций в DLL, включая некоторые метки, \etc{}.
+
+Хорошо, что же тогда остальная часть массива? 
+Остальные 66 значений, начинающиеся с \TT{0x0000}? 
+Они похоже в пределах \TT{[0...0x3F8]}. 
+И не похоже, что это битовые поля: ряд чисел возрастает.
+Последняя шестнадцатеричная цифра выглядит как случайная, так что, не похоже, что это
+адрес чего-либо (в противном случае, он бы делился, может быть, на 4 или 8 или 0x10).
+
+Спросим себя: что еще разработчики \oracle хранили бы здесь, в этом файле?
+
+Случайная догадка: это может быть адрес текстовой строки (название функции).
+
+Это можно легко проверить, и да, каждое число --- это просто позиция первого символа в блоке строк.
+
+Вот и всё! Всё закончено.
+
+\myindex{IDA}
+Напишем утилиту для конвертирования .SYM-файлов в \IDA-скрипт, 
+так что сможем загружать .idc-скрипт и он выставит имена функций:
+
+\lstinputlisting[style=customc]{ff/Oracle_SYM/unpacker.c}
+
+Пример его работы:
+
+\begin{lstlisting}[style=customc]
+#include <idc.idc>
+
+static main() {
+	MakeName(0x60351000, "_ax_reg");
+	MakeName(0x60351080, "_ax_unreg");
+	MakeName(0x603510F0, "_loaddll");
+	MakeName(0x60351150, "_wtcsrin0");
+	MakeName(0x60351160, "_wtcsrin");
+	MakeName(0x603511C0, "_wtcsrfre");
+	MakeName(0x603511D0, "_wtclkm");
+	MakeName(0x60351370, "_wtcstu");
+...
+}
+\end{lstlisting}
+
+Файлы, использованные в этом примере, здесь: \href{http://go.yurichev.com/17216}{beginners.re}.
+
+\clearpage
+О, можно еще попробовать \oracle для win64.
+Там ведь должны быть 64-битные адреса, верно?
+
+8-байтная структура здесь видна даже еще лучше:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_SYM/whole64.png}
+\caption{пример .SYM-файла из \oracle для win64}
+\label{fig:oracle_SYM_whole64}
+\end{figure}
+
+Так что да, все таблицы здесь имеют 64-битные элементы, даже смещения строк!
+
+Сигнатура теперь \TT{OSYMAM64}, чтобы отличить целевую платформу, очевидно.
+
+Вот и всё!
+Вот также библиотека в которой есть функция для доступа к .SYM-файлам \oracle{}:
+\href{http://go.yurichev.com/17007}{GitHub}.

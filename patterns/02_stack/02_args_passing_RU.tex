@@ -1,0 +1,176 @@
+\subsubsection{Передача параметров функции}
+
+Самый распространенный способ передачи параметров в x86 называется \q{cdecl}:
+
+\begin{lstlisting}[style=customasmx86]
+push arg3
+push arg2
+push arg1
+call f
+add esp, 12 ; 4*3=12
+\end{lstlisting}
+
+Вызываемая функция получает свои параметры также через указатель стека.
+
+Следовательно, так расположены значения в стеке перед исполнением самой первой инструкции функции \ttf{}:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+ESP & адрес возврата \\
+\hline
+ESP+4 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+ESP+8 & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+ESP+0xC & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+
+См. также в соответствующем разделе о других способах передачи аргументов через стек~(\myref{sec:callingconventions}).
+
+\par Кстати, вызываемая функция не имеет информации о количестве переданных ей аргументов.
+Функции Си с переменным количеством аргументов (как \printf) определяют их количество по спецификаторам строки формата (начинающиеся со знака \%).
+
+Если написать что-то вроде:
+
+\begin{lstlisting}
+printf("%d %d %d", 1234);
+\end{lstlisting}
+
+\printf выведет 1234, затем ещё два случайных числа\footnote{В строгом смысле, они не случайны, скорее, непредсказуемы: \myref{noise_in_stack}}, которые волею случая оказались в стеке рядом.
+
+\par
+Вот почему не так уж и важно, как объявлять функцию \main{}:\\
+как \main{}, \TT{main(int argc, char *argv[])}\\
+либо \TT{main(int argc, char *argv[], char *envp[])}.
+
+В реальности, \ac{CRT}-код вызывает \main примерно так:
+	
+\begin{lstlisting}[style=customasmx86]
+push envp
+push argv
+push argc
+call main
+...
+\end{lstlisting}
+
+Если вы объявляете \main без аргументов, они, тем не менее, присутствуют в стеке, но не используются.
+Если вы объявите \main как \TT{main(int argc, char *argv[])}, 
+вы можете использовать два первых аргумента, а третий останется для вашей функции \q{невидимым}.
+Более того, можно даже объявить \TT{main(int argc)}, и это будет работать.
+
+\myparagraph{Альтернативные способы передачи аргументов}
+
+Важно отметить, что, в общем, никто не заставляет программистов передавать параметры именно через стек, это не является требованием к исполняемому коду.
+Вы можете делать это совершенно иначе, не используя стек вообще.
+
+В каком-то смысле, популярный метод среди начинающих использовать язык ассемблера,
+это передавать аргументы в глобальных переменных, например:
+
+\lstinputlisting[caption=Код на ассемблере,style=customasmx86]{patterns/02_stack/global_args.asm}
+
+Но у этого метода есть очевидный недостаток: ф-ция \IT{do\_something()} не сможет вызвать саму себя рекурсивно (либо, через
+какую-то стороннюю ф-цию),
+потому что тогда придется затереть свои собственные аргументы.
+Та же история с локальными переменными: если хранить их в глобальных переменных, ф-ция не сможет вызывать сама себя.
+К тому же, этот метод не безопасный для мультитредовой среды\footnote{При корректной реализации,
+каждый тред будет иметь свой собственный стек со своими аргументами/переменными.}.
+Способ хранения подобной информации в стеке заметно всё упрощает ---
+он может хранить столько аргументов ф-ций и/или значений вообще,
+сколько в нем есть места.
+
+В \InSqBrackets{\TAOCPvolI{}, 189} можно прочитать про еще более странные схемы передачи аргументов,
+которые были очень удобны на IBM System/360.
+
+\myindex{MS-DOS}
+\myindex{x86!\Instructions!INT}
+
+В MS-DOS был метод передачи аргументов через регистры, например, этот фрагмент кода для древней 16-битной MS-DOS
+выводит ``Hello, world!'':
+
+\begin{lstlisting}[style=customasmx86]
+mov  dx, msg      ; адрес сообщения
+mov  ah, 9        ; §9 означает ф-цию "вывод строки"§
+int  21h          ; DOS "syscall"
+
+mov  ah, 4ch      ; §ф-ция "закончить программу"§
+int  21h          ; DOS "syscall"
+
+msg  db 'Hello, World!\$'
+\end{lstlisting}
+
+\myindex{fastcall}
+Это очень похоже на метод \myref{fastcall}.
+И еще на метод вызовов сисколлов в Linux (\myref{linux_syscall}) и Windows.
+
+\myindex{x86!\Flags!CF}
+Если ф-ция в MS-DOS возвращает булево значение (т.е., один бит, обычно сигнализирующий об ошибке),
+часто использовался флаг \TT{CF}.
+
+Например:
+
+\begin{lstlisting}[style=customasmx86]
+mov ah, 3ch       ; создать файл
+lea dx, filename
+mov cl, 1
+int 21h
+jc  error
+mov file_handle, ax
+...
+error:
+...
+\end{lstlisting}
+
+В случае ошибки, флаг \TT{CF} будет выставлен.
+Иначе, хэндл только что созданного файла возвращается в \TT{AX}.
+
+Этот метод до сих пор используется программистами на ассемблере.
+В исходных кодах Windows Research Kernel (который очень похож на Windows 2003) мы можем найти такое\\
+(файл \IT{base/ntos/ke/i386/cpu.asm}):
+
+\begin{lstlisting}[style=customasmx86]
+        public  Get386Stepping
+Get386Stepping  proc
+
+        call    MultiplyTest            ; Perform multiplication test
+        jnc     short G3s00             ; if nc, muttest is ok
+        mov     ax, 0
+        ret
+G3s00:
+        call    Check386B0              ; Check for B0 stepping
+        jnc     short G3s05             ; if nc, it's B1/later
+        mov     ax, 100h                ; It is B0/earlier stepping
+        ret
+
+G3s05:
+        call    Check386D1              ; Check for D1 stepping
+        jc      short G3s10             ; if c, it is NOT D1
+        mov     ax, 301h                ; It is D1/later stepping
+        ret
+
+G3s10:
+        mov     ax, 101h                ; assume it is B1 stepping
+        ret
+
+	...
+
+MultiplyTest    proc
+
+        xor     cx,cx                   ; 64K times is a nice round number
+mlt00:  push    cx
+        call    Multiply                ; does this chip's multiply work?
+        pop     cx
+        jc      short mltx              ; if c, No, exit
+        loop    mlt00                   ; if nc, YEs, loop to try again
+        clc
+mltx:
+        ret
+
+MultiplyTest    endp
+\end{lstlisting}
+
+

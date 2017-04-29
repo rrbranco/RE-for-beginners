@@ -1,0 +1,40 @@
+dennis@ubuntuvm:~/polygon$ gcc 17_1.c -g
+dennis@ubuntuvm:~/polygon$ gdb ./a.out 
+GNU gdb (GDB) 7.6.1-ubuntu
+Copyright (C) 2013 Free Software Foundation, Inc.
+...
+Reading symbols from /home/dennis/polygon/a.out...done.
+(gdb) b 17_1.c:11
+Breakpoint 1 at 0x804845f: file 17_1.c, line 11.
+(gdb) run
+Starting program: /home/dennis/polygon/./a.out 
+
+Breakpoint 1, comp (_a=0xbffff0f8, _b=_b@entry=0xbffff0fc) at 17_1.c:11
+11	  if (*a==*b)
+(gdb) p *a
+$1 = 1892
+(gdb) p *b
+$2 = 45
+(gdb) c
+Continuing.
+
+Breakpoint 1, comp (_a=0xbffff104, _b=_b@entry=0xbffff108) at 17_1.c:11
+11	  if (*a==*b)
+(gdb) p *a
+$3 = -98
+(gdb) p *b
+$4 = 4087
+(gdb) bt
+#0  comp (_a=0xbffff0f8, _b=_b@entry=0xbffff0fc) at 17_1.c:11
+#1  0xb7e42872 in msort_with_tmp (p=p@entry=0xbffff07c, b=b@entry=0xbffff0f8, n=n@entry=2)
+    at msort.c:65
+#2  0xb7e4273e in msort_with_tmp (n=2, b=0xbffff0f8, p=0xbffff07c) at msort.c:45
+#3  msort_with_tmp (p=p@entry=0xbffff07c, b=b@entry=0xbffff0f8, n=n@entry=5) at msort.c:53
+#4  0xb7e4273e in msort_with_tmp (n=5, b=0xbffff0f8, p=0xbffff07c) at msort.c:45
+#5  msort_with_tmp (p=p@entry=0xbffff07c, b=b@entry=0xbffff0f8, n=n@entry=10) at msort.c:53
+#6  0xb7e42cef in msort_with_tmp (n=10, b=0xbffff0f8, p=0xbffff07c) at msort.c:45
+#7  __GI_qsort_r (b=b@entry=0xbffff0f8, n=n@entry=10, s=s@entry=4, cmp=cmp@entry=0x804844d <comp>, 
+    arg=arg@entry=0x0) at msort.c:297
+#8  0xb7e42dcf in __GI_qsort (b=0xbffff0f8, n=10, s=4, cmp=0x804844d <comp>) at msort.c:307
+#9  0x0804850d in main (argc=1, argv=0xbffff1c4) at 17_1.c:26
+(gdb) 

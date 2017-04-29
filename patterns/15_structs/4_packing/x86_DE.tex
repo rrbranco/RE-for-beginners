@@ -1,0 +1,84 @@
+\subsubsection{x86}
+
+Das Beispiel kompiliert zu folgendem Code:
+
+\lstinputlisting[caption=MSVC 2012 /GS-
+/Ob0,label=src:struct_packing_4,numbers=left,style=customasmx86]{patterns/15_structs/4_packing/packing_DE.asm}
+Wir übergeben das struct als Ganzes, aber im Code können wir sehen, dass das struct in ein temporäres struct kopiert
+wird (ein Platz hierfür wird in Zeile 10 auf dem Stack reserviert), und dass dann alle 4 Felder einzeln (in den Zeilen
+12\ldots 19) kopiert werden und anschließend ihr Pointer (Adresse) übergeben wird.
+
+Das struct wird kopiert, da nicht bekannt ist, ob die Funktion \ttf{} das struct verändern wird oder nicht.
+Wenn es verändert wird, muss das struct in \main auf dem vorherigen Stand bleiben.
+
+Wir könnten \CCpp Pointer verwenden und der erzeugte Code wäre fast der gleiche nur ohne das Kopieren.
+
+Wie wir sehen können, wird die Adresse von jedem Feld auf einer 4 Byte Grenze angeordnet. Das ist der Grund dafür, dass
+jeder \Tchar hier 4 Byte belegt (wie ein \Tint). Es ist für die CPU einfacher auf Speicher an entsprechend angeordneten
+Adressen zuzugreifen und Daten von dort im Cache zwischenzuspeichern.
+
+Trotzdem ist dieses Vorgehen nicht besonders ökonomisch.
+
+Komplieren wir mit der Option (\TT{/Zp1})(\IT{/Zp[n] pack structures on n-byte boundary}).
+
+\lstinputlisting[caption=MSVC 2012 /GS-
+/Zp1,label=src:struct_packing_1,numbers=left,style=customasmx86]{patterns/15_structs/4_packing/packing_msvc_Zp1_DE.asm}
+Das struct benötigt nun lediglich 10 Byte und jeder \Tchar Wert genau 1 Byte. Welchen Vorteil bringt uns das? 
+In erster Linie spart man Platz. Ein Nachteil hieran~---die CPU greift hier auf die Felder langsamer zu als es möglich
+wäre.
+
+\label{short_struct_copying_using_MOV}
+Das struct wird auch in \main kopiert. Nicht Feld für Feld, sondern alle 10 Byte direkt durch Verwendung von drei Paaren
+von \MOV Befehlen. Warum aber nicht 4 Paare?
+
+Der Compiler hat entschieden, dass es besser ist, die 10 Byte mit 3 \MOV Befehlspaaren zu kopieren als zwei 32-Bit-Worte
+und dann zwei Byte mit insgesamt 4 \MOV Paaren.
+
+Solch eine Implementierung, die zum Kopieren \MOV anstelle eines Aufrufs von \TT{memcpy()} verwendet, ist sehr
+gebräuchlich, da es schneller ist als ein Funktionsaufruf von \TT{memcpy()}---zumindest für kurze Blöcke:
+\myref{copying_short_blocks}.
+Man kann sich leicht überlegen, dass, wenn ein struct in vielen Quellcode und Objektdateien verwendet wird, alle diese
+mit der gleichen Konvention bezüglich des Packens in structs kompiliert werden müssen.
+
+\newcommand{\FNURLMSDNZP}{\footnote{\href{http://go.yurichev.com/17067}
+{MSDN: Working with Packing Structures}}}
+\newcommand{\FNURLGCCPC}{\footnote{\href{http://go.yurichev.com/17068}
+{Structure-Packing Pragmas}}}
+Neben der Option \TT{Zp} in MSVC, die die Anordnung der Felder von structs festlegt, gibt es auch die
+Compileroption \TT{\#pragma pack}, die direkt im Quellcode definiert werden kann.
+Sie ist sowohl in MSVC\FNURLMSDNZP als auch in GCC\FNURLGCCPC{} verfügbar.
+
+Gehen wir zurück zum \TT{SYSTEMTIME} struct, das aus 16-Bit-Feldern besteht.
+Wie kann unser Compiler wissen, dass diese in 1-Byte-Anordnung gepackt werden müssen?
+
+Die Datei \TT{WinNT.h} enthält dies:
+
+\begin{lstlisting}[caption=WinNT.h,style=customc]
+#include "pshpack1.h"
+\end{lstlisting}
+
+Und dies:
+
+\begin{lstlisting}[caption=WinNT.h,style=customc]
+#include "pshpack4.h"                   // 4 byte packing is the default
+\end{lstlisting}
+
+Die Datei PshPack1.h sieht wie folgt aus:
+
+\begin{lstlisting}[caption=PshPack1.h,style=customc]
+#if ! (defined(lint) || defined(RC_INVOKED))
+#if ( _MSC_VER >= 800 && !defined(_M_I86)) || defined(_PUSHPOP_SUPPORTED)
+#pragma warning(disable:4103)
+#if !(defined( MIDL_PASS )) || defined( __midl )
+#pragma pack(push,1)
+#else
+#pragma pack(1)
+#endif
+#else
+#pragma pack(1)
+#endif
+#endif /* ! (defined(lint) || defined(RC_INVOKED)) */
+\end{lstlisting}
+Dies sagt dem Compiler wie die structs, die hinter \TT{\#pragma pack} definiert werden, gepackt werden müssen.
+
+\input{patterns/15_structs/4_packing/olly_DE.tex}

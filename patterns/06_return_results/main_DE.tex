@@ -1,0 +1,175 @@
+\section{Mehr zu Rückgabewerten}
+
+\myindex{x86!\Registers!EAX}
+In x86 wird das Ergebnis einer Funktionsausführung\footnote{\Seealso: MSDN: Return Values (C++):
+\href{http://go.yurichev.com/17258}{MSDN}} normalerweise über das \EAX Register zurückgegeben.
+Wenn es sich um ein Byte oder einen \Tchar handelt, dann wird der niedere Teil des Registers \EAX (\AL) verwendet.
+Wenn eine Funktion eine \Tfloat Zahl zurückgibt, wird das FPU Register \ST{0} stattdessen verwendet.
+
+\myindex{ARM!\Registers!R0}
+In ARM wird das Ergebnis üblicherweise über das \Reg{0} Register zurückgegeben.
+
+\subsection{Versuch einen Rückgabewert vom Typ \Tvoid zu verwenden}
+Was würde passieren, wenn der Rückgabewert der Funktion \main vom Typ \Tvoid und nicht \Tint wäre?
+Der sogenannte Startup-Code ruft \main in etwa wie folgt auf:
+
+\begin{lstlisting}[style=customasmx86]
+push envp
+push argv
+push argc
+call main
+push eax
+call exit
+\end{lstlisting}
+
+Mit anderen Worten:
+
+\begin{lstlisting}[style=customc]
+exit(main(argc,argv,envp));
+\end{lstlisting}
+Wenn man \main als \Tvoid deklariert muss nichts explizit zurückgegeben werden (mit dem \IT{return} Ausdruck). In diesem
+Fall wird etwas Zufälliges, das am Ende der Ausführung von \main in \EAX steht, das einzige Argument der exit()
+Funktion.
+Höchstwahrscheinlich wird es sich um einen Zufallswert handelt, der von der Ausführung der Funktion dort belassen wurde,
+sodass der Exitcode des Programms pseudozufällig ist.
+\par
+Wir veranschaulichen diese Tatsache. 
+Beachten Sie, dass die Funktion \main hier den Rückgabetyp \Tvoid hat: 
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+void main()
+{
+	printf ("Hello, world!\n");
+};
+\end{lstlisting}
+
+Kompilieren wir es in Linux.
+
+\myindex{puts() instead of printf()}
+GCC 4.8.1 hat \printf durch \puts ersetzt. 
+(wir haben dies vorher gesehen: \myref{puts}), aber das ist in Ordnung,
+denn \puts liefert die Anzahl der ausgegebenen Zeichen zurück, genau wie \printf.
+Man beachte, dass \EAX vor dem Ende von \main nicht geleert wird.
+
+Das bedeutet, dass \EAX am Ende von \main den Wert enthält, den \puts dort hinterlassen hat.
+
+\begin{lstlisting}[caption=GCC 4.8.1,style=customasmx86]
+.LC0:
+	.string	"Hello, world!"
+main:
+	push	ebp
+	mov	ebp, esp
+	and	esp, -16
+	sub	esp, 16
+	mov	DWORD PTR [esp], OFFSET FLAT:.LC0
+	call	puts
+	leave
+	ret
+\end{lstlisting}
+
+\myindex{bash}
+
+Schreiben wir ein Bash Skript, das den Exitcode anzeigt:
+
+\begin{lstlisting}[caption=tst.sh]
+#!/bin/sh
+./hello_world
+echo $?
+\end{lstlisting}
+
+Führen wir es aus:
+
+\begin{lstlisting}
+$ tst.sh 
+Hello, world!
+14
+\end{lstlisting}
+
+14 ist Anzahl der ausgegebenen Zeichen.
+\ac{TBT}
+
+\myindex{Hex-Rays}
+Wenn wir übrigens C++ in Hex-Rays dekompilieren, stoßen wir häufig auf eine Funktion, die mit dem Destruktor einer
+Klasse endet:
+
+\begin{lstlisting}[style=customasmx86]
+...
+
+call    ??1CString@@QAE@XZ ; CString::~CString(void)
+mov     ecx, [esp+30h+var_C]
+pop     edi
+pop     ebx
+mov     large fs:0, ecx
+add     esp, 28h
+retn
+\end{lstlisting}
+Gemäß C++ Standard gibt der Destruktor nichts zurück, aber wenn Hex-Rays dies nicht erkennt, und davon ausgeht, dass
+sowohl Destruktor und diese Funktion \Tint zurückgeben, finden wir so etwas wie das Folgende im Output:
+
+\begin{lstlisting}[style=customc]
+...
+
+	return CString::~CString(&Str);
+}
+\end{lstlisting}
+
+\subsection{Was, wenn wir das Funktionsergebnis nicht verwenden?}
+\printf gibt die Anzahl der erfolgreich ausgegebenen Zeichen zurück, aber das Ergebnis dieser Funktion wird in der
+Praxis kaum verwendet.
+
+Es ist also möglich eine Funktion aufzurufen, die einen Wert zurückgibt, diesen Wert aber nicht zu verwenden:
+
+
+\begin{lstlisting}[style=customc]
+int f()
+{
+    // skip first 3 random values:
+    rand();
+    rand();
+    rand();
+    // and use 4th:
+    return rand();
+};
+\end{lstlisting}
+Das Ergebnis der Funktion rand() bleibt in allen vier Fällen in \EAX.
+
+In den ersten drei Fällen wird der Wert in \EAX aber nicht verwendet.
+
+\subsection{Eine Struktur zurückgeben}
+
+\myindex{\CLanguageElements!return}
+Gehen wir nochmals darauf ein, dass der Rückgabewert im \EAX Register verbleibt.
+
+Dies ist der Grund dafür, dass alte C Kompiler keine Funktion erzeugen konnten, die einen Wert zurückgeben, der nicht in
+ein Register passt (normalerweise \Tint), aber falls es erforderlich ist, kann man Informationen über Pointer, die der
+Funktion als Argumente übergeben wurden, zurückgeben.
+
+Wenn also eine Funktion mehrere Werte zurückgeben soll, gibt sie normalerweise nur einen zurück und den Rest über
+Pointer.
+
+Nun ist es möglich geworden beispielsweise eine komplette Struktur zurückzugeben, aber die Möglichkeit wird nicht
+besonders häufig genutzt. Wenn eine Funktion eine große Struktur zurückgeben muss, muss der Aufrufer Speicher hierfür
+reservieren und einen Pointer darauf als erstes Argument übergeben.
+Dies ist das fast das gleiche wie einen Pointer manuell in das erste Argument zu übergeben, aber der Kompiler verbirgt
+es.
+
+Ein kleines Beispiel:
+
+\lstinputlisting[style=customc]{patterns/06_return_results/6_1.c}
+
+\dots was wir erhalten, ist (MSVC 2010 \Ox):
+
+\lstinputlisting[style=customasmx86]{patterns/06_return_results/6_1.asm}
+
+Der Name des Makros um intern einen Pointer auf eine Struktur zu übergeben, ist hier \GTT{\$T3853}.
+
+\myindex{\CLanguageElements!C99}
+Dieses Beispiel kann mithilfe der C99 Spracherweiterungen umgeschrieben werden:
+
+\lstinputlisting[style=customc]{patterns/06_return_results/6_1_C99.c}
+
+\lstinputlisting[caption=GCC 4.8.1,style=customasmx86]{patterns/06_return_results/6_1_C99.asm}
+Wie wir sehen, füllt die Funktion nur die Felder der Struktur, die durch die aufrufende Funktion angelegt wurden als ob
+ein Pointer auf die Struktur übergeben worden wäre. Es gibt an dieser Stelle also keine Nachteile bezüglich Performance.

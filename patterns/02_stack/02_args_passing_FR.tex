@@ -1,0 +1,185 @@
+\subsubsection{Passage des arguments de fonction}
+
+Le moyen le plus utilisé pour passer des arguments en x86 est appelé \q{cdecl}:
+
+\begin{lstlisting}[style=customasmx86]
+push arg3
+push arg2
+push arg1
+call f
+add esp, 12 ; 4*3=12
+\end{lstlisting}
+
+La fonction \glslink{callee}{appelée} reçoit ses arguments par la pile.
+
+Voici donc comment sont stockés les arguments sur la pile avant l'exécution
+de la première instruction de la fonction \ttf{}:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+ESP & return address \\
+\hline
+ESP+4 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+ESP+8 & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+ESP+0xC & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+
+Pour plus d'information sur les conventions d'appel, voir cette section~(\myref{sec:callingconventions}).
+
+\par
+A propos, la fonction \glslink{callee}{appelée} n'a aucune d'information sur le
+nombre d'arguments qui ont été passés.
+Les fonctions C avec un nombre variable d'arguments (comme \printf) déterminent
+leur nombre en utilisant les spécificateurs de la chaîne de format (qui commencent
+pas le symbole \%).
+
+Si nous écrivons quelque comme:
+
+\begin{lstlisting}
+printf("%d %d %d", 1234);
+\end{lstlisting}
+
+\printf va afficher 1234, et deux autres nombres aléatoires\footnote{Pas aléatoire
+dans le sens strict du terme, mais plutôt imprévisibles: \myref{noise_in_stack}},
+qui sont situés à côté dans la pile.
+
+\par
+C'est pourquoi la façon dont la fonction \main est déclarée n'est pas très importante:
+comme \main, \\\TT{main(int argc, char *argv[])} ou \TT{main(int argc, char *argv[], char *envp[])}.
+
+En fait, le code-\ac{CRT} appelle \main, schématiquement, de cette façon:
+	
+\begin{lstlisting}[style=customasmx86]
+push envp
+push argv
+push argc
+call main
+...
+\end{lstlisting}
+
+Si vous déclarez \main comme \main sans argument, ils sont néanmoins toujours présents
+sur la pile, mais ne sont pas utilisés.
+Si vous déclarez \main as comme \TT{main(int argc, char *argv[])},
+vous pourrez utiliser les deux premiers arguments, et le troisième restera \q{invisible}
+pour votre fonction.
+Il est même possible de déclarer \main comme \TT{main(int argc)}, cela fonctionnera.
+
+\myparagraph{Autres façons de passer les arguments}
+
+Il est à noter que rien n'oblige les programmeurs à passer les arguments à travers
+la pile. Ce n'est pas une exigence.
+On peut implémenter n'importe quelle autre méthode sans utiliser du tout la pile.
+
+Une méthode répandue chez les débutants en assembleur est de passer les arguments
+par des variables globales, comme:
+
+\lstinputlisting[caption=Code assembleur,style=customasmx86]{patterns/02_stack/global_args.asm}
+
+Mais cette méthode a un inconvénient évident: la fonction \IT{do\_something()}
+ne peut pas s'appeler elle-même récursivement (ou par une autre fonction),
+car il faudrait écraser ses propres arguments.
+La même histoire avec les variables locales: si vous les stocker dans des variables
+globales, la fonction ne peut pas s'appeler elle-même.
+Et ce n'est pas thread-safe.
+\footnote{Correctemment implémenter, chaque thread aurait sa propre pile avec ses propres arguments/variables.}.
+Une méthode qui stocke ces informations sur la pile rend cela plus facile---elle
+peut contenir autant d'arguments de fonctions et/ou de valeurs, que la pile a d'espace.
+
+\InSqBrackets{\TAOCPvolI{}, 189} mentionne un schéma encore plus étrange, particulièrement
+pratique sur les IBM System/360.
+
+\myindex{MS-DOS}
+\myindex{x86!\Instructions!INT}
+
+MS-DOS a une manière de passer tout les arguments de fonctions via des registres,
+par exemple, c'est un morceau de code pour un ancien MS-DOS 16-bit qui affiche
+``Hello, world!'':
+
+\begin{lstlisting}[style=customasmx86]
+mov  dx, msg      ; address of message
+mov  ah, 9        ; 9 means "print string" function
+int  21h          ; DOS "syscall"
+
+mov  ah, 4ch      ; "terminate program" function
+int  21h          ; DOS "syscall"
+
+msg  db 'Hello, World!\$'
+\end{lstlisting}
+
+\myindex{fastcall}
+C'est presque similaire à la méthode \myref{fastcall}.
+Et c'est aussi très similaire aux appels systèmes sous Linux (\myref{linux_syscall}) et Windows.
+
+\myindex{x86!\Flags!CF}
+Si une fonction MS-DOS devait renvoyer une valeur booléenne (i.e., un simple bit,
+souvent pour indiquer un état d'erreur), le flag \TT{CF} était souvent utilisé.
+
+Par exemple:
+
+\begin{lstlisting}[style=customasmx86]
+mov ah, 3ch       ; create file
+lea dx, filename
+mov cl, 1
+int 21h
+jc  error
+mov file_handle, ax
+...
+error:
+...
+\end{lstlisting}
+
+En cas d'erreur, le flag \TT{CF} est mis. Sinon, le handle du fichier nouvellement
+créer est retourné via \TT{AX}.
+
+Cette méthode est encore utilisée par les programmeurs en langage d'assemblage.
+Dans le code source de Windows Research Kernel (qui est très similaire à Windows
+2003) nous pouvons trouver quelque chose comme ça (file \IT{base/ntos/ke/i386/cpu.asm}):
+
+\begin{lstlisting}[style=customasmx86]
+        public  Get386Stepping
+Get386Stepping  proc
+
+        call    MultiplyTest            ; Perform multiplication test
+        jnc     short G3s00             ; if nc, muttest is ok
+        mov     ax, 0
+        ret
+G3s00:
+        call    Check386B0              ; Check for B0 stepping
+        jnc     short G3s05             ; if nc, it's B1/later
+        mov     ax, 100h                ; It is B0/earlier stepping
+        ret
+
+G3s05:
+        call    Check386D1              ; Check for D1 stepping
+        jc      short G3s10             ; if c, it is NOT D1
+        mov     ax, 301h                ; It is D1/later stepping
+        ret
+
+G3s10:
+        mov     ax, 101h                ; assume it is B1 stepping
+        ret
+
+	...
+
+MultiplyTest    proc
+
+        xor     cx,cx                   ; 64K times is a nice round number
+mlt00:  push    cx
+        call    Multiply                ; does this chip's multiply work?
+        pop     cx
+        jc      short mltx              ; if c, No, exit
+        loop    mlt00                   ; if nc, YEs, loop to try again
+        clc
+mltx:
+        ret
+
+MultiplyTest    endp
+\end{lstlisting}
+

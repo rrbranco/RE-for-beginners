@@ -1,0 +1,90 @@
+﻿\clearpage
+\mysubparagraph{\olly}
+\myindex{\olly}
+
+Betrachten wir dieses Beispiel in \olly. 
+Sei der Eingabewert dabei \TT{0x12345678}.
+
+Für $i=1$ sehen wir, wie $i$ nach \ECX geladen wird: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/14_bitfields/4_popcnt/olly1_1.png}
+\caption{\olly: $i=1$, $i$ wird nach \ECX geladen}
+\label{fig:shifts_olly1_1}
+\end{figure}
+
+\EDX ist 1. \SHL wird jetzt ausgeführt.
+
+\clearpage
+\SHL wurde ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/14_bitfields/4_popcnt/olly1_2.png}
+\caption{\olly: $i=1$, \EDX=$1 \ll 1=2$}
+\label{fig:shifts_olly1_2}
+\end{figure}
+
+\EDX enthält $1 \ll 1$ (oder 2). Hierbei handelt es sich um eine Bitmaske.
+
+\clearpage
+\AND setzt \ZF auf 1, was bedeutet, dass der Eingabewert (\TT{0x12345678}) 
+mit 2 verUNDet wird. Das Ergebnis ist 0:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/14_bitfields/4_popcnt/olly1_3.png}
+\caption{\olly: $i=1$, 
+ist hier das Bit im Eingabewert gesetzt? Nein. (\ZF=1)}
+\label{fig:shifts_olly1_3}
+\end{figure}
+Es gibt hier also kein entsprechendes Bit im Eingabewert.
+
+Das Codestück, welches den Zähler erhöht, wird also nicht ausgeführt:
+Der \JZ Befehl überspringt es.
+
+\clearpage
+Verfolgen wir den Ablauf ein bisschen weiter bis $i$ den Wert 4 hat.
+\SHL wird jetzt ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/14_bitfields/4_popcnt/olly4_1.png}
+\caption{\olly: $i=4$, $i$ wird nach \ECX geladen}
+\label{fig:shifts_olly4_1}
+\end{figure}
+
+\clearpage
+\EDX=$1 \ll 4$ (oder \TT{0x10} oder 16): 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/14_bitfields/4_popcnt/olly4_2.png}
+\caption{\olly: $i=4$, \EDX=$1 \ll 4=0x10$}
+\label{fig:shifts_olly4_2}
+\end{figure}
+
+Hierbei handelt es sich um eine weitere Bitmaske.
+
+\clearpage
+\AND wird ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/14_bitfields/4_popcnt/olly4_3.png}
+\caption{\olly: $i=4$, 
+ist hier das Bit im Eingabewert gesetzt? Ja. (\ZF=0)}
+\label{fig:shifts_olly4_3}
+\end{figure}
+
+\ZF ist 0 , da das Bit im Eingabewert gesetzt ist.\\
+Tatsächlich gilt \TT{0x12345678 \& 0x10 = 0x10}. 
+
+Das Bit wird gezählt: der Sprung wird nicht ausgeführt und der Zähler wird
+erhöht.
+
+Die Funktion liefert den Wert 13 zurück.
+Dies entspricht der Anzahl der in der binären Darstellung von \TT{0x12345678}
+gesetzten Bits.
+

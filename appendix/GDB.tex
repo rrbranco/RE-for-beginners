@@ -1,0 +1,64 @@
+\subsection{GDB}
+\myindex{GDB}
+\label{sec:GDB_cheatsheet}
+
+\RU{Некоторые команды, которые были использованы в книге}\EN{Some of commands we used in this book}\DE{Einige nützliche Optionen die in diesem Buch genutzt werden}:
+
+\small
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor \RU{опция}\EN{option}\DE{Option} & 
+\HeaderColor \RU{значение}\EN{meaning}\DE{Bedeutung} \\
+\hline
+break filename.c:number		& \RU{установить точку останова на номере строки в исходном файле}
+					\EN{set a breakpoint on line number in source code}
+                    \DE{Setzen eines Breakpoints in der angegebenen Zeile}\\
+break function			& \RU{установить точку останова на функции}\EN{set a breakpoint on function}\DE{Setzen eines Breakpoints in der Funktion} \\
+break *address			& \RU{установить точку останова на адресе}\EN{set a breakpoint on address}\DE{Setzen eines Breakpoints auf Adresse} \\
+b				& \dittoclosing \\
+p variable			& \RU{вывести значение переменной}\EN{print value of variable}\DE{Ausgabe eines Variablenwerts} \\
+run				& \RU{запустить}\EN{run}\DE{Starten} \\
+r				& \dittoclosing \\
+cont				& \RU{продолжить исполнение}\EN{continue execution}\DE{Ausführung fortfahren} \\
+c				& \dittoclosing \\
+bt				& \RU{вывести стек}\EN{print stack}\DE{Stack ausgeben} \\
+set disassembly-flavor intel	& \RU{установить Intel-синтаксис}\EN{set Intel syntax}\DE{Intel-Syntax nutzen} \\
+disas				& disassemble current function \\
+disas function			& \RU{дизассемблировать функцию}\EN{disassemble function}\DE{Funktion disassemblieren} \\
+disas function,+50		& disassemble portion \\
+disas \$eip,+0x10		& \dittoclosing \\
+disas/r				& \EN{disassemble with opcodes}\RU{дизассемблировать с опкодами}\DE{mit OpCodes disassemblieren} \\
+info registers			& \RU{вывести все регистры}\EN{print all registers}\DE{Ausgabe aller Register} \\
+info float			& \RU{вывести FPU-регистры}\EN{print FPU-registers}\DE{Ausgabe der FPU-Register} \\
+info locals			& \RU{вывести локальные переменные (если известны)}\EN{dump local variables (if known)}\DE{(bekannte) lokale Variablen ausgeben} \\
+x/w ...				& \RU{вывести память как 32-битные слова}\EN{dump memory as 32-bit word}\DE{Speicher als 32-Bit-Wort ausgeben} \\
+x/w \$rdi			& \RU{вывести память как 32-битные слова}\EN{dump memory as 32-bit word}\DE{Speicher als 32-Bit-Wort ausgeben} \\
+				& \RU{по адресу в \TT{RDI}}\EN{at address in \TT{RDI}}\DE{an Adresse in \TT{RDI}} \\
+
+x/10w ...			& \RU{вывести 10 слов памяти}\EN{dump 10 memory words}\DE{10 Speicherworte ausgeben} \\
+x/s ...				& \RU{вывести строку из памяти}\EN{dump memory as string}\DE{Speicher als Zeichenkette ausgeben} \\
+x/i ...				& \RU{трактовать память как код}\EN{dump memory as code}\DE{Speicher als Code ausgeben} \\
+x/10c ...			& \RU{вывести 10 символов}\EN{dump 10 characters}\DE{10 Zeichen ausgeben} \\
+x/b ...				& \RU{вывести байты}\EN{dump bytes}\DE{Bytes ausgeben} \\
+x/h ...				& \RU{вывести 16-битные полуслова}\EN{dump 16-bit halfwords}\DE{16-Bit-Halbworte ausgeben} \\
+x/g ...				& \RU{вывести 64-битные слова}\EN{dump giant (64-bit) words}\DE{große (64-Bit-) Worte ausgeben} \\
+finish				& \RU{исполнять до конца функции}\EN{execute till the end of function}\DE{bis Funktionsende fortfahren} \\
+next				& \RU{следующая инструкция (не заходить в функции)}
+					\EN{next instruction (don't dive into functions)}
+                    \DE{Nächste Anweisung (nicht in Funktion springen)} \\
+step				& \RU{следующая инструкция (заходить в функции)}
+					\EN{next instruction (dive into functions)}
+                    \DE{Nächste Anweisung (in Funktion springen)} \\
+set step-mode on		& \RU{не использовать информацию о номерах строк при использовании команды step}
+					\EN{do not use line number information while stepping}
+                    \DE{Beim schrittweisen Ausführen keine Zeilennummerninfos nutzen} \\
+frame n				& \RU{переключить фрейм стека}\EN{switch stack frame}\DE{Stack-Frame tauschen} \\
+info break			& \RU{список точек останова}\EN{list of breakpoints} \\
+del n				& \RU{удалить точку останова}\EN{delete breakpoint}\DE{Breakpoints löschen} \\
+set args ...			& \RU{установить аргументы командной строки}\EN{set command-line arguments}\DE{Aufrufparameter setzen} \\
+\hline
+\end{tabular}
+\end{center}
+\normalsize
+

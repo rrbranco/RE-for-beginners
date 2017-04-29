@@ -1,0 +1,37 @@
+\clearpage
+\subsubsection{MSVC: x86 + \olly}
+Laden wir unser Programm in \olly und zwingen es dazu zu glauben, dass \scanf stets ohne Fehler arbeitet.
+Wenn die Adresse einer lokalen Variablen an \scanf übergeben wird, enthält die Variable zu Beginn einen zufälligen Wert,
+in diesem Fall \TT{0x6E494714}:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/olly_1.png}
+\caption{\olly: Adresse der Variablen an \scanf übergeben}
+\label{fig:scanf_ex3_olly_1}
+\end{figure}
+
+\clearpage
+Während \scanf ausgeführt wird, geben wir in der Konsole etwas ein, das definitiv keine Zahl ist, z.B. \q{asdasd}.
+\scanf beendet sich mit 0 in \EAX, was anzeigt, dass ein Fehler aufgetreten ist:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/olly_2.png}
+\caption{\olly: \scanf Rückgabewert bei Fehler}
+\label{fig:scanf_ex3_olly_2}
+\end{figure}
+Wir können auch die lokale Variable auf dem Stack überprüfen und stellen fest, dass sie sich nicht verändert hat.
+Was könnte \scanf hier auch hineinschreiben? Die Funktion hat nichts getan außer 0 zurückzugeben.
+
+Versuchen wir unser Programm zu modifizieren, d.i. zu \q{hacken}.
+Rechtsklick auf \EAX, in den Optionen finden wir \q{Set to 1}. Das ist was wir brauchen.
+
+Wir haben jetzt 1 in \EAX, sodass die folgende Überprüfung wie gewünscht ausgeführt wird und \printf den Wert der
+Variablen auf dem Stack ausgibt.
+
+Wenn wir das Programm laufen lassen (F9), sehen wir das Folgende im Konsolenfenster:
+
+\lstinputlisting[caption=console window]{patterns/04_scanf/3_checking_retval/console.txt}
+
+Und tatsächlich ist 1850296084 die dezimale Darstellung der Zahl auf dem Stack (\TT{0x6E494714})!

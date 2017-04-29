@@ -1,0 +1,80 @@
+\subsubsection{ARM64}
+
+\myparagraph{\Optimizing GCC (Linaro) 4.9}
+
+\myindex{Fused multiply–add}
+\myindex{ARM!\Instructions!MADD}
+Everything here is simple.
+\TT{MADD} is just an instruction doing fused multiply/add (similar to the \TT{MLA} we already saw).
+All 3 arguments are passed in the 32-bit parts of X-registers.
+Indeed, the argument types are 32-bit \IT{int}'s.
+The result is returned in \TT{W0}.
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.9,style=customasmARM]{patterns/05_passing_arguments/ARM/ARM64_O3_EN.s}
+
+Let's also extend all data types to 64-bit \TT{uint64\_t} and test:
+
+\lstinputlisting[style=customc]{patterns/05_passing_arguments/ex64.c}
+
+\begin{lstlisting}[style=customasmARM]
+f:
+	madd	x0, x0, x1, x2
+	ret
+main:
+	mov	x1, 13396
+	adrp	x0, .LC8
+	stp	x29, x30, [sp, -16]!
+	movk	x1, 0x27d0, lsl 16
+	add	x0, x0, :lo12:.LC8
+	movk	x1, 0x122, lsl 32
+	add	x29, sp, 0
+	movk	x1, 0x58be, lsl 48
+	bl	printf
+	mov	w0, 0
+	ldp	x29, x30, [sp], 16
+	ret
+
+.LC8:
+	.string	"%lld\n"
+\end{lstlisting}
+
+The \ttf{} function is the same, only the whole 64-bit X-registers are now used.
+Long 64-bit values are loaded into the registers by parts, this is also described here: \myref{ARM_big_constants_loading}.
+
+\myparagraph{\NonOptimizing GCC (Linaro) 4.9}
+
+The non-optimizing compiler is more redundant:
+
+\begin{lstlisting}[style=customasmARM]
+f:
+	sub	sp, sp, #16
+	str	w0, [sp,12]
+	str	w1, [sp,8]
+	str	w2, [sp,4]
+	ldr	w1, [sp,12]
+	ldr	w0, [sp,8]
+	mul	w1, w1, w0
+	ldr	w0, [sp,4]
+	add	w0, w1, w0
+	add	sp, sp, 16
+	ret
+\end{lstlisting}
+
+The code saves its input arguments in the local stack, 
+in case someone (or something) in this function needs using the \TT{W0...W2} 
+registers. This prevents overwriting the original
+function arguments, which may be needed again in the future.
+
+This is called \IT{Register Save Area.} (\ARMPCS).
+The callee, however, is not obliged to save them.
+This is somewhat similar to \q{Shadow Space}: \myref{shadow_space}.
+
+Why did the optimizing GCC 4.9 drop this argument saving code?
+Because it did some additional optimizing work and concluded
+that the function arguments will not be needed in the future 
+and also that the registers \TT{W0...W2} will not be used.
+
+\myindex{ARM!\Instructions!MUL}
+\myindex{ARM!\Instructions!ADD}
+
+We also see a \TT{MUL}/\TT{ADD} instruction pair instead of single a \TT{MADD}.

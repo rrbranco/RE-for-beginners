@@ -1,0 +1,180 @@
+﻿\subsection{SIMD \strlen implementation}
+\label{SIMD_strlen}
+
+\newcommand{\URLMSDNSSE}{\href{http://go.yurichev.com/17262}{MSDN: MMX, SSE, and SSE2 Intrinsics}}
+
+It has to be noted that the \ac{SIMD} instructions can be inserted in \CCpp code via special macros\footnote{\URLMSDNSSE}.
+For MSVC, some of them are located in the \TT{intrin.h} file.
+
+\newcommand{\URLSTRLEN}{http://go.yurichev.com/17330}
+
+\myindex{\CStandardLibrary!strlen()}
+
+It is possible to implement the \strlen function\footnote{strlen()~---standard C library function for calculating
+string length} using SIMD instructions that works 2-2.5 times faster than the common implementation.
+This function loads 16 characters into a XMM-register and check each against zero
+\footnote{
+The example is based on source code from: \url{\URLSTRLEN}.}.
+
+\lstinputlisting[style=customc]{patterns/19_SIMD/18_3.c}
+
+Let's compile it in MSVC 2010 with \Ox option:
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{patterns/19_SIMD/18_4_msvc_Ox_EN.asm}
+
+How it works?
+First of all, we must understand goal of the function.
+It calculates C-string length, but we can use different terms: it's task is searching for zero byte, and then calculating its position relatively to string start.
+
+First, we check if the \TT{str} pointer is aligned on a 16-byte boundary.
+If not, we call the generic \strlen implementation.
+
+Then, we load the next 16 bytes into the \XMM{1} register using \MOVDQA.
+
+An observant reader might ask, why can't \MOVDQU be used here since it can load data from the memory
+regardless pointer alignment?
+
+Yes, it might be done in this way: if the pointer is aligned, load data using \MOVDQA,
+if not~---use the slower \MOVDQU.
+
+But here we are may hit another caveat:
+
+\myindex{Page (memory)}
+\newcommand{\URLPAGE}{\href{http://go.yurichev.com/17136}{wikipedia}}
+
+In the \gls{Windows NT} line of \ac{OS} (but not limited to it), memory is allocated by pages of 4 KiB (4096 bytes).
+Each win32-process has 4 GiB available, but in fact, only some parts
+of the address space are connected to real physical memory.
+If the process is accessing an absent memory block, an exception is to be raised.
+That's how \ac{VM} works\footnote{\URLPAGE}.
+
+So, a function loading 16 bytes at once  may step over the border of an allocated memory block.
+Let's say that the \ac{OS} has allocated 8192 (0x2000) bytes at address 0x008c0000.
+Thus, the block is the bytes starting from address 0x008c0000 to 0x008c1fff inclusive.
+
+After the block, that is, starting from address 0x008c2000 there is nothing at all, e.g. the \ac{OS} not allocated
+any memory there.
+Any attempt to access memory starting from that address will raise an exception.
+
+And let's consider the example in which the program is holding a string that contains 5 characters almost
+at the end of a block, and that is not a crime.
+
+\begin{center}
+  \begin{tabular}{ | l | l | }
+    \hline
+        0x008c1ff8 & 'h' \\
+        0x008c1ff9 & 'e' \\
+        0x008c1ffa & 'l' \\
+        0x008c1ffb & 'l' \\
+        0x008c1ffc & 'o' \\
+        0x008c1ffd & '\textbackslash{}x00' \\
+        0x008c1ffe & random noise \\
+        0x008c1fff & random noise \\
+    \hline
+  \end{tabular}
+\end{center}
+
+So, in normal conditions the program calls \strlen, passing it a pointer to the string \TT{'hello'} 
+placed in memory at address 0x008c1ff8.
+\strlen reads one byte at a time until 0x008c1ffd, where there's a zero byte, and then it stops.
+
+Now if we implement our own \strlen reading 16 byte at once, starting at any address, aligned or not,
+\MOVDQU may attempt to load 16 bytes at once at address 0x008c1ff8 up to 0x008c2008, 
+and then an exception will be raised.
+That situation is to be avoided, of course.
+
+So then we'll work only with the addresses aligned on a 16 byte boundary, which in combination with the knowledge
+that the \ac{OS}' page size is usually aligned on a 16-byte boundary gives us some warranty that our function will not
+read from unallocated memory.
+
+Let's get back to our function.
+
+\myindex{x86!\Instructions!PXOR}
+\verb|_mm_setzero_si128()|---is a macro generating \TT{pxor xmm0, xmm0}~---it just clears the \XMM{0} register.
+
+\verb|_mm_load_si128()|---is a macro for \MOVDQA, it just loads 16 bytes from the address into the \XMM{1} register.
+
+\myindex{x86!\Instructions!PCMPEQB}
+\verb|_mm_cmpeq_epi8()|---is a macro for \PCMPEQB, an instruction that compares two XMM-registers bytewise.
+
+And if some byte is equals to the one in the other register, 
+there will be \TT{0xff} at this point in the result or 0 if otherwise.
+
+For example:
+
+\begin{verbatim}
+XMM1: 0x11223344556677880000000000000000
+XMM0: 0x11ab3444007877881111111111111111
+\end{verbatim}
+
+After the execution of \TT{pcmpeqb xmm1, xmm0}, the \XMM{1} register contains:
+
+\begin{verbatim}
+XMM1: 0xff0000ff0000ffff0000000000000000
+\end{verbatim}
+
+In our case, this instruction compares each 16-byte block with a block of 16 zero-bytes,
+which has been set in the \XMM{0} register by \TT{pxor xmm0, xmm0}.
+
+\myindex{x86!\Instructions!PMOVMSKB}
+
+The next macro is \TT{\_mm\_movemask\_epi8()}~---that is the \TT{PMOVMSKB} instruction.
+
+It is very useful with \PCMPEQB.
+
+\TT{pmovmskb eax, xmm1}
+
+This instruction sets first \EAX bit to 1 if the most significant bit of the first byte in \XMM{1} is 1.
+In other words, if the first byte of the \XMM{1} register is \TT{0xff}, then the first bit of \EAX is to be 1, too.
+
+If the second byte in the \XMM{1} register is \TT{0xff}, then the second bit in \EAX is to be set to 1.
+In other words, the instruction is answering the question \q{which bytes in \XMM{1} are \TT{0xff}?}
+and returns 16 bits in the \EAX register. 
+The other bits in the \EAX register are to be cleared.
+
+By the way, do not forget about this quirk of our algorithm.
+There might be 16 bytes in the input like:
+
+\input{patterns/19_SIMD/strlen_hello_and_garbage}
+
+It is the \TT{'hello'} string, terminating zero, and some random noise in memory.
+
+If we load these 16 bytes into \XMM{1} and compare them with the zeroed \XMM{0}, 
+we are getting something like
+\footnote{An order from \ac{MSB} to \ac{LSB} is used here.}:
+
+\begin{verbatim}
+XMM1: 0x0000ff00000000000000ff0000000000
+\end{verbatim}
+
+This means that the instruction found two zero bytes, and it is not surprising.
+ 
+\TT{PMOVMSKB} in our case will set \EAX to\\
+\IT{0b0010000000100000}.
+
+Obviously, our function must take only the first zero bit and ignore the rest.
+
+\myindex{x86!\Instructions!BSF}
+\label{instruction_BSF}
+The next instruction is \TT{BSF} (\IT{Bit Scan Forward}). 
+
+This instruction finds the first bit set to 1 and stores its position into the first operand.
+
+\begin{verbatim}
+EAX=0b0010000000100000
+\end{verbatim}
+
+After the execution of \TT{bsf eax, eax}, \EAX contains 5, meaning 
+1 has been found at the 5th bit position (starting from zero).
+
+MSVC has a macro for this instruction: \TT{\_BitScanForward}.
+
+Now it is simple. If a zero byte has been found, its position is added to what we have already counted and now we have 
+the return result.
+
+Almost all.
+
+By the way, it is also has to be noted that the MSVC compiler emitted two loop bodies side by side, for optimization.
+
+By the way, SSE 4.2 (that appeared in Intel Core i7) offers more instructions where these string manipulations might be
+even easier: \url{http://go.yurichev.com/17331}

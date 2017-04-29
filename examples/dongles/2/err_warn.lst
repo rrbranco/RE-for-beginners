@@ -1,0 +1,66 @@
+.text:0000A43C err_warn        proc near               ; CODE XREF: prep_sys+E8p
+.text:0000A43C                                         ; prep_sys2+2Fp ...
+.text:0000A43C
+.text:0000A43C var_55          = byte ptr -55h
+.text:0000A43C var_54          = byte ptr -54h
+.text:0000A43C arg_0           = dword ptr  8
+.text:0000A43C arg_4           = dword ptr  0Ch
+.text:0000A43C arg_8           = dword ptr  10h
+.text:0000A43C arg_C           = dword ptr  14h
+.text:0000A43C
+.text:0000A43C                 push    ebp
+.text:0000A43D                 mov     ebp, esp
+.text:0000A43F                 sub     esp, 54h
+.text:0000A442                 push    edi
+.text:0000A443                 mov     ecx, [ebp+arg_8]
+.text:0000A446                 xor     edi, edi
+.text:0000A448                 test    ecx, ecx
+.text:0000A44A                 push    esi
+.text:0000A44B                 jle     short loc_A466
+.text:0000A44D                 mov     esi, [ebp+arg_C] ; key
+.text:0000A450                 mov     edx, [ebp+arg_4] ; string
+.text:0000A453
+.text:0000A453 loc_A453:                               ; CODE XREF: err_warn+28j
+.text:0000A453                 xor     eax, eax
+.text:0000A455                 mov     al, [edx+edi]
+.text:0000A458                 xor     eax, esi
+.text:0000A45A                 add     esi, 3
+.text:0000A45D                 inc     edi
+.text:0000A45E                 cmp     edi, ecx
+.text:0000A460                 mov     [ebp+edi+var_55], al
+.text:0000A464                 jl      short loc_A453
+.text:0000A466
+.text:0000A466 loc_A466:                               ; CODE XREF: err_warn+Fj
+.text:0000A466                 mov     [ebp+edi+var_54], 0
+.text:0000A46B                 mov     eax, [ebp+arg_0]
+.text:0000A46E                 cmp     eax, 18h
+.text:0000A473                 jnz     short loc_A49C
+.text:0000A475                 lea     eax, [ebp+var_54]
+.text:0000A478                 push    eax
+.text:0000A479                 call    status_line
+.text:0000A47E                 add     esp, 4
+.text:0000A481
+.text:0000A481 loc_A481:                               ; CODE XREF: err_warn+72j
+.text:0000A481                 push    50h
+.text:0000A483                 push    0
+.text:0000A485                 lea     eax, [ebp+var_54]
+.text:0000A488                 push    eax
+.text:0000A489                 call    memset
+.text:0000A48E                 call    pcv_refresh
+.text:0000A493                 add     esp, 0Ch
+.text:0000A496                 pop     esi
+.text:0000A497                 pop     edi
+.text:0000A498                 mov     esp, ebp
+.text:0000A49A                 pop     ebp
+.text:0000A49B                 retn
+.text:0000A49C
+.text:0000A49C loc_A49C:                               ; CODE XREF: err_warn+37j
+.text:0000A49C                 push    0
+.text:0000A49E                 lea     eax, [ebp+var_54]
+.text:0000A4A1                 mov     edx, [ebp+arg_0]
+.text:0000A4A4                 push    edx
+.text:0000A4A5                 push    eax
+.text:0000A4A6                 call    pcv_lputs
+.text:0000A4AB                 add     esp, 0Ch
+.text:0000A4AE                 jmp     short loc_A481
+.text:0000A4AE err_warn        endp

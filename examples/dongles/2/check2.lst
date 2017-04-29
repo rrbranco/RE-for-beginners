@@ -1,0 +1,76 @@
+.text:0000DA55 loc_DA55:                               ; CODE XREF: sync_sys+24Cj
+.text:0000DA55                 push    offset aOffln   ; "offln"
+.text:0000DA5A                 call    SSQ
+.text:0000DA5F                 add     esp, 4
+.text:0000DA62                 mov     dl, [ebx]
+.text:0000DA64                 mov     esi, eax
+.text:0000DA66                 cmp     dl, 0Bh
+.text:0000DA69                 jnz     short loc_DA83
+.text:0000DA6B                 cmp     esi, 0FE81h
+.text:0000DA71                 jz      OK
+.text:0000DA77                 cmp     esi, 0FFFFF8EFh
+.text:0000DA7D                 jz      OK
+.text:0000DA83
+.text:0000DA83 loc_DA83:                               ; CODE XREF: sync_sys+201j
+.text:0000DA83                 mov     cl, [ebx]
+.text:0000DA85                 cmp     cl, 0Ch
+.text:0000DA88                 jnz     short loc_DA9F
+.text:0000DA8A                 cmp     esi, 12A9h
+.text:0000DA90                 jz      OK
+.text:0000DA96                 cmp     esi, 0FFFFFFF5h
+.text:0000DA99                 jz      OK
+.text:0000DA9F
+.text:0000DA9F loc_DA9F:                               ; CODE XREF: sync_sys+220j
+.text:0000DA9F                 mov     eax, [ebp+var_18]
+.text:0000DAA2                 test    eax, eax
+.text:0000DAA4                 jz      short loc_DAB0
+.text:0000DAA6                 push    24h
+.text:0000DAA8                 call    timer
+.text:0000DAAD                 add     esp, 4
+.text:0000DAB0
+.text:0000DAB0 loc_DAB0:                               ; CODE XREF: sync_sys+23Cj
+.text:0000DAB0                 inc     edi
+.text:0000DAB1                 cmp     edi, 3
+.text:0000DAB4                 jle     short loc_DA55
+.text:0000DAB6                 mov     eax, ds:net_env
+.text:0000DABB                 test    eax, eax
+.text:0000DABD                 jz      short error
+
+...
+
+.text:0000DAF7 error:                                  ; CODE XREF: sync_sys+255j
+.text:0000DAF7                                         ; sync_sys+274j ...
+.text:0000DAF7                 mov     [ebp+var_8], offset encrypted_error_message2
+.text:0000DAFE                 mov     [ebp+var_C], 17h ; decrypting key
+.text:0000DB05                 jmp     decrypt_end_print_message
+
+...
+
+; this name we gave to label:
+.text:0000D9B6 decrypt_end_print_message:              ; CODE XREF: sync_sys+29Dj
+.text:0000D9B6                                         ; sync_sys+2ABj
+.text:0000D9B6                 mov     eax, [ebp+var_18]
+.text:0000D9B9                 test    eax, eax
+.text:0000D9BB                 jnz     short loc_D9FB
+.text:0000D9BD                 mov     edx, [ebp+var_C] ; key
+.text:0000D9C0                 mov     ecx, [ebp+var_8] ; string
+.text:0000D9C3                 push    edx
+.text:0000D9C4                 push    20h
+.text:0000D9C6                 push    ecx
+.text:0000D9C7                 push    18h
+.text:0000D9C9                 call    err_warn
+.text:0000D9CE                 push    0Fh
+.text:0000D9D0                 push    190h
+.text:0000D9D5                 call    sound
+.text:0000D9DA                 mov     [ebp+var_18], 1
+.text:0000D9E1                 add     esp, 18h
+.text:0000D9E4                 call    pcv_kbhit
+.text:0000D9E9                 test    eax, eax
+.text:0000D9EB                 jz      short loc_D9FB
+
+...
+
+; this name we gave to label:
+.data:00401736 encrypted_error_message2 db 74h, 72h, 78h, 43h, 48h, 6, 5Ah, 49h, 4Ch, 2 dup(47h)
+.data:00401736                 db 51h, 4Fh, 47h, 61h, 20h, 22h, 3Ch, 24h, 33h, 36h, 76h
+.data:00401736                 db 3Ah, 33h, 31h, 0Ch, 0, 0Bh, 1Fh, 7, 1Eh, 1Ah

@@ -1,0 +1,50 @@
+\subsubsection{x86}
+
+\myparagraph{MSVC}
+
+Kompilieren wir das Beispiel:
+
+\lstinputlisting[caption=MSVC 2008,style=customasmx86]{patterns/13_arrays/1_simple/simple_msvc.asm}
+
+\myindex{x86!\Instructions!SHL}
+Soweit nichts Außergewöhnliches, nur zwei Schleifen: die erste füllt mit Werten auf und die zweite gibt Werte aus.
+Der Befehl \TT{shl ecx, 1} wird für die Multiplikation mit 2 in \ECX verwendet; mehr dazu unten~\myref{SHR}.
+
+Auf dem Stack werden 80 Bytes für das Array reserviert: 20 Elemente von je 4 Byte.
+
+\clearpage
+Untersuchen wir dieses Beispiel in \olly.
+\myindex{\olly}
+
+Wir erkennen wie das Array befüllt wird:
+
+jedes Element ist ein 32-Bit-Wort vom Typ \Tint und der Wert ist der Index multipliziert mit 2:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/13_arrays/1_simple/olly.png}
+\caption{\olly: nach dem Füllen des Arrays}
+\label{fig:array_simple_olly}
+\end{figure}
+Da sich dieses Array auf dem Stack befindet, finden wir dort alle seine 20 Elemente.
+
+\myparagraph{GCC}
+
+Hier ist was GCC 4.4.1 erzeugt:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/13_arrays/1_simple/simple_gcc.asm}
+Die Variable $a$ ist übrigens vom Typ \IT{int*} (Pointer auf \Tint{})--man kann einen Pointer auf ein Array an eine
+andere Funktion übergeben, aber es ist richtiger zu sagen, dass der Pointer auf das erste Element des Arrays übergeben
+wird. (Die Adressen der übrigen Elemente werden in bekannter Weise berechnet.)
+
+Wenn man diesen Pointer mittels \IT{a[idx]} indiziert, wird \IT{idx} zum Pointer addiert und das dort abgelegte Element
+(auf das der berechnete Pointer zeigt) wird zurückgegeben.
+
+Ein interessantes Beispiel: ein String wie \IT{\q{string}} ist ein Array von Chars und hat den Typ \IT{const
+char[]}.
+
+Auch auf diesen Pointer kann ein Index angewendet werden.
+
+Das ist der Grund warum es es möglich ist, Dinge wie \TT{\q{string}[i]} zu schreiben--es handelt sich dabei um einen
+korrekten \CCpp Ausdruck!
+

@@ -1,0 +1,46 @@
+\clearpage
+\subsubsection{MSVC + \olly}
+\myindex{\olly}
+Schauen wir uns diese Beispiel in \olly an.
+Wir laden es und drücken F8 (\stepover) bis wir unsere ausführbare Datei anstelle von \TT{ntdll.dll} erreicht haben. Wir scrollen nach oben bis \main erscheint.
+
+Wir klicken auf den ersten Befehl (\TT{PUSH EBO}), drücken F2 (\IT{set a breakpoint}), dann F9 (\IT{Run}). Der Breakpoint wird ausgelöst, wenn die Funktion \main beginnt.
+
+Verfolgen wir den Ablauf bis zu der Stelle, an der die Adresse der Variablen $x$ berechnet wird:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/1_simple/ex1_olly_1.png}
+\caption{\olly: Die Adresse der lokalen Variable wird berechnet.}
+\label{fig:scanf_ex1_olly_1}
+\end{figure}
+
+Wir machen einen Rechtsklick auf \EAX in Registerfenster und wählen \q{Follow in stack}. 
+
+Diese Adresse wird im Stackfenster erscheinen. Der rote Pfeil wurde nachträglich hinzugefügt; er zeigt auf die Variable im lokalen Stack. Im Moment enthält diese Speicherstelle Zufallswerte (\TT{0x6E494714}). Jetzt wird mithilfe des \PUSH Befehls die Adresse dieses Stackelements auf demselben Stack an der folgenden Position gespeichert. 
+Verfolgen wir den Ablauf mit F8 bis die Ausführung von \scanf abgeschlossen ist. Während der Ausführung von \scanf geben wir beispielsweise 123 in der Konsole ein:
+
+\lstinputlisting{patterns/04_scanf/1_simple/console.txt}
+
+\clearpage
+\scanf ist bereits beendet:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/1_simple/ex1_olly_3.png}
+\caption{\olly: \scanf wurde ausgeführt}
+\label{fig:scanf_ex1_olly_3}
+\end{figure}
+
+\scanf liefert 1 im \EAX Register zurück, was aussagt, dass die Funktion einen Wert erfolgreich eingelesen hat. Wenn wir wiederum auf das zugehörige Stackelement für die lokale Variable schauen, enthält diese nun den Wert \TT{0x7B} (dez. 123).
+
+\clearpage
+Im weiteren Verlauf wird dieser Wert vom Stack in das \ECX Register kopiert und an \printf übergeben:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/1_simple/ex1_olly_4.png}
+\caption{\olly: Wert für Übergabe an \printf vorbereiten.}
+\label{fig:scanf_ex1_olly_4}
+\end{figure}
+

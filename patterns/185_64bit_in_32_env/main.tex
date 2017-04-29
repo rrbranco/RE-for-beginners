@@ -1,0 +1,31 @@
+\ifdefined\ENGLISH
+\section{64-bit values in 32-bit environment}
+\label{sec:64bit_in_32_env}
+
+In a 32-bit environment, \ac{GPR}'s are 32-bit, so 64-bit values are stored and passed as 32-bit value pairs
+\footnote{By the way, 32-bit values are passed as pairs in 16-bit environment in the same way: \myref{win16_32bit_values}}.
+\fi
+
+\ifdefined\RUSSIAN
+\section{64-битные значения в 32-битной среде}
+\label{sec:64bit_in_32_env}
+
+В среде, где \ac{GPR}-ы 32-битные, 64-битные значения хранятся и передаются как пары 32-битных значений
+\footnote{Кстати, в 16-битной среде, 32-битные значения передаются 16-битными парами точно так же: \myref{win16_32bit_values}}.
+\fi
+
+\ifdefined\GERMAN
+\section{64-Bit-Werte in 32-Bit-Umgebungen}
+\label{sec:64bit_in_32_env}
+
+In einer 32-Bit-Umgebung sind \ac{GPR} 32 Bit groß. Also werden 64-Bit-Werte in
+32-Bit-Wertepaaren gespeichert und übergeben\footnote{Übrigens, 32-Bit-Werte werden
+als Paare in 16--Bit-Umgebungen auf der gleiche Art übergeben: \myref{win16_32bit_values}}.
+\fi
+
+\input{patterns/185_64bit_in_32_env/ret/main}
+\input{patterns/185_64bit_in_32_env/passing_add_sub/main}
+\input{patterns/185_64bit_in_32_env/multdiv/main}
+\input{patterns/185_64bit_in_32_env/shifting/main}
+\input{patterns/185_64bit_in_32_env/conversion/main}
+

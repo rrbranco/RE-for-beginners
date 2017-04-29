@@ -1,0 +1,51 @@
+\subsection{Массив как аргумент функции}
+
+Кто-то может спросить, какая разница между объявлением аргумента ф-ции как массива и как указателя?
+
+Как видно, разницы вообще нет:
+
+\begin{lstlisting}[style=customc]
+void write_something1(int a[16])
+{
+	a[5]=0;
+};
+
+void write_something2(int *a)
+{
+	a[5]=0;
+};
+
+int f()
+{
+	int a[16];
+	write_something1(a);
+	write_something2(a);
+};
+\end{lstlisting}
+
+Оптимизирующий GCC 4.8.4:
+
+\begin{lstlisting}[style=customasmx86]
+write_something1:
+        mov     DWORD PTR [rdi+20], 0
+        ret
+
+write_something2:
+        mov     DWORD PTR [rdi+20], 0
+        ret
+\end{lstlisting}
+
+Но вы можете объявлять массив вместо указателя для самодокументации, если размер массива известен зараннее и определен.
+И может быть, какой-нибудь инструмент для статического анализа выявит возможное переполнение буфера.
+Или такие инструменты есть уже сегодня?
+
+Некоторые люди, включая Линуса Торвальдса, критикуют эту возможность \CCpp{}: \url{https://lkml.org/lkml/2015/9/3/428}.
+
+В стандарте C99 имеется также ключевое слово \IT{static} \InSqBrackets{\CNineNineStd{} 6.7.5.3}:
+
+\begin{framed}
+\begin{quotation}
+If the keyword static also appears  within the [ and ] of the array type derivation, then for each call to the function, the value of the corresponding actual argument shall provide access to the first element of an array with at least as many elements as specified by the size expression.
+\end{quotation}
+\end{framed}
+

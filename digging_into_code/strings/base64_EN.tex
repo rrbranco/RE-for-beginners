@@ -1,0 +1,71 @@
+\subsubsection{Base64}
+\myindex{Base64}
+
+The base64 encoding is highly popular for the cases when you have to transfer binary data as a text string.
+
+In essence, this algorithm encodes 3 binary bytes into 4 printable characters:
+all 26 Latin letters (both lower and upper case), digits, plus sign (\q{+}) and slash sign (\q{/}),
+64 characters in total.
+
+One distinctive feature of base64 strings is that they often (but not always) ends with 1 or 2 \gls{padding}
+equality symbol(s) (\q{=}), for example:
+
+\begin{lstlisting}
+AVjbbVSVfcUMu1xvjaMgjNtueRwBbxnyJw8dpGnLW8ZW8aKG3v4Y0icuQT+qEJAp9lAOuWs=
+\end{lstlisting}
+
+\begin{lstlisting}
+WVjbbVSVfcUMu1xvjaMgjNtueRwBbxnyJw8dpGnLW8ZW8aKG3v4Y0icuQT+qEJAp9lAOuQ==
+\end{lstlisting}
+
+The equality sign (\q{=}) is never encounter in the middle of base64-encoded strings.
+
+Now example of manual encoding.
+Let's encode 0x00, 0x11, 0x22, 0x33 hexadecimal bytes into base64 string:
+
+\lstinputlisting{digging_into_code/strings/base64_ex.sh}
+
+Let's put all 4 bytes in binary form, then regroup them into 6-bit groups:
+
+\begin{lstlisting}
+|  00  ||  11  ||  22  ||  33  ||      ||      |
+00000000000100010010001000110011????????????????
+| A  || B  || E  || i  || M  || w  || =  || =  |
+\end{lstlisting}
+
+Three first bytes (0x00, 0x11, 0x22) can be encoded into 4 base64 characters (``ABEi''),
+but the last one (0x33) --- cannot be,
+so it's encoded using two characters (``Mw'') and \gls{padding} symbol (``='')
+is added twice to pad the last group to 4 characters.
+Hence, length of all correct base64 strings are always divisible by 4.
+
+\myindex{XML}
+\myindex{PGP}
+Base64 is often used when binary data needs to be stored in XML.
+``Armored'' (i.e., in text form) PGP keys and signatures are encoded using base64.
+
+Some people tries to use base64 to obfuscate strings:
+\url{http://blog.sec-consult.com/2016/01/deliberately-hidden-backdoor-account-in.html}
+\footnote{\url{http://archive.is/nDCas}}.
+
+\myindex{base64scanner}
+There are utilities for scanning an arbitrary binary files for base64 strings.
+One such utility is base64scanner\footnote{\url{https://github.com/dennis714/base64scanner}}.
+
+\myindex{UseNet}
+\myindex{FidoNet}
+\myindex{Uuencoding}
+\myindex{Phrack}
+Another encoding system which was much more popular in UseNet and FidoNet is Uuencoding.
+Binary files are still encoded in Uuencode format in Phrack magazine.
+It offers mostly the same features, but is different from base64 in the sense that file name
+is also stored in header.
+
+\myindex{Tor}
+\myindex{base32}
+By the way: there is also close sibling to base64: base32, alphabet of which has ~10 digits and ~26 Latin characters.
+One well-known usage of it is onion addresses
+\footnote{\url{https://trac.torproject.org/projects/tor/wiki/doc/HiddenServiceNames}},
+like: \url{http://3g2upl4pq6kufc4m.onion/}.
+\ac{URL} can't have mixed-case Latin characters, so apparently, this is why Tor developers used base32.
+

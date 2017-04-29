@@ -1,0 +1,24 @@
+\subsubsection{Windows x64}
+
+\label{SEH_win64}
+
+Wie man sich vielleicht denken kann, ist es nicht sehr schnell bei jedem Funktionsprolog
+einen SEH-Frame aufzubauen.
+Ein weiteres Geschwindigkeitsproblem ist das häufige Ändern des \IT{previous try level}-Werts
+während der Ausführung einer Funktion.
+
+Also haben sich die Dinge in x64 komplett geändert: alle Zeiger auf einen \TT{try}-Block,
+Filter und Handler-Funktionen sind im einem PE-Segment \TT{.pdata} gesichert.
+Von hier nimmt die \ac{OS}-Ausnahmebehandlung alle Informationen.
+
+Hier sind zwei Beispiele aus dem letzten Abschnitt, für x64 kompiliert:
+
+\lstinputlisting[caption=MSVC 2012,style=customasmx86]{OS/SEH/3/2_x64.asm}
+
+\lstinputlisting[caption=MSVC 2012,style=customasmx86]{OS/SEH/3/3_x64.asm}
+
+In \IgorSkochinsky gibt es eine Reihe weiterer, detaillierte Information über dieses Thema.
+
+Neben den Ausnahme-Informationen, beinhaltet \TT{.pdata} die Adressen von fast allen
+Funktionsbeginn- und enden, da dies für Tools die für automatische Analysen nützlich
+sein kann.

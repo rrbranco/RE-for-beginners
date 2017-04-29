@@ -1,0 +1,40 @@
+\clearpage
+\subsubsection{MSVC: x86 + \olly}
+
+Vamos hackear nosso programa no \olly, forçando-o a acreditar que o \scanf sempre funciona sem erro.
+
+Quando o endereço de uma variável local é passado para o \scanf, a variável geralmente contém algum lixo de memória, neste caso \TT{0x6E494714}:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/olly_1.png}
+\caption{\olly: Passando o endereço da variável pro \scanf}
+\label{fig:scanf_ex3_olly_1}
+\end{figure}
+
+\clearpage
+Enquanto \scanf o está em execução, ja janela do console entre com um valor que não é um número, por exemplo \q{asdasd}.
+
+\scanf termina com 0 no \EAX,  o que indica que houve um erro:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/olly_2.png}
+\caption{\olly: \scanf retornando erro}
+\label{fig:scanf_ex3_olly_2}
+\end{figure}
+
+Também podemos checar o valor da variável local na pilha e perceba que o valor não mudou.
+O que levaria o \scanf escrever lá?
+Simplesmente não fez nada, exceto retornar zero.
+
+Vamos tentar \q{hack} nosso programa.
+Clique com o botão direito do mouse em \EAX, entre outras opções selecione \q{Set to 1}. É o que precisamos.
+
+Agora temos 1 em \EAX, a próxima e o \printf irá imprimir o valor da variável na pilha.
+
+Quando executamos o programa (F9) podemos ver o seguinte no console:
+
+\lstinputlisting[caption=console window]{patterns/04_scanf/3_checking_retval/console.txt}
+
+De fato, 1850296084 é a representação decimal do número na pilha (\TT{0x6E494714})!

@@ -1,0 +1,15 @@
+d_max:
+; set FPU condition bit if $f14<$f12 (b<a):
+                c.lt.d  $f14, $f12
+                or      $at, $zero ; NOP
+; jump to locret_14 if condition bit is set
+                bc1t    locret_14
+; this instruction is always executed (set return value to "a"):
+                mov.d   $f0, $f12  ; branch delay slot
+; this instruction is executed only if branch was not taken (i.e., if b>=a)
+; set return value to "b":
+                mov.d   $f0, $f14
+
+locret_14:
+                jr      $ra
+                or      $at, $zero ; branch delay slot, NOP

@@ -1,0 +1,114 @@
+\section{Basic Block Reordering}
+
+% TODO __builtin_expect in GCC?
+
+\subsection{Profile-guided Optimization}
+\label{PGO}
+
+\myindex{\oracle}
+\myindex{Intel C++}
+
+Diese Optimierungsmethode kann einige \gls{basic block}s zu anderen Sektionen der
+ausführbaren Datei verschieben.
+
+Offensichtlich gibt es Teile einer Funktion die öfter ausgeführt werden als andere
+(zum Beispiel Schleifen-Rümpfe) und welche, die weniger oft ausgeführt werden
+(beispielsweise Fehlerberichte oder Ausnahmebehandlungen).
+
+Der Compiler fügt Messcode in die ausführbare Datei ein. Anschließend führt der
+Programmierer diesen mit vielen Tests aus um Statistiken zu erstellen.
+
+Der Compiler präpariert die ausführbare Datei mithilfe der erstellten Statistiken
+insofern, dass alle weniger häufige Codeteile in eine andere Sektion der Datei
+verschoben werden.
+
+Als Ergebnis ist der häufig ausgeführte Funktionscode zusammengefasst, was sehr
+wichtig für die Ausführgeschwindigkeit und die Cachebenutzung ist.
+
+Ein Beispiel vom \oracle-Code, der mit dem Intel C++-Compiler übersetzt wurde:
+
+\begin{lstlisting}[caption=orageneric11.dll (win32),style=customasmx86]
+                public _skgfsync
+_skgfsync       proc near
+
+; address 0x6030D86A
+
+                db      66h
+                nop
+                push    ebp
+                mov     ebp, esp
+                mov     edx, [ebp+0Ch]
+                test    edx, edx
+                jz      short loc_6030D884
+                mov     eax, [edx+30h]
+                test    eax, 400h
+                jnz     __VInfreq__skgfsync  ; write to log
+continue:
+                mov     eax, [ebp+8]
+                mov     edx, [ebp+10h]
+                mov     dword ptr [eax], 0
+                lea     eax, [edx+0Fh]
+                and     eax, 0FFFFFFFCh
+                mov     ecx, [eax]
+                cmp     ecx, 45726963h
+                jnz     error                ; exit with error
+                mov     esp, ebp
+                pop     ebp
+                retn
+_skgfsync       endp
+
+...
+
+; address 0x60B953F0
+
+__VInfreq__skgfsync:
+                mov     eax, [edx]
+                test    eax, eax
+                jz      continue
+                mov     ecx, [ebp+10h]
+                push    ecx
+                mov     ecx, [ebp+8]
+                push    edx
+                push    ecx
+                push    offset ... ; "skgfsync(se=0x%x, ctx=0x%x, iov=0x%x)\n"
+                push    dword ptr [edx+4]
+                call    dword ptr [eax] ; write to log
+                add     esp, 14h
+                jmp     continue
+
+error:
+                mov     edx, [ebp+8]
+                mov     dword ptr [edx], 69AAh ; 27050 "function called with invalid FIB/IOV structure"
+                mov     eax, [eax]
+                mov     [edx+4], eax
+                mov     dword ptr [edx+8], 0FA4h ; 4004
+                mov     esp, ebp
+                pop     ebp
+                retn
+; END OF FUNCTION CHUNK FOR _skgfsync
+\end{lstlisting}
+
+Der Abstand der Adressen zwischen diesen beiden Code-Fragmenten beträgt fast 9 MB.
+
+Alle weniger oft ausgeführten Codeteile wurden an das Ende der Code-Sektion der
+DLL-Datei verschoben.
+
+Dieser Teil der Funktion wurde vom Intel C++-Compiler mit dem \TT{VInfreq}-Präfix
+markiert.
+
+Man kann hier sehen, dass der Teil der Funktion der in die Logdatei schreibt (zum
+Beispiel im Falle eines Fehlers oder einer Warnung) vermutlich selten oder vielleicht
+gar nicht ausgeführt wurde als der Entwickler von Oracle die Statistiken erstellt hat.
+
+Das Schreiben in log basic block gibt die Ausführkontrolle letztendlich wieder zurück
+an den \q{heißen} Teil der Funktion.
+
+Ein weiterer \q{seltener} Teil ist der \gls{basic block}, welcher den Fehlercode
+27050 zurück gibt.
+
+In Linux ELF-Dateien wird der selten ausgeführte Code vom Intel C++-Compiler in die
+separate \TT{text.unlikely}-Sektion verschoben und der \q{heiße} Code in die Sektion
+\TT{text.hot}.
+
+Aus Sicht eines Reverse-Engineers kann diese Information helfen um die Funktion in
+den Hauptteil und den Fehlerbehandlungsteil zu unterteilen.

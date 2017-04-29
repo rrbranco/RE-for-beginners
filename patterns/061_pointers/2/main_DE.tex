@@ -1,0 +1,131 @@
+\subsection{Werte zurückgeben}
+Pointer werden oft verwendet um Funktionsergebnisse zurückzuliefern (siehe der Fall \scanf ~(\myref{label_scanf})).
+
+Zum Beispiel dann, wenn eine Funktion zwei Werte zurückgeben soll.
+
+\subsubsection{Beispiel mit globalen Variablen}
+
+\lstinputlisting[style=customc]{patterns/061_pointers/2/global.c}
+
+Dies kompiliert zu:
+
+\lstinputlisting[caption=\Optimizing MSVC 2010 (/Ob0),style=customasmx86]{patterns/061_pointers/2/global.asm}
+
+\myindex{\olly}
+\clearpage
+Schauen wir es uns in \olly an:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_global1.png}
+\caption{\olly: 
+Adressen der globalen Variablen werden an \ttfone übergeben}
+\label{fig:pointers_olly_global_1}
+\end{figure}
+Zuerst werden die Adressen der globalen Variablen an \ttfone übergeben.
+Wir klicken auf \q{Follow in dump} beim Stackelement und wir sehen den Platz, der im Datensegment für die beiden
+Variablen angelegt wird.
+
+\clearpage
+Diese Variablen werden auf Null gesetzt, denn nicht initialisierte Daten (aus \ac{BSS}) werden gelöscht, bevor die
+Ausführung beinnt, [siehe \CNineNineStd{} 6.7.8p10].
+
+Sie bleiben im Datensegment, was wir durch Drücken von Alt-M und untersuchen der Speicherzuordnung verifizieren können:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_global5.png}
+\caption{\olly: Speicherzuordnung}
+\label{fig:pointers_olly_global_5}
+\end{figure}
+
+\clearpage
+Verfolgen wir den Ablauf (F7) bis zum Start von \ttfone: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_global2.png}
+\caption{\olly: \ttfone beginnt}
+\label{fig:pointers_olly_global_2}
+\end{figure}
+Zwei Werte sind auf dem Stack sichtbar: 456 (\TT{0x1C8}) und
+123 (\TT{0x7B}) und außerdem die Adressen der beiden globalen Variablen.
+
+\clearpage
+Verfolgen wir den Ablauf bis zum Ende von \ttfone.
+Im linken unteren Fenster sehen wir wie die Ergebnisse der Berechnung in den globalen Variablen erscheinen:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_global3.png}
+\caption{\olly: Ausführung von \ttfone beendet}
+\label{fig:pointers_olly_global_3}
+\end{figure}
+
+\clearpage
+Jetzt werden die Werte der globalen Variablen in Register geladen, um dann an \printf übergeben zu werden (über den
+Stack):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_global4.png}
+\caption{\olly: 
+Adressen der globalen Variablen werden an \printf übergeben}
+\label{fig:pointers_olly_global_4}
+\end{figure}
+
+\subsubsection{Beispiel mit lokalen Variablen}
+
+Verändern wir unser Beispiel ein wenig:
+
+\lstinputlisting[caption=\TT{sum} und \TT{product} sind jetzt lokale
+Variablen,style=customc]{patterns/061_pointers/2/local_DE.c}
+
+Der Code von \ttfone wird sich nicht verändern.
+Nur den Code von \main wird sich verändern:
+
+\lstinputlisting[caption=\Optimizing MSVC 2010 (/Ob0),style=customasmx86]{patterns/061_pointers/2/local.asm}
+
+\newcommand{\PtrsAddresses}{\TT{0x2EF854} und \TT{0x2EF858}\xspace}
+
+\clearpage
+Schauen wir es uns erneut mit \olly an. 
+Die Adressen der lokalen Variablen auf dem Stack sind \PtrsAddresses.
+Wir erkennen wie diese auf dem Stack abgelegt werden:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_stk1.png}
+\caption{\olly: Adressen der lokalen Variablen werden auf dem Stack abgelegt}
+\label{fig:pointers_olly_stk_1}
+\end{figure}
+
+\clearpage
+\ttfone beginnt.
+Bis hierher befinden sich nur zufällige Werte auf dem Stack an den Adressen \PtrsAddresses:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_stk2.png}
+\caption{\olly: \ttfone beginnt}
+\label{fig:pointers_olly_stk_2}
+\end{figure}
+
+\clearpage
+\ttfone endet:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/061_pointers/2/olly_stk3.png}
+\caption{\olly: Ausführung von \ttfone endet}
+\label{fig:pointers_olly_stk_3}
+\end{figure}
+Wir finden nun \TT{0xDB18} und \TT{0x243} an den Adressen \PtrsAddresses.
+Diese Werte sind die Ergebnisse von \ttfone.
+
+% \Conclusion{} is a macro, don't translate it:
+\subsubsection{\Conclusion{}}
+\ttfone kann Pointer auf jede beliebige Speicherstelle zurückgeben.
+Dies ist die Quintessenz der Nützlichkeit von Pointern. 
+ 
+\Cpp \IT{references} funktionieren übrigens genau auf die gleiche Weise. Lesen Sie mehr dazu: (\myref{cpp_references}).

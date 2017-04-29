@@ -1,0 +1,30 @@
+\subsubsection{MIPS}
+
+\myindex{MIPS!\Registers!FCCR}
+Der Koprozessor des MIPS Prozessors hat ein Condition Bit, welches in der FPU
+gesetzt und in der CPU geprüft werden kann.
+
+Frühere MIPS haben nur ein Condition Bit (genannt FCC0), spätere haben deren 8
+(genannt FCC7-FCC0). 
+
+Diese(s) Bit(s) befinden sich im Register FCCR.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA)]{patterns/12_FPU/3_comparison/MIPS_O3_IDA_DE.lst}
+
+\myindex{MIPS!\Instructions!C.LT.D}
+\INS{C.LT.D} vergleicht zwei Werte. 
+\GTT{LT} ist die Bedingung \q{Less Than} (weniger als).
+\GTT{D} impliziert einen Wert vom Typ \Tdouble.
+Abhängig vom Ergebnis des Vergleichs wird das FCC0 Condition Bit entweder
+gesetzt oder gelöscht.
+
+\myindex{MIPS!\Instructions!BC1T}
+\myindex{MIPS!\Instructions!BC1F}
+\INS{BC1T} prüft das FCC0 Bit und sprint, falls das Bit gesetzt ist.
+\GTT{T} bedeutet, dass der Sprung ausgeführt wird, wenn das Bit gesetzt
+(\q{True}) ist.
+Daneben gibt es auch den Befehl \INS{BC1F}, der springt, wenn das Bit gelöscht
+(\q{FALSE}) ist.
+
+Abhängig vom Sprung wird einer der Funktionsargument in \$F0 abgelegt.

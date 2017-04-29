@@ -1,0 +1,117 @@
+\section{Bedingte Sprünge}
+\label{sec:Jcc}
+\myindex{\CLanguageElements!if}
+
+% sections
+\input{patterns/07_jcc/simple/main}
+\input{patterns/07_jcc/abs/main}
+\input{patterns/07_jcc/cond_operator/main}
+\input{patterns/07_jcc/minmax/main}
+
+\subsection{\Conclusion{}}
+
+\subsubsection{x86}
+
+Hier ist der grobe Aufbau eines bedingten Sprungs:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+CMP register, register/value
+Jcc true ; cc=condition code
+false:
+... dieser Code wird ausgeführt, wenn der Vergleich falsch ergibt ...
+JMP exit 
+true:
+... dieser Code wird ausgeführt, wenn der Vergleich wahr ergibt ...
+exit:
+\end{lstlisting}
+
+\subsubsection{ARM}
+
+\begin{lstlisting}[caption=ARM,style=customasmARM]
+CMP register, register/value
+Bcc true ; cc=condition code
+false:
+... dieser Code wird ausgeführt, wenn der Vergleich falsch ergibt ...
+JMP exit 
+true:
+... dieser Code wird ausgeführt, wenn der Vergleich wahr ergibt ...
+exit:
+\end{lstlisting}
+
+\subsubsection{MIPS}
+
+\begin{lstlisting}[caption=prüfe auf Null,style=customasmMIPS]
+BEQZ REG, label
+...
+\end{lstlisting}
+% TBT
+\begin{lstlisting}[caption=Prüfe auf kleiner Null,style=customasmMIPS]
+BLTZ REG, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Prüfe auf Gleichheit,style=customasmMIPS]
+BEQ REG1, REG2, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Prüfe auf Ungleichheit,style=customasmMIPS]
+BNE REG1, REG2, label
+...
+\end{lstlisting}
+% TBT
+\begin{lstlisting}[caption=Prüfe auf größer{,} größer als
+(vorzeichenbehaftet),style=customasmMIPS] SLT REG1, REG2, REG3
+BEQ REG1, label
+...
+\end{lstlisting}
+% TBT
+\begin{lstlisting}[caption=Prüfe auf kleiner{,} kleiner als
+(vorzeichenlos),style=customasmMIPS] SLTU REG1, REG2, REG3
+BEQ REG1, label
+...
+\end{lstlisting}
+
+\subsubsection{Ohne Verzweigung}
+
+\myindex{ARM!\Instructions!MOVcc}
+\myindex{x86!\Instructions!CMOVcc}
+\myindex{ARM!\Instructions!CSEL}
+Wenn der Rumpf eines bedingten Ausdrucks sehr kurz ist, kann der bedingten
+Move-Befehl verwendet werden:
+\INS{MOVcc} in ARM (in ARM mode), \INS{CSEL} in ARM64, \INS{CMOVcc} in x86.
+
+\myparagraph{ARM}
+Es ist im ARM mode möglich, Bedingungssuffixe (engl. condition code) für manchen
+Befehle zu verwenden:
+
+\begin{lstlisting}[caption=ARM (\ARMMode),style=customasmARM]
+CMP register, register/value
+instr1_cc ; dieser Befehl wird ausgeführt, wenn der condition code falsch ergibt
+instr2_cc ; dieser Befehl wird ausgeführt, wenn der condition code wahr ergibt
+...
+etc...
+\end{lstlisting}
+Natürlich gibt es keine Obergrenze für die Anzahl an Befehlen mit conditional
+codes, solange diese die CPU Flags nicht verändern.
+
+% FIXME: list of such instructions or \myref{} to it
+
+\myindex{ARM!\Instructions!IT}
+Im Thumb mode gibt es den \INS{IT} Befehl, der es erlaubt, zusätzliche Suffixe
+an die vier folgenden Befehle anzuhängen. Mehr dazu unter: \myref{ARM_Thumb_IT}.
+
+
+\begin{lstlisting}[caption=ARM (\ThumbMode),style=customasmARM]
+CMP register, register/value
+ITEEE EQ ; setze folgende Suffixe: if-then-else-else-else
+instr1   ; Befehl wird ausgeführt, wenn Bedingung wahr ist
+instr2   ; Befehl wird ausgeführt, wenn Bedingung falsch ist
+instr3   ; Befehl wird ausgeführt, wenn Bedingung falsch ist
+instr4   ; Befehl wird ausgeführt, wenn Bedingung falsch ist
+\end{lstlisting}
+
+\subsection{\Exercise}
+(ARM64) Versuchen Sie den Code in \lstref{cond_ARM64} so neu zu schreiben, dass
+alle Befehle mit bedingten Sprüngen durch den \TT{CSEL} Befehl ersetzt werden.
+

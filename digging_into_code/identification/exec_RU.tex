@@ -1,0 +1,136 @@
+\section{Идентификация исполняемых файлов}
+
+\subsection{Microsoft Visual C++}
+\label{MSVC_versions}
+
+Версии MSVC и DLL которые могут быть импортированы:
+
+\small
+\begin{center}
+\begin{tabular}{ | l | l | l | l | l | }
+\hline
+\HeaderColor Маркетинговая вер. & 
+\HeaderColor Внутренняя вер. & 
+\HeaderColor Вер. CL.EXE &
+\HeaderColor Импорт.DLL &
+\HeaderColor Дата выхода \\
+\hline
+% 4.0, April 1995
+% 97 & 5.0 & February 1997
+6		&  6.0	& 12.00	& msvcrt.dll	& June 1998		\\
+		&	&	& msvcp60.dll	&			\\
+\hline
+.NET (2002)	&  7.0	& 13.00	& msvcr70.dll	& February 13, 2002	\\
+		&	&	& msvcp70.dll	&			\\
+\hline
+.NET 2003	&  7.1	& 13.10 & msvcr71.dll	& April 24, 2003	\\
+		&	&	& msvcp71.dll	&			\\
+\hline
+2005		&  8.0	& 14.00 & msvcr80.dll	& November 7, 2005	\\
+		&	&	& msvcp80.dll	&			\\
+\hline
+2008		&  9.0	& 15.00 & msvcr90.dll	& November 19, 2007	\\
+		&	&	& msvcp90.dll	&			\\
+\hline
+2010		& 10.0	& 16.00 & msvcr100.dll	& April 12, 2010 	\\
+		&	&	& msvcp100.dll	&			\\
+\hline
+2012		& 11.0	& 17.00 & msvcr110.dll	& September 12, 2012 	\\
+		&	&	& msvcp110.dll	&			\\
+\hline
+2013		& 12.0	& 18.00 & msvcr120.dll	& October 17, 2013 	\\
+		&	&	& msvcp120.dll	&			\\
+\hline
+\end{tabular}
+\end{center}
+\normalsize
+
+msvcp*.dll содержит функции связанные с \Cpp{}, так что если она импортируется, скорее всего, 
+вы имеете дело с программой на \Cpp.
+
+\subsubsection{Name mangling}
+
+Имена обычно начинаются с символа \TT{?}.
+
+О \gls{name mangling} в MSVC читайте также здесь: \myref{namemangling}.
+
+\subsection{GCC}
+\myindex{GCC}
+
+Кроме компиляторов под *NIX, GCC имеется так же и для win32-окружения: в виде Cygwin и MinGW.
+
+\subsubsection{Name mangling}
+
+Имена обычно начинаются с символов \TT{\_Z}.
+
+О \gls{name mangling} в GCC читайте также здесь: \myref{namemangling}.
+
+\subsubsection{Cygwin}
+\myindex{Cygwin}
+
+cygwin1.dll часто импортируется.
+
+\subsubsection{MinGW}
+\myindex{MinGW}
+
+msvcrt.dll может импортироваться.
+
+\subsection{Intel Fortran}
+\myindex{Фортран}
+
+libifcoremd.dll, libifportmd.dll и libiomp5md.dll (поддержка OpenMP) могут импортироваться.
+
+В libifcoremd.dll много функций с префиксом \TT{for\_}, что значит \IT{Fortran}.
+
+\subsection{Watcom, OpenWatcom}
+\myindex{Watcom}
+\myindex{OpenWatcom}
+
+\subsubsection{Name mangling}
+
+Имена обычно начинаются с символа \TT{W}.
+
+Например, так кодируется метод \q{method} класса \q{class} не имеющий аргументов и возвращающий \Tvoid{}:
+
+\begin{lstlisting}
+W?method$_class$n__v
+\end{lstlisting}
+
+\subsection{Borland}
+\myindex{Borland Delphi}
+\myindex{Borland C++Builder}
+
+Вот пример \gls{name mangling} в Borland Delphi и C++Builder:
+
+\lstinputlisting{digging_into_code/identification/borland_mangling.txt}
+
+Имена всегда начинаются с символа \TT{@} 
+затем следует имя класса, имя метода
+и закодированные типы аргументов.
+
+Эти имена могут присутствовать с импортах .exe, экспортах .dll, отладочной информации, итд.
+
+Borland Visual Component Libraries (VCL) находятся в файлах .bpl вместо .dll, например, vcl50.dll, rtl60.dll.
+
+Другие DLL которые могут импортироваться: BORLNDMM.DLL.
+
+\subsubsection{Delphi}
+
+Почти все исполняемые файлы имеют текстовую строку \q{Boolean} 
+в самом начале сегмента кода, среди остальных имен типов.
+
+Вот очень характерное для Delphi начало сегмента \TT{CODE}, 
+этот блок следует сразу за заголовком win32 PE-файла:
+
+\lstinputlisting{digging_into_code/identification/delphi.txt}
+
+Первые 4 байта сегмента данных (\TT{DATA}) в исполняемых файлах могут быть \TT{00 00 00 00}, \TT{32 13 8B C0} или \TT{FF FF FF FF}.
+Эта информация может помочь при работе с запакованными/зашифрованными программами на Delphi.
+
+\subsection{Другие известные DLL}
+
+\myindex{OpenMP}
+\begin{itemize}
+\item vcomp*.dll --- Реализация OpenMP от Microsoft.
+\end{itemize}
+

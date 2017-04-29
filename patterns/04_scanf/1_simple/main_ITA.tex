@@ -1,0 +1,44 @@
+% TODO resync with EN version
+\subsection{Simple example}
+
+\lstinputlisting[style=customc]{patterns/04_scanf/1_simple/ex1.c}
+
+Oggi non e' piu' conveniente usare \scanf per interagire con l'utente. 
+Possiamo pero' utilizzarla per illustrare il passaggio di un puntatore ad una variabile di tipo \Tint.
+
+\subsubsection{Puntatori}
+\myindex{\CLanguageElements!\Pointers}
+
+I puntatori sono fra i concetti fondamentali in informatica.
+Spesso il passaggio di una struttura, array o piu' in generale, un oggetto molto grande, e' troppo costoso in termini di memoria, mentre passare il suo indirizzo e' piu' efficace. 
+Inoltre se la funzione chiamata (\gls{callee}) necessita di modificare qualcosa nella struttura ricevuta come parametro e successivamente restituirla per intero, la sitauzione si fa ancora piu' inefficiente.
+Percio' la cosa piu' semplice da fare e ' passare l'indirizzo della struttura alla funzione chiamata, e lasciare che operi le modifiche necessarie.
+
+Un puntatore in \CCpp--- e' semplicemente un indirizzo di una locazione di mamoria.
+
+\myindex{x86-64}
+In x86, l'indirizzo e' rappresentato con un numero a 32-bit (i.e., occupa 4 byte), mentre in x86-64 e' un numero a 64-bit (8 byte).
+Per inciso, questo e' il motivo per cui alcune persone si lamentano nel passaggio a x86-64 --- tutti i puntatori in architettura x64 richiedono il doppio dello spazio, inclusa la memoria cache, che e' memoria ``costosa''.
+
+% TODO ... а делать разные версии memcpy для разных типов - абсурд
+\myindex{\CStandardLibrary!memcpy()}
+E' possibile lavorare soltanto con puntatori senza tipo, con un po' di sforzo. Ad esempio la funzione C standard \TT{memcpy()}, che copia un blocco di memoria da un indirizzo ad un altro, ha come argomenti 2 puntatori di tipo \TT{void*}, poiche' e' impossibile predire il tipo di dati che si vuole copiare. Il tipo di dato non e' importante, conta solo la dimensione del blocco.
+
+I puntatori sono anche moldo usati quando una funzione deve restituire piu' di un valore
+(torneremo su questo argomento piu' avanti
+~(\myref{label_pointers})
+).
+
+la funzione \IT{scanf()} --- e' uno di questi casi.
+
+Oltre al fatto che la funzione necessita di indicare quanti valori sono stati letti con successo, deve anche restituire tutti questi valori.
+
+In \CCpp il tipo del puntatore e' necessario soltanto per i controlli sui tipi a compile-time.
+
+Internamente, nel codice compilato, non vi e' alcuna informazione sui tipi dei puntatori.
+% TODO это сильно затрудняет декомпиляцию
+
+\input{patterns/04_scanf/1_simple/x86}
+\input{patterns/04_scanf/1_simple/x64}
+\input{patterns/04_scanf/1_simple/ARM}
+\input{patterns/04_scanf/1_simple/MIPS/main}

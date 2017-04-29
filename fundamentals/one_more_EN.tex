@@ -1,0 +1,54 @@
+\subsection{Couple of additions about two's complement form}
+
+\subsubsection{Getting maximum number of some \gls{word}}
+
+Maximum unsigned number is just a number where all bits are set: \IT{0xFF....FF}
+(this is -1 if the \gls{word} is treated as signed integer).
+So you take a \gls{word}, set all bits and get the value:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+	unsigned int val=~0; // change to "unsigned char" to get maximal value for the unsigned 8-bit byte
+	// 0-1 will also work, or just -1
+	printf ("%u\n", val); // %u for unsigned
+};
+\end{lstlisting}
+
+This is 4294967295 for 32-bit integer.
+
+\subsubsection{Getting minimum number for some signed \gls{word}}
+
+Minimum signed number is encoded as \IT{0x80....00}, i.e., most significant bit is set, while others are cleared.
+Maximum signed number is encoded in the same way, but all bits are inverted: \IT{0x7F....FF}.
+
+Let's shift a lone bit left until it disappears:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+	signed int val=1; // change to "signed char" to find values for signed byte
+	while (val!=0)
+	{
+		printf ("%d %d\n", val, ~val);
+		val=val<<1;
+	};
+};
+\end{lstlisting}
+
+Output is:
+
+\begin{lstlisting}
+...
+
+536870912 -536870913
+1073741824 -1073741825
+-2147483648 2147483647
+\end{lstlisting}
+
+Two last numbers are minimum and maximum signed 32-bit \IT{int} respectively.
+

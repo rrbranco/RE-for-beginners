@@ -1,0 +1,112 @@
+\subsubsection{Sauvegarder l'adresse de retour de la fonction}
+
+\myparagraph{x86}
+
+\myindex{x86!\Instructions!CALL}
+Lorsque l'on appelle une fonction avec une instruction \CALL, l'adresse du point
+exactement après cette dernière est sauvegardée sur la pile et un saut inconditionnel
+à l'adresse de l'opérande \CALL est exécuté.
+
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!JMP}
+L'instruction \CALL est équivalente à la\\
+paire d'instructions \INS{PUSH address\_after\_call / JMP operand}.
+
+\myindex{x86!\Instructions!RET}
+\myindex{x86!\Instructions!POP}
+\RET va chercher une valeur sur la pile et y saute~---ce qui est équivalent à
+la paire d'instructions \TT{POP tmp / JMP tmp}.
+
+\myindex{\Stack!\MLStackOverflow}
+\myindex{\Recursion}
+Déborder de la pile est très facile. Il suffit de lancer une récursion éternelle:
+
+\begin{lstlisting}[style=customc]
+void f()
+{
+	f();
+};
+\end{lstlisting}
+
+MSVC 2008 signale le problème:
+
+\begin{lstlisting}
+c:\tmp6>cl ss.cpp /Fass.asm
+Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 15.00.21022.08 for 80x86
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ss.cpp
+c:\tmp6\ss.cpp(4) : warning C4717: 'f' : recursive on all control paths, function will cause runtime stack overflow
+\end{lstlisting}
+
+\dots mais génère tout de même le code correspondant:
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+	push	ebp
+	mov	ebp, esp
+; Line 3
+	call	?f@@YAXXZ	; f
+; Line 4
+	pop	ebp
+	ret	0
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+\dots Si nous utilisons l'option d'optimisation du compilateur (option \TT{\Ox})
+le code optimisé ne va pas déborder de la pile et au lieu de cela va fonctionner
+\IT{correctemment}\footnote{ironique ici}:
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+$LL3@f:
+; Line 3
+	jmp	SHORT $LL3@f
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+GCC 4.4.1 génère un code similaire dans les deux cas, sans, toutefois émettre
+d'avertissement à propos de ce problème.
+
+\myparagraph{ARM}
+
+\myindex{ARM!\Registers!Link Register}
+Les programmes ARM utilisent également la pile pour sauver les adresses de retour,
+mais différemment.
+Comme mentionné dans \q{\HelloWorldSectionName}~(\myref{sec:hw_ARM}),
+\ac{RA} est sauvegardé dans \ac{LR} (\gls{link register}).
+Si l'on a toutefois besoin d'appeler une autre fonction et d'utiliser le registre
+\ac{LR} une fois de plus, sa valeur doit être sauvegardée.
+\myindex{Function prologue}
+Usuellement, cela se fait dans le prologue de la fonction.
+
+\myindex{ARM!\Instructions!PUSH}
+\myindex{ARM!\Instructions!POP}
+Souvent, nous voyons des instructions comme \INS{PUSH {R4-R7,LR}} en même temps
+que cette instruction dans le prologue \INS{POP {R4-R7,PC}}---ces registres qui
+sont utilisés dans la fonction sont sauvegardés sur la pile, \ac{LR} inclus.
+
+\myindex{ARM!Fonction leaf} % FIXME traduire avec feuille ?
+Néanmoins, si une fonction n'appelle jamais d'autre fonction, dans la terminologie
+\ac{RISC} elle est appelée \IT{\glslink{leaf function}{fonction leaf}}\footnote{\href{http://go.yurichev.com/17064}{infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.faqs/ka13785.html}}.
+Ceci a comme conséquence que les fonctions leaf ne sauvegardent pas le registre
+\ac{LR} (car elles ne le modifient pas).
+Si une telle fonction est petite et utilise un petit nombre de registres, elle
+peut ne pas utiliser du tout la pile.
+Ainsi, il est possible d'appeler des fonctions leaf sans utiliser la pile.
+Ce qui peut être plus rapide sur des vieilles machines x86 car la mémoire externe
+n'est pas utilisée pour la pile
+\footnote{Il y a quelques temps, sur PDP-11 et VAX, l'instruction CALL (appel d'autres fonctions) était coûteux; jusqu'à 50\%
+du temps d'exécution pouvait être passé à ça, il était donc considèré qu'avoir un grand nombre de petite fonction était un \gls{anti-pattern} \InSqBrackets{\TAOUP Chapter 4, Part II}.}.
+Cela peut être utile pour des situations où la mémoire pour la pile n'est pas
+encore allouée ou disponible.
+
+Quelques exemples de fonctions leaf:
+\myref{ARM_leaf_example1}, \myref{ARM_leaf_example2},
+\myref{ARM_leaf_example3}, \myref{ARM_leaf_example4}, \myref{ARM_leaf_example5},
+\myref{ARM_leaf_example6}, \myref{ARM_leaf_example7}, \myref{ARM_leaf_example10}.
+

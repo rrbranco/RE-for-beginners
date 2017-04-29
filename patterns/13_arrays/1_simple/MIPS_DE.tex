@@ -1,0 +1,19 @@
+\subsubsection{MIPS}
+% FIXME better start at non-optimizing version?
+Die Funktion verwendet eine Menge S-Register, die gesichert werden müssen. Das ist der Grund dafür, dass die Werte im
+Funktionsprolog gespeichert und im Funktionsepilog wiederhergestellt werden.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA),style=customasmMIPS]{patterns/13_arrays/1_simple/MIPS_O3_IDA_DE.lst}
+Interessant: es gibt zwei Schleifen und die erste benötigt $i$ nicht; sie benötigt nur $i\cdot 2$ (erhöht um 2 bei
+jedem Iterationsschritt) und die Adresse im Speicher (erhöht um 4 bei jedem Iterationsschritt).
+
+Wir sehen hier also zwei Variablen: eine (in \$V0), die jedes Mal um 2 erhöht wird, und eine andere (in\$V1), die um 4
+erhöht wird.
+
+Die zweite Schleife ist der Ort, an dem \printf aufgerufen wird und dem Benutzer den Wert von $i$ zurückliefert, es gibt
+also eine Variable die in \$S0 inkrementiert wird und eine Speicheradresse in \$S1, die jedes Mal um 4 erhöht wird.
+
+Das erinnert uns an die Optimierung von Schleifen, die wir früher betrachtet haben: \myref{loop_iterators}.
+
+Das Ziel der Optimierung ist es, die Multiplikationen loszuwerden.

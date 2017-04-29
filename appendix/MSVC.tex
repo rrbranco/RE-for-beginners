@@ -1,0 +1,32 @@
+\subsection{MSVC}
+\myindex{MSVC}
+\label{sec:MSVC_options}
+
+\RU{Некоторые полезные опции, которые были использованы в книге}
+\EN{Some useful options which were used through this book}.
+\DE{Einige nützliche Optionen die in diesem Buch genutzt werden}.
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor \RU{опция}\EN{option}\DE{Option} & 
+\HeaderColor \RU{значение}\EN{meaning}\DE{Bedeutung} \\
+\hline
+/O1		& \RU{оптимизация по размеру кода}\EN{minimize space}\DE{Speicherplatz minimieren}\\
+/Ob0		& \RU{не заменять вызовы inline-функций их кодом}\EN{no inline expansion}\DE{Keine Inline-Erweiterung}\\
+/Ox		& \RU{максимальная оптимизация}\EN{maximum optimizations}\DE{maximale Optimierung}\\
+/GS-		& \RU{отключить проверки переполнений буфера}
+		\EN{disable security checks (buffer overflows)}
+        \DE{Sicherheitsüberprüfungen deaktivieren (Buffer Overflows)}\\
+/Fa(file)	& \RU{генерировать листинг на ассемблере}\EN{generate assembly listing}\DE{Assembler-Quelltext erstellen}\\
+/Zi		& \RU{генерировать отладочную информацию}\EN{enable debugging information}\DE{Debugging-Informationen erstellen}\\
+/Zp(n)		& \RU{паковать структуры по границе в $n$ байт}\EN{pack structs on $n$-byte boundary}\DE{Strukturen an $n$-Byte-Grenze ausrichten}\\
+/MD		& \RU{выходной исполняемый файл будет использовать}
+			\EN{produced executable will use} \TT{MSVCR*.DLL}
+            \DE{ausführbare Daten nutzt} \TT{MSVCR*.DLL}\\
+\hline
+\end{tabular}
+\end{center}
+
+\RU{Кое-как информация о версиях MSVC}\EN{Some information about MSVC versions}\DE{Informationen zu MSVC-Versionen}:
+\myref{MSVC_versions}.

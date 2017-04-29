@@ -1,0 +1,115 @@
+\myparagraph{\NonOptimizing MSVC}
+
+MSVC 2010 erzeugt den folgenden Code:
+
+\lstinputlisting[caption=\NonOptimizing MSVC
+2010,style=customasmx86]{patterns/12_FPU/3_comparison/x86/MSVC/MSVC_DE.asm}
+
+\myindex{x86!\Instructions!FLD}
+
+Der Befehl \FLD lädt \GTT{\_b} nach \ST{0}.
+
+\label{Czero_etc}
+\newcommand{\Czero}{\GTT{C0}\xspace}
+\newcommand{\Ctwo}{\GTT{C2}\xspace}
+\newcommand{\Cthree}{\GTT{C3}\xspace}
+\newcommand{\CThreeBits}{\Cthree/\Ctwo/\Czero}
+
+\myindex{x86!\Instructions!FCOMP}
+\FCOMP verlgeicht den Wert in \ST{0} mit dem Wert, der sich in \GTT{\_a}
+befindet und setzt die \CThreeBits im FPU Status Register entsprechend.
+Das Statusregister ist ein 16-Bit-Register, das den aktueller Zustand der FPU
+abbildet.
+
+Nachdem die Bits gesetzt worden sind, nimmer der \FCOMP Befehl auch eine
+Variable vom Stack. Dieses Verhalten unterscheidet ihn von \FCOM, der einfach
+zwei Werte vergleicht und den Stack unangetastet lässt.
+
+Leider verfügen CPUs vor Intel P6\footnote{Intel P6 ist Pentium Pro, Pentium II,
+etc.}über keinerlei bedingte Sprungbefehle, die die \CThreeBits prüfen.
+
+After the bits are set, the \FCOMP instruction also pops one variable from the stack. 
+This is what distinguishes it from \FCOM, which is just compares values, leaving the stack in the same state.
+Vielleicht ist diese Tatsache historisch begründet (man erinnere sich: die FPU
+war früher ein eigener Chip).\\
+Moderne CPUs, beginnend mit Intel P6 haben \FCOMI/\FCOMIP/\FUCOMI/\FUCOMIP
+Befehle~--welche im Prinzip das gleiche tun, aber die \ZF/\PF/\CF Flags der CPU
+verändern können.
+
+\myindex{x86!\Instructions!FNSTSW}
+Der \FNSTSW Befehl kopiert das FPU Statusregister nach \AX.
+\CThreeBits werden an den Stellen 14/10/8 abgelegt, sie befinden sich im \AX
+Register an den gleichen Stellen und sie werden alle in höherwertigen Teil von
+\AX{}~---\AH{} abgelegt.
+
+\begin{itemize}
+\item Falls in unserem Beispiel $b>a$, dann werden die \CThreeBits Bits wie
+folgt gesetzt: 0, 0, 0.
+\item Falls $a>b$, dann ist das Bitmuster: 0, 0, 1.
+\item Falls $a=b$, dann ist das Bitmuster: 1, 0, 0.
+\item
+
+Wenn das Ergebnis (z.B. im Fehlerfall) ungeordnet ist, dann werden die Bits wie
+folgt gesetzt: 1,1,1.
+\end{itemize}
+% TODO: table here?
+So werden die \CThreeBits Bits im \AX Register angeordnet:
+
+\input{C3_in_AX}
+
+So werden die \CThreeBits Bits im \AH Register angeordnet:
+
+\input{C3_in_AH}
+Nach der Ausführung von \INS{test ah, 5}\footnote{5=101b} werden nur die \Czero
+und \Ctwo Bits (an den Stellen 0 und 2) betrachtet, alle übrigen Bits werden
+einfach überlesen.
+
+\label{parity_flag}
+\myindex{x86!\Registers!\Flags!Parity flag}
+Werfen wir nun einen Blick auf ein anderes bemerkenswertes historisches
+Überbleibsel: das \IT{parity flag}.
+
+Dieses Flag wird auf 1 gesetzt, falls die Anzahl der Einsen im Ergebnis der
+letzten Berechnung gerade ist und auf 1, falls dies nicht der Fall ist.
+
+Schlagen wir in der Wikipedia
+nach\footnote{\href{http://go.yurichev.com/17131}{wikipedia.org/wiki/Parity\_flag}}:
+
+%TODO Quotation has been translated from English wiki article, since the
+% correspondig German article doesn't offer such information.
+\begin{framed}
+\begin{quotation}
+Ein guter Grund das Parity Flag abzufragen, hat tatsächlich gar nichts mit
+Parität zu tun. Die FPU hat vier Bedingungsflags (C0 bis C3), aber diese können
+nicht direkt abgefragt werden, sondern müssen zunächst in das Flags Register
+kopiert werden. Wenn dies geschieht, wird C0 im Carry Flag abgelegt, C2 im
+Parity Flag und C3 im Zero Flag.
+Das C2 Flag ist gesetzt, wenn z.B. unvergleichbare Fließkommawerte (NaN oder
+nicht unterstütztes Format) über der \FUCOM Befehl miteinander verglichen
+werden.\textit{(Übersetzung aus der englischen Wikipedia.)}
+\end{quotation}
+\end{framed}
+
+Wie in der Wikipedia dargestellt wird das Parity Flag manchmal im FPU Code
+verwendet; schauen wir uns genauer an wie das funktioniert.
+
+\myindex{x86!\Instructions!JP}
+Das \PF Flag wird auf 1 gesetzt, wenn sowohl \Czero als auch \Ctwo beide 0 oder
+beide 1 sind. In diesem Fall wird der nachfolgende Sprung \JP(\IT{jump if
+PF==1}) ausgeführt.
+Wenn wir die Werte der \CThreeBits in den unterschiedlichen Fällen betrachten,
+dann sehen wir, dass der bedingte Sprung \JP in zwei Fällen ausgeführt wird:
+wenn $b>a$ oder wenn $a=b$ (das \Cthree Bit wird hier nicht betrachtet, da es
+durch den Befehl \INS{test ah,5}) gelöscht wurde).
+
+Der Rest ist leicht nachvollziehbar.
+Denn der bedingte Sprung ausgeführt wurde, lädt \FLD den Wert von \GTT{\_b} nach
+\ST{0} und wenn nicht, wird der Wert von \GTT{\_a} dorthin geladen.
+
+\mysubparagraph{Was ist mit der Abfrage von \Ctwo?}
+Das \Ctwo Flag wird im Fehlerfall (\gls{NaN}, etc.) gesetzt, aber unser Code
+prüft dies nicht. 
+Wenn sich der Programmierer für FPU Fehler interessiert, muss er zusätzliche
+Abfragen hinzufügen.
+
+\input{patterns/12_FPU/3_comparison/x86/MSVC/olly_DE.tex}

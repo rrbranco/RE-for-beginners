@@ -1,0 +1,34 @@
+\subsection{Указатель на аргумент функции}
+\label{pointer_to_argument}
+
+\dots и даже более того, можно взять указатель на аргумент функции и передать его в другую функцию:
+
+\lstinputlisting[style=customc]{OS/calling_conventions/ptr_to_argument/10.c}
+
+Трудно понять, как это работает, пока мы не посмотрим на код:
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{OS/calling_conventions/ptr_to_argument/MSVC_2010_O3.asm}
+
+Адрес места в стеке где была передана $a$ просто передается в другую функцию.
+Она модифицирует переменную по этому адресу, и затем \printf выведет модифицированное значение.
+
+\par Наблюдательный читатель может спросить, а что насчет тех соглашений о вызовах, где аргументы функции
+передаются в регистрах?
+
+Это та ситуация где используется \IT{Shadow Space}.
+
+Так что входящее значение копируется из регистра в \IT{Shadow Space} в локальном стеке и затем это адрес
+передается в другую функцию:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{OS/calling_conventions/ptr_to_argument/MSVC_2012_x64_O3.asm}
+
+GCC также записывает входное значение в локальный стек:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 x64,style=customasmx86]{OS/calling_conventions/ptr_to_argument/GCC491_x64_O3.s}
+
+GCC для ARM64 делает то же самое, но это пространство здесь называется \IT{Register Save Area}:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 ARM64,style=customasmARM]{OS/calling_conventions/ptr_to_argument/GCC49_ARM64_O3.s}
+
+Кстати, похожее использование \IT{Shadow Space} разбирается здесь: \myref{variadic_arith_registers}.
+

@@ -1,0 +1,41 @@
+\clearpage
+\subsubsection{MSVC: x86 + \olly}
+\myindex{\olly}
+
+Um pouco mais simples aqui:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/2_global/ex2_olly_1.png}
+\caption{\olly: depois da execução do \scanf}
+\label{fig:scanf_ex2_olly_1}
+\end{figure}
+
+A variável está localizada na seção de data.
+
+Depois da instrução \PUSH (colocando o endereço de $x$) é executada, o endereço aparece no topo da pilha. Clique com o botão direito naquela linha e selecione \q{Follow in dump}.
+
+A variável aparecerá na janela de memória na esquerda.
+Após digitarmos 123 no console, \TT{0x7B}  aparece na janela de memória(veja a região marcada no screenshot).
+
+Mas, porque o primeiro byte é \TT{7B}?
+Pela lógica deveria ser \TT{00 00 00 7B}.
+O motivo para isso é conhecido como \gls{endianness},e a plataforma x86 usa o que é chamado \IT{little-endian}.
+Isso implica que a parte de baixa ordem do byte é escrita primeiro e a parte alta é escrita por último.
+
+Leia mais sobre em: \myref{sec:endianness}.
+De volta ao exemplo, o valor de 32-bits é carregado do endereço da memória pro \EAX e passado para o \printf.
+
+O endereço de memória de $x$ é \TT{0x00C53394}.
+
+\clearpage
+No \olly podemos rever o estado da memória do processo (Alt+M) e podemos ver que este endereço está dentro do da seção \TT{.data} do nosso arquivo PE:
+
+\label{olly_memory_map_example}
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/2_global/ex2_olly_2.png}
+\caption{\olly: Estado da memória}
+\label{fig:scanf_ex2_olly_2}
+\end{figure}
+

@@ -1,0 +1,117 @@
+\section{64 bits}
+
+\subsection{x86-64}
+\myindex{x86-64}
+\label{x86-64}
+
+It is a 64-bit extension to the x86 architecture.
+
+From the reverse engineer's perspective, the most important changes are:
+
+\myindex{\CLanguageElements!\Pointers}
+\begin{itemize}
+
+\item
+
+Almost all registers (except FPU and SIMD) were extended to 64 bits and got a R- prefix.
+8 additional registers wer added.
+Now \ac{GPR}'s are: \RAX, \RBX, \RCX, \RDX, 
+\RBP, \RSP, \RSI, \RDI, \Reg{8}, \Reg{9}, \Reg{10}, 
+\Reg{11}, \Reg{12}, \Reg{13}, \Reg{14}, \Reg{15}. 
+
+It is still possible to access the \IT{older} register parts as usual. 
+For example, it is possible to access the lower 32-bit part of the \RAX register using \EAX:
+
+\RegTableOne{RAX}{EAX}{AX}{AH}{AL}
+
+The new \GTT{R8-R15} registers also have their \IT{lower parts}: \GTT{R8D-R15D} (lower 32-bit parts),
+\GTT{R8W-R15W} (lower 16-bit parts), \GTT{R8L-R15L} (lower 8-bit parts).
+
+\RegTableFour{R8}{R8D}{R8W}{R8L}
+
+The number of SIMD registers was doubled from 8 to 16: \XMM{0}-\XMM{15}.
+
+\item
+
+In Win64, the function calling convention is slightly different, somewhat resembling fastcall
+(\myref{fastcall}).
+The first 4 arguments are stored in the \RCX, \RDX, \Reg{8}, \Reg{9} registers, the rest~---in the stack.
+The \gls{caller} function must also allocate 32 bytes so the \gls{callee} may save there 4 first arguments and use these 
+registers for its own needs.
+Short functions may use arguments just from registers, but larger ones may save their values on the stack.
+
+System V AMD64 ABI (Linux, *BSD, \MacOSX)\SysVABI also somewhat resembles
+fastcall, it uses 6 registers 
+\RDI, \RSI, \RDX, \RCX, \Reg{8}, \Reg{9} for the first 6 arguments.
+All the rest are passed via the stack.
+
+See also the section on calling conventions~(\myref{sec:callingconventions}).
+
+\item
+The \CCpp \Tint type is still 32-bit for compatibility.
+
+\item
+All pointers are 64-bit now.
+
+\end{itemize}
+
+\myindex{Register allocation}
+
+Since now the number of registers is doubled, the compilers have more space for maneuvering called 
+\glslink{register allocator}{register allocation}.
+For us this implies that the emitted code containing less number of local variables.
+
+\myindex{DES}
+
+For example, the function that calculates the first S-box of the DES encryption algorithm processes
+32/64/128/256 values at once (depending on \GTT{DES\_type} type (uint32, uint64, SSE2 or AVX)) 
+using the bitslice DES method
+(read more about this technique here ~(\myref{bitslicedes})):
+
+\lstinputlisting[style=customc]{patterns/20_x64/19_1.c}
+
+There are a lot of local variables. 
+Of course, not all those going into the local stack.
+Let's compile it with MSVC 2008 with \GTT{/Ox} option:
+
+\lstinputlisting[caption=\Optimizing MSVC 2008,style=customasmx86]{patterns/20_x64/19_2_msvc_Ox.asm}
+
+5 variables were allocated in the local stack by the compiler.
+
+Now let's try the same thing in the 64-bit version of MSVC 2008:
+
+\lstinputlisting[caption=\Optimizing MSVC 2008,style=customasmx86]{patterns/20_x64/19_3_msvc_x64.asm}
+
+Nothing was allocated in the local stack by the compiler, \GTT{x36} is synonym for \GTT{a5}.
+
+\iffalse
+% FIXME1 невнятно
+
+By the way, we can see here that the function saved the \RCX and \RDX registers in space allocated by the \gls{caller},
+but \Reg{8} and \Reg{9} were not saved but used from the beginning.
+\fi
+
+By the way, there are CPUs with much more \ac{GPR}'s, e.g. Itanium (128 registers).
+
+\subsection{ARM}
+
+64-bit instructions appeared in ARMv8.
+
+\subsection{Float point numbers}
+
+How floating point numbers are processed in x86-64 is explained here: \myref{floating_SIMD}.
+
+\subsection{64-bit architecture criticism}
+
+Some people has irritation sometimes: now one needs twice as much memory for storing pointers,
+including cache memory, despite the fact that x64 \ac{CPU}s can address only 48 bits of external 
+\ac{RAM}.
+
+Some people made their own memory allocators.
+\myindex{CryptoMiniSat}
+It's interesting to know about CryptoMiniSat\footnote{\url{https://github.com/msoos/cryptominisat/}} case.
+This program rarely uses more than 4GiB of \ac{RAM}, but it uses pointers heavily.
+So it requires less memory on 32-bit architecture than on 64-bit one.
+To mitigate this problem, author made his own allocator (in \IT{clauseallocator.(h|cpp)} files),
+which allows to have access to allocated memory using 32-bit identifiers instead of 64-bit pointers.
+

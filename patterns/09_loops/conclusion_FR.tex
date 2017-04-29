@@ -1,0 +1,47 @@
+﻿% N.B.: \Conclusion{} is a macro name, do not translate
+\subsection{\Conclusion{}}
+
+Squelette grossier d'une boucle de 2 à 9 inclus:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_optimized_FR.lst}
+
+L'opération d'incrémentation peut être représentée par 3 instructions dans du code
+non optimisé:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_FR.lst}
+
+Si le corps de la boucle est court, un registre entier peut être dédié à la variable
+compteur:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_reg_FR.lst}
+
+Certaines parties de la boucle peuvent être générées dans un ordre différent par
+le compilateur:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_order_FR.lst}
+
+En général, la condition est testée \IT{avant} le corps de la boucle, mais le compilateur
+peut la réarranger afin que la condition soit testée \IT{aprés} le corps de la boucle.
+
+Cela est fait lorsque le compilateur est certain que la condition est toujours \IT{vraie}
+à la première itération, donc que le corps de la boucle doit être exécuté au moins
+une fois:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_reorder_FR.lst}
+
+\myindex{x86!\Instructions!LOOP}
+
+En utilisant l'instruction \TT{LOOP}. Ceci est rare, les compilateurs ne l'utilisent
+pas.
+Lorsque vous la voyez, c'est le signe que le morceau de code a été écrit é la main:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_loop_FR.lst}
+
+ARM. 
+
+Le registre \Reg{4} est dédié à la variable compteur dans cet exemple:
+
+\lstinputlisting[caption=ARM,style=customasmARM]{patterns/09_loops/skeleton_ARM_FR.lst}
+
+% TODO MIPS
+

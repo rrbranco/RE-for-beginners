@@ -1,0 +1,17 @@
+﻿\subsection{ARM64: \NonOptimizing GCC (Linaro) 4.9}
+
+Реализация простая и прямолинейная:
+
+\lstinputlisting[caption=\NonOptimizing GCC (Linaro) 4.9,style=customasmARM]{\CURPATH/GCC49_ARM64_O0_RU.s}
+
+\subsection{ARM64: \Optimizing GCC (Linaro) 4.9}
+
+Это более продвинутая оптимизация.
+Первый символ загружается в самом начале и сравнивается с 10 (символ \ac{LF}).
+
+Символы также загружаются и в главном цикле, для символов после первого.
+
+Это в каком смысле похоже на этот пример: \myref{string_trim_GCC_x64_O3}.
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.9,style=customasmARM]{\CURPATH/GCC49_ARM64_O3_RU.s}
+

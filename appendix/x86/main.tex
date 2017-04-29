@@ -1,0 +1,45 @@
+\section{x86}
+
+\subsection{\RU{Терминология}\EN{Terminology}}
+
+\RU{Общее для 16-bit (8086/80286), 32-bit (80386, итд), 64-bit.}
+\EN{Common for 16-bit (8086/80286), 32-bit (80386, etc.), 64-bit.}
+
+\myindex{IEEE 754}
+\myindex{MS-DOS}
+\begin{description}
+	\item[byte] 8-\bitENRU. 
+		\RU{Для определения переменных и массива байт используется директива ассемблера DB}
+		\EN{The DB assembly directive is used for defining variables and arrays of bytes}.
+		\RU{Байты передаются в 8-битных частях регистров}
+		\EN{Bytes are passed in the 8-bit part of registers}: \TT{AL/BL/CL/DL/AH/BH/CH/DH/SIL/DIL/R*L}.
+	\item[word] 16-\bitENRU. \RU{\dittoclosing директива ассемблера DW}
+		\EN{DW assembly directive \dittoclosing}.
+		\RU{Слова передаются в 16-битных частях регистров}%
+		\EN{Words are passed in the 16-bit part of the registers}:\\
+			\TT{AX/BX/CX/DX/SI/DI/R*W}.
+	\item[double word] (\q{dword}) 32-\bitENRU. \RU{\dittoclosing директива ассемблера DD}
+		\EN{DD assembly directive \dittoclosing}.
+		\RU{Двойные слова передаются в регистрах}
+		\EN{Double words are passed in registers} (x86) \RU{или в 32-битных частях регистров}
+		\EN{or in the 32-bit part of registers} (x64). 
+		\RU{В 16-битном коде, двойные слова передаются в парах 16-битных регистров}
+		\EN{In 16-bit code, double words are passed in 16-bit register pairs}.
+	\item[quad word] (\q{qword}) 64-\bitENRU. \RU{\dittoclosing директива ассемблера DQ}
+		\EN{DQ assembly directive \dittoclosing}.
+		\RU{В 32-битной среде, учетверенные слова передаются в парах 32-битных регистров}
+		\EN{In 32-bit environment, quad words are passed in 32-bit register pairs}.
+	\EN{\item[tbyte] (10 bytes) 80-bit or 10 bytes (used for IEEE 754 FPU registers).}%
+	\RU{\item[tbyte] (10 байт) 80-бит или 10 байт (используется для регистров IEEE 754 FPU).}
+	\item[paragraph] (16 \RU{байт}\EN{bytes})\EMDASH{}\RU{термин был популярен в среде MS-DOS}
+	\EN{term was popular in MS-DOS environment}.
+\end{description}
+
+\myindex{Windows!API}
+\RU{Типы данных с той же шириной (BYTE, WORD, DWORD) точно такие же и в}
+\EN{Data types of the same width (BYTE, WORD, DWORD) are also the same in} Windows \ac{API}.
+
+\input{appendix/x86/registers} % subsection
+\input{appendix/x86/instructions} % subsection
+\input{appendix/x86/npad} % subsection
+

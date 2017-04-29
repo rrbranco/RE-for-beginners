@@ -1,0 +1,145 @@
+seg030:0041             sent_pro proc far ; CODE XREF: check_dongle+34p
+seg030:0041
+seg030:0041             var_3    = byte ptr -3
+seg030:0041             var_2    = word ptr -2
+seg030:0041             arg_0    = dword ptr  6
+seg030:0041
+seg030:0041 C8 04 00 00          enter   4, 0
+seg030:0045 56                   push    si
+seg030:0046 57                   push    di
+seg030:0047 8B 16 82 E7          mov     dx, _in_port_1 ; 0x37A
+seg030:004B EC                   in      al, dx
+seg030:004C 8A D8                mov     bl, al
+seg030:004E 80 E3 FE             and     bl, 0FEh
+seg030:0051 80 CB 04             or      bl, 4
+seg030:0054 8A C3                mov     al, bl
+seg030:0056 88 46 FD             mov     [bp+var_3], al
+seg030:0059 80 E3 1F             and     bl, 1Fh
+seg030:005C 8A C3                mov     al, bl
+seg030:005E EE                   out     dx, al
+seg030:005F 68 FF 00             push    0FFh
+seg030:0062 0E                   push    cs
+seg030:0063 E8 CE FF             call    near ptr out_port
+seg030:0066 59                   pop     cx
+seg030:0067 68 D3 00             push    0D3h
+seg030:006A 0E                   push    cs
+seg030:006B E8 C6 FF             call    near ptr out_port
+seg030:006E 59                   pop     cx
+seg030:006F 33 F6                xor     si, si
+seg030:0071 EB 01                jmp     short loc_359D4
+seg030:0073
+seg030:0073             loc_359D3: ; CODE XREF: sent_pro+37j
+seg030:0073 46                   inc     si
+seg030:0074
+seg030:0074             loc_359D4: ; CODE XREF: sent_pro+30j
+seg030:0074 81 FE 96 00          cmp     si, 96h
+seg030:0078 7C F9                jl      short loc_359D3
+seg030:007A 68 C3 00             push    0C3h
+seg030:007D 0E                   push    cs
+seg030:007E E8 B3 FF             call    near ptr out_port
+seg030:0081 59                   pop     cx
+seg030:0082 68 C7 00             push    0C7h
+seg030:0085 0E                   push    cs
+seg030:0086 E8 AB FF             call    near ptr out_port
+seg030:0089 59                   pop     cx
+seg030:008A 68 D3 00             push    0D3h
+seg030:008D 0E                   push    cs
+seg030:008E E8 A3 FF             call    near ptr out_port
+seg030:0091 59                   pop     cx
+seg030:0092 68 C3 00             push    0C3h
+seg030:0095 0E                   push    cs
+seg030:0096 E8 9B FF             call    near ptr out_port
+seg030:0099 59                   pop     cx
+seg030:009A 68 C7 00             push    0C7h
+seg030:009D 0E                   push    cs
+seg030:009E E8 93 FF             call    near ptr out_port
+seg030:00A1 59                   pop     cx
+seg030:00A2 68 D3 00             push    0D3h
+seg030:00A5 0E                   push    cs
+seg030:00A6 E8 8B FF             call    near ptr out_port
+seg030:00A9 59                   pop     cx
+seg030:00AA BF FF FF             mov     di, 0FFFFh
+seg030:00AD EB 40                jmp     short loc_35A4F
+seg030:00AF
+seg030:00AF             loc_35A0F: ; CODE XREF: sent_pro+BDj
+seg030:00AF BE 04 00             mov     si, 4
+seg030:00B2
+seg030:00B2             loc_35A12: ; CODE XREF: sent_pro+ACj
+seg030:00B2 D1 E7                shl     di, 1
+seg030:00B4 8B 16 80 E7          mov     dx, _in_port_2 ; 0x379
+seg030:00B8 EC                   in      al, dx
+seg030:00B9 A8 80                test    al, 80h
+seg030:00BB 75 03                jnz     short loc_35A20
+seg030:00BD 83 CF 01             or      di, 1
+seg030:00C0
+seg030:00C0             loc_35A20: ; CODE XREF: sent_pro+7Aj
+seg030:00C0 F7 46 FE 08+         test    [bp+var_2], 8
+seg030:00C5 74 05                jz      short loc_35A2C
+seg030:00C7 68 D7 00             push    0D7h ; '+'
+seg030:00CA EB 0B                jmp     short loc_35A37
+seg030:00CC
+seg030:00CC             loc_35A2C: ; CODE XREF: sent_pro+84j
+seg030:00CC 68 C3 00             push    0C3h
+seg030:00CF 0E                   push    cs
+seg030:00D0 E8 61 FF             call    near ptr out_port
+seg030:00D3 59                   pop     cx
+seg030:00D4 68 C7 00             push    0C7h
+seg030:00D7
+seg030:00D7             loc_35A37: ; CODE XREF: sent_pro+89j
+seg030:00D7 0E                   push    cs
+seg030:00D8 E8 59 FF             call    near ptr out_port
+seg030:00DB 59                   pop     cx
+seg030:00DC 68 D3 00             push    0D3h
+seg030:00DF 0E                   push    cs
+seg030:00E0 E8 51 FF             call    near ptr out_port
+seg030:00E3 59                   pop     cx
+seg030:00E4 8B 46 FE             mov     ax, [bp+var_2]
+seg030:00E7 D1 E0                shl     ax, 1
+seg030:00E9 89 46 FE             mov     [bp+var_2], ax
+seg030:00EC 4E                   dec     si
+seg030:00ED 75 C3                jnz     short loc_35A12
+seg030:00EF
+seg030:00EF             loc_35A4F: ; CODE XREF: sent_pro+6Cj
+seg030:00EF C4 5E 06             les     bx, [bp+arg_0]
+seg030:00F2 FF 46 06             inc     word ptr [bp+arg_0]
+seg030:00F5 26 8A 07             mov     al, es:[bx]
+seg030:00F8 98                   cbw
+seg030:00F9 89 46 FE             mov     [bp+var_2], ax
+seg030:00FC 0B C0                or      ax, ax
+seg030:00FE 75 AF                jnz     short loc_35A0F
+seg030:0100 68 FF 00             push    0FFh
+seg030:0103 0E                   push    cs
+seg030:0104 E8 2D FF             call    near ptr out_port
+seg030:0107 59                   pop     cx
+seg030:0108 8B 16 82 E7          mov     dx, _in_port_1 ; 0x37A
+seg030:010C EC                   in      al, dx
+seg030:010D 8A C8                mov     cl, al
+seg030:010F 80 E1 5F             and     cl, 5Fh
+seg030:0112 8A C1                mov     al, cl
+seg030:0114 EE                   out     dx, al
+seg030:0115 EC                   in      al, dx
+seg030:0116 8A C8                mov     cl, al
+seg030:0118 F6 C1 20             test    cl, 20h
+seg030:011B 74 08                jz      short loc_35A85
+seg030:011D 8A 5E FD             mov     bl, [bp+var_3]
+seg030:0120 80 E3 DF             and     bl, 0DFh
+seg030:0123 EB 03                jmp     short loc_35A88
+seg030:0125
+seg030:0125             loc_35A85: ; CODE XREF: sent_pro+DAj
+seg030:0125 8A 5E FD             mov     bl, [bp+var_3]
+seg030:0128
+seg030:0128             loc_35A88: ; CODE XREF: sent_pro+E2j
+seg030:0128 F6 C1 80             test    cl, 80h
+seg030:012B 74 03                jz      short loc_35A90
+seg030:012D 80 E3 7F             and     bl, 7Fh
+seg030:0130
+seg030:0130             loc_35A90: ; CODE XREF: sent_pro+EAj
+seg030:0130 8B 16 82 E7          mov     dx, _in_port_1 ; 0x37A
+seg030:0134 8A C3                mov     al, bl
+seg030:0136 EE                   out     dx, al
+seg030:0137 8B C7                mov     ax, di
+seg030:0139 5F                   pop     di
+seg030:013A 5E                   pop     si
+seg030:013B C9                   leave
+seg030:013C CB                   retf
+seg030:013C             sent_pro endp

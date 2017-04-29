@@ -1,0 +1,14 @@
+\newcommand{\GlobalVarsSectionName}{Variables globales}
+\subsection{\GlobalVarsSectionName}
+\myindex{\GlobalVarsSectionName}
+\label{scanf_global_variable}
+
+Que se passe-t-il si la variable \TT{x} de l'exemple précédent n'est pas locale
+mais globale ?
+ALors, elle sera accessible depuis n'importe quel point, plus seulement depuis le
+corps de la fonction.
+Les variables globales sont considérées comme un \gls{anti-pattern}, mais dans le
+but de l'expérience, nous pouvons le faire.
+
+\lstinputlisting[style=customc]{patterns/04_scanf/2_global/ex2_FR.c}
+

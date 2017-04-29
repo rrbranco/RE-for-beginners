@@ -1,0 +1,104 @@
+\subsubsection{x86}
+
+\myparagraph{MSVC}
+
+Questo e' cio' che si ottiene dopo la compilazione con MSVC 2010:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/1_simple/ex1_MSVC_EN.asm}
+
+\TT{x} e' una variabile locale.
+
+In base allo standard \CCpp deve essere visibile soltanto in questa funzione e non in altri ambiti (esterni alla funzione).
+Tradizionalmente, le variabili locali sono memorizzate sullo stack. 
+Ci sono probabilmente altri modi per allocarle, ma in x86 e' cosi'.
+
+\myindex{x86!\Instructions!PUSH}
+Lo scopo dell'istruzione che segue il prologo della funzione, \TT{PUSH ECX}, non e' quello di salvare lo stato di \ECX  
+(si noti infatti l'assenza della corrispondente istruzione \TT{POP ECX} alla fine della funzione).
+
+Infatti alloca 4 byte sullo stack per memorizzare la variabile \TT{x}.
+
+\label{stack_frame}
+\myindex{\Stack!Stack frame}
+\myindex{x86!\Registers!EBP}
+\TT{x} sara' acceduta con l'aiuto della macro \TT{\_x\$} (che e' uguale a -4) ed il registro \EBP che punta al frame corrente.
+
+Durante l'esecuzione delle funziona, \EBP punta allo \gls{stack frame} corrente 
+rendendo possibile accedere alle variabili locali ed agli argomenti della funzione attraverso \TT{EBP+offset}.
+
+\myindex{x86!\Registers!ESP}
+E' anche possibile usare \ESP per lo stesso scopo, tuttavia non e' molto conveniente poiche' cambia di frequente.
+Il valore di \EBP puo' essere pensato come uno \IT{stato congelato} del valore in \ESP all'inizio dell'esecuzione della funzione.
+
+% FIXME1 это уже было в 02_stack?
+Questo e' un tipico layout di uno \gls{stack frame} in un ambiente a 32-bit:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\dots & \dots \\
+\hline
+EBP-8 & local variable \#2, \MarkedInIDAAs{} \TT{var\_8} \\
+\hline
+EBP-4 & local variable \#1, \MarkedInIDAAs{} \TT{var\_4} \\
+\hline
+EBP & saved value of \EBP \\
+\hline
+EBP+4 & return address \\
+\hline
+EBP+8 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+EBP+0xC & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+EBP+0x10 & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+
+La funzione \scanf nel nostro esempio ha due argomenti.
+Il primo e' un puntatore alla stringa contenente \TT{\%d} e il secondo e' l'indirizzo della variabile \TT{x}.
+
+\myindex{x86!\Instructions!LEA}
+Per prima cosa l'indirizzo della variabile \TT{x} e' caricato nel registro \EAX dall'istruzione \TT{lea eax, DWORD PTR \_x\$[ebp]}.
+
+\LEA sta per \IT{load effective address}, ed e' spesso usata per formare un indirizzo ~(\myref{sec:LEA}).
+
+Potremmo dire che in questo caso \LEA memorizza semplicemente la somma del valore nel registro \EBP e della macro \TT{\_x\$} nel registro \EAX.
+
+E' l'equivalente di \INS{lea eax, [ebp-4]}.
+
+Quindi, 4 viene sottratto dal valore del registro \EBP ed il risultato e' memorizzato nel registro \EAX.
+Successivamente il registro \EAX e' messo sullo stack (push) e \scanf viene chiamata.
+
+\printf viene chiamata subito dopo con il suo primo argomento --- un puntatore alla stringa:
+\TT{You entered \%d...\textbackslash{}n}.
+
+Il secondo argomento e' preparato con: \TT{mov ecx, [ebp-4]}.
+L'istruzione memorizza il valore della variabile \TT{x},  non il suo indirizzo, nel registro \ECX.
+
+Successivamente il valore in \ECX e' memorizzato sullo stack e l'ultima \printf viene chiamata.
+
+\input{patterns/04_scanf/1_simple/olly.tex}
+
+\myparagraph{GCC}
+
+Proviamo a compilare questo codice con GCC 4.4.1 su Linux:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/1_simple/ex1_GCC.asm}
+
+\myindex{puts() instead of printf()}
+GCC ha sostituito la chiamata a \printf con \puts. La ragione per cui cio' avviene e' stata spiegata in ~(\myref{puts}).
+
+% TODO: rewrite
+%\RU{Почему \scanf переименовали в \TT{\_\_\_isoc99\_scanf}, я честно говоря, пока не знаю.}
+%\EN{Why \scanf is renamed to \TT{\_\_\_isoc99\_scanf}, I do not know yet.}
+% 
+% Apparently it has to do with the ISO c99 standard compliance. By default GCC allows specifying a standard to adhere to.
+% For example if you compile with -std=c89 the outputted assmebly file will contain scanf and not __isoc99__scanf. I guess current GCC version adhares to c99 by default.
+% According to my understanding the two implementations differ in the set of suported modifyers (See printf man page)
+
+Come nell'esempio compilato con MSVC ---gli argomenti sono messi sullo stack utilizzando l'istruzione \MOV.
+
+

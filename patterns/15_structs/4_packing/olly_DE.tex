@@ -1,0 +1,41 @@
+\clearpage
+\myparagraph{\olly + standardmäßig gepackte Felder}
+\myindex{\olly}
+Betrachten wir unser Beispiel (in dem die Felder standardmäßig auf 4 Byte angeordnet werden) in \olly:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/15_structs/4_packing/olly_packing_4.png}
+\caption{\olly: vor der Ausführung von \printf}
+\label{fig:packing_olly_4}
+\end{figure}
+Wir sehen unsere 4 Felder im Datenfenster.
+
+Wir fragen uns aber, woher die Zufallsbytes (0x30, 0x37, 0x01) stammen, die neben dem ersten ($a$) und dritten ($c$)
+Feld liegen.
+
+Betrachten wir unser Listing \myref{src:struct_packing_4}, erkennen wir, dass das erste und dritte Feld vom Typ \Tchar
+ist, und daher nur ein Byte geschrieben wird, nämlich 1 bzw. 3 (Zeilen 6 und 8).
+
+Die übrigen 3 Byte des 32-Bit-Wortes werden im Speicher nicht verändert!
+Deshalb befinden sich hier zufällige Reste.
+
+\myindex{x86!\Instructions!MOVSX}
+Diese Reste beeinflussen den Output von \printf in keinster Weise, da die Werte für die Funktion mithilfe von \MOVSX
+vorbereitet werden, der Bytes und nicht Worte als Argumente hat: 
+\lstref{src:struct_packing_4} (Zeilen 34 und 38).
+Der vorzeichenerweiternde Befehl \MOVSX wird hier übrigens verwendet, da \Tchar standardmäßig in MSVC und GCC
+vorzeichenbehaftet ist.
+Würde hier der Datentyp \TT{unsigned char} oder \TT{uint8\_t} verwendet, würde der Befehl \MOVZX stattdessen verwendet.
+
+\clearpage
+\myparagraph{\olly + Felder auf 1 Byte Grenzen angeordnet}
+\myindex{\olly}
+Hier sind die Dinge viel klarer ersichtlich: 4 Felder benötigen 16 Byte und die Werte werden nebeneinander gespeichert.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/15_structs/4_packing/olly_packing_1.png}
+\caption{\olly: Vor der Ausführung von \printf}
+\label{fig:packing_olly_1}
+\end{figure}

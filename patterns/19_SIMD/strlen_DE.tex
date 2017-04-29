@@ -1,0 +1,164 @@
+\subsection{SIMD \strlen Implementierung}
+\label{SIMD_strlen}
+
+\newcommand{\URLMSDNSSE}{\href{http://go.yurichev.com/17262}{MSDN: MMX, SSE, und SSE2 Intrinsics}}
+Man beachte, dass die \ac{SIMD} Befehle über spezielle Makros\footnote{\URLMSDNSSE} in den \CCpp Code eingefügt werden
+können. Einige dieser Makros für MSVC befinden sich in der Datei \TT{intrin.h}.
+
+\newcommand{\URLSTRLEN}{http://go.yurichev.com/17330}
+
+\myindex{\CStandardLibrary!strlen()}
+Es ist möglich die Funktion \strlen\footnote{strlen()~---Funktion der Standard-C-Bibliothek, mit der die Länge eines
+Strings berechnet wird} mit SIMD Befehlen zu implementieren, sodass sie 2-2.5-mal schneller als die normale
+Implementierung arbeitet. Diese Funktion lädt 16 Zeichen in ein XMM-Register und prüft jedes auf Null.\footnote{Dieses
+Beispiel basiert auf Quellcode von: \url{\URLSTRLEN}.}.
+
+\lstinputlisting[style=customc]{patterns/19_SIMD/18_3.c}
+
+Kompilieren wir das Beispiel in MSVC 2010 mit der Option \Ox:
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{patterns/19_SIMD/18_4_msvc_Ox_DE.asm}
+
+Um die Funktionsweise zu verstehen müssen wir uns zunächst den Zweck der Funktion klarmachen. Sie berechnet die Länge
+eines C-Strings; anders ausgedrückt: sie sucht nach dem Nullbyte und berechnet dann dessen Position relativ zum Anfang
+des Strings.
+
+Zunächst prüfen wir, ob der \TT{str} Pointer auf einer 16-Byte-Grenze liegt. Wenn nicht, rufen wir die normale
+Implementierung von \strlen auf.
+
+Danach laden wir die nächsten 16 Byte mit \MOVDQA in das Register \XMM{1}.
+
+Der aufmerksame Leser fragt sich vielleicht, warum hier \MOVDQU nicht verwendet wird, da dieser Befehl die Daten auch
+dann aus dem Speicher laden kann, wenn der Pointer nicht auf einer 16-Byte-Grenze liegt.
+
+Man könnte es wie folgt lösen: wenn der Pointer entsprechend angeordnet ist, verwende \MOVDQA zum Laden, ansonsten den
+langsameren Befehl \MOVDQU.
+
+Aber an dieser Stelle lauert ein weiterer Fallstrick:
+
+\myindex{Seite (Speicher)}
+\newcommand{\URLPAGE}{\href{http://go.yurichev.com/17136}{wikipedia}}
+In den Betriebssystemen der Reihe \gls{Windows NT} (aber nicht nur dort) wird Speicher in Seiten von 4KiB (4096 Byte)
+reserviert. Jeder win32-Prozess hat 4GiB zur Verfügung, auch wenn tatsächlich nur einige Teile des Adressraumes wirklich
+mit dem physischen Speicher verbunden sind. Wenn der Prozess auf einen nicht vorhandenen Speicherblock zugreift, wird
+eine Exception ausgelöst. So arbeitet \ac{VM}\footnote{\URLPAGE}.
+
+Eine Funktion, die 16 Byte auf einmal lädt, könnte also eine solche Grenze im Speicherblock übertreten.
+Nehmen wir an, das Betriebssystem hat 8192 (0x2000) Byte ab der Adresse 0x008c000 reserviert.
+Dieser Block umfasst also die Bytes von Adresse 0x08c0000 bis einschließlich 0x008c1fff.
+
+Hinter diesen Block, d.h. ab Adresse 0x008c2000 befindet sich nichts, d.h. das Betriebssystem hat hier keinen weiteren
+Speicher reservietrt. Jeder Versuch auf diesen Speicherbereich zuzugreifen, wird eine Exception auslösen.
+
+Betrachten wir weiter das Beispiel, in dem ein Programm einen String enthält, der fast am Ende des Blocks 5 Zeichen
+belegt. Das ist zunächst nichts Schlimmes.
+%TODO
+\begin{center}
+  \begin{tabular}{ | l | l | }
+    \hline
+        0x008c1ff8 & 'h' \\
+        0x008c1ff9 & 'e' \\
+        0x008c1ffa & 'l' \\
+        0x008c1ffb & 'l' \\
+        0x008c1ffc & 'o' \\
+        0x008c1ffd & '\textbackslash{}x00' \\
+        0x008c1ffe & Zufallswert \\
+        0x008c1fff & Zufallswert \\
+    \hline
+  \end{tabular}
+\end{center}
+Unter normalen Umständen ruft das Programm \strlen auf und übergibt einen Pointer auf den String \TT{'hello'}, der an
+der Speicheradresse 0x000c1ff0 liegt.
+\strlen liest ein Byte zur Zeit bis zur Adresse 0x000c1ffd, an der sich ein Nullbyte befindet, und hält dann an.
+
+Wenn unser \strlen 16 Byte auf einmal von irgendeiner Startadresse aus liest, richtig angeordnet oder nicht, könnte
+\MOVDQU versuchen 16 Byte auf einmal aus dem Adressraum 0x000c1ff0 bis 0x000c2000 zu lesen und eine Exception würde
+ausgelöst. Dies gilt es natürlich zu vermeiden.
+
+Wir arbeiten also nur mit Adressen, die auf einer 16-Byte-Grenze liegen, was uns in Kombination mit dem Wissen, dass die
+Seitengröße des Betriebssystems normalerweise ebenfalls so angeordnet ist, eine gewisse Sicherheit daür bietet, dass
+unsere Funktion nicht aus dem nicht reservierten Speicher zu lesen versucht.
+
+Zurück zu unserer Funktion.
+
+\myindex{x86!\Instructions!PXOR}
+\verb|_mm_setzero_si128()|---ist ein Makro, das \TT{pxor xmm0, xmm0} erzeugt~---es löscht das \XMM{0} Register.
+
+\verb|_mm_load_si128()|---ist ein Makro für \MOVDQA: es lädt 16 Bytes von der Adresse in das \XMM{1} Register.
+
+\myindex{x86!\Instructions!PCMPEQB}
+\verb|_mm_cmpeq_epi8()|---ist ein Makro für \PCMPEQB, ein Befehl, der zwei XMM-Register byteweise miteinader vergleicht.
+
+Wenn ein Byte das gleiche ist wie im anderen Register, wird im Ergebnis hier \TT{0xff} stehen, ansonsten aber 0.
+
+Ein Beispiel:
+
+\begin{verbatim}
+XMM1: 0x11223344556677880000000000000000
+XMM0: 0x11ab3444007877881111111111111111
+\end{verbatim}
+
+Nach der Ausführung von \TT{pcmpeqb xmm1, xmm0}, enthält das \XMM{1} Register:
+
+\begin{verbatim}
+XMM1: 0xff0000ff0000ffff0000000000000000
+\end{verbatim}
+In unserem Fall vergleicht der Befehl jeden 16-Byte-Block mit einem Block aus 16 Nullbytes, der durch \TT{pxor xmm0,
+xmm0} im \XMM{0} Register angelegt wurde.
+
+\myindex{x86!\Instructions!PMOVMSKB}
+
+Das nächste Makro ist \TT{\_mm\_movemask\_epi8()}~---das ist der Befehl \TT{PMOVMSKB}.
+
+Es ist sehr nützlich im Zusammenspiel mit \PCMPEQB.
+
+\TT{pmovmskb eax, xmm1}
+Dieser Befehl setzt das erste Bit in \EAX auf 1, falls das MSB des ersten Bytes in \XMM{1} gleich 1 ist.
+Mit anderen Worten: wenn das erste Byte im \XMM{1} Register \TT{0xff} ist, dann wird das erste Bit in \EAX ebenfalls auf
+1 gesetzt.
+
+Wenn das zweite Byte in \XMM{1} \TT{0xff} ist, wird das zweite Bit in \EAX auf 1 gesetzt.
+Mit anderen Worten: der Befehl beantwortet die Frage welche Bytes in \XMM{1} gleich \TT{0xff} sind und gibt 16 Bits im
+\EAX Register zurück.
+Die anderen Bits im in \EAX werden gelöscht.
+
+Vergessen wir aber nicht die Eigenart in unserem Algorithmus. Es könnte im Input 16 Byte wie die folgenden geben:
+
+\input{patterns/19_SIMD/strlen_hello_and_garbage}
+Das ist der String \TT{'hello'}, eine abschließende Null und ein paar Zufallswerte aus dem Speicher.
+
+Wenn wir diese 16 Byte nach \XMM{1} laden und mit dem genullten \XMM{0} vergleichen, erhalten wir als Ergebnis etwas,
+das so ähnlich ist wie der folgende Output\footnote{hier wird eine Ordnung vom \ac{MSB} zum \ac{LSB} verwendet}:
+
+\begin{verbatim}
+XMM1: 0x0000ff00000000000000ff0000000000
+\end{verbatim}
+
+Das bedeutet, dass der Befehl zwei Nullbytes gefunden hat. Dieses Ergebnis war zu erwarten.
+ 
+\TT{PMOVMSKB} in our case will set \EAX to\\
+\IT{0b0010000000100000}.
+Offensichtlich muss unsere Funktion nur das erste Nullbit nehmen und den Rest ignorieren.
+
+\myindex{x86!\Instructions!BSF}
+\label{instruction_BSF}
+Der nächste Befehl ist \TT{BSF} (\IT{Bit Scan Forward}). 
+Dieser Befehl erkennt, dass das erste Bit auf 1 gesetzt ist und speichert dessen Position im ersten Operanden.
+
+\begin{verbatim}
+EAX=0b0010000000100000
+\end{verbatim}
+Nach der Ausführung von \TT{bsf eax, eax} enthält \EAX 5, was bedeutet, dass 1 an der 5. Stelle (von 0 aus gezählt)
+gefunden wurde.
+
+MSVC verfügt über ein Makro für diesen Befehl: \TT{\_BitScanForward}.
+
+Der Rest ist einfach. Wenn ein Nullbyte gefunden wurde, wird dessen Position zum Zähler hinzuaddiert und wir erhalten
+den Rückgabewert.
+
+Das ist fast alles.
+
+Hier ist bemerkenswert, dass der MSVC Compiler zur Optimierung zwei Schleifenrümpfe nebeneinander erzeugt hat.
+
+SSE 4.2 (erschienen im Intel Core i7) verfügt über noch mehr Befehle, sodass diese Stringmanipulationen noch einfacher
+bewerkstelligt werden können: \url{http://go.yurichev.com/17331}

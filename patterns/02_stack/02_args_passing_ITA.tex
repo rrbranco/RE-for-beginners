@@ -1,0 +1,71 @@
+\subsubsection{Passaggio di argomenti alle funzioni}
+
+Il modo piu' diffuso di passare parametri in x86 e' detto \q{cdecl}:
+
+\begin{lstlisting}[style=customasmx86]
+push arg3
+push arg2
+push arg1
+call f
+add esp, 12 ; 4*3=12
+\end{lstlisting}
+
+La funzioni chiamate, \Gls{callee}, ricevono i propri argomenti tramite lo stack pointer.
+Quindi e' cosi' che i valori degli arcomenti sono posizionati nello stack prima dell'esecuzione della prima istruzione della funzione \ttf{}:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+ESP & return address \\
+\hline
+ESP+4 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+ESP+8 & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+ESP+0xC & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+
+Per ulteriori informazioni su altri tipi di convenzioni di chiamata (calling conventions), fare riferimento alla sezione~(\myref{sec:callingconventions}).
+Vale la pena notare che non c'e' nulla che obbliga il programmatore a passare gli argomenti attraverso lo stack. Non e' un requisito necessario.
+Si potrebbe implementare un qualunque altro metodo anche senza usare per niente lo stack.
+
+Ad esempio e' possibile allocare spazio per gli argomenti nello \gls{heap}, riempirlo e passarlo ad una funzione tramite un puntatore a questo blocco di memoria, nel registro \EAX.
+E cio' funzionerebbe.
+
+% TBT: \InSqBrackets{\TAOCPvolI{}, 189} mentions even weirder schemes particularly convenient on IBM System/360.
+
+Ad ogni modo, in x86 e ARM e' pratica diffusa e conveniente quella di usare lo stack per questo scopo.
+
+\par
+A proposito, la funzione chiamata (\gls{callee}) non ha alcuna informazione su quanti argomenti sono stati passati.
+Le funzioni C functions con un numero variabile di argomenti (come \printf) determinano questo numero utilizzando i format string specifiers (che iniziano con il simbolo \% ).
+
+Se scriviamo una cosa come:
+
+\begin{lstlisting}
+printf("%d %d %d", 1234);
+\end{lstlisting}
+
+\printf stampera' 1234, e due numeri randomici, che si trovano vicini a 1234 nello stack\footnote{\ac{TBT}}.
+
+\par
+Questo spiega perche' non e' molto importante come si dichiara la funzione \main : \main, \TT{main(int argc, char *argv[])} oppure \TT{main(int argc, char *argv[], char *envp[])}.
+
+Infatti, il codice \ac{CRT} chiama \main grossomodo cosi':
+
+\begin{lstlisting}[style=customasmx86]
+push envp
+push argv
+push argc
+call main
+...
+\end{lstlisting}
+
+Se si dichiara \main come \main senza arogmenti, saranno comunque presenti nello stack anche se non usati.
+Se si dichiara \main come \TT{main(int argc, char *argv[])},
+si potranno usare i primi due argomenti, ed il terzo restera' \q{invisibile} alla funzione.
+E' inoltre possibile dichiarare anche \TT{main(int argc)}, e funzionera'.

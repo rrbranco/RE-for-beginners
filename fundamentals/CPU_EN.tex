@@ -1,0 +1,24 @@
+﻿\section{CPU}
+
+\subsection{Branch predictors}
+\label{branch_predictors}
+
+Some latest compilers try to get rid of conditional jump instructions.
+Examples in this book are: \myref{subsec:jcc_ARM}, \myref{chap:cond}, \myref{subsec:popcnt}.
+
+This is because the branch predictor is not always perfect, so the compilers try to do 
+without conditional jumps, if possible.
+
+\myindex{x86!\Instructions!CMOVcc}
+\myindex{ARM!\Instructions!ADRcc}
+Conditional instructions in ARM (like ADRcc) are one way, another one is the CMOVcc x86 instruction.
+
+\subsection{Data dependencies}
+
+Modern CPUs are able to execute instructions simultaneously (\ac{OOE}), but in order to do so,
+the results of one instruction in a group must not influence the execution of others.
+Hence, the compiler endeavors to use instructions with minimal influence on the CPU state.
+
+\myindex{ARM!\Instructions!LEA}
+That's why the \LEA instruction is so popular, because it does not modify CPU flags, while
+other arithmetic instructions does.

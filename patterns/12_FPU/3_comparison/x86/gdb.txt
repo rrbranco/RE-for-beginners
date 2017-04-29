@@ -1,0 +1,153 @@
+dennis@ubuntuvm:~/polygon$ gcc -O3 d_max.c -o d_max -fno-inline
+dennis@ubuntuvm:~/polygon$ gdb d_max
+GNU gdb (GDB) 7.6.1-ubuntu
+...
+Reading symbols from /home/dennis/polygon/d_max...(no debugging symbols found)...done.
+(gdb) b d_max
+Breakpoint 1 at 0x80484a0
+(gdb) run
+Starting program: /home/dennis/polygon/d_max 
+
+Breakpoint 1, 0x080484a0 in d_max ()
+(gdb) ni
+0x080484a4 in d_max ()
+(gdb) disas $eip
+Dump of assembler code for function d_max:
+   0x080484a0 <+0>:	fldl   0x4(%esp)
+=> 0x080484a4 <+4>:	fldl   0xc(%esp)
+   0x080484a8 <+8>:	fxch   %st(1)
+   0x080484aa <+10>:	fucomi %st(1),%st
+   0x080484ac <+12>:	fcmovbe %st(1),%st
+   0x080484ae <+14>:	fstp   %st(1)
+   0x080484b0 <+16>:	ret    
+End of assembler dump.
+(gdb) ni
+0x080484a8 in d_max ()
+(gdb) info float
+  R7: Valid   0x3fff9999999999999800 +1.199999999999999956      
+=>R6: Valid   0x4000d999999999999800 +3.399999999999999911      
+  R5: Empty   0x00000000000000000000
+  R4: Empty   0x00000000000000000000
+  R3: Empty   0x00000000000000000000
+  R2: Empty   0x00000000000000000000
+  R1: Empty   0x00000000000000000000
+  R0: Empty   0x00000000000000000000
+
+Status Word:         0x3000                                            
+                       TOP: 6
+Control Word:        0x037f   IM DM ZM OM UM PM
+                       PC: Extended Precision (64-bits)
+                       RC: Round to nearest
+Tag Word:            0x0fff
+Instruction Pointer: 0x73:0x080484a4
+Operand Pointer:     0x7b:0xbffff118
+Opcode:              0x0000
+(gdb) ni
+0x080484aa in d_max ()
+(gdb) info float
+  R7: Valid   0x4000d999999999999800 +3.399999999999999911      
+=>R6: Valid   0x3fff9999999999999800 +1.199999999999999956      
+  R5: Empty   0x00000000000000000000
+  R4: Empty   0x00000000000000000000
+  R3: Empty   0x00000000000000000000
+  R2: Empty   0x00000000000000000000
+  R1: Empty   0x00000000000000000000
+  R0: Empty   0x00000000000000000000
+
+Status Word:         0x3000                                            
+                       TOP: 6
+Control Word:        0x037f   IM DM ZM OM UM PM
+                       PC: Extended Precision (64-bits)
+                       RC: Round to nearest
+Tag Word:            0x0fff
+Instruction Pointer: 0x73:0x080484a8
+Operand Pointer:     0x7b:0xbffff118
+Opcode:              0x0000
+(gdb) disas $eip
+Dump of assembler code for function d_max:
+   0x080484a0 <+0>:	fldl   0x4(%esp)
+   0x080484a4 <+4>:	fldl   0xc(%esp)
+   0x080484a8 <+8>:	fxch   %st(1)
+=> 0x080484aa <+10>:	fucomi %st(1),%st
+   0x080484ac <+12>:	fcmovbe %st(1),%st
+   0x080484ae <+14>:	fstp   %st(1)
+   0x080484b0 <+16>:	ret    
+End of assembler dump.
+(gdb) ni
+0x080484ac in d_max ()
+(gdb) info registers
+eax            0x1	1
+ecx            0xbffff1c4	-1073745468
+edx            0x8048340	134513472
+ebx            0xb7fbf000	-1208225792
+esp            0xbffff10c	0xbffff10c
+ebp            0xbffff128	0xbffff128
+esi            0x0	0
+edi            0x0	0
+eip            0x80484ac	0x80484ac <d_max+12>
+eflags         0x203	[ CF IF ]
+cs             0x73	115
+ss             0x7b	123
+ds             0x7b	123
+es             0x7b	123
+fs             0x0	0
+gs             0x33	51
+(gdb) ni
+0x080484ae in d_max ()
+(gdb) info float
+  R7: Valid   0x4000d999999999999800 +3.399999999999999911      
+=>R6: Valid   0x4000d999999999999800 +3.399999999999999911      
+  R5: Empty   0x00000000000000000000
+  R4: Empty   0x00000000000000000000
+  R3: Empty   0x00000000000000000000
+  R2: Empty   0x00000000000000000000
+  R1: Empty   0x00000000000000000000
+  R0: Empty   0x00000000000000000000
+
+Status Word:         0x3000                                            
+                       TOP: 6
+Control Word:        0x037f   IM DM ZM OM UM PM
+                       PC: Extended Precision (64-bits)
+                       RC: Round to nearest
+Tag Word:            0x0fff
+Instruction Pointer: 0x73:0x080484ac
+Operand Pointer:     0x7b:0xbffff118
+Opcode:              0x0000
+(gdb) disas $eip
+Dump of assembler code for function d_max:
+   0x080484a0 <+0>:	fldl   0x4(%esp)
+   0x080484a4 <+4>:	fldl   0xc(%esp)
+   0x080484a8 <+8>:	fxch   %st(1)
+   0x080484aa <+10>:	fucomi %st(1),%st
+   0x080484ac <+12>:	fcmovbe %st(1),%st
+=> 0x080484ae <+14>:	fstp   %st(1)
+   0x080484b0 <+16>:	ret    
+End of assembler dump.
+(gdb) ni
+0x080484b0 in d_max ()
+(gdb) info float
+=>R7: Valid   0x4000d999999999999800 +3.399999999999999911      
+  R6: Empty   0x4000d999999999999800
+  R5: Empty   0x00000000000000000000
+  R4: Empty   0x00000000000000000000
+  R3: Empty   0x00000000000000000000
+  R2: Empty   0x00000000000000000000
+  R1: Empty   0x00000000000000000000
+  R0: Empty   0x00000000000000000000
+
+Status Word:         0x3800                                            
+                       TOP: 7
+Control Word:        0x037f   IM DM ZM OM UM PM
+                       PC: Extended Precision (64-bits)
+                       RC: Round to nearest
+Tag Word:            0x3fff
+Instruction Pointer: 0x73:0x080484ae
+Operand Pointer:     0x7b:0xbffff118
+Opcode:              0x0000
+(gdb) quit
+A debugging session is active.
+
+	Inferior 1 [process 30194] will be killed.
+
+Quit anyway? (y or n) y
+dennis@ubuntuvm:~/polygon$ 

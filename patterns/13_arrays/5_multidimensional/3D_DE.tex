@@ -1,0 +1,71 @@
+\subsubsection{Beispiel: dreidimensionales Array}
+
+Mit multidimensionalen Arrays ist es das gleiche.
+
+Wir werden nun mit einem Array vom Typ \Tint arbeiten: jedes Element benötigt 4 Byte Speicherplatz.
+
+Sehen wir es uns an:
+
+\lstinputlisting[caption=simple example,style=customc]{patterns/13_arrays/5_multidimensional/multi.c}
+
+\myparagraph{x86}
+
+Wir erhalten das Folgende (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/13_arrays/5_multidimensional/multi_msvc_DE.asm}
+Nichts Außergewöhnliches. Zur Berechnung des Index' werden in der Formel $address=600 \cdot 4 \cdot x + 30 \cdot 4 \cdot
+y + 4z$ drei Eingabewerte verwendet, um das multidimensionale Array zu repräsentieren.
+Vergessen wir nicht, dass der \Tint Typ 32 Bit (4 Byte) breit ist, sodass alle Koeffizienten mit 4 multipliziert werden
+müssen.
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/13_arrays/5_multidimensional/multi_gcc_DE.asm}
+Der GCC Compiler arbeitet anders.
+
+Für eine der Operationen in der Berechnung ($30y$) produziet GCC Code ohne Multiplikationsbefehle.
+Das funktioniert wie folgt:
+$(y+y) \ll 4 - (y+y) = (2y) \ll 4 - 2y = 2 \cdot 16 \cdot y - 2y = 32y - 2y = 30y$.
+
+So werden für die $30y$ Berechnung nur ein Addierbefehl, eine bitweiser Verschiebebefehl und ein Subtraktionsbefehl
+verwendet. So geht es schneller.
+
+\myparagraph{ARM + \NonOptimizingXcodeIV (\ThumbMode)}
+
+\lstinputlisting[caption=\NonOptimizingXcodeIV
+(\ThumbMode),style=customasmARM]{patterns/13_arrays/5_multidimensional/multi_Xcode_thumb_O0_DE.asm}
+
+\NonOptimizing LLVM speichert alle Variablen auf dem lokalen Stack, was redundant ist.
+
+Die Adresse des Arrayelements wird über die eben gezeigte Formel berechnet.
+
+\myparagraph{ARM + \OptimizingXcodeIV (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingXcodeIV
+(\ThumbMode),style=customasmARM]{patterns/13_arrays/5_multidimensional/multi_Xcode_thumb_O3_DE.asm}
+Die Tricks für das Ersetzen der Multiplikation durch Verschieben, Addieren und Subtrahieren, die wir bereits
+kennengelernt haben, kommen hier auch vor.
+
+\myindex{ARM!\Instructions!RSB}
+\myindex{ARM!\Instructions!SUB}
+Hier finden wir auch einen für uns neuen Befehl: \RSB (\IT{Reverse Subtract}).
+
+Er arbeitet genau wie \SUB, aber vertauscht die Operanden vor der Ausführung. Warum?
+
+\myindex{ARM!Optional operators!LSL}
+\SUB und \RSB  sind Befehle, bei denen auf den zweiten Operanden eine bitweise Verschiebung angewendet werden kann:
+(\INS{LSL\#4}).
+Dieser Koeffizient kann aber nur auf den zweiten Operanden angewendet werden.
+
+Das ist günstig für kommutative Operationen wie Addition und Multiplikation (die Operanden können vertauscht werden,
+ohne das Ergebnis zu verändern).
+
+Subtraktion dagegen ist nicht kommutativ, weshalb für diese Fälle \RSB existiert.
+
+\myparagraph{MIPS}
+
+\myindex{MIPS!Global Pointer}
+Das Beispiel ist sehr klein, sodass der GCC Compiler entschieden hat das Array $a$ im 64KiB Platz abzulegen, um es durch
+den globalen Pointer zugreifbar zu machen.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA),style=customasmMIPS]{patterns/13_arrays/5_multidimensional/multi_MIPS_O3_IDA_DE.lst}
+

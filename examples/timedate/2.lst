@@ -1,0 +1,18 @@
+.text:6EB87890 ; int table[]
+.text:6EB87890 table           dd 0
+.text:6EB87894                 dd 0FFFFE0C1h
+.text:6EB87898                 dd 344h
+.text:6EB8789C                 dd 0FFFFE0ECh
+.text:6EB878A0                 dd 67Fh
+.text:6EB878A4                 dd 0FFFFE16Fh
+.text:6EB878A8                 dd 9A8h
+.text:6EB878AC                 dd 0FFFFE248h
+.text:6EB878B0                 dd 0CB5h
+.text:6EB878B4                 dd 0FFFFE374h
+.text:6EB878B8                 dd 0F9Fh
+.text:6EB878BC                 dd 0FFFFE4F0h
+.text:6EB878C0                 dd 125Eh
+.text:6EB878C4                 dd 0FFFFE6B8h
+.text:6EB878C8                 dd 14E9h
+
+...

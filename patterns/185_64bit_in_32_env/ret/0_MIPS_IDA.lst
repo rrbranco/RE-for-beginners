@@ -1,0 +1,5 @@
+       lui     $v1, 0x90AB
+       lui     $v0, 0x1234
+       li      $v1, 0x90ABCDEF
+       jr      $ra
+       li      $v0, 0x12345678

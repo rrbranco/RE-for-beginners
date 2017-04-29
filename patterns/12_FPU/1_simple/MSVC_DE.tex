@@ -1,0 +1,46 @@
+\myparagraph{MSVC}
+
+Kompilieren mit MSVC 2010 liefert:
+
+\lstinputlisting[caption=MSVC 2010: \ttf{},style=customasmx86]{patterns/12_FPU/1_simple/MSVC_DE.asm}
+
+\FLD nimmt 8 Byte vom Stack und lädt die Zahl in das \ST{0} Register, wobei
+diese automatisch in das interne 80-bit-Format (\IT{erweiterte Genauigkeit})
+konvertiert wird.
+
+\myindex{x86!\Instructions!FDIV}
+\FDIV teilt den Wert in \ST{0} durch die Zahl, die an der Adresse
+\GTT{\_\_real@40091eb851eb851f} gespeichert ist~---der Wert 3.14 ist hier
+kodiert.
+Die Syntax des Assemblers erlaubt keine Fließkommazahlen, sodass wir hier die
+hexadezimale Darstellung von 3.14 im 64-bit IEEE 754 Format finden.
+
+Nach der Ausführung von \FDIV enthält \ST{0} den \glslink{quotient}{Quotienten}.
+
+\myindex{x86!\Instructions!FDIVP}
+Es gibt übrigens auch noch den \FDIVP Befehl, welcher \ST{1} durch \ST{0}
+teilt, beide Werte vom Stack holt und das Ergebnis ebenfalls auf dem Stack
+ablegt.
+Wer mit der Sprache Forth \FNURLFORTH vertraut ist, erkennt schnell, dass es sich
+hier um eine Stackmaschine\FNURLSTACK handelt.
+
+Der nachfolgende \FLD Befehl speichert den Wert von $b$ auf dem Stack.
+
+Anschließend wir der Quotient in \ST{1} abgelegt und \ST{0} enthält den Wert von
+$b$.
+
+\myindex{x86!\Instructions!FMUL}
+Der nächste \FMUL Befehl führt folgende Multiplikation aus: $b$ aus Register
+\ST{0} wird mit dem Wert an der Speicherstelle \GTT{\_\_real@4010666666666666}
+(hier befindet sich die Zahl 4.1) multipliziert und hinterlässt das Ergebnis im
+\ST{ß} Register.
+
+\myindex{x86!\Instructions!FADDP}
+Der letzte \FADDP Befehl addiert die beiden Werte, die auf dem Stack zuoberst
+liegen, speichet das Ergebnis in \ST{1} und holt dann den Wert von \ST{0} vom
+Stack, wobei das oberste Element auf dem Stack in \ST{0} gespeichert wird.
+
+Die Funktion muss ihr Ergebnis im \ST{0} Register zurückgeben, sodass außer dem
+Funktionsepilog nach \FADDP keine weiteren Befehle mehr folgen.
+
+\input{patterns/12_FPU/1_simple/olly_DE.tex}

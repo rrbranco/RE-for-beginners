@@ -1,0 +1,22 @@
+message #1
+key= 20 value= `eb^h%|``hudw|_af{n~f%ljmSbnwlpk
+key= 21 value= ajc]i"}cawtgv{^bgto}g"millcmvkqh
+key= 22 value= bkd\j#rbbvsfuz!cduh|d#bhomdlujni
+key= 23 value= check security device connection
+key= 24 value= lifbl!pd|tqhsx#ejwjbb!`nQofbshlo
+message #2
+key= 7 value= No security device found        
+key= 8 value= An#rbbvsVuz!cduhld#ghtme?!#!'!#!
+message #3
+key= 7 value= Bk<waoqNUpu$`yreoa\wpmpusj,bkIjh
+key= 8 value= Mj?vfnrOjqv%gxqd``_vwlstlk/clHii
+key= 9 value= Lm>ugasLkvw&fgpgag^uvcrwml.`mwhj
+key= 10 value= Ol!td`tMhwx'efwfbf!tubuvnm!anvok
+key= 11 value= No security device station found
+key= 12 value= In#rjbvsnuz!{duhdd#r{`whho#gPtme
+message #4
+key= 14 value= Number of authorized users exceeded
+key= 15 value= Ovlmdq!hg#`juknuhydk!vrbsp!Zy`dbefe
+message #5
+key= 17 value= check security device station   
+key= 18 value= `ijbh!td`tmhwx'efwfbf!tubuVnm!'!

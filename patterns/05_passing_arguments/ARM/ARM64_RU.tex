@@ -1,0 +1,79 @@
+\subsubsection{ARM64}
+
+\myparagraph{\Optimizing GCC (Linaro) 4.9}
+
+\myindex{Fused multiply–add}
+\myindex{ARM!\Instructions!MADD}
+Тут всё просто.
+\TT{MADD} это просто инструкция, производящая умножение и сложение одновременно (как \TT{MLA}, 
+которую мы уже видели).
+Все 3 аргумента передаются в 32-битных частях X-регистров.
+Действительно, типы аргументов это 32-битные \IT{int}'ы.
+Результат возвращается в \TT{W0}.
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.9,style=customasmARM]{patterns/05_passing_arguments/ARM/ARM64_O3_RU.s}
+
+Также расширим все типы данных до 64-битных \TT{uint64\_t} и попробуем:
+
+\lstinputlisting[style=customc]{patterns/05_passing_arguments/ex64.c}
+
+\begin{lstlisting}[style=customasmARM]
+f:
+	madd	x0, x0, x1, x2
+	ret
+main:
+	mov	x1, 13396
+	adrp	x0, .LC8
+	stp	x29, x30, [sp, -16]!
+	movk	x1, 0x27d0, lsl 16
+	add	x0, x0, :lo12:.LC8
+	movk	x1, 0x122, lsl 32
+	add	x29, sp, 0
+	movk	x1, 0x58be, lsl 48
+	bl	printf
+	mov	w0, 0
+	ldp	x29, x30, [sp], 16
+	ret
+
+.LC8:
+	.string	"%lld\n"
+\end{lstlisting}
+
+Функция \ttf{} точно такая же, только теперь используются полные части 64-битных X-регистров.
+Длинные 64-битные значения загружаются в регистры по частям, это описано здесь: \myref{ARM_big_constants_loading}.
+
+\myparagraph{\NonOptimizing GCC (Linaro) 4.9}
+
+Неоптимизирующий компилятор выдает немного лишнего кода:
+
+\begin{lstlisting}[style=customasmARM]
+f:
+	sub	sp, sp, #16
+	str	w0, [sp,12]
+	str	w1, [sp,8]
+	str	w2, [sp,4]
+	ldr	w1, [sp,12]
+	ldr	w0, [sp,8]
+	mul	w1, w1, w0
+	ldr	w0, [sp,4]
+	add	w0, w1, w0
+	add	sp, sp, 16
+	ret
+\end{lstlisting}
+
+Код сохраняет входные аргументы в локальном стеке на случай если кому-то (или чему-то) в этой функции
+понадобится использовать регистры \TT{W0...W2}, перезаписывая оригинальные аргументы функции, которые
+могут понадобится в будущем.
+Это называется \IT{Register Save Area.} (\ARMPCS)
+Вызываемая функция не обязана сохранять их.
+Это то же что и \q{Shadow Space}: \myref{shadow_space}.
+
+Почему оптимизирующий GCC 4.9 убрал этот, сохраняющий аргументы, код?
+
+Потому что он провел дополнительную работу по оптимизации и сделал вывод, 
+что аргументы функции не понадобятся в будущем и регистры \TT{W0...W2} также не будут использоваться.
+
+\myindex{ARM!\Instructions!MUL}
+\myindex{ARM!\Instructions!ADD}
+Также мы видим пару инструкций \TT{MUL}/\TT{ADD} вместо одной \TT{MADD}.
+

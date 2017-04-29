@@ -1,0 +1,27 @@
+\subsubsection{\OptimizingXcodeIV (\ThumbTwoMode)}
+
+Let's get back to our simple array example (\myref{arrays_simple}),
+
+again, now we can see how LLVM checks the correctness of the \q{canary}:
+
+% TODO shorten the listing a bit? is full display of unrolled loop necessary?
+\lstinputlisting[style=customasmARM]{patterns/13_arrays/3_BO_protection/simple_Xcode_thumb_O3_EN.asm}
+
+\myindex{Unrolled loop}
+
+First of all, as we see, LLVM \q{unrolled} the loop and all values were written into an array one-by-one,
+pre-calculated, as LLVM concluded it can work faster.
+By the way, instructions in ARM mode may help to do this even faster, 
+and finding this could be your homework.
+
+
+At the function end we see the comparison of the \q{canaries}---the one in the local stack and the correct one,
+to which \Reg{8} points.
+\myindex{ARM!\Instructions!IT}
+
+If they are equal to each other, a 4-instruction block is triggered by \INS{ITTTT EQ},
+which contains writing 0 in \Reg{0}, the function epilogue and exit.
+If the \q{canaries} are not equal, the block being skipped,\\
+and the jump to \TT{\_\_\_stack\_chk\_fail}
+ function will occur, which, perhaps will halt execution.
+% TODO1 illustrate this!

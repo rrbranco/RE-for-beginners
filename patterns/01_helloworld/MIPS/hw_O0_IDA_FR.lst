@@ -1,0 +1,41 @@
+.text:00000000 main:
+.text:00000000
+.text:00000000 var_10          = -0x10
+.text:00000000 var_8           = -8
+.text:00000000 var_4           = -4
+.text:00000000
+; prologue de la fonction.
+; sauver RA et FP sur la pile:
+.text:00000000                 addiu   $sp, -0x20
+.text:00000004                 sw      $ra, 0x20+var_4($sp)
+.text:00000008                 sw      $fp, 0x20+var_8($sp)
+; §définir FP§ (stack frame pointer):
+.text:0000000C                 move    $fp, $sp
+; §définir GP:§
+.text:00000010                 la      $gp, __gnu_local_gp
+.text:00000018                 sw      $gp, 0x20+var_10($sp)
+; §charger l'adresse de la chaîne de texte:§
+.text:0000001C                 lui     $v0, (aHelloWorld >> 16)  # "Hello, world!"
+.text:00000020                 addiu   $a0, $v0, (aHelloWorld & 0xFFFF)  # "Hello, world!"
+; charger l'adresse de puts() en utilisant GP:
+.text:00000024                 lw      $v0, (puts & 0xFFFF)($gp)
+.text:00000028                 or      $at, $zero ; NOP
+; appeler puts():
+.text:0000002C                 move    $t9, $v0
+.text:00000030                 jalr    $t9
+.text:00000034                 or      $at, $zero ; NOP
+; restaurer GP depuis la pile locale:
+.text:00000038                 lw      $gp, 0x20+var_10($fp)
+; §mettre le registre \$2 (\$V0) à zéro:§
+.text:0000003C                 move    $v0, $zero
+; §épilogue de la fonction.§
+; restaurer SP:
+.text:00000040                 move    $sp, $fp
+; restaurer RA:
+.text:00000044                 lw      $ra, 0x20+var_4($sp)
+; restaurer FP:
+.text:00000048                 lw      $fp, 0x20+var_8($sp)
+.text:0000004C                 addiu   $sp, 0x20
+; sauter en RA:
+.text:00000050                 jr      $ra
+.text:00000054                 or      $at, $zero ; NOP

@@ -1,0 +1,59 @@
+.text:00000000 main:
+.text:00000000
+.text:00000000 var_28          = -0x28
+.text:00000000 var_24          = -0x24
+.text:00000000 var_20          = -0x20
+.text:00000000 var_1C          = -0x1C
+.text:00000000 var_18          = -0x18
+.text:00000000 var_10          = -0x10
+.text:00000000 var_8           = -8
+.text:00000000 var_4           = -4
+.text:00000000
+; prologue de la fonction:
+.text:00000000                 addiu   $sp, -0x38
+.text:00000004                 sw      $ra, 0x38+var_4($sp)
+.text:00000008                 sw      $fp, 0x38+var_8($sp)
+.text:0000000C                 move    $fp, $sp
+.text:00000010                 la      $gp, __gnu_local_gp
+.text:00000018                 sw      $gp, 0x38+var_10($sp)
+.text:0000001C                 la      $v0, aADBDCDDDEDFDGD  # "a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%"...
+; §passer le 5ème argument dans la pile:§
+.text:00000024                 li      $v1, 4
+.text:00000028                 sw      $v1, 0x38+var_28($sp)
+; §passer le 6ème argument dans la pile:§
+.text:0000002C                 li      $v1, 5
+.text:00000030                 sw      $v1, 0x38+var_24($sp)
+; §passer le 7ème argument dans la pile:§
+.text:00000034                 li      $v1, 6
+.text:00000038                 sw      $v1, 0x38+var_20($sp)
+; §passer le 8ème argument dans la pile:§
+.text:0000003C                 li      $v1, 7
+.text:00000040                 sw      $v1, 0x38+var_1C($sp)
+; §passer le 9ème argument dans la pile:§
+.text:00000044                 li      $v1, 8
+.text:00000048                 sw      $v1, 0x38+var_18($sp)
+; passer le 1er argument dans $a0:
+.text:0000004C                 move    $a0, $v0
+; passer le 2nd argument dans $a1:
+.text:00000050                 li      $a1, 1
+; §passer le 3ème argument dans§ $a2:
+.text:00000054                 li      $a2, 2
+; §passer le 4ème argument dans§ $a3:
+.text:00000058                 li      $a3, 3
+; appeler printf():
+.text:0000005C                 lw      $v0, (printf & 0xFFFF)($gp)
+.text:00000060                 or      $at, $zero
+.text:00000064                 move    $t9, $v0
+.text:00000068                 jalr    $t9
+.text:0000006C                 or      $at, $zero ; NOP
+; §épilogue de la fonction:§
+.text:00000070                 lw      $gp, 0x38+var_10($fp)
+; §mettre la valeur de retour à 0:§
+.text:00000074                 move    $v0, $zero
+.text:00000078                 move    $sp, $fp
+.text:0000007C                 lw      $ra, 0x38+var_4($sp)
+.text:00000080                 lw      $fp, 0x38+var_8($sp)
+.text:00000084                 addiu   $sp, 0x38
+; retourner
+.text:00000088                 jr      $ra
+.text:0000008C                 or      $at, $zero ; NOP

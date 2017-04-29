@@ -1,0 +1,58 @@
+\subsubsection{Modification de chaînes (Win32)}
+
+Nous pouvons facilement trouver la chaîne ``hello, world'' dans l'exécutable en utilisant Hiew:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/01_helloworld/hola_edit1.png}
+\caption{Hiew}
+\label{}
+\end{figure}
+
+Et nous pouvons essayer de traduire notre message en espagnol:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/01_helloworld/hola_edit2.png}
+\caption{Hiew}
+\label{}
+\end{figure}
+
+Le texte en espagnol est un octet plus court que celui en anglais, nous ajoutons l'octet 0x0A à la fin
+ (\TT{\textbackslash{}n}) ainsi qu'un octet à zéro.
+
+Ca fonctionne.
+
+Comment faire si nous voulons insèrer un message plus long ?
+Il y a quelques octets à zéro après le texte original en anglais.
+Il est difficile de dire si ils peuvent être écrasés: ils peuvent être utilisés quelque part dans du code \ac{CRT},
+ou pas.
+De toutes façons, écrasez-les seulement si vous savez vraiment ce que vous faîtes.
+
+\subsubsection{Modification de chaînes (Linux x64)}
+
+\myindex{\radare}
+Essayons de modifier un exécutable Linux x64 en utilisant \radare{}:
+
+\lstinputlisting[caption=\radare{} session]{patterns/01_helloworld/radare.lst}
+
+Ce que je fais ici: je cherche la chaîne \q{hello} en utilisant la commande  \TT{/},
+ensuite je déplace le \IT{curseur} (ou \IT{seek} selon la terminologie de \radare{}) à cette adresse.
+Je veux être certain d'être à la bonne adresse: \TT{px} affiche les octets ici.
+\TT{oo+} passe \radare{} en mode \IT{read-write}.
+\TT{w} écrit une chaîne ASCII à la \IT{seek} (\IT{position}) courante.
+Notez le \TT{\textbackslash{}00} à la fin--c'est l'octet à zéro.
+\TT{q} quitte.
+
+\subsubsection{\IT{Traduction} de logiciel à l'ère MS-DOS}
+
+%%The way I described was a common way to translate MS-DOS software to Russian language back to 1980's and 1990's.
+%%Russian words and sentences are usually slightly longer than its English counterparts, so that is why \IT{localized}
+%%software has a lot of weird acronyms and hardly readable abbreviations.
+La méthode que je viens de décrire était couramment employée pour traduire des logiciels sous MS-DOS en russe dans les
+années 1980 et 1990.
+Les mots et les phrases russes sont en général un peu plus longs qu'en anglais, c'est pourquoi les logiciels
+\IT{traduits} sont pleins d'acronymes sybillins et d'abréviations difficilement lisibles.
+
+Peut-être que cela s'est produit pour d'autres langages durant cette période.
+

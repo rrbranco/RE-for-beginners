@@ -1,0 +1,142 @@
+\subsection{MIPS}
+
+\subsubsection{Qualche parola sul \q{global pointer}}
+\label{MIPS_GP}
+
+\myindex{MIPS!\GlobalPointer}
+
+Un importante concetto MIPS e' il \q{global pointer}.
+Come potremmo gia' sapere, ogni ustrizione MIPS ha lunghezza pari a 32 bit, quindi e' impossibile inserire un indirizzo a 32-bit
+in una sola istruzione: deve essere usata una coppia (come ha fatto GCC nell'esempio per il caricamento dell'indirizzo della stringa).
+E' comunque possibile caricare dati da un indirizzo nell'intervallo $register-32768...register+32767$ utilizzando una singola istruzione
+(perche' 16 bit di un signed offset possono essere codificati in una singola istruzione).
+Possiamo quindi allocare per questo scopo un registro e allocare anche un'area a 64KiB per i dati piu' usati.
+Questo registro dedicato e' detto \q{global pointer} e punta in mezzo dall'area di 64KiB.
+Questa area solitamente contiene variabili globali e indirizzi di funzioni importate come \printf, perche' gli sviluppatori di GCC hanno deciso
+che il recupero dell'indirizzo di una funzione deve essere veloce tanto quanto l'esecuzione di una singola istruzione invece di due.
+
+In un file ELF questa area di 64KiB e' collocata parzialmente nelle sezioni .sbss (\q{small \ac{BSS}}) per dati non inizializzati
+e .sdata (\q{small data}) per dati inizializzati.
+
+Cio' implica che il programmatore puo' scegliere a quale dati si possa accedere piu' velocemente e piazzarli nelle sezioni .sdata/.sbss.
+Alcuni programmatori old-school potrebbero ricordarsi del memory model MS-DOS \myref{8086_memory_model} 
+o dei memory manger MS-DOS come XMS/EMS, in cui tutta la memoria era divisa in blocchi da 64KiB.
+
+\myindex{PowerPC}
+
+Questo concetto non e' unicamente di MIPS. Anche PowerPC usa la stessa tecnica.
+
+\subsubsection{\Optimizing GCC}
+
+Consideriamo il seguente esempio che illustra il concetto di \q{global pointer}.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),numbers=left,style=customasmMIPS]{patterns/01_helloworld/MIPS/hw_O3_EN.s}
+
+Come possiamo vedere, il registro \$GP e' settato nel prologo della funzione affinche' punti nel mezzo di questa area.
+Il registro \ac{RA} viene anche salvato sullo stack locale.
+\puts e' usata anche qui al posto di \printf.
+\myindex{MIPS!\Instructions!LW}
+L'indirizzo della funzione \puts e' caticato in \$25 usando \INS{LW} , l'istruzione (\q{Load Word}).
+\myindex{MIPS!\Instructions!LUI}
+\myindex{MIPS!\Instructions!ADDIU}
+Successivamente l'indirizzo della stringa viene caricato in \$4 usando la coppia di istruzioni \INS{LUI} (\q{Load Upper Immediate}) e 
+\INS{ADDIU} (\q{Add Immediate Unsigned Word}).
+\INS{LUI} setta i 16 bit alti del registro (da cui la parola \q{upper} nel nome dell'istruzione) e \INS{ADDIU} aggiunge
+i 16 bit piu' bassi dell'indirizzo.
+
+\INS{ADDIU} segue \INS{JALR} (ti ricordi dei \IT{branch delay slots}?).
+Il registro \$4 e' anche detto \$A0, e' usato per passare il primo argomento di una funzione
+\footnote{La tabella dei registri MIPS e' riportata in appendice \myref{MIPS_registers_ref}}.
+
+\myindex{MIPS!\Instructions!JALR}
+
+\INS{JALR} (\q{Jump and Link Register}) salta all'indirizzo memorizzato nel registro \$25 register (indirizzo di \puts) 
+salvando l'indirizzo della prossima istruzione (LW) in \ac{RA}.
+Questo e' molto simile ad ARM.
+Oh, e una cosa importate e' che l'indirizzo salvato in \ac{RA} non e' l'indirizzo della prossima istruzione (perche' e' in un 
+\IT{delay slot} e viene eseguito prima prima dell'istruzione jump),
+ma l'indirizzo dell'istruzione dopo la prossima (dopo il \IT{delay slot}).
+
+Quindi, $PC + 8$ viene scritto in \ac{RA} durante l'esecuzione di \TT{JALR}, nel nostro caso, questo e' l'indirizzo dell'istruzione 
+\INS{LW} successiva a \INS{ADDIU}.
+
+\INS{LW} (\q{Load Word}) a riga 20 ripristina \ac{RA} dallo stack locale (questa istruzione e' in effetti parte
+dell'epilogo della funzione).
+
+\myindex{MIPS!\Pseudoinstructions!MOVE}
+
+\INS{MOVE} a riga 22 copia il valore dal registro \$0 (\$ZERO) al \$2 (\$V0).
+\label{MIPS_zero_register}
+
+MIPS ha un registro \IT{costante}, il cui valore e' sempre zero.
+Apparentemente, gli sviluppatori MIPS hanno pensato che zero e' la costante piu' usata in programmazione, quindi usiamo il registro \$0
+ ogni volta che serve il valore zero.
+
+Un altro fatto interessante e' che in MIPS non c'e' un'istruzione che trasferisce dati tra registri.
+Infatti, \TT{MOVE DST, SRC} e' \TT{ADD DST, SRC, \$ZERO} ($DST=SRC+0$), che fa la stessa cosa.
+Apparentemente gli sviluppatori MIPS desideravano avere una tabella di opcode compatta.
+Questo non significa che un'addizione si verifichi per ogni istruzione \INS{MOVE}.
+Molto probabilmente, la \ac{CPU} ottimizza queste pseudoistruzioni e la \ac{ALU} non viene mai usata.
+
+\myindex{MIPS!\Instructions!J}
+
+\INS{J} a riga 24 salta all'indirizzo in \ac{RA}, effettuando di fatti il ritorno dalla funzione.
+\INS{ADDIU} dopo \INS{J} e' in effetti eseguita prima di J (ricordi i \IT{branch delay slots}?) e fa parte dell'epilogo della funzione.
+Ecco anche il listato generato da \IDA. Ogni registro qui ha il suo pseudonimo:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\IDA),numbers=left,style=customasmMIPS]{patterns/01_helloworld/MIPS/hw_O3_IDA_EN.lst}
+
+L'istruzione alla riga 15 salva il valore di GP sullo stack locale, e questa istruzione manca misteriosamente dal listato prodotto da GCC, forse per un errore di GCC
+\footnote{Apparentemente, le funzioni che generano i listati non sono fondamentali per gli utenti GCC, quindi qualche errore
+non ancora corretto puo' esserci.}.
+Il valore di GP deve essere infatti salvato, perche' ogni funzione puo' usare la sua finestra dati da 64KiB.
+Il registro contenente l'indirizzo di \puts e' chiamato \$T9, perche' i registri con il prefisso T- sono detti 
+\q{temporaries} ed il loro contenuto puo' non essere preservato.
+
+\subsubsection{\NonOptimizing GCC}
+
+\NonOptimizing GCC e' piu' verboso.
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (\assemblyOutput),numbers=left,style=customasmMIPS]{patterns/01_helloworld/MIPS/hw_O0_EN.s}
+
+Qui vediamo che il registro FP e' usato come un puntatore allo stack frame.
+Vediamo anche 3 \ac{NOP}s.
+Di cui il secondo e terzo seguono all'istruzione branch.
+Forse GCC aggiunge sempre \ac{NOP}s (a causa dei \IT{branch delay slots}) dopo le istruzioni branch
+e successivamente, se le ottimizzazioni sono attivate, forse li elimina.
+Quindi in questo caso sono rimasti.
+
+Ecco anche il listato \IDA:
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (\IDA),numbers=left,style=customasmMIPS]{patterns/01_helloworld/MIPS/hw_O0_IDA_EN.lst}
+
+\myindex{MIPS!\Pseudoinstructions!LA}
+
+E' interessante notare che \IDA ha riconosciuto la coppia di istruzioni \INS{LUI}/\INS{ADDIU} e le ha fusae in un'unica pseudoistruzione 
+\INS{LA} (\q{Load Address}) a riga 15.
+Possiamo anche vedere che questa pseudoistruzione e' lunga 8 bytes!
+Questa e' una pseudoistruzione (o \IT{macro}) in quanto non e' una vera istruzione MIPS , ma soltanto un nome comodo per una coppia
+di istruzioni.
+
+\myindex{MIPS!\Pseudoinstructions!NOP}
+\myindex{MIPS!\Instructions!OR}
+
+Un'altra cosa e' che \IDA non ha riconosciuto le istruzioni \ac{NOP} , che sono alle righe 22, 26 e 41.
+E' \TT{OR \$AT, \$ZERO}.
+Essenzialmente, questa istruzione applica l'operazione OR al contenuto del registro \$AT 
+con zero, che e', ovviamente, un'istruzione nulla/inutile.
+MIPS, come molte altre \ac{ISA}, non ha un'istruzione \ac{NOP} propria.
+
+\subsubsection{Ruolo dello the stack frame in questo esempio}
+
+L'indirizzo della stringa e' passato nel registro.
+Perche' impostare allora ugualmente uno stack locale?
+La ragione sta nel fatto che i valori dei registri \ac{RA} e GP devono essere salvati da qualche parte 
+(poiche' viene chiamata \printf ), e lo stack locale e' usato proprio per questo scopo.
+Se fosse stata una \gls{leaf function}, sarebbe stato possibile fare a meno (disfarsi) del prologo e dell'epilogo,
+ad esempio: \myref{MIPS_leaf_function_ex1}.
+
+\subsubsection{\Optimizing GCC: carichiamolo in GDB}
+
+\myindex{GDB}
+\lstinputlisting[caption=sample GDB session]{patterns/01_helloworld/MIPS/O3_GDB.txt}

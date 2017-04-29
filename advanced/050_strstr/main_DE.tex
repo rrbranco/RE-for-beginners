@@ -1,0 +1,38 @@
+% TODO translate to RU
+\section{strstr()-Beispiel}
+\label{strstr_example}
+\myindex{\CStandardLibrary!strstr()}
+
+Erinnern wir uns an die Tatsache, dass GCC manchmal Teile einer Zeichenkette nutzen kann: \myref{use_parts_of_C_strings}.
+
+Die \IT{strstr()} \CCpp-Standard-Bibliotheksfunktion wird genutzt um das Auftreten einer Zeichenkette
+in einer anderen zu finden.
+Nachfolgend ein Beispiel für die Anwendung:
+
+\begin{lstlisting}[style=customc]
+#include <string.h>
+#include <stdio.h>
+
+int main()
+{
+	char *s="Hello, world!";
+	char *w=strstr(s, "world");
+
+	printf ("%p, [%s]\n", s, s);
+	printf ("%p, [%s]\n", w, w);
+};
+\end{lstlisting}
+
+Die Ausgabe ist:
+
+\begin{lstlisting}
+0x8048530, [Hello, world!]
+0x8048537, [world!]
+\end{lstlisting}
+
+Der Unterschied zwischen der Adresse der Original-Zeichenkette und der Adresse des Substrings die
+\IT{strstr()} zurück gibt ist 7.
+Tatsächlich hat \q{Hello, } ja auch eine Länge von sieben Zeichen.
+
+Der zweite \printf-Aufruf weiß nicht, dass weitere Zeichen vor der Zeichenkette sind und gibt lediglich die
+Zeichen von der Mitte der Original-Zeichenkette bis zum Ende aus (markiert durch ein Null-Byte).

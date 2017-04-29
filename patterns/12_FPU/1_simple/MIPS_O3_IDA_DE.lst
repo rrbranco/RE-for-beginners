@@ -1,0 +1,31 @@
+f:
+; $f12-$f13=A
+; $f14-$f15=B
+                lui     $v0, (dword_C4 >> 16) ; ?
+; lade niedere 32 bit der 3.14 Konstante nach $f0:
+                lwc1    $f0, dword_BC
+                or      $at, $zero            ; lade delay slot, NOP
+; lade höhere 32 bit der 3.14 Konstante nach $f1:
+                lwc1    $f1, $LC0
+                lui     $v0, ($LC1 >> 16)     ; ?
+; A in $f12-$f13, 3.14 Konstante in $f0-$f1, dividiere:
+                div.d   $f0, $f12, $f0
+; $f0-$f1=A/3.14
+; lade niedere 32 bit von 4.1 nach $f2:
+                lwc1    $f2, dword_C4
+                or      $at, $zero            ; lade delay slot, NOP
+; load high 32-bit part of 4.1 to $f3:
+                lwc1    $f3, $LC1
+                or      $at, $zero            ; lade delay slot, NOP
+; B in $f14-$f15, 4.1 Konstante in $f2-$f3, multipliziere:
+                mul.d   $f2, $f14, $f2
+; $f2-$f3=B*4.1
+                jr      $ra
+; addiere 64-Bit-Teile und lasse Ergebnis in $f0-$f1:
+                add.d   $f0, $f2              ; branch delay slot, NOP
+
+
+.rodata.cst8:000000B8 $LC0:           .word 0x40091EB8         # DATA XREF: f+C
+.rodata.cst8:000000BC dword_BC:       .word 0x51EB851F         # DATA XREF: f+4
+.rodata.cst8:000000C0 $LC1:           .word 0x40106666         # DATA XREF: f+10
+.rodata.cst8:000000C4 dword_C4:       .word 0x66666666         # DATA XREF: f

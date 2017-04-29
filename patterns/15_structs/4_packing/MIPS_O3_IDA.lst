@@ -1,0 +1,42 @@
+f:
+
+var_18          = -0x18
+var_10          = -0x10
+var_4           = -4
+arg_0           =  0
+arg_4           =  4
+arg_8           =  8
+arg_C           =  0xC
+
+; $a0=s.a
+; $a1=s.b
+; $a2=s.c
+; $a3=s.d
+                lui     $gp, (__gnu_local_gp >> 16)
+                addiu   $sp, -0x28
+                la      $gp, (__gnu_local_gp & 0xFFFF)
+                sw      $ra, 0x28+var_4($sp)
+                sw      $gp, 0x28+var_10($sp)
+; prepare byte from 32-bit big-endian integer:
+                sra     $t0, $a0, 24
+                move    $v1, $a1
+; prepare byte from 32-bit big-endian integer:
+                sra     $v0, $a2, 24
+                lw      $t9, (printf & 0xFFFF)($gp)
+                sw      $a0, 0x28+arg_0($sp)
+                lui     $a0, ($LC0 >> 16)  # "a=%d; b=%d; c=%d; d=%d\n"
+                sw      $a3, 0x28+var_18($sp)
+                sw      $a1, 0x28+arg_4($sp)
+                sw      $a2, 0x28+arg_8($sp)
+                sw      $a3, 0x28+arg_C($sp)
+                la      $a0, ($LC0 & 0xFFFF)  # "a=%d; b=%d; c=%d; d=%d\n"
+                move    $a1, $t0
+                move    $a2, $v1
+                jalr    $t9
+                move    $a3, $v0 ; branch delay slot
+                lw      $ra, 0x28+var_4($sp)
+                or      $at, $zero ; load delay slot, NOP
+                jr      $ra
+                addiu   $sp, 0x28 ; branch delay slot
+
+$LC0:           .ascii "a=%d; b=%d; c=%d; d=%d\n"<0>

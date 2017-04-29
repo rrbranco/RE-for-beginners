@@ -1,0 +1,154 @@
+\subsection{\RU{Инструкции}\EN{Instructions}}
+
+\RU{В ARM имеется также для некоторых инструкций суффикс \IT{-S}, указывающий, 
+что эта инструкция будет модифицировать флаги.}
+\EN{There is a \IT{-S} suffix for some instructions in ARM,
+indicating that the instruction sets the flags according to the result.}
+\RU{Инструкции без этого суффикса не модифицируют флаги.}
+\EN{Instructions which lacks this suffix are not modify flags.}
+\myindex{ARM!\Instructions!ADD}
+\myindex{ARM!\Instructions!ADDS}
+\myindex{ARM!\Instructions!CMP}
+\RU{Например, инструкция}\EN{For example} \TT{ADD} \RU{в отличие от}\EN{unlike} \TT{ADDS}
+\RU{сложит два числа, но флаги не изменит}
+\EN{will add two numbers, but the flags will not be touched}.
+\RU{Такие инструкции удобно использовать
+между \CMP где выставляются флаги и, например, инструкциями перехода, где флаги используются.}
+\EN{Such instructions are convenient to use between \CMP where the flags are set and, 
+e.g. conditional jumps, where the flags are used.}
+\EN{They are also better in terms of data dependency analysis 
+(because less number of registers are modified during execution).}
+\RU{Они также лучше в смысле анализа зависимостей данных (data dependency analysis) 
+(потому что меньшее количество регистров модифицируется во время исполнения).}
+
+% ADD
+% ADDAL
+% ADDCC
+% ADDS
+% ADR
+% ADREQ
+% ADRGT
+% ADRHI
+% ADRNE
+% ASRS
+% B
+% BCS
+% BEQ
+% BGE
+% BIC
+% BL
+% BLE
+% BLEQ
+% BLGT
+% BLHI
+% BLS
+% BLT
+% BLX
+% BNE
+% BX
+% CMP
+% IDIV
+% IT
+% LDMCSFD
+% LDMEA
+% LDMED
+% LDMFA
+% LDMFD
+% LDMGEFD
+% LDR.W
+% LDR
+% LDRB.W
+% LDRB
+% LDRSB
+% LSL.W
+% LSL
+% LSLS
+% MLA
+% MOV
+% MOVT.W
+% MOVT
+% MOVW
+% MULS
+% MVNS
+% ORR
+% POP
+% PUSH
+% RSB
+% SMMUL
+% STMEA
+% STMED
+% STMFA
+% STMFD
+% STMIA
+% STMIB
+% STR
+% SUB
+% SUBEQ
+% SXTB
+% TEST
+% TST
+% VADD
+% VDIV
+% VLDR
+% VMOV
+% VMOVGT
+% VMRS
+% VMUL
+%\myindex{ARM!Optional operators!ASR
+%\myindex{ARM!Optional operators!LSL
+%\myindex{ARM!Optional operators!LSR
+%\myindex{ARM!Optional operators!ROR
+%\myindex{ARM!Optional operators!RRX
+
+% AArch64
+% RET is BR X30 or BR LR but with additional hint to CPU
+
+\subsubsection{\RU{Таблица условных кодов}\EN{Conditional codes table}}
+
+% TODO rework this!
+\small
+\begin{center}
+\begin{tabular}{ | l | l | l | }
+\hline
+\HeaderColor \RU{Код}\EN{Code} & 
+\HeaderColor \RU{Описание}\EN{Description} & 
+\HeaderColor \RU{Флаги}\EN{Flags} \\
+\hline
+EQ & \EN{Equal}\RU{равно} & Z == 1 \\
+\hline
+NE & \EN{Not equal}\RU{не равно} & Z == 0 \\
+\hline
+CS \ac{AKA} HS (Higher or Same) & \EN{Carry set}\RU{перенос} / \EN{Unsigned, Greater than, equal}\RU{беззнаковое, больше или равно} & C == 1 \\
+\hline
+CC \ac{AKA} LO (LOwer) & \EN{Carry clear}\RU{нет переноса} / \EN{Unsigned, Less than}\RU{беззнаковое, меньше чем} & C == 0 \\
+\hline
+MI & \EN{Minus, negative}\RU{минус, отрицательный знак} / \EN{Less than}\RU{меньше чем} & N == 1 \\
+\hline
+PL & \EN{Plus, positive or zero}\RU{плюс, положительный знак или ноль} / \EN{Greater than, equal}\RU{больше чем или равно} & N == 0 \\
+\hline
+VS & \EN{Overflow}\RU{переполнение} & V == 1 \\
+\hline
+VC & \EN{No overflow}\RU{нет переполнения} & V == 0 \\
+\hline
+HI & \EN{Unsigned higher}\RU{беззнаковое, больше чем} / \EN{Greater than} & C == 1 \AndENRU \\
+ & & Z == 0 \\
+\hline
+LS & \EN{Unsigned lower or same}\RU{беззнаковое, меньше или равно} / \EN{Less than or equal} & C == 0 \OrENRU \\
+ & & Z == 1 \\
+\hline
+GE & \EN{Signed greater than or equal}\RU{знаковое, больше чем или равно} / \EN{Greater than or equal} & N == V \\
+\hline
+LT & \EN{Signed less than}\RU{знаковое, меньше чем} / \EN{Less than} & N != V \\
+\hline
+GT & \EN{Signed greater than}\RU{знаковое, больше чем} / \EN{Greater than} & Z == 0 \AndENRU \\
+ & & N == V \\
+\hline
+LE & \EN{Signed less than or equal}\RU{знаковое, меньше чем или равно} / \EN{Less than, equal} & Z == 1 \OrENRU \\
+ & & N != V \\
+\hline
+None / AL & \RU{Всегда}\EN{Always} & \RU{Любые}\EN{Any} \\
+\hline
+\end{tabular}
+\end{center}
+\normalsize
+

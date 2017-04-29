@@ -1,0 +1,50 @@
+\subsubsection{\NonOptimizingKeilVI (\ARMMode)}
+
+\begin{lstlisting}[style=customasmARM]
+.text:000000A4 00 30 A0 E1       MOV     R3, R0
+.text:000000A8 93 21 20 E0       MLA     R0, R3, R1, R2
+.text:000000AC 1E FF 2F E1       BX      LR
+...
+.text:000000B0             main
+.text:000000B0 10 40 2D E9       STMFD   SP!, {R4,LR}
+.text:000000B4 03 20 A0 E3       MOV     R2, #3
+.text:000000B8 02 10 A0 E3       MOV     R1, #2
+.text:000000BC 01 00 A0 E3       MOV     R0, #1
+.text:000000C0 F7 FF FF EB       BL      f
+.text:000000C4 00 40 A0 E1       MOV     R4, R0
+.text:000000C8 04 10 A0 E1       MOV     R1, R4
+.text:000000CC 5A 0F 8F E2       ADR     R0, aD_0        ; "%d\n"
+.text:000000D0 E3 18 00 EB       BL      __2printf
+.text:000000D4 00 00 A0 E3       MOV     R0, #0
+.text:000000D8 10 80 BD E8       LDMFD   SP!, {R4,PC}
+\end{lstlisting}
+
+La funzione \main chiama altre due funzioni, con tre valori passati alla prima ~---(\ttf).
+
+Come detto in precedenza, in ARM i primi 4 valori sono solitamente passati nei primi 4 registri (\Reg{0}-\Reg{3}).
+
+La funzione \ttf function, come si deve, usa i primi 3 registri (\Reg{0}-\Reg{2}) come argomenti.
+
+\myindex{ARM!\Instructions!MLA}
+L'istruzione \TT{MLA} (\IT{Multiply Accumulate}) 
+moltiplica i suoi primi due operandi (\Reg{3} e \Reg{1}), aggiunge al prodotto il terzo operando (\Reg{2}) e salva il risultato
+nel zeresimo registro (\Reg{0}), attraverso il quale, da standard, le funzioni restituiscono i valori.
+
+\myindex{Fused multiply–add}
+La moltiplicazione e addizione fatte in una volta sola \footnote{\WPMAO} (\IT{Fused multiply–add}) e' un'operazione molto utile. 
+Non vi era alcune funzione analoga in x86 prima dell'avvento delle istruzioni FMA in SIMD.
+\footnote{\href{http://go.yurichev.com/17103}{wikipedia}}.
+
+La prima istruzione \TT{MOV R3, R0}, 
+e' apparentemente ridondante (al suo posto sarebbe potuta essere usata una singola istruzione \TT{MLA}). 
+Il compilatore, come previsto, non ha quindi ottimizzato il codice.
+
+\myindex{ARM!Mode switching}
+\myindex{ARM!\Instructions!BX}
+
+L'istruzione \TT{BX} restituisce il controllo all'indirizzo memorizzato nel registro \ac{LR} e, se necessario, 
+effettua lo switch della modalita' del processore da Thumb a ARM o viceversa.
+Cio' puo' essere necessario in quanto, come possiamo vedere ,la funzione \ttf non e' al corrente di che tipo di codice potrebbe esere chiamato in seguito (ARM o Thumb).
+Dunque, se viene chiamata da codice Thumb \TT{BX} non resituisce soltanto il controllo alla funzione chiamante ma switcha anche la modalita' del processore a Thumb. 
+Se la funzione viene chiamata da codice ARM, non effettua lo scambio di modalita' \InSqBrackets{\ARMSevenRef A2.3.2}.
+% look for "BXWritePC()" in manual

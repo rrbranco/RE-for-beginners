@@ -1,0 +1,50 @@
+\section{Verd\"achtige Code muster}
+
+\subsection{XOR Instruktionen}
+\myindex{x86!\Instructions!XOR}
+
+Instruktionen wie \TT{XOR op, op} (zum Beispiel, \TT{XOR EAX, EAX})
+werden normal daf\"ur benutzt Register Werte auf Null zu setzen, wenn jedoch
+einer der Operanden sich unterscheidet wird die \q{exclusive or} Operation 
+ausgef\"uhrt.
+
+Diese Operation wird allgemeinen selten benutzt beim programmieren, aber ist
+weit verbreitet in der Kryptografie, besonders bei Amateuren der Kryptografie.
+Sowas ist besonders Verd\"achtig wenn der zweite Operand eine große Zahl ist.
+
+Das k\"onnte ein Hinweis sein das etwas ver-/entschl\"usselt wird oder Checksumme berechnet werden, etc.
+
+Eine Ausnahme dieser Beobachtung ist der \q{canary} (\myref{subsec:BO_protection}). 
+Die Generierung und das pr\"ufen des \q{canary} werden oft mit Hilfe der \XOR Instruktion gemacht. 
+
+\myindex{AWK}
+
+Dieses AWK Skript kann benutzt werden um \IDA{} listing (.lst) Dateien zu parsen:
+
+\lstinputlisting{digging_into_code/awk.sh}
+
+Es sollte auch noch erw\"ahnt werden das diese Art von Skript in der Lage ist inkorrekt disassemblierten Code zu erkennen
+(\myref{sec:incorrectly_disasmed_code}).
+
+\subsection{Hand geschriebener Assembler code}
+
+\myindex{Function prologue}
+\myindex{Function epilogue}
+\myindex{x86!\Instructions!LOOP}
+\myindex{x86!\Instructions!RCL}
+
+Moderne Compiler benutzen keine \TT{LOOP} und \TT{RCL} Instruktionen.
+Auf der anderen Seite sind diese Instruktionen sehr beliebt bei Programmieren die Code direkt in Assembler schreiben.
+Wenn man diese Instruktionen sieht, kann man mit hoher Sicherheit sagen das dieses Code Fragment h\"andisch geschrieben wurde.,
+Diese Instruktionen sind in der Instruktionsliste im Anhang mit (M) markiert: \myref{sec:x86_instructions}.
+
+\par Die Funktions Prolog und Epilog sind allgemein nicht vorhanden bei handgeschriebenen Assembler Code.
+
+\par Tats\"achlich gibt es kein bestimmtes System um Argumente an Funktionen zu \"ubergeben wenn der Code handgeschrieben wurde. 
+
+\par Beispiel aus dem Windows 2003 Kernel (ntoskrnl.exe file):
+
+\lstinputlisting[style=customasmx86]{digging_into_code/ntoskrnl.lst}
+
+Tats\"achlich, wenn wir in den \ac{WRK} v1.2 source code schauen, kann dieser Code einfach in der Datei
+\IT{WRK-v1.2\textbackslash{}base\textbackslash{}ntos\textbackslash{}ke\textbackslash{}i386\textbackslash{}cpu.asm} gefunden werden.

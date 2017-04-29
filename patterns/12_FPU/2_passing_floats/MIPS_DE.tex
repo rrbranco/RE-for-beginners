@@ -1,0 +1,17 @@
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA)]{patterns/12_FPU/2_passing_floats/MIPS_O3_IDA_DE.lst}
+Und wieder sehen wir hier, dass der Befehl \INS{LUI} einen 32-Bit-Teil einer
+\Tdouble Zahl nach \$V0 lädt.
+Und wiederum ist es schwer nachzuvollziehen warum dies geschieht.
+
+\myindex{MIPS!\Instructions!MFC1}
+Der für uns neue Befehl an dieser Stelle ist \INS{MFC1}(\q{Move From Coprocessor
+1}). Die Nummer des FPU-Koprozessors ist 1, daher die \q{1} im Namen des
+Befehls. 
+Dieser Befehl überträgt Werte aus den Registern des Koprozessors in die Register
+der CPU (\ac{GPR}).
+Auf diese Weise wird das Ergebnis von \TT{pow()} schließlich in die Register
+\$A3 und \$A2 verschoben und \printf übernimmt einen 64-Bit-Wert von doppelter
+Genauigkeit aus diesem Registerpaar.

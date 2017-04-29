@@ -1,0 +1,22 @@
+\begin{center}
+	\begin{tikzpicture}
+	\tikzstyle{every path}=[thick]
+
+	\node [rectangle,draw,minimum width=6cm, minimum height=2cm] (memory) {};
+	\node [] [right=0.2cm of memory.west] (heap) {\MLHeap};
+	\node [] [left=0.2cm of memory.east] (stack) {\MLStack};
+
+	\node [] (center1) [right=2cm of memory.west] {};
+	\node [] (center2) [left=2cm of memory.east] {};
+
+	\draw [->] (heap) -- (center1);
+	\draw [->] (stack) -- (center2);
+
+	\node [] [above left=1.1cm and 0.2cm of heap] (t1) {\MLStartOfHeap};
+	\node [] [above right=1.1cm and 0.2cm of stack] (t2) {\MLStartOfStack};
+
+	\draw [->] (t1) -- (memory.west);
+	\draw [->] (t2) -- (memory.east);
+
+	\end{tikzpicture}
+\end{center}

@@ -1,0 +1,75 @@
+\section{Leere Funktion}
+\label{empty_func}
+
+Die denkbar einfachste Funktion ist sicher eine die nichts macht:
+
+\lstinputlisting[caption=\EN{\CCpp Code}\DE{\CCpp-Code},style=customc]{patterns/00_empty/1.c}
+
+Kompilieren wir diesen Quellcode!
+
+\subsection{x86}
+Nachfolgende die Ausgabe die sowohl der optimierende GCC als auch der MSVC-Compiler auf
+einer x86-Plattform produziert:
+
+\lstinputlisting[caption=\Optimizing GCC/MSVC (\assemblyOutput),style=customasmx86]{patterns/00_empty/1.s}
+
+\myindex{x86!\Instructions!RET}
+Es gibt lediglich eine Anweisung \RET, welche die Ausführung zurück an \gls{caller} übergibt.
+
+\subsection{ARM}
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) \assemblyOutput,style=customasmARM]{patterns/00_empty/1_Keil_ARM_O3.s}
+
+Die Rücksprungadresse ist im ARM-\ac{ISA} nicht auf dem lokalen Stack gesichert sondern im Link-Register.
+Die \INS{BX LR}-Anweisung führt dazu, dass die an diese Adresse gesprungen wird----also die Ausführung
+wieder an den \gls{caller} übergeben wird.
+
+\subsection{MIPS}
+Es gibt zwei Namenskonventionen für Register in der MIPS-Welt:
+durch Zahlen (von\$0 bis \$31) oder Pseudonamen (\$V0, \$A0, usw.).
+
+Die Assembler-Ausgabe von GCC unten listet die Register mit Nummern auf:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/00_empty/MIPS.s}
+
+\dots während \IDA Pseudonamen nutzt:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/00_empty/MIPS_IDA.lst}
+
+\myindex{MIPS!\Instructions!J}
+Die erste Anweisung ist die Sprunganweisung die die Ausführung durch Springen an die Adresse
+in Register \$31 (oder \$RA) wieder an den \gls{caller} übergibt.
+
+Dies ist das Register analog zu \ac{LR} in ARM.
+
+Die zweite Anweisung ist \ac{NOP} und macht gar nichts; sie kann hier erst mal ignoriert werden.
+
+\subsubsection{Eine Anmerkung zu MIPS-Anweisungen und Registernamen}
+
+Register und Anweisungsnamen sind in Bezug auf MIPS traditionellerweise klein geschrieben.
+Um einen einheitlichen Stil zu haben, werden in diesem Buch jedoch Großbuchstaben genutzt.
+Dies gilt für alle \ac{ISA}s die in diesem Buch besprochen werden.
+
+\subsection{Leere Funktionen in der Praxis}
+
+Abgesehen von der Tatsache, dass leere Funktionen nutzlos sind, begegnet man ihnen
+in Low-Level-Code häufiger.
+
+Zum Einen sind Debugging-Funktionen wie die Folgende recht verbreitet:
+
+\lstinputlisting[caption=\EN{\CCpp Code}\DE{\CCpp-Code},style=customc]{patterns/00_empty/dbg_print.c}
+
+Bei einem Nicht-Debug-Build (d.h. ``Release''), ist \TT{\_DEBUG} nicht definiert.
+Die Funktion \TT{dbg\_print()} ist, obwohl sie bei der Ausführung aufgerufen wird, ohne Inhalt.
+
+Eine verbreitete Art des Software-Schutzes ist es verschiedene Build-Versionen zu erstellen:
+eine für legale Kunden und eine Demo-Version. Der Letzteren können zum Beispiel wichtige
+Funktionen fehlen, wie folgt:
+
+\lstinputlisting[caption=\EN{\CCpp Code}\DE{\CCpp-Code},style=customc]{patterns/00_empty/demo.c}
+
+Die Funktion\TT{save\_file()} kann vom Nutzer über den Menüpunkt \TT{File->Save} aufgerufen werden.
+Die Demo-Version könnte mit einem deaktivierten Menüpunkt ausgeliefert werden, selbst wenn ein
+Cracker in der Lage ist diesen wieder zu aktivieren, wird die leere Funktion ohne sinnvollen
+Inhalt ausgeführt
+
+\IDA markiert solche Funktionen mit Namen wie \TT{nullsub\_00}, \TT{nullsub\_01}, usw.

@@ -1,0 +1,164 @@
+% TODO to be resynced with EN version
+\subsection{Système de numération}
+
+Les Hommes ont probablement pris l'habitude d'utiliser la numérotation décimale parce qu'ils ont 10 doigts.
+Néanmoins, le nombre 10 n'a pas de signification particulière en science et en mathématiques.
+En électronique, le système de numérotation est le binaire : 0 pour l'absence de courant dans un fil et 1 s'il y en a.
+10 en binaire est 2 en décimale; 100 en binaire est 4 en décimale et ainsi de suite.
+
+Si le système de numération a 10 chiffres, il est en \IT{base} 10. % \IT{radix} ?
+Le système binaire est en \IT{base} 2.
+
+Rappels importants :
+1) Un \IT{nombre} est un nombre, tandis qu'un \IT{chiffre} est un élément d'un système d'écriture et est généralement un caractère;
+2) Un nombre ne change pas lorsqu'on le convertit dans une autre base : sa représentation change.
+
+Comment convertir un nombre d'un base à une autre ?
+
+La notation positionnelle est utilisée quasiment partout, cela signifie qu'un chiffre (nombre contenu dans un seul caractère) a
+un poids dépendant de sa position dans la représentation du nombre.
+Si 2 se situe le plus à droite, c'est 2.
+S'il est placé un chiffre avant celui le plus à droite, c'est 20.
+
+Que représente $1234$ ?
+
+$10^3 \cdot 1 + 10^2 \cdot 2 + 10^1 \cdot 3 + 1 \cdot 4$ = 1234 ou 
+$1000 \cdot 1 + 100 \cdot 2 + 10 \cdot 3 + 4 = 1234$
+
+De même pour les nombres binaires, mais la base est 2 au lieu de 10.
+Que représente 0b101011 ?
+
+$2^5 \cdot 1 + 2^4 \cdot 0 + 2^3 \cdot 1 + 2^2 \cdot 0 + 2^1 \cdot 1 + 2^0 \cdot 1 = 43$ ou
+$32 \cdot 1 + 16 \cdot 0 + 8 \cdot 1 + 4 \cdot 0 + 2 \cdot 1 + 1 = 43$
+
+On peut opposer la notation positionnelle avec la notation non-positionnelle comme la numération romaine.
+\footnote{A propos de l'évolution du système de numération, voir \InSqBrackets{\TAOCPvolII{}, 195--213.}}.
+Peut-être que l'humanité a choisi le système de numération positionnelle parce qu'il était plus simple pour les opérations basiques (addition, multiplication, etc.) à la main sur papier.
+
+En effet, les nombres binaires peuvent être ajoutés, soustraits et ainsi de suite de la même manière que c'est enseigné à l'école, mais seulement 2 chiffres sont disponibles.
+
+Les nombres binaires sont volumineux pour représenter le code source et les dumps, c'est pourquoi le système hexadécimal peut etre utilisé.
+La base hexadécimale utilise les nombres 0..9 et aussi 6 caractères latins : A..F.
+Chaque chiffre hexadécimal prend 4 bits ou 4 chiffres binaires, donc c'est très simple de convertir un nombre binaire vers l'hexadécimal et inversement, même manuellement.
+
+\begin{center}
+\begin{longtable}{ | l | l | l | }
+\hline
+\HeaderColor hexadécimal & \HeaderColor binaire & \HeaderColor décimal \\
+\hline
+0	&0000	&0 \\
+1	&0001	&1 \\
+2	&0010	&2 \\
+3	&0011	&3 \\
+4	&0100	&4 \\
+5	&0101	&5 \\
+6	&0110	&6 \\
+7	&0111	&7 \\
+8	&1000	&8 \\
+9	&1001	&9 \\
+A	&1010	&10 \\
+B	&1011	&11 \\
+C	&1100	&12 \\
+D	&1101	&13 \\
+E	&1110	&14 \\
+F	&1111	&15 \\
+\hline
+\end{longtable}
+\end{center}
+
+Comment savoir quelle est la base actuellement utilisée ?
+
+Les nombres décimaux sont d'ordinaire écrits tels quels, i.e, 1234. Mais certains assembleurs permettent d'accentuer la base décimale, et les nombres peuvent alors s'écrire avec le suffixe "d" : 1234d.
+
+Les nombres binaires sont parfois préfixés avec "0b" : 0b100110111 (\ac{GCC} a une extension de langage non-standard pour ca \footnote{\url{https://gcc.gnu.org/onlinedocs/gcc/Binary-constants.html}}).
+Il y a aussi un autre moyen : le suffixe "b", par exemple : 100110111b.
+J'essaierai de garder le préfixe "0b" tout le long du livre pour les nombres binaires.
+
+Les nombres hexadécimaux sont préfixés avec "0x" en \CCpp et autres \ac{PL}s : 0x1234ABCD.
+Ou ils ont le suffixe "h" : 1234ABCDh - c'est une manière commune de les représenter dans les assembleurs et les débuggeurs.
+Si le nombre commence par un A..F, un 0 est ajouté au début : 0ABCDEFh.
+Il y avait une convention répandue à l'ère des ordinateurs personnels 8-bit, utilisant
+le préfixe \$, comme \$ABCD.
+J'essaierai de garder le préfixe "0x" tout le long du livre pour les nombres hexadécimaux.
+
+Faut-il apprendre à convertir les nombres de tête? La table des nombres hexadécimaux de 1 chiffre peut facilement être mémorisée. Pour les nombres plus gros, ce n'est pas la peine de se torturer.
+
+\subsubsection{Base octal}
+
+Un autre système numération a été largement utilisé en informatique est la représentation octale: il y a 8 chiffres (0..7) et occupent 3 bits, donc c'est facile de convertir un nombre d'un base à l'autre.
+Il est maintenant remplacé par le système hexadécimal quasiment partout mais, chose surprenante, il y a encore une commande sur *NIX, utilisée par beaucoup de personnes, qui a un nombre octal comme argument : \TT{chmod}.
+
+\myindex{UNIX!chmod}
+Comme beaucoup d'utilisateur *NIX le savent, l'argument de \TT{chmod} peut être un nombre à 3 chiffres. Le premier correspond aux droits du propriétaire du fichier, le scond correspond aux droits pour le groupe (auquel le fichier appartient), le troisième est pour tous les autres.
+Et chaque chiffre peut être représenté en binaire:
+
+\begin{center}
+\begin{longtable}{ | l | l | l | }
+\hline
+\HeaderColor décimal & \HeaderColor binaire & \HeaderColor signification
+\\
+\hline
+7	&111	&\textbf{rwx} \\
+6	&110	&\textbf{rw-} \\
+5	&101	&\textbf{r-x} \\
+4	&100	&\textbf{r-{}-} \\
+3	&011	&\textbf{-wx} \\
+2	&010	&\textbf{-w-} \\
+1	&001	&\textbf{-{}-x} \\
+0	&000	&\textbf{-{}-{}-} \\
+\hline
+\end{longtable}
+\end{center}
+
+Ainsi chaque bit correspond à un droit: lecture (r) / écriture (w) / exécution (x).
+
+La raison pour laquelle je parle de \TT{chmod} ici est que l'argument peut être écrit comme un nombre octal.
+Prenons par exemple, 644.
+Quand vous tapez \TT{chmod 644 file}, vous définissez les droits de lecture/écriture pour le propriétaire, les droits de lecture pour le groupe et encore les droits de lecture pour les autres.
+Convertissons le nombre 644 en octal vers le binaire, ce sera \TT{110100100}, ou (par groupe de 3 bits) \TT{110 100 100}.
+
+Maintenant que nous savons que chaque triplet sert a décrire les permissions pour le propriétaire/groupe/autres : le premier est \TT{rw-}, le second est \TT{r--} et le troisième est \TT{r--}.
+
+Le système de numération octal était aussi populaire sur les vieux ordinateurs comme le PDP-8 parce que les mots pouvaient être de 12, 24 ou de 36 bits et ces nombres sont divisibles par 3, donc la représentation octale était naturelle dans cet environnement.
+Aujourd'hui, tous les ordinateurs populaires utilisent des mots/taille d'adresse de 16, 32 ou de 64 bits et ces nombres sont divisibles par 4, donc la représentation hexadécimale était plus naturelle içi.
+
+Le système de numération octal est supporté par tous les compilateurs \CCpp standards.
+C'est parfois une source de confusion parce que les nombres octaux sont notés avec un zéro au début. Par exemple, 0377 est 255.
+Et parfois, vous faites une faute de frappe et écrivez "09" au lieu de 9, et le compilateur ne vous l'autorise pas.
+GCC peut renvoyer quelque chose comme ca:\\
+\TT{erreur: chiffre  9  invalide dans la constante en base 8}.
+
+\subsubsection{Divisibilité}
+
+Quand vous voyez un nombre décimal comme 120, vous en déduisez immédiatement qu'il est divisible par 10, parce que le dernier chiffre est zéro.
+Egalement, 123400 est divisible par 100 parce que les deux derniers chiffres sont zéros.
+
+De la même façon, un nombre hexadécimal 0x1230 est divisible par 0x10 (ou 16), 0x123000 est disible par 0x1000 (ou 4096), etc.
+
+Un nombre binaire 0b1000101000 est divisible par 0b1000 (8), etc.
+
+Cette propriété peut être souvent utilisée pour déterminer rapidement si la taille d'un bloc mémoire correspond à la limite. % TODO clarify original
+Par exemple, les sections dans les fichiers \ac{PE} commencent quasiment toujours à une adresse finissant par 3 zéros hexadécimaux: 0x41000, 0x10001000, etc.
+La raison sous-jacente est que la plupart des sections \ac{PE} sont alignées sur une limite de 0x1000 (4096) octets.
+
+\subsubsection{Arithmétique multiprécision et base}
+
+\index{RSA}
+L'arithmétique multiprécision utilise des nombres très grands et chacun peut être stocké sur plusieurs octets.
+Par exemple, les clés RSA, tant publique que privée, utilisent jusqu'à 4096 bits et parfois plus encore.
+
+Dans \InSqBrackets{\TAOCPvolII, 265} vous pouvez trouver l'idée suivante: quand vous stockez un nombre multiprécision
+dans plusieurs octets.
+Le nombre complet peut être représenté dans une base de $2^8=256$, et chacun des chiffres correspond à un octet.
+De la même manière, si vous sauvegardez un nombre multiprécision sur plusieurs entiers de 32 bits, chaque chiffre est associé
+ à l'emplacement de 32 bits et vous pouvez penser à ce nombre comme étant stocker dans une base $2^{32}$.
+
+\subsubsection{Prononciation}
+
+Les nombres dans une base non décimale sont généralement prononcés par un chiffre à la fois : ``un-zéro-zéro-un-un-...''.
+Les mots comme ``dix``, ``mille``, etc, ne sont généralement pas prononcés, parce qu'ils peuvent être confondus avec ceux en base décimale.
+
+\subsubsection{Nombres à virgule flottante}
+
+Pour distinguer les nombres à virgule flottante des entiers, ils sont souvent écrits avec avec un ``.0`` à la fin,
+comme $0.0$, $123.0$, etc.

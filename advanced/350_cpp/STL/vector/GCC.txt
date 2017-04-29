@@ -1,0 +1,43 @@
+_Myfirst=0x(nil), _Mylast=0x(nil), _Myend=0x(nil)
+size=0, capacity=0
+_Myfirst=0x8257008, _Mylast=0x825700c, _Myend=0x825700c
+size=1, capacity=1
+element 0: 1
+_Myfirst=0x8257018, _Mylast=0x8257020, _Myend=0x8257020
+size=2, capacity=2
+element 0: 1
+element 1: 2
+_Myfirst=0x8257028, _Mylast=0x8257034, _Myend=0x8257038
+size=3, capacity=4
+element 0: 1
+element 1: 2
+element 2: 3
+_Myfirst=0x8257028, _Mylast=0x8257038, _Myend=0x8257038
+size=4, capacity=4
+element 0: 1
+element 1: 2
+element 2: 3
+element 3: 4
+_Myfirst=0x8257040, _Mylast=0x8257050, _Myend=0x8257058
+size=4, capacity=6
+element 0: 1
+element 1: 2
+element 2: 3
+element 3: 4
+_Myfirst=0x8257040, _Mylast=0x8257054, _Myend=0x8257058
+size=5, capacity=6
+element 0: 1
+element 1: 2
+element 2: 3
+element 3: 4
+element 4: 5
+_Myfirst=0x8257040, _Mylast=0x8257058, _Myend=0x8257058
+size=6, capacity=6
+element 0: 1
+element 1: 2
+element 2: 3
+element 3: 4
+element 4: 5
+element 5: 6
+6
+0

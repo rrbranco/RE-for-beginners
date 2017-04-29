@@ -1,0 +1,120 @@
+\clearpage
+\mysubparagraph{Erstes \olly Beispiel: a=1.2 und b=3.4}
+\myindex{\olly}
+
+Beide \FLD werden ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly1_1.png}
+\caption{\olly: beide \FLD werden ausgeführt}
+\label{fig:FPU_comparison_Ox_case1_olly1}
+\end{figure}
+
+\FCOM wird ausgeführt: 
+\olly zeigt die Inhalte \ST{0} und \ST{1} übersichtlich an.
+
+\clearpage
+\FCOM wurde ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly1_2.png}
+\caption{\olly: \FCOM wurde ausgeführt}
+\label{fig:FPU_comparison_Ox_case1_olly2}
+\end{figure}
+
+\Czero ist gesetzt, alle anderen Flags sind gelöscht.
+
+\clearpage
+\FNSTSW wurde ausgeführt, \GTT{AX}=0x3100:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly1_3.png}
+\caption{\olly: \FNSTSW wird ausgeführt}
+\label{fig:FPU_comparison_Ox_case1_olly3}
+\end{figure}
+
+\clearpage
+\TEST wird ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly1_4.png}
+\caption{\olly: \TEST wird ausgeführt}
+\label{fig:FPU_comparison_Ox_case1_olly4}
+\end{figure}
+
+ZF=0, conditional bedingter Sprung wird jetzt ausgeführt.
+
+\clearpage
+\INS{FSTP ST} (oder \FSTP \ST{0}) wurde ausgeführt~---1.2 wurde vom Stack geholt und 3.4 bleibt obenauf liegen:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly1_5.png}
+\caption{\olly: \FSTP wird ausgeführt}
+\label{fig:FPU_comparison_Ox_case1_olly5}
+\end{figure}
+
+Wir sehen, dass das Ergebnis des Befehls \INS{FSTP ST} dem Holen eines Wertes vom FPU Stack entspricht. 
+
+\clearpage
+\mysubparagraph{Second \olly example: a=5.6 and b=-4}
+
+Beide \FLD werden ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly2_1.png}
+\caption{\olly: beide \FLD werden ausgeführt}
+\label{fig:FPU_comparison_Ox_case2_olly1}
+\end{figure}
+
+\FCOM wird gleich ausgeführt.
+
+\clearpage
+\FCOM wurde ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly2_2.png}
+\caption{\olly: \FCOM ist beendet}
+\label{fig:FPU_comparison_Ox_case2_olly2}
+\end{figure}
+
+Alle Bedingungs-Flags sind gelöscht.
+
+\clearpage
+\FNSTSW ist abgearbeitet, \GTT{AX}=0x3000:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly2_3.png}
+\caption{\olly: \FNSTSW wurde ausgeführt}
+\label{fig:FPU_comparison_Ox_case2_olly3}
+\end{figure}
+
+\clearpage
+\TEST wurde ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly2_4.png}
+\caption{\olly: \TEST wurde ausgeführt}
+\label{fig:FPU_comparison_Ox_case2_olly4}
+\end{figure}
+
+ZF=1, der Sprung wird jetzt nicht ausgeführt.
+
+\clearpage
+\FSTP \ST{1} wurde ausgeführt: der Wert 5.6 liegt jetzt oben auf dem FPU Stack.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly2_5.png}
+\caption{\olly: \FSTP wurde ausgeführt}
+\label{fig:FPU_comparison_Ox_case2_olly5}
+\end{figure}
+Wir erkennen, dass der Befehl \FSTP \ST{1} wie folgt funktioniert: er lässt das oberste Element des Stacks an seinem Platz, löscht aber das Register \ST{1}.

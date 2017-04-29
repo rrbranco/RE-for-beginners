@@ -1,0 +1,100 @@
+\subsubsection{\NonOptimizingKeilVI (\ARMMode)}
+
+Iniziamo a compilare il nostro esempio in Keil:
+
+\begin{lstlisting}
+armcc.exe --arm --c90 -O0 1.c 
+\end{lstlisting}
+
+\myindex{\IntelSyntax}
+Il compilatore \IT{armcc} produce un listato assembly con sintassi Intel,
+e utilizza macro di alto livello legate al processore ARM
+\footnote{ad esempio, l' ARM mode 'e privo delle istruzioni \PUSH/\POP},
+tuttavia e' piu' importante per noi vedere le istruzioni \q{cosi' come sono}, quindi guardiamo il risultato compilato con \IDA.
+
+\begin{lstlisting}[caption=\NonOptimizingKeilVI (\ARMMode) \IDA,style=customasmARM]
+.text:00000000             main
+.text:00000000 10 40 2D E9    STMFD   SP!, {R4,LR}
+.text:00000004 1E 0E 8F E2    ADR     R0, aHelloWorld ; "hello, world"
+.text:00000008 15 19 00 EB    BL      __2printf
+.text:0000000C 00 00 A0 E3    MOV     R0, #0
+.text:00000010 10 80 BD E8    LDMFD   SP!, {R4,PC}
+
+.text:000001EC 68 65 6C 6C+aHelloWorld  DCB "hello, world",0    ; DATA XREF: main+4
+\end{lstlisting}
+
+Nell'esempio possiamo facilmente vedere che ogni istruzione ha lunghezza pari a 4 byte.
+Difatti abbiamo compilato il codice per la modalita' ARM e non Thumb.
+
+\myindex{ARM!\Instructions!STMFD}
+\myindex{ARM!\Instructions!POP}
+La prima istruzione, \TT{STMFD SP!, \{R4,LR\}}\footnote{\ac{STMFD}},
+funzione come l' istruzione \PUSH in x86, scrivendo i valori di due registri (\Reg{4} \ITAph{} \ac{LR}) nello stack.
+Infatti il listato di output prodotto dal compilatore \IT{armcc}, per semplificazione, mostra l'istruzione \INS{PUSH \{r4,lr\}}.
+Ma cio' non e' del tutto esatto. L'istruzione\PUSH e' disponibile solo in modalita' Thumb. Utilizziamo quindi \IDA per non fare confusione.
+
+Questa istruzione dapprima \glslink{decrement}{decrementa} il valore di \ac{SP} cosi' da farlo puntare alla porzione dello stack che' e' libera di ospitare nuovi dati, quindi salva il valore dei registri \Reg{4} e \ac{LR} all'indirizzo memorizzato nel registro \ac{SP} appena modificato.
+
+Questa istruzione (esattamente come \PUSH in Thumb mode) e' in grado di salvare il valore di piu' registri contemporaneamente, cosa che e' puo' risultare molto utile. 
+A proposito, non ha un equivalente in x86.
+Si puo' notare anche che l'istruzione \TT{STMFD} e' una generalizzazione dell'istruzione \PUSH (che estende le sue funzionalita'), poiche' puo' funzionare con qualunque registro, e non solo \ac{SP}.
+In altre parole, \TT{STMFD} puo' essere usata per memorizzare un insieme di registri all'indirizzo di memoria specificato.
+
+\myindex{\PICcode}
+\myindex{ARM!\Instructions!ADR}
+L'istruzione \INS{ADR R0, aHelloWorld}
+aggiunge o sottrae il valore nel registro \ac{PC} all'offset dove e' memorizzata la stringa \TT{hello, world}.
+Ci si potrebbe chiedere, come e' utilizzato qui il registro \TT{PC}?
+Cio' e' detto \q{\PICcode}
+\footnote{Maggiori informazioni sono fornite nella sezione~(\myref{sec:PIC})}.
+Questo tipo di codice puo' essere eseguito a indirizzi non fissi (variabili)in memoria.
+In altre parole, e' un indirizzamento relativo a \ac{PC} (\ac{PC}-relative addressing).
+L'istruzione \TT{ADR} tiene conto della differenza tra l'indirizzo di questa istruzione e l'indirizzo dove si trova la stringa.
+Questa differenza (offset) sara' sempre la stessa, a prescindere dall'indirizzo in cui nostro codice sara' caricato dall'\ac{OS}.
+Cio' spiega perche' bisogna soltanto aggiungere l'indirizzo dell'istruzione corrente (from \ac{PC}) per ottenere l'indirizzo assoluto in memoria della nostra stringa C.
+
+\myindex{ARM!\Registers!Link Register}
+\myindex{ARM!\Instructions!BL}
+L'istruzione \INS{BL \_\_2printf}\footnote{Branch with Link} chiama la funzione \printf. 
+Questa istruzione funziona cosi': 
+\begin{itemize}
+\item memorizza l'indirizzo successivo all'istruzione \INS{BL} (\TT{0xC}) nel registro \ac{LR};
+\item quindi passa il controllo a \printf scrivendo il suo indirizzo nel registro \ac{PC}.
+\end{itemize}
+
+Quando la funzione \printf termina la sua esecuzione, deve sapere a chi restituire il controllo (dove ritornare). Per questo motivo ogni funzione passa il controllo all'indirizzo memorizzato nel registro \ac{LR}.
+
+Questa e' una differenza tra processori \ac{RISC} \q{puri} come ARM e processori simili a \ac{CISC} come x86, nei quali il return address e' solitamente memorizzato nello stack
+\footnote{Maggiori informazioni si trovano nella prossima sezione~(\myref{sec:stack})}.
+
+A proposito, un indirizzo assoluto o un offset a 32-bit non puo' essere codificato nell'istruzione a 32-bit \TT{BL} poiche' ha solo spazio per 24 bit.
+Come potremmo ricordare, tutte le istruzioni in ARM-mode hanno dimensione fissa di 4 byte (32 bit).
+Dunque possono essere collocate solo su indirizzi allineati a 4-byte.
+Cio' implica che gli ultimi 2 bits dell'indirizzo dell'istruzione (che sono sempre zero) possono essere omessi.
+Abbiamo in definitiva 26 bit per la codifica dell'offset (offset encoding). E cio e' sufficiente per codificare $current\_PC \pm{} \approx{}32M$.
+
+\myindex{ARM!\Instructions!MOV}
+L'istruzione successiva, \INS{MOV R0, \#0}\footnote{\ITAph{} MOVe} scrive soltanto 0 nel registro \Reg{0}.
+Questo succede perche' la nostra funzione C restituisce 0, ed il valore di ritorno deve essere memorizzato nel registro \Reg{0}.
+
+\myindex{ARM!\Registers!Link Register}
+\myindex{ARM!\Instructions!LDMFD}
+\myindex{ARM!\Instructions!POP}
+L'ultima istruzione \INS{LDMFD SP!, {R4,PC}}\footnote{\ac{LDMFD} e' l'istruzione inversa rispetto a  \ac{STMFD}}.
+Carica i valori dallo stack (o qualunque altra zona di memoria) per salvarli nei registri \Reg{4} e \ac{PC}, e \glslink{increment}{incrementa} lo \gls{stack pointer} \ac{SP}.
+In questo caso funziona come \POP.\\
+N.B. La prima istruzione \TT{STMFD} aveva salvato la coppia di registri \Reg{4} e \ac{LR} sullo stack, ma \Reg{4} e \ac{PC} vengono \IT{ripristinati} durante l'esecuzione di \TT{LDMFD}.
+
+Come gia' sappiamo, l'indirizzo del posto a cui ogni funzione devere restituire il controllo e' solitamente salvato nel registro \ac{LR}.
+La prima istruzione salva il suo valore nello stack perche' lo stesso registro sara' usato dalla nostra funzione \main per la chiamata a \printf.
+Al termine della funzione, questo valore puo' essere scritto direttamente nel registro \ac{PC}, passando di fatti il controllo al punto in cui la nostra funzione era stata chiamata.
+
+Dal momento che \main e' solitamente la funzione principale in \CCpp,
+il controllo sara' restituito al loader dell' \ac{OS} oppure ad un punto in una \ac{CRT},
+o qualcosa del genere.
+
+Tutto cio' consente di omettere l'istruzione \TT{BX LR} alla fine della funzione.
+
+\myindex{ARM!DCB}
+\TT{DCB} e' una direttiva assembly che definisce un array di byte o una stringa ASCII, analoga alla direttiva DB in linguaggio assembly x86.
+

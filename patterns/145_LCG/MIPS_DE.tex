@@ -1,0 +1,56 @@
+\subsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/145_LCG/MIPS_O3_IDA_DE.lst}
+Hier sehen wir nur eine Konstante (0x3C6EF35F oder 1013904223).
+Wo befindet sich die andere (1664525)?
+
+Es scheint, dass die Multiplikation mit 1664525 nur durch Verschieben und Addieren durchgeführt wird.
+Überprüfen wir diese Vermutung:
+
+\lstinputlisting[style=customc]{patterns/145_LCG/test.c}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/145_LCG/test_O3_MIPS.lst}
+
+Tatsächlich!
+
+\subsubsection{MIPS Relocation}
+Wir werden uns auch anschauen wie solche Operationen wie das Laden und Werten aus dem Speicher und das Speichern
+tatsächlich funktionieren.
+
+Die Listings wurden mit IDA erzeugt, was einige Details versteckt.
+
+Wir lassen objdump zweimal laufen: um das disassemblierte Listing und die Relocation List zu erhalten:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (objdump)]{patterns/145_LCG/MIPS_O3_objdump.txt}
+Betrachten wir die beiden Relocations für die Funktion \TT{my\_srand()}.
+
+Die erste für die Adresse 0 hat den Typ \TT{R\_MIPS\_HI16}.
+Die zweite für die Adresse 8 hat den Typ \TT{R\_MIPS\_LO16}.
+
+Das bedeutet, dass die Adresse zu Beginn des .bss Segments zu den Befehlen an der Adresse 0 (höherer Teil der Adresse)
+bzw. 8 (niederer Teil der Adresse) geschrieben wird.
+
+Die Variable \TT{rand\_state} befindet sich ganz am Anfang des .bss Segments.
+
+Wir finden hier Nullen in den Operanden der Befehle \LUI und \SW, da sich hier noch nichts befindet---der Compiler weiß
+noch nicht was hier hingeschrieben werden soll.
+
+Der Linker wird dieses Problem beheben und der höhere Teil der Adresse wird in den Operanden von \LUI geschriebne und
+der niedere Teil der Adresse in den Operanden von \SW.
+
+\SW addiert den niederen Teil der Adresse und den Inhalt des Registers \$V0 (hier befindet sich der höhere Teil).
+
+Das gleiche geschieht mit der Funktion \TT{my\_rand()}: Die R\_MIPS\_HI16 Relocation teilt dem Linker mit, dass der
+höhere Teil der Adresse des .bss Segments in den Befehl \LUI geschrieben wird.
+
+Der höhere Teil der Adresse der Variablen rand\_state befindet sich im Register \$V1.
+
+Der Befehl \LW an der Adresse 0x10 addiert den höheren und niederen Teil und lädt den Wert der Variablen rand\_state
+nach \$V0.
+
+Der Befehl \SW an der Adresse 0x54 summiert erneut auf und speichert dann den neuen Wert in der globale Variable
+rand\_state.
+
+\IDA arbeitet die Relocations beim Laden ab, sodass diese Details verborgen bleiben, aber wir sollten wissen, dass es
+sie gibt.
+% TODO add example of compiled binary, GDB example, etc...

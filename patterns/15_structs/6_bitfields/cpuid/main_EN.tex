@@ -1,0 +1,76 @@
+\subsubsection{CPUID example}
+
+The \CCpp language allows to define the exact number of bits for each structure field.
+It is very useful if one needs to save memory space. 
+For example, one bit is enough for a \Tbool variable.
+But of course, it is not rational if speed is important.
+% FIXME!
+% another use of this is to parse binary protocols/packets, for example
+% the definition of struct iphdr in include/linux/ip.h
+
+\newcommand{\FNCPUID}{\footnote{\href{http://go.yurichev.com/17069}{wikipedia}}}
+
+\myindex{x86!\Instructions!CPUID}
+\label{cpuid}
+
+Let's consider the \CPUID\FNCPUID instruction example.
+This instruction returns information about the current CPU and its features.
+
+If the \EAX is set to 1 before the instruction's execution, 
+\CPUID returning this information packed into the \EAX register:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+3:0 (4 bits)& Stepping \\
+7:4 (4 bits) & Model \\
+11:8 (4 bits) & Family \\
+13:12 (2 bits) & Processor Type \\
+19:16 (4 bits) & Extended Model \\
+27:20 (8 bits) & Extended Family \\
+\hline
+\end{tabular}
+\end{center}
+
+\newcommand{\FNGCCAS}{\footnote{\href{http://go.yurichev.com/17070}
+{More about internal GCC assembler}}}
+
+MSVC 2010 has \CPUID macro, but GCC 4.4.1 does not.
+So let's make this function by ourselves for GCC with the help of its built-in assembler\FNGCCAS.
+
+\lstinputlisting[style=customc]{patterns/15_structs/6_bitfields/cpuid/CPUID.c}
+
+After \CPUID fills \EAX/\EBX/\ECX/\EDX, these registers are to be written in the \TT{b[]} array.
+Then, we have a pointer to the \TT{CPUID\_1\_EAX} structure and we point it to the value in \EAX from the \TT{b[]} array.
+
+In other words, we treat a 32-bit \Tint value as a structure.
+Then we read specific bits from the structure.
+
+\myparagraph{MSVC}
+
+Let's compile it in MSVC 2008 with \Ox option:
+
+\lstinputlisting[caption=\Optimizing MSVC 2008,style=customasmx86]{patterns/15_structs/6_bitfields/cpuid/CPUID_msvc_Ox.asm}
+
+\myindex{x86!\Instructions!SHR}
+
+The \TT{SHR} instruction shifting the value in \EAX by the number of bits that must be
+\IT{skipped}, e.g., we ignore some bits \IT{at the right side}.
+
+\myindex{x86!\Instructions!AND}
+
+The \AND instruction clears the unneeded bits \IT{on the left}, or, in other words, 
+leaves only those bits in the \EAX register we need.
+
+\input{patterns/15_structs/6_bitfields/cpuid/olly_EN.tex}
+
+\myparagraph{GCC}
+
+Let's try GCC 4.4.1 with \Othree option.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.1,style=customasmx86]{patterns/15_structs/6_bitfields/cpuid/CPUID_gcc_O3.asm}
+
+Almost the same.
+The only thing worth noting is that GCC somehow combines the calculation of\\
+\TT{extended\_model\_id} and \TT{extended\_family\_id} into one block,
+instead of calculating them separately before each \printf call.

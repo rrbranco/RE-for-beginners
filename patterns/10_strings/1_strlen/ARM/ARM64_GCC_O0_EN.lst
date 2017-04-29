@@ -1,0 +1,32 @@
+my_strlen:
+; function prologue
+	sub	sp, sp, #32
+; first argument (str) will be stored in [sp,8]
+	str	x0, [sp,8]
+	ldr	x0, [sp,8]
+; copy "str" to "eos" variable
+	str	x0, [sp,24]
+	nop
+.L62:
+; eos++
+	ldr	x0, [sp,24]  ; load "eos" to X0
+	add	x1, x0, 1    ; increment X0
+	str	x1, [sp,24]  ; save X0 to "eos"
+; load byte from memory at address in X0 to W0
+	ldrb	w0, [x0]
+; is it zero? (WZR is the 32-bit register always contain zero)
+	cmp	w0, wzr
+; jump if not zero (Branch Not Equal)
+	bne	.L62
+; zero byte found. now calculate difference.
+; load "eos" to X1
+	ldr	x1, [sp,24]
+; load "str" to X0
+	ldr	x0, [sp,8]
+; calculate difference
+	sub	x0, x1, x0
+; decrement result
+	sub	w0, w0, #1
+; function epilogue
+	add	sp, sp, 32
+	ret

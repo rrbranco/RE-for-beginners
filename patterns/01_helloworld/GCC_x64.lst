@@ -1,0 +1,9 @@
+.text:00000000004004D0                  main  proc near
+.text:00000000004004D0 48 83 EC 08      sub     rsp, 8
+.text:00000000004004D4 BF E8 05 40 00   mov     edi, offset format ; "hello, world\n"
+.text:00000000004004D9 31 C0            xor     eax, eax
+.text:00000000004004DB E8 D8 FE FF FF   call    _printf
+.text:00000000004004E0 31 C0            xor     eax, eax
+.text:00000000004004E2 48 83 C4 08      add     rsp, 8
+.text:00000000004004E6 C3               retn
+.text:00000000004004E6                  main  endp

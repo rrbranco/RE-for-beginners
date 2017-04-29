@@ -1,0 +1,44 @@
+\subsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5,style=customasmMIPS]{patterns/05_passing_arguments/MIPS_O3_IDA_EN.lst}
+
+The first four function arguments are passed in four registers prefixed by A-.
+
+\myindex{MIPS!\Instructions!MULT}
+
+There are two special registers in MIPS: HI and LO which are filled with the 64-bit result of the multiplication during the execution of the \TT{MULT} instruction.
+\myindex{MIPS!\Instructions!MFLO}
+\myindex{MIPS!\Instructions!MFHI}
+
+These registers are accessible only by using the \TT{MFLO} and \TT{MFHI} instructions.
+\TT{MFLO} here takes the low-part of the multiplication result and stores it into \$V0.
+So the high 32-bit part of the multiplication result is dropped (the HI register content is not used).
+Indeed: we work with 32-bit \Tint data types here.
+
+\myindex{MIPS!\Instructions!ADDU}
+
+Finally, \TT{ADDU} (\q{Add Unsigned}) adds the value of the third argument to the result.
+
+\myindex{MIPS!\Instructions!ADD}
+\myindex{MIPS!\Instructions!ADDU}
+\myindex{Ada}
+\myindex{Integer overflow}
+
+There are two different addition instructions in MIPS: \TT{ADD} and \TT{ADDU}.
+The difference between them is not related to signedness, but to exceptions. \TT{ADD} can raise an exception on overflow, which is sometimes useful\footnote{\url{http://go.yurichev.com/17326}} and supported in Ada \ac{PL}, for instance.
+\TT{ADDU} does not raise exceptions on overflow.
+
+Since \CCpp does not support this, in our example we see \TT{ADDU} instead of \TT{ADD}.
+
+The 32-bit result is left in \$V0.
+
+\myindex{MIPS!\Instructions!JAL}
+\myindex{MIPS!\Instructions!JALR}
+
+There is a new instruction for us in \main: \TT{JAL} (\q{Jump and Link}). 
+
+The difference between \INS{JAL} and \INS{JALR} is that a relative offset is encoded in the first instruction, 
+while \INS{JALR} jumps to the absolute address stored in a register (\q{Jump and Link Register}).
+
+Both \ttf and \main functions are located in the same object file, so the relative address of \ttf 
+is known and fixed.

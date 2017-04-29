@@ -1,0 +1,23 @@
+* Compiling on Ubuntu (checked way)
+
+1) Get all the packages listed in .travis.yml file.
+
+2) For all versions (Russian, English):
+   make all
+
+   For English-only version:
+   make EN
+
+   For Russian-only version:
+   make RU
+
+* Compiling on Mac OS X 10.8 (unchecked)
+
+1) Get MacTeX: https://www.tug.org/mactex/
+
+2) Run make as it has been described before.
+
+* Windows (unchecked)
+
+Install TeXlive and use Cygwin.
+

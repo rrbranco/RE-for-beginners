@@ -1,0 +1,48 @@
+main:
+
+; IDA is not aware of variable names in local stack
+; We gave them names manually:
+i               = -0x10
+saved_FP        = -8
+saved_RA        = -4
+
+; function prologue:
+                addiu   $sp, -0x28
+                sw      $ra, 0x28+saved_RA($sp)
+                sw      $fp, 0x28+saved_FP($sp)
+                move    $fp, $sp
+; initialize counter at 2 and store this value in local stack
+                li      $v0, 2
+                sw      $v0, 0x28+i($fp)
+; pseudoinstruction. "BEQ $ZERO, $ZERO, loc_9C" there in fact:
+                b       loc_9C
+                or      $at, $zero ; branch delay slot, NOP
+
+loc_80:                                  # CODE XREF: main+48
+; load counter value from local stack and call printing_function():
+                lw      $a0, 0x28+i($fp)
+                jal     printing_function
+                or      $at, $zero ; branch delay slot, NOP
+; load counter, increment it, store it back:
+                lw      $v0, 0x28+i($fp)
+                or      $at, $zero ; NOP
+                addiu   $v0, 1
+                sw      $v0, 0x28+i($fp)
+
+loc_9C:                                  # CODE XREF: main+18
+; check counter, is it 10?
+                lw      $v0, 0x28+i($fp)
+                or      $at, $zero ; NOP
+                slti    $v0, 0xA
+; if it is less than 10, jump to loc_80 (loop body begin):
+                bnez    $v0, loc_80
+                or      $at, $zero ; branch delay slot, NOP
+; finishing, return 0:
+                move    $v0, $zero
+; function epilogue:
+                move    $sp, $fp
+                lw      $ra, 0x28+saved_RA($sp)
+                lw      $fp, 0x28+saved_FP($sp)
+                addiu   $sp, 0x28
+                jr      $ra
+                or      $at, $zero ; branch delay slot, NOP

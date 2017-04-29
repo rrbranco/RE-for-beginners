@@ -1,0 +1,63 @@
+\subsection{MIPS}
+
+\subsubsection{3 argomenti}
+
+\myparagraph{\Optimizing GCC 4.4.5}
+
+La differenza principale con l'esempio \q{\HelloWorldSectionName} e' che in questo caso \printf e' chiamata 
+al posto di \puts, e 3 argomenti aggiuntivi sono passati attraverso i registri \$5\dots \$7 (o \$A0\dots \$A2).
+Questo e' il motivo per cui questi registri hanno il prefisso A-, che implica il loro uso per il passaggio di argomenti di funzioni.
+
+% TODO translate to Italian:
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O3_EN.s}
+
+% TODO translate to Italian:
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O3.IDA_EN.lst}
+
+\IDA ha fuso le coppie di istruzioni \INS{LUI} e \INS{ADDIU} in una unica pseudoistruzione \INS{LA}.
+Questo e' il motivo per cui non c'e' nessuna istruzione all'indirizzo 0x1C: perche' \INS{LA} \IT{occupa} 8 byte.%
+
+\myparagraph{\NonOptimizing GCC 4.4.5}
+
+\NonOptimizing GCC e' piu' verboso:
+
+% TODO translate to Italian:
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O0_EN.s}
+
+% TODO translate to Italian:
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf3.O0.IDA_EN.lst}
+
+\subsubsection{8 argomenti}
+
+Usiamo nuovamente l'esempio con 9 argomenti dalla sezione prcedente: \myref{example_printf8_x64}.
+
+\lstinputlisting[style=customc]{patterns/03_printf/2.c}
+
+\myparagraph{\Optimizing GCC 4.4.5}
+
+Solo i primi 4 argomenti sono passati nei registri \$A0 \dots \$A3, gli altri sono passati tramite lo stack.
+\myindex{MIPS!O32}
+
+Questa e' la calling convention O32 (che e' la piu' comune nel mondo MIPS).
+Altre calling conventions (come N32) possono usare i registri per scopi diversi.
+
+\myindex{MIPS!\Instructions!SW}
+
+\INS{SW} e' l'abbreviazione di \q{Store Word} (da un registro alla memoria).
+MIPS manca di istruzioni per memorizzare un valore in memoria, e' quindi necessario usare una coppia di istruzioni (LI/SW).
+
+% TODO translate to Italian:
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O3_EN.s}
+
+% TODO translate to Italian:
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O3.IDA_EN.lst}
+
+\myparagraph{\NonOptimizing GCC 4.4.5}
+
+\NonOptimizing GCC e' piu' verboso:
+
+% TODO translate to Italian:
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O0_EN.s}
+
+% TODO translate to Italian:
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/03_printf/MIPS/printf8.O0.IDA_EN.lst}

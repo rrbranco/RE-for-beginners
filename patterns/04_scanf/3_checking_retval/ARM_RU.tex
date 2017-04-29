@@ -1,0 +1,33 @@
+\subsubsection{ARM}
+
+\myparagraph{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode)style=customasmARM]{patterns/04_scanf/3_checking_retval/ex3_ARM_Keil_thumb_O3.asm}
+
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!BEQ}
+Здесь для нас есть новые инструкции: \CMP и \ac{BEQ}.
+
+\CMP аналогична той что в x86: она отнимает один аргумент от второго и сохраняет флаги.
+
+% TODO: в мануале ARM $op1 + NOT(op2) + 1$ вместо вычитания
+
+\myindex{ARM!\Registers!Z}
+\myindex{x86!\Instructions!JZ}
+\ac{BEQ} совершает переход по другому адресу, 
+если операнды при сравнении были равны, 
+либо если результат последнего вычисления был 0, либо если флаг Z равен 1.
+То же что и \JZ в x86.
+
+Всё остальное просто: исполнение разветвляется на две ветки, затем они сходятся там, 
+где в \Reg{0} записывается 0 как возвращаемое из функции значение и происходит выход из функции.
+
+\myparagraph{ARM64}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1 ARM64,numbers=left,style=customasmARM]{patterns/04_scanf/3_checking_retval/ARM64_GCC491_O0_RU.s}
+
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!Bcc}
+
+Исполнение здесь разветвляется, используя пару инструкций \INS{CMP}/\INS{BNE} (Branch if Not Equal: переход если не равно).
+

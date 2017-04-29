@@ -1,0 +1,18 @@
+my_strlen:
+; "eos" Variable bleibt stets in $v1:
+                move    $v1, $a0
+
+loc_4:
+; lade Byte von der Adresse in "eos" nach $a1:
+                lb      $a1, 0($v1)
+                or      $at, $zero ; lade delay slot, NOP
+; ist das geladene Byte ungleich 0, springe nach loc_4:
+                bnez    $a1, loc_4
+; erhöhe "eos" in jedem Falle:
+                addiu   $v1, 1 ; branch delay slot
+; Schleife beendet. Invertiere "str" Variable:
+                nor     $v0, $zero, $a0
+; $v0=-str-1
+                jr      $ra
+; return value = $v1 + $v0 = eos + ( -str-1 ) = eos - str - 1
+                addu    $v0, $v1, $v0 ; branch delay slot

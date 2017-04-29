@@ -1,0 +1,53 @@
+\subsubsection{x86}
+
+\myparagraph{\NonOptimizing MSVC}
+
+Wir erhalten (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/08_switch/2_lot/lot_msvc_DE.asm}
+
+\myindex{jumptable}
+Was wir hier sehen ist eine Ansammlung von Aufrufen von \printf mit diversen Argumenten.
+Alle haben nicht Adressen im Speicher des Prozesses, sondern auch interne symbolische Labels, die ihnen vom Compiler
+zugewiesen werden.
+Alle diese Labels werden auch in der internen Tabelle \TT{\$LN11@f} aufgeführt. 
+
+Zu Beginn der Funktion wird der Control Flow an das Label \TT{\$LN1@f} abgegeben, wenn $a$ größer ist als 4. An diesem
+Label wird \printf mit dem Argument \TT{'something unknown'} aufgerufen.
+
+Wenn aber der Wert von $a$ kleiner gleich 4 ist, dann wird dieser mit 4 multipliziert und mit der Tabellenadresse
+\TT{\$LN11@f} addiert. Auf diese Weise wird die Adresse innerhalb der Tabelle konstruiert und zeigt genau auf das
+gewünschte Element. Nehmen wir zum Beispiel an, dass $a$ gleich 2 ist. $2\cdot 4=8$ (alle Tabellenelemente sind
+Adressen in einem 32-Bit-Prozess und haben daher eine Breite von 4 Bytes).
+Die Adresse an der Stelle \TT{\$LN11@f} + 8 ist das Tabellenelement, an dem das Label \TT{\$LN4@f} gespeichert ist.
+\JMP holt die Adresse \TT{\$LN4@f} aus der Tabelle und springt dorthin.
+
+Diese Tabelle wird manchmal \IT{Jumptable} oder \IT{Verzweigungstabelle} genannt\footnote{Die ganze Methode wurde
+in früheren Versionen von Fortran \IT{berechnetes GOTO} genannt:
+\href{http://go.yurichev.com/17122}{wikipedia}.
+Heutzutage zwar nicht mehr relevant, aber welch ein Ausdruck!}.
+
+Dann wird das zugehörige \printf mit dem Argument \TT{'two'} aufgerufen.\\
+Der Befehl TT{jmp DWORD PTR \$LN11@f[ecx*4]} bedeutet dabei \IT{springe zum an dieser Stelle gespeicherten
+DWORD}\TT{\$LN11@f + ecx * 4}.
+
+\TT{npad} (\myref{sec:npad}) ist ein Assemblermakro, dass das nächste Label so angeordnet, dass es an einer 4 Byte
+(oder 16 Bit) Adressgrenze gespeichert wird. Das ist für den Prozessor sehr praktisch, da er die 32-Bit-Werte aus dem
+Speicher durch den Speicherbus, den Cache, etc. in effektiverer Weise laden kann.
+
+\input{patterns/08_switch/2_lot/olly_DE}
+
+\myparagraph{\NonOptimizing GCC}
+\label{switch_lot_GCC}
+
+Schauen wir was GCC 4.4.1 erzeugt:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/08_switch/2_lot/lot_gcc.asm}
+
+\myindex{x86!\Registers!JMP}
+Es ist bis auf eine Nuance das gleiche: das Argument \TT{arg\_0} wird mit 4 multipliziert durch eine Verschiebung von 2
+Bits nach links (dies entspricht einer Multiplikation mit 4)~(\myref{SHR}).
+Dann wird die Adresse des Labels vom \TT{off\_804855C} genommen, die in \EAX gespeichert wird, und dann wird mit
+\TT{JMP EAX} der eigentliche Sprung durchgeführt.
+
+

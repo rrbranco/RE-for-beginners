@@ -1,0 +1,91 @@
+.data:0040169C _51_52_53       dd offset aPressAnyKeyT_0 ; DATA XREF: init_sys+392r
+.data:0040169C                                         ; sys_info+A1r
+.data:0040169C                                         ; "PRESS ANY KEY TO CONTINUE: "
+.data:004016A0                 dd offset a51           ; "51"
+.data:004016A4                 dd offset a52           ; "52"
+.data:004016A8                 dd offset a53           ; "53"
+
+...
+
+.data:004016B8 _3C_or_3E       dd offset a3c           ; DATA XREF: sys_info:loc_D67Br
+.data:004016B8                                         ; "3C"
+.data:004016BC                 dd offset a3e           ; "3E"
+
+; these names we gave to the labels:
+.data:004016C0 answers1        dd 6B05h                ; DATA XREF: sys_info+E7r
+.data:004016C4                 dd 3D87h
+.data:004016C8 answers2        dd 3Ch                  ; DATA XREF: sys_info+F2r
+.data:004016CC                 dd 832h
+.data:004016D0 _C_and_B        db 0Ch                  ; DATA XREF: sys_info+BAr
+.data:004016D0                                         ; sys_info:OKr
+.data:004016D1 byte_4016D1     db 0Bh                  ; DATA XREF: sys_info+FDr
+.data:004016D2                 db    0
+
+...
+
+.text:0000D652                 xor     eax, eax
+.text:0000D654                 mov     al, ds:ctl_port
+.text:0000D659                 mov     ecx, _51_52_53[eax*4]
+.text:0000D660                 push    ecx
+.text:0000D661                 call    SSQ
+.text:0000D666                 add     esp, 4
+.text:0000D669                 cmp     eax, 0FFFFFFFFh
+.text:0000D66E                 jz      short loc_D6D1
+.text:0000D670                 xor     ebx, ebx
+.text:0000D672                 mov     al, _C_and_B
+.text:0000D677                 test    al, al
+.text:0000D679                 jz      short loc_D6C0
+.text:0000D67B
+.text:0000D67B loc_D67B: ; CODE XREF: sys_info+106j
+.text:0000D67B                 mov     eax, _3C_or_3E[ebx*4]
+.text:0000D682                 push    eax
+.text:0000D683                 call    SSQ
+.text:0000D688                 push    offset a4g      ; "4G"
+.text:0000D68D                 call    SSQ
+.text:0000D692                 push    offset a0123456789 ; "0123456789"
+.text:0000D697                 call    SSQ
+.text:0000D69C                 add     esp, 0Ch
+.text:0000D69F                 mov     edx, answers1[ebx*4]
+.text:0000D6A6                 cmp     eax, edx
+.text:0000D6A8                 jz      short OK
+.text:0000D6AA                 mov     ecx, answers2[ebx*4]
+.text:0000D6B1                 cmp     eax, ecx
+.text:0000D6B3                 jz      short OK
+.text:0000D6B5                 mov     al, byte_4016D1[ebx]
+.text:0000D6BB                 inc     ebx
+.text:0000D6BC                 test    al, al
+.text:0000D6BE                 jnz     short loc_D67B
+.text:0000D6C0
+.text:0000D6C0 loc_D6C0: ; CODE XREF: sys_info+C1j
+.text:0000D6C0                 inc     ds:ctl_port
+.text:0000D6C6                 xor     eax, eax
+.text:0000D6C8                 mov     al, ds:ctl_port
+.text:0000D6CD                 cmp     eax, edi
+.text:0000D6CF                 jle     short loc_D652
+.text:0000D6D1
+.text:0000D6D1 loc_D6D1: ; CODE XREF: sys_info+98j
+.text:0000D6D1           ; sys_info+B6j
+.text:0000D6D1                 mov     edx, [ebp+var_8]
+.text:0000D6D4                 inc     edx
+.text:0000D6D5                 mov     [ebp+var_8], edx
+.text:0000D6D8                 cmp     edx, 3
+.text:0000D6DB                 jle     loc_D641
+.text:0000D6E1
+.text:0000D6E1 loc_D6E1: ; CODE XREF: sys_info+16j
+.text:0000D6E1           ; sys_info+51j ...
+.text:0000D6E1                 pop     ebx
+.text:0000D6E2                 pop     edi
+.text:0000D6E3                 mov     esp, ebp
+.text:0000D6E5                 pop     ebp
+.text:0000D6E6                 retn
+.text:0000D6E8 OK:       ; CODE XREF: sys_info+F0j
+.text:0000D6E8           ; sys_info+FBj
+.text:0000D6E8                 mov     al, _C_and_B[ebx]
+.text:0000D6EE                 pop     ebx
+.text:0000D6EF                 pop     edi
+.text:0000D6F0                 mov     ds:ctl_model, al
+.text:0000D6F5                 mov     esp, ebp
+.text:0000D6F7                 pop     ebp
+.text:0000D6F8                 retn
+.text:0000D6F8 sys_info        endp
+

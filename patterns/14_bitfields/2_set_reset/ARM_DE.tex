@@ -1,0 +1,130 @@
+\subsubsection{ARM + \OptimizingKeilVI (\ARMMode)}
+
+\begin{lstlisting}[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]
+02 0C C0 E3          BIC     R0, R0, #0x200
+01 09 80 E3          ORR     R0, R0, #0x4000
+1E FF 2F E1          BX      LR
+\end{lstlisting}
+
+\myindex{ARM!\Instructions!BIC}
+Der Befehl \INS{BIC} (\IT{BItwise bit Clear}) dient zum Löschen spezifischer
+Bits. Er arbeitet wie ein \AND Befehl mit invertierten Operanden. Er entspricht
+also einem \NOT+\AND Befehlspaar.
+
+\myindex{ARM!\Instructions!ORR}
+\INS{ORR} bedeutet \q{logical or} und ist analog zu \OR in x86.
+
+So weit, so gut.
+
+\subsubsection{ARM + \OptimizingKeilVI (\ThumbMode)}
+
+\begin{lstlisting}[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]
+01 21 89 03          MOVS    R1, 0x4000
+08 43                ORRS    R0, R1
+49 11                ASRS    R1, R1, #5   ; erzeuge 0x200 und speichere in R1
+88 43                BICS    R0, R1
+70 47                BX      LR
+\end{lstlisting}
+Es scheint, dass Keil enschieden hat, dass der Code im Thumn mode, der
+\TT{0x200} statt \TT{0x4000} verwendet, kompakter ist, als einer, der \TT{0x200}
+in ein beliebiges Register schreibt.
+
+% TODO1 пример, как компилятор при помощи сдвигов оптизирует такое: a=0x1000; b=0x2000; c=0x4000, etc
+
+\myindex{ARM!\Instructions!ASRS}
+Das ist der Grund dafür, dass dieser Wert mithilfe von \INS{ASRS} (\ASRdesc) als
+$\TT{0x4000} \gg 5$ berechnet wird.
+
+\subsubsection{ARM + \OptimizingXcodeIV (\ARMMode)}
+\label{anomaly:LLVM}
+\myindex{\CompilerAnomaly}
+
+\begin{lstlisting}[caption=\OptimizingXcodeIV (\ARMMode),label=ARM_leaf_example3,style=customasmARM]
+42 0C C0 E3          BIC             R0, R0, #0x4200
+01 09 80 E3          ORR             R0, R0, #0x4000
+1E FF 2F E1          BX              LR
+\end{lstlisting}
+
+Der Code, der von LLVM erzeugt wurde, könnte als Quellcode etwa wie folgt
+ausgesehen haben:
+
+\begin{lstlisting}[style=customc]
+    REMOVE_BIT (rt, 0x4200);
+    SET_BIT (rt, 0x4000);
+\end{lstlisting}
+Er macht genau das, was wir erwarten. Aber woher das \TT{0x4200}? Möglicherweise
+handelt es sich um ein Artefakt des Optimierers von LLVM.
+
+\footnote{Hier wurde der LLVM Build 2410.2.00 mit Apple Xcode 4.6.3 gebündelt}.
+Möglicherweise also ein Fehler des Optimierers im Compiler; aber der erzeugte
+Code funktioniert trotzdem korrekt.
+
+Mehr zu Compiler-Anomalien hier:~(\myref{anomaly:Intel}).
+
+\OptimizingXcodeIV im Thumb mode erzeugt identischen Code.
+
+\subsubsection{ARM: Mehr zum Befehl \INS{BIC}}
+\myindex{ARM!\Instructions!BIC}
+
+Überarbeiten wir unser Beispiel ein wenig:
+
+\begin{lstlisting}[style=customc]
+int f(int a)
+{
+    int rt=a;
+
+    REMOVE_BIT (rt, 0x1234);
+
+    return rt;
+};
+\end{lstlisting}
+
+Jetzt erzeugt der optimierende Keil 5.03 im ARM mode folgenden Code:
+
+\begin{lstlisting}[style=customasmARM]
+f PROC
+        BIC      r0,r0,#0x1000
+        BIC      r0,r0,#0x234
+        BX       lr
+        ENDP
+\end{lstlisting}
+Es gibt zwei \INS{BIC} Befehle, d.h. die Bits \TT{0x1234} werden in zwei
+Durchgängen gelöscht.
+
+Das liegt daran, dass es nicht möglich ist, \TT{0x1234} in einem einzigen
+\INS{BIC} Befehl zu kodieren; deshalb müssen \TT{0x1000} und \TT{0x234} getrennt
+werden.
+
+\subsubsection{ARM64: \Optimizing GCC (Linaro) 4.9}
+
+\Optimizing GCCcompiling für ARM64 kann den Befehl \AND anstelle von
+\INS{BIC} verwenden:
+
+\begin{lstlisting}[caption=\Optimizing GCC (Linaro) 4.9,style=customasmARM]
+f:
+	and	w0, w0, -513	; 0xFFFFFFFFFFFFFDFF
+	orr	w0, w0, 16384	; 0x4000
+	ret
+\end{lstlisting}
+
+\subsubsection{ARM64: \NonOptimizing GCC (Linaro) 4.9}
+
+\NonOptimizing GCC erzeugt mehr redundanten Code; dieser funktiniert aber wie
+die optimierte Variante:
+
+\begin{lstlisting}[caption=\NonOptimizing GCC (Linaro) 4.9,style=customasmARM]
+f:
+	sub	sp, sp, #32
+	str	w0, [sp,12]
+	ldr	w0, [sp,12]
+	str	w0, [sp,28]
+	ldr	w0, [sp,28]
+	orr	w0, w0, 16384	; 0x4000
+	str	w0, [sp,28]
+	ldr	w0, [sp,28]
+	and	w0, w0, -513	; 0xFFFFFFFFFFFFFDFF
+	str	w0, [sp,28]
+	ldr	w0, [sp,28]
+	add	sp, sp, 32
+	ret
+\end{lstlisting}

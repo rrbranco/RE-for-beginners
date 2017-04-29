@@ -1,0 +1,128 @@
+\subsubsection{x86}
+
+\myparagraph{x86 + MSVC}
+
+Die Funktions \TT{f\_signed()} sieht folgendermaßen aus:
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2010,style=customasmx86]{patterns/07_jcc/simple/signed_MSVC.asm}
+
+\myindex{x86!\Instructions!JLE}
+Der erste Befehl, \JLE steht für \IT{Jump if Less or Equal}.
+Mit anderen Worten, wenn der zweite Operand größer gleich dem ersten ist, wird der Control Flow an die angegebene
+Adresse bzw. das angegebene Label übergeben.
+Wenn die Bedingung falsch ist, weil der zweite Operand kleiner ist als der erste, wird der Control Flow nicht verändert
+und das erste \printf wird ausgeführt.
+
+Tmyindex{x86!\Instructions!JNE}
+Der zweite Check ist \JNE: \IT{Jump if Not Equal}.
+Der Control Flow wird nicht verändert, wenn die Operanden gleich sind.
+
+\myindex{x86!\Instructions!JGE}
+Der dritte Check ist \JGE: \IT{Jump if Greater or Equal}---springe, falls der erste Operand größer gleich dem zweiten
+ist.
+Wenn also alle drei bedingten Sprünge ausgeführt werden, wird also kein Aufruf von \printf ausgeführt.
+Dies ist ohne manuellen Eingriff unmöglich.
+Werfen wir nun einen Blick auf die Funktion \TT{f\_unsigned()}.
+Diese Funktion macht prinzipiell das gleiche wie \TT{f\_signed()} mit der Ausnahme, dass die Befehle \JBE und \JAE
+anstelle von \JLE und \JGE wie folgt verwendet werden:
+
+\lstinputlisting[caption=GCC,style=customasmx86]{patterns/07_jcc/simple/unsigned_MSVC.asm}
+
+\myindex{x86!\Instructions!JBE}
+\myindex{x86!\Instructions!JAE}
+Wie bereits erwähnt unterscheiden sich die Verzweigungsbefehle:
+\JBE---\IT{Jump if Below or Equal} und \JAE---\IT{Jump if Above or Equal}.
+Diese Befehle (\JA/\JAE/\JB/\JBE) unterscheiden sich von \JG/\JGE/\JL/\JLE dadurch, dass sie mit vorzeichenlosen Zahlen
+arbeiten.
+
+\myindex{x86!\Instructions!JA}
+\myindex{x86!\Instructions!JB}
+\myindex{x86!\Instructions!JG}
+\myindex{x86!\Instructions!JL}
+\myindex{Signed numbers}
+Siehe hierzu auch den Abschnitt über Darstellung vorzeichenbehafteter Zahlen~(\myref{sec:signednumbers}).
+Das ist der Grund warum wir, wenn wir \JG/\JL anstelle von \JA/\JB und umgekehrt finden, fast mit Gewissheit sagen
+können, dass die Variablen vorzeichenbehaftet bzw. vorzeichenlos sind.
+Hier befindet sich auch die Funktion \main, welche für uns nichts Neues bereithält:
+
+\lstinputlisting[caption=\main,style=customasmx86]{patterns/07_jcc/simple/main_MSVC.asm}
+
+\input{patterns/07_jcc/simple/olly_EN.tex}
+
+\clearpage
+\myparagraph{x86 + MSVC + Hiew}
+\myindex{Hiew}
+Wir können versuchen, die Executable so zu verändern, dass die Funktion \TT{f\_unsigned()} stets \q{a==b} ausgibt, egal
+was wir eingben.
+So sieht das ganze in Hiew aus:
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/hiew_unsigned1.png}
+\caption{Hiew: Funktion \TT{f\_unsigned()}}
+\label{fig:jcc_hiew_1}
+\end{figure}
+Grundsätzlich haben wir drei Dinge zu erzwingen:
+\begin{itemize}
+  \item den ersten Sprung stets ausführen;
+  \item den zweiten Sprung nie ausführen;
+  \item den dritten Sprung stets ausführen.
+\end{itemize}
+
+Dadurch können wir den Code Flow so manupulieren, dass das zweite \printf immer ausgeführt wird und \q{a==b} ausgibt.
+Drei Befehle (oder Bytes) müssen verändert werden:
+\begin{itemize}
+\item Der erste Sprung wird zu \JMP verändert, aber der \gls{jump offset} bleibt gleich.
+
+ 
+\item Der zweite Sprung könnte manchmal ausgeführt werden, wird aber in jedem Fall zum nächsten Befehl springen, denn
+wir setzen den \gls{jump offset} auf 0.
+Bei diesen Befehlen wird der \gls{jump offset} zu der Adresse der nächsten Befehls addiert. Wenn der Offset 0 ist, wird
+die Ausführung also beim nächsten Befehl fortgesetzt.
+\item 
+Den dritten Sprung ersetzen wie genau wie den ersten durch \JMP, damit er stets ausgeführt wird.
+
+\end{itemize}
+
+\clearpage
+Hier ist der veränderte Code:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/hiew_unsigned2.png}
+\caption{Hiew: Veränderte Funktion \TT{f\_unsigned()}}
+\label{fig:jcc_hiew_2}
+\end{figure}
+Wenn wir es verpassen, einen dieser Sprünge zu verändern, könnten mehrere Aufrufe von \printf ausgeführt werden; wir
+wollen aber nur genau einen Aufruf ausführen.
+
+\myparagraph{\NonOptimizing GCC}
+
+\myindex{puts() anstelle von printf()}
+\NonOptimizing GCC 4.4.1 
+erzeugt fast identischen Code, aber mit \puts~(\myref{puts}) anstelle von \printf.
+
+\myparagraph{\Optimizing GCC}
+Der aufmerksame Leser fragt sich vielleicht, warum \CMP mehrmals ausgeführt wird, wenn doch die Flags nach jeder
+Ausführung dieselben Werte haben. 
+
+Vielleicht kann der optimierende MSVC dies nicht leisten, aber der optimierende GCC 4.8.1 gräbt tiefer:
+
+\lstinputlisting[caption=GCC 4.8.1 f\_signed(),style=customasmx86]{patterns/07_jcc/simple/GCC_O3_signed.asm}
+
+% should be here instead of 'switch' section?
+Wir finden auch hier \TT{JMP puts} anstelle von \TT{CALL puts / RETN}.
+
+Dieser Trick wird später erklärt:\myref{JMP_instead_of_RET}.
+
+Diese Sorte x86 Code ist trotzdem selten. MSVC 2012 kann wie es scheint solchen Code nicht erzeugen.
+Andererseits sind Assemblerprogrammierer sich natürlich der Tatsache bewusst, dass \TT{Jcc} Befehle gestackt werden
+können.
+Wenn man solche gestackten Befehle findet, ist es sehr wahrscheinlich, dass der entsprechende Code von Hand geschrieben
+wurde. 
+Die Funktion \TT{f\_unsigned()} ist nicht so ästhetisch:
+
+
+\lstinputlisting[caption=GCC 4.8.1 f\_unsigned(),style=customasmx86]{patterns/07_jcc/simple/GCC_O3_unsigned_DE.asm}
+Trotzdem werden hier immerhin nur zwei statt drei \TT{CMP} Befehle verwendet.
+
+Die Optimierungsalgorithmen von GCC 4.8.1 sind möglicherweise noch nicht so ausgereift.

@@ -1,0 +1,98 @@
+\subsection{Multidimensionale Arrays}
+Intern ist ein multidimensionales Array im Prinzip das gleiche wie ein lineares Array.
+
+Da der Speicher eines Rechners linear ist, ist es ein eindimensionales Array.
+Zur Vereinfachung kann dieses multidimensionales Array leicht als eindimensional dargestellt werden.
+
+Beispielsweise werden die Elemente eines 3x4 Arrays folgendermaßen in einem eindimensionalen Array aus 12 Zellen
+gespeichert:
+
+% TODO FIXME not clear. First, horizontal would be better. Second, why two columns?
+% I'd first show 3x4 with numbered elements (e.g. 32-bit ints) in colored lines,
+% then linear with the same numbered elements (and colored blocks)
+% then linear with addresses (offsets) - assuming let say 32-bit ints.
+\begin{table}[H]
+\centering
+\begin{tabular}{ | l | l | }
+\hline
+Offset im Speicher & Arrayelement \\
+\hline
+0 & [0][0] \\
+\hline
+1 & [0][1] \\
+\hline
+2 & [0][2] \\
+\hline
+3 & [0][3] \\
+\hline
+4 & [1][0] \\
+\hline
+5 & [1][1] \\
+\hline
+6 & [1][2] \\
+\hline
+7 & [1][3] \\
+\hline
+8 & [2][0] \\
+\hline
+9 & [2][1] \\
+\hline
+10 & [2][2] \\
+\hline
+11 & [2][3] \\
+\hline
+\end{tabular}
+\caption{Zweidimensionales Array in eindimensionaler Speicherdarstellung}
+\end{table}
+
+Auf diese Weise wird jede Zellen des 3*4 Arrays im Speicher abgelegt:
+
+% TODO coordinates. TikZ?
+\begin{table}[H]
+\centering
+\begin{tabular}{ | l | l | l | l | }
+\hline                        
+0 & 1 & 2 & 3 \\
+\hline  
+4 & 5 & 6 & 7 \\
+\hline  
+8 & 9 & 10 & 11 \\
+\hline  
+\end{tabular}
+\caption{Speicheradressen jeder Zelle des zweidimensionalen Arrays}
+\end{table}
+
+\myindex{row-major order}
+Um also die Adresse des benötigten Elements zu berechnen, multiplizieren wir zunächst den ersten Index mit 4 (der
+Arraybreite) und addieren dann den zweiten Index.
+Dies nennt man \IT{Zeilenordnung} (engl. row-major order) und diese Methode zur Darstellung von Arrays und Matrizen
+wird mindestens von \CCpp und Python verwendet.
+Der Ausdruck row-major order bedeutet: \q{schreibe zuerst die Elemente der ersten Zeilen, dann die zweite Zeile\dots
+und schließlich die Elemente der letzten Zeile}.
+
+\myindex{column-major order}
+\myindex{Fortran}
+Eine andere Methode zur Darstellung heißt \IT{Spaltenordnung} (engl. column-major order) (die Indizes des Arrays werden
+in umgekehrter Reihenfolge verwendet) und wird zumindest in Fortran, MATLAB und R verwendet.
+Der Ausdruck column-major oder bedeutet: \q{schreibe zuerst die Elemente der ersten Spalte, dann die zweite Spalte\dots
+und schließlich die Elemente der letzten Spalte}.
+
+Welche Method ist besser?
+
+Generel ist hinsichtlich Performance und Cachespeicher die beste Methode der Datenorganisation diejenige, in der auf die
+Elemente sequentiell zugegriffen wird.
+
+Wenn eine Funktion auf Daten zeilenweise zugreift, ist Zeilenordnung besser und umgekehrt.
+
+% subsections
+\input{patterns/13_arrays/5_multidimensional/2D_DE}
+\input{patterns/13_arrays/5_multidimensional/2D_as_1D_DE}
+\input{patterns/13_arrays/5_multidimensional/3D_DE}
+
+\subsubsection{Weitere Beispiele}
+Der Bildschirm wird als 2D-Array dargestellt, aber der Videopuffer ist ein lineares 1D-Array.
+Wir betrachten hier näher: \myref{Mandelbrot_demo}.
+
+Ein anderes Beispiel in diesem Buch ist das Spiel Minesweeper: das Feld ist auch ein zweidimensionales Array:
+\ref{minesweeper_winxp}.
+

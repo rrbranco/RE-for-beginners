@@ -1,0 +1,96 @@
+\subsubsection{ARM: \OptimizingKeilVI (\ARMMode)}
+\label{sec:SwitchARMLot}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/08_switch/2_lot/lot_ARM_ARM_O3.asm}
+
+This code makes use of the ARM mode feature in which all instructions have a fixed size of 4 bytes.
+
+Let's keep in mind that the maximum value for $a$ is 4 and any greater value will cause
+\IT{<<something unknown\textbackslash{}n>>} string to be printed.
+
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!ADDCC}
+The first \TT{CMP R0, \#5} instruction compares the input value of $a$ with 5.
+
+\footnote{ADD---addition}
+The next \TT{ADDCC PC, PC, R0,LSL\#2} instruction is being executed only if $R0 < 5$ (\IT{CC=Carry clear / Less than}). 
+Consequently, if \TT{ADDCC} does not trigger (it is a $R0 \geq 5$ case), a jump to \IT{default\_case} label will occur.
+
+But if $R0 < 5$ and \TT{ADDCC} triggers, the following is to be happen:
+
+The value in \Reg{0} is multiplied by 4.
+In fact, \TT{LSL\#2} at the instruction's suffix stands for \q{shift left by 2 bits}.
+But as we will see later~(\myref{division_by_shifting}) in section \q{\ShiftsSectionName}, 
+shift left by 2 bits is equivalent to multiplying by 4.
+
+Then we add $R0*4$ to the current value in \ac{PC}, 
+thus jumping to one of the \TT{B} (\IT{Branch}) instructions located below.
+
+At the moment of the execution of \TT{ADDCC}, the value in \ac{PC} is 8 bytes ahead (\TT{0x180})
+than the address at which the \TT{ADDCC} instruction is located (\TT{0x178}), 
+or, in other words, 2 instructions ahead.
+
+\myindex{ARM!Pipeline}
+
+This is how the pipeline in ARM processors works: when \TT{ADDCC} is executed,
+the processor at the moment
+is beginning to process the instruction after the next one,
+so that is why \ac{PC} points there. This has to be memorized.
+
+If $a=0$, then is to be added to the value in \ac{PC},
+and the actual value of the \ac{PC} will be written into \ac{PC} (which is 8 bytes ahead)
+and a jump to the label \IT{loc\_180} will happen,
+which is 8 bytes ahead of the point where the \TT{ADDCC} instruction is.
+
+If $a=1$, then $PC+8+a*4 = PC+8+1*4 = PC+12 = 0x184$ will be written to \ac{PC},
+which is the address of the \IT{loc\_184} label.
+
+With every 1 added to $a$, the resulting \ac{PC} is increased by 4.
+
+4 is the instruction length in ARM mode and also, the length of each \TT{B} instruction,
+of which there are 5 in row.
+
+Each of these five \TT{B} instructions passes control further, to what was programmed in the \IT{switch()}.
+
+Pointer loading of the corresponding string occurs there, etc.
+
+\subsubsection{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/08_switch/2_lot/lot_ARM_thumb_O3.asm}
+
+\myindex{ARM!\ThumbMode}
+\myindex{ARM!\ThumbTwoMode}
+
+One cannot be sure that all instructions in Thumb and Thumb-2 modes has the same size.
+It can even be said that in these modes the instructions have variable lengths, just like in x86.
+
+\myindex{jumptable}
+
+So there is a special table added that contains information about how much cases are there (not including 
+default-case), and an offset for each with a label to which control must be passed in 
+the corresponding case.
+
+\myindex{ARM!Mode switching}
+\myindex{ARM!\Instructions!BX}
+
+A special function is present here in order to deal with the table and pass control, \\
+named \IT{\_\_ARM\_common\_switch8\_thumb}. 
+It starts with \TT{BX PC}, whose function is to switch the processor to ARM-mode.
+Then you see the function for table processing. 
+
+It is too advanced to describe it here now, so let's omit it.
+% TODO explain it...
+
+\myindex{ARM!\Registers!Link Register}
+
+It is interesting to note that the function uses the \ac{LR} register as a pointer to the table.
+
+Indeed, after calling of this function, \ac{LR} contains the address after\\
+\TT{BL \_\_ARM\_common\_switch8\_thumb} instruction, where the table starts.
+
+It is also worth noting that the code is generated as a separate function in order to reuse it, 
+so the compiler doesn't generate the same code for every switch() statement.
+
+\IDA successfully perceived it as a service function and a table, and added comments to the labels like\\
+\TT{jumptable 000000FA case 0}.
+

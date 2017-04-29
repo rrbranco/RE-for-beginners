@@ -1,0 +1,7 @@
+    ; zähle von 10 bis 1
+    MOV ECX, 10
+body:
+    ; Schleifenkörper
+    ; tue etwas
+    ; verwende Zähler in ECX, aber verändere ihn nicht!
+    LOOP body

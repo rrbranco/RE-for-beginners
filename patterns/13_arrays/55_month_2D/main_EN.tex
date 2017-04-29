@@ -1,0 +1,99 @@
+\subsection{Pack of strings as a two-dimensional array}
+
+Let's revisit the function that returns the name of a month: \lstref{get_month1}.
+
+As you see, at least one memory load operation is needed to prepare a pointer to the string
+that's the month's name.
+
+Is it possible to get rid of this memory load operation?
+
+In fact yes, if you represent the list of strings as a two-dimensional array:
+
+\lstinputlisting[style=customc]{patterns/13_arrays/55_month_2D/month2_EN.c}
+
+Here is what we've get:
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{patterns/13_arrays/55_month_2D/MSVC2013_x64_Ox_EN.asm}
+
+There are no memory accesses at all.
+
+All this function does is to calculate a point at which the first character of the name of the month is: 
+$pointer\_to\_the\_table + month * 10$.
+
+There are also two \LEA instructions, which effectively work as several \MUL and \MOV instructions.
+
+The width of the array is 10 bytes. 
+
+Indeed, the longest string here---\q{September}---is 9 bytes, and plus the terminating zero is 10 bytes.
+
+The rest of the month names are padded by zero bytes, so they all occupy the same space (10 bytes).
+
+Thus, our function works even faster, because all string start at an address which can be
+calculated easily.
+
+\Optimizing GCC 4.9 can do it even shorter:
+
+\begin{lstlisting}[caption=\Optimizing GCC 4.9 x64,style=customasmx86]
+	movsx	rdi, edi
+	lea	rax, [rdi+rdi*4]
+	lea	rax, month2[rax+rax]
+	ret
+\end{lstlisting}
+
+\LEA is also used here for multiplication by 10.
+
+Non-optimizing compilers do multiplication differently.
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9 x64,style=customasmx86]{patterns/13_arrays/55_month_2D/x64_GCC49_O0_EN.asm}
+
+\NonOptimizing MSVC just uses \IMUL instruction:
+\myindex{x86!\Instructions!IMUL}
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2013 x64,style=customasmx86]{patterns/13_arrays/55_month_2D/MSVC2013_x64_EN.asm}
+
+\myindex{\CompilerAnomaly}
+\label{MSVC2013_anomaly}
+
+But one thing is weird here: why add multiplication by zero and adding zero to the final result?
+
+This looks like a compiler code generator quirk, which wasn't caught by the compiler's tests
+(the resulting code works correctly, after all).
+% класс!
+%
+We intentionally consider such pieces of code so the reader would understand, 
+that sometimes one shouldn't puzzle over such compiler artifacts.
+
+\subsubsection{32-bit ARM}
+
+\Optimizing Keil 
+for Thumb mode uses the multiplication instruction \INS{MULS}:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/13_arrays/55_month_2D/Keil_O3_thumb_EN.asm}
+
+\Optimizing Keil for ARM mode uses add and shift operations:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/13_arrays/55_month_2D/Keil_O3_ARM_EN.asm}
+
+\subsubsection{ARM64}
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 ARM64,style=customasmARM]{patterns/13_arrays/55_month_2D/GCC49_ARM64_EN.asm}
+
+\myindex{ARM!\Instructions!SXTW}
+\myindex{ARM!\Instructions!ADRP/ADD pair}
+
+\INS{SXTW} is used for sign-extension and promoting input 32-bit value into a 64-bit one and storing it in X0.
+
+\ADRP/\ADD pair is used for loading the address of the table.
+
+The \ADD instructions also has a \LSL suffix, which helps with multiplications.
+
+\subsubsection{MIPS}
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/13_arrays/55_month_2D/MIPS_O3_IDA_EN.lst}
+
+\subsubsection{\Conclusion{}}
+
+This is a bit old-school technique to store text strings.
+You may find a lot of it in \oracle, for example.
+It's hard to say if it's worth doing on modern computers.
+Nevertheless, it is a good example of arrays, so it was added to this book.
+

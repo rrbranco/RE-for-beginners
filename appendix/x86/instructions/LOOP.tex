@@ -1,0 +1,17 @@
+\myindex{x86!\Instructions!LOOP}
+  \item[LOOP] (M) \RU{\glslink{decrement}{декремент}}\EN{\gls{decrement}} CX/ECX/RCX,
+  \RU{переход если он всё еще не ноль}\EN{jump if it is still not zero}.
+
+\RU{Инструкцию LOOP очень часто использовали в DOS-коде, который работал внешними устройствами.
+Чтобы сделать небольшую задержку, делали так:}%
+\EN{LOOP instruction was often used in DOS-code which works with external devices.
+To add small delay, this was done:}
+
+\begin{lstlisting}[style=customasmx86]
+	MOV	CX, nnnn
+LABEL:	LOOP	LABEL
+\end{lstlisting}
+
+\RU{Недостаток очевиден: длительность задержки сильно зависит от скорости \ac{CPU}.}%
+\EN{Drawback is obvious: length of delay depends on \ac{CPU} speed.}
+

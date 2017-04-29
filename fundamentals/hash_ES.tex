@@ -1,0 +1,67 @@
+﻿\newcommand{\HashFuncChapterName}{Funciones hash}
+
+\section{\HashFuncChapterName}
+\label{hash_func}
+
+\myindex{\HashFuncChapterName}
+\myindex{CRC32}
+Un ejemplo muy sencillo es CRC32, un algoritmo que provee una \q{fuerte} suma de
+comprobaci\'on para prop\'ositos de comprobaci\'on de integridad.
+Es imposible reestablecer el texto original a partir de su valor hash, tiene mucho menos informaci\'on:
+la entrada puede ser larga, pero el resultado de CRC32 siempre est\'a limitado a 32 bits.
+Pero CRC32 no es criptogr\'aficamente seguro: es sabido c\'omo alterar un texto de tal modo que el valor
+del hash CRC32 resultante sea el que necesitemos.
+Las funciones hash criptogr\'aficas est\'an protegidas de esto. \\
+\\
+\myindex{MD5}
+\myindex{SHA1}
+Tales funciones son MD5, SHA1, etc., y son utilizadas ampliamente para obtener el hash de contrase\~nas de usuarios para
+almacenarlas en las bases de datos.
+De hecho, la base de datos de un foro en internet no puede contener las contrase\~nas de los usuarios
+(una base de datos robado puede comprometer las contrase\~nas de todos los usuarios) sino \'unicamente
+hashes (un cracker no puede recuperar las contrase\~nas).
+Adem\'as, el motor de un foro de internet no es consciente de tu contrase\~na, s\'olo debe comprobar
+si su hash es el mismo que aquel almacenado en la base de datos, y darte acceso si concuerdan.
+Uno de los m\'etodos de cracking de contrase\~nas m\'as simple es tratar de obtener los hashes de todas
+las contrase\~nas posibles para ver cu\'al concuerda con el resultado que necesitamos.
+Otros m\'etodos son mucho m\'as complejos.
+% TODO1 add about Rainbow tables
+
+\subsection{?`C\'omo trabajan las funciones de una v\'ia?}
+
+Las funciones de una v\'ia son funciones capces de transformar un valor en otro,
+a la vez que es imposible (o muy dif\'icil revertirlo.)
+Algunas personas tienen dificultad entendiendo c\'omo puede ser esto posible.
+Consideremos una demostraci\'on simple.
+
+Tenemos un vector de 10 n\'umeros en el rango 0..9, cada una presente una sola vez, por ejemplo:
+
+\begin{lstlisting}
+4 6 0 1 3 5 7 8 9 2
+\end{lstlisting}
+
+El algoritmo de la funci\'on de una v\'ia m\'as simple es:
+
+\begin{itemize}
+\item toma el n\'umero en la posici\'on cero (4 en nuestro caso);
+\item toma el n\'umero en la primera posici\'on (6 en nuestro caso);
+\item intercambia los n\'umeros en las posiciones 4 y 6.
+\end{itemize}
+
+Marquemos los n\'umeros en las posiciones 4 y 6:
+
+\begin{lstlisting}
+4 6 0 1 3 5 7 8 9 2
+        ^   ^
+\end{lstlisting}
+
+Intercambi\'emolos y tenemos el resultado:
+
+\begin{lstlisting}
+4 6 0 1 7 5 3 8 9 2
+\end{lstlisting}
+
+Mientras vemos el resultado, incluso si conocemos el algoritmo, no podemos enumerar sin ambig\"uedad el conjunto inicial
+porque los primeros dos n\'umeros puedieron haber sido 0 y/o 1, y puedieron haber participado en el proceso de intercambio.
+
+Este ejemplo fue demasiado simplificado para efectos de desmostraci\'on. Las funciones de una v\'ia reales pueden llegar a ser muy complejas.

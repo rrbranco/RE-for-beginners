@@ -1,0 +1,138 @@
+\subsection{Windows NT: Kritischer Abschnitt}
+\myindex{Windows}
+
+\label{critical_sections}
+
+Kritische Abschnitte sind in jedem \ac{OS} sehr wichtig bei Multithread-Umgebungen.
+Der Zweck besteht darin, einen exklusiven Zugriff auf eine Ressource zu garantieren,
+während andere Threads oder Interrupts blockiert sind.
+
+\par
+Nachfolgend, wie eine \TT{CRITICAL\_SECTION}-Struktur unter \gls{Windows NT} deklariert wird:
+
+\begin{lstlisting}[caption=(Windows Research Kernel v1.2) public/sdk/inc/nturtl.h,style=customc]
+typedef struct _RTL_CRITICAL_SECTION {
+    PRTL_CRITICAL_SECTION_DEBUG DebugInfo;
+
+    //
+    //  The following three fields control entering and exiting the critical
+    //  section for the resource
+    //
+
+    LONG LockCount;
+    LONG RecursionCount;
+    HANDLE OwningThread;        // from the thread's ClientId->UniqueThread
+    HANDLE LockSemaphore;
+    ULONG_PTR SpinCount;        // force size on 64-bit systems when packed
+} RTL_CRITICAL_SECTION, *PRTL_CRITICAL_SECTION;
+\end{lstlisting}
+
+Nachfolgend wird gezeigt, wie die Funktion EnterCriticalSection() funktioniert:
+
+\myindex{x86!\Instructions!LOCK}
+\begin{lstlisting}[caption=Windows 2008/ntdll.dll/x86 (begin),style=customasmx86]
+_RtlEnterCriticalSection@4
+
+var_C           = dword ptr -0Ch
+var_8           = dword ptr -8
+var_4           = dword ptr -4
+arg_0           = dword ptr  8
+
+                mov     edi, edi
+                push    ebp
+                mov     ebp, esp
+                sub     esp, 0Ch
+                push    esi
+                push    edi
+                mov     edi, [ebp+arg_0]
+                lea     esi, [edi+4] ; LockCount
+                mov     eax, esi
+                lock btr dword ptr [eax], 0
+                jnb     wait ; jump if CF=0
+
+loc_7DE922DD:
+                mov     eax, large fs:18h
+                mov     ecx, [eax+24h]
+                mov     [edi+0Ch], ecx
+                mov     dword ptr [edi+8], 1
+                pop     edi
+                xor     eax, eax
+                pop     esi
+                mov     esp, ebp
+                pop     ebp
+                retn    4
+
+... und so weiter
+\end{lstlisting}
+
+\myindex{x86!\Instructions!BTR}
+\myindex{x86!\Prefixes!LOCK}
+
+Die wichtigste Funktion in diesem Code-Fragment ist \TT{BTR} (nach dem vorangehenden \TT{LOCK}):
+
+Das nullte Bit wird im CF-Flag gesichert und im Speicher zurückgesetzt.
+Dies ist eine \gls{atomic operation} und blockiert alle Zugriffe der CPU auf diesen
+Teil des Speichert (siehe \TT{LOCK} vor der \TT{BTR}-Anweisung).
+Wenn das Bit in \TT{LockCount} 1 ist, wird es zurückgesetzt und von der Funktion
+zurückgekehrt: die CPU befindet sich nun um Kritischen Abschnitt.
+
+Wenn nicht, wurde der Kritische Abschnitt bereits von einem anderen Thread betreten,
+also muss gewartet werden.
+Das Warten wird durch die Funktion WaitForSingleObject() realisiert.
+
+Hier nun, wie die Funktion LeaveCriticalSection() funktioniert:
+
+\begin{lstlisting}[caption=Windows 2008/ntdll.dll/x86 (begin),style=customasmx86]
+_RtlLeaveCriticalSection@4 proc near
+
+arg_0           = dword ptr  8
+
+                mov     edi, edi
+                push    ebp
+                mov     ebp, esp
+                push    esi
+                mov     esi, [ebp+arg_0]
+                add     dword ptr [esi+8], 0FFFFFFFFh ; RecursionCount
+                jnz     short loc_7DE922B2
+                push    ebx
+                push    edi
+                lea     edi, [esi+4]    ; LockCount
+                mov     dword ptr [esi+0Ch], 0
+                mov     ebx, 1
+                mov     eax, edi
+                lock xadd [eax], ebx
+                inc     ebx
+                cmp     ebx, 0FFFFFFFFh
+                jnz     loc_7DEA8EB7
+
+loc_7DE922B0:
+                pop     edi
+                pop     ebx
+
+loc_7DE922B2:
+                xor     eax, eax
+                pop     esi
+                pop     ebp
+                retn    4
+
+... und so weiter
+\end{lstlisting}
+
+\myindex{x86!\Instructions!XADD}
+\TT{XADD} bedeutet \q{exchange and add}.
+
+In diesem Fall wird 1 zu \TT{LockCount} addiert, während der ursprüngliche Wert von \TT{LockCount}
+im \TT{EBX}-Register gesichert wird.
+Der Wert in \TT{EBX} wird durch aufeinander folgende \INS{INC EBX}-Anweisungen inkrementiert und
+wird damit gleich dem aktualisierten Wert von \TT{LockCount}.
+
+Diese Operation ist atomar, da sie ebenfalls mit \TT{LOCK} eingeleitet wird und so alle anderen
+CPUs oder CPU-Kerne des Systems für den Zugriff auf diesen Speicherbereich blockiert werden.
+
+Das vorangehende \TT{LOCK} ist sehr wichtig:
+
+ohne diese Anweisung können zwei Threads die auf unterschiedlichen CPUs oder CPU-Kernen laufen,
+versuchen den Kritischen Abschnitt zu betreten und den Wert im Speicher zu verändern.
+Diese kann zu einem nicht-deterministischen Verhalten führen.
+
+% TODO linux

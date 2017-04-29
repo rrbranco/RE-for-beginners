@@ -1,0 +1,114 @@
+\subsubsection{x86}
+
+\myparagraph{MSVC}
+
+Что получаем на ассемблере, компилируя в MSVC 2010:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/1_simple/ex1_MSVC_RU.asm}
+
+Переменная \TT{x} является локальной.
+
+По стандарту \CCpp она доступна только из этой же функции и нигде более. 
+Так получилось, что локальные переменные располагаются в стеке. 
+Может быть, можно было бы использовать и другие варианты, но в x86 это традиционно так.
+
+\myindex{x86!\Instructions!PUSH}
+Следующая после пролога инструкция \TT{PUSH ECX} не ставит своей целью сохранить 
+значение регистра \ECX. 
+(Заметьте отсутствие соответствующей инструкции \TT{POP ECX} в конце функции).
+
+Она на самом деле выделяет в стеке 4 байта для хранения \TT{x} в будущем.
+
+\label{stack_frame}
+\myindex{\Stack!Стековый фрейм}
+\myindex{x86!\Registers!EBP}
+Доступ к \TT{x} будет осуществляться при помощи объявленного макроса \TT{\_x\$} (он равен -4) и регистра \EBP указывающего на текущий фрейм.
+
+Во всё время исполнения функции \EBP указывает на текущий \glslink{stack frame}{фрейм} и через \TT{EBP+смещение}
+можно получить доступ как к локальным переменным функции, так и аргументам функции.
+
+\myindex{x86!\Registers!ESP}
+Можно было бы использовать \ESP, но он во время исполнения функции часто меняется, а это не удобно. 
+Так что можно сказать, что \EBP это \IT{замороженное состояние} \ESP на момент начала исполнения функции.
+
+% FIXME1 это уже было в 02_stack?
+Разметка типичного стекового \glslink{stack frame}{фрейма} в 32-битной среде:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\dots & \dots \\
+\hline
+EBP-8 & локальная переменная \#2, \MarkedInIDAAs{} \TT{var\_8} \\
+\hline
+EBP-4 & локальная переменная \#1, \MarkedInIDAAs{} \TT{var\_4} \\
+\hline
+EBP & сохраненное значение \EBP \\
+\hline
+EBP+4 & адрес возврата \\
+\hline
+EBP+8 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+EBP+0xC & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+EBP+0x10 & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+
+У функции \scanf в нашем примере два аргумента.
+
+Первый~--- указатель на строку, содержащую \TT{\%d} и второй~--- адрес переменной \TT{x}.
+
+\myindex{x86!\Instructions!LEA}
+Вначале адрес \TT{x} помещается в регистр \EAX при помощи инструкции \TT{lea eax, DWORD PTR \_x\$[ebp]}.
+
+Инструкция \LEA означает \IT{load effective address}, и часто используется для формирования адреса чего-либо ~(\myref{sec:LEA}).
+
+Можно сказать, что в данном случае \LEA просто помещает в \EAX результат суммы значения в регистре \EBP и макроса \TT{\_x\$}.
+
+Это тоже что и \INS{lea eax, [ebp-4]}.
+
+Итак, от значения \EBP отнимается 4 и помещается в \EAX.
+Далее значение \EAX заталкивается в стек и вызывается \scanf.
+
+После этого вызывается \printf. Первый аргумент вызова строка:
+\TT{You entered \%d...\textbackslash{}n}.
+
+Второй аргумент: \INS{mov ecx, [ebp-4]}.
+Эта инструкция помещает в \ECX не адрес переменной \TT{x}, а её значение.
+
+Далее значение \ECX заталкивается в стек и вызывается \printf.
+
+\input{patterns/04_scanf/1_simple/olly.tex}
+
+\myparagraph{GCC}
+
+Попробуем тоже самое скомпилировать в Linux при помощи GCC 4.4.1:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/1_simple/ex1_GCC.asm}
+
+\myindex{puts() вместо printf()}
+GCC заменил первый вызов \printf на \puts. Почему это было сделано, 
+уже было описано ранее~(\myref{puts}).
+
+% TODO: rewrite
+%\RU{Почему \scanf переименовали в \TT{\_\_\_isoc99\_scanf}, я честно говоря, пока не знаю.}
+%\EN{Why \scanf is renamed to \TT{\_\_\_isoc99\_scanf}, I do not know yet.}
+% 
+% Apparently it has to do with the ISO c99 standard compliance. By default GCC allows specifying a standard to adhere to.
+% For example if you compile with -std=c89 the outputted assmebly file will contain scanf and not __isoc99__scanf. I guess current GCC version adhares to c99 by default.
+% According to my understanding the two implementations differ in the set of suported modifyers (See printf man page)
+
+
+Далее всё как и прежде~--- параметры заталкиваются через стек при помощи \MOV.
+
+\myparagraph{Кстати}
+
+Кстати, этот простой пример иллюстрирует то обстоятельство, что компилятор преобразует
+список выражений в \CCpp-блоке просто в последовательный набор инструкций.
+Между выражениями в \CCpp ничего нет, и в итоговом машинном коде между ними тоже ничего нет, 
+управление переходит от одной инструкции к следующей за ней.
+

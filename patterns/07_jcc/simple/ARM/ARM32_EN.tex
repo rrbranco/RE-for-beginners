@@ -1,0 +1,102 @@
+\myparagraph{32-bit ARM}
+\label{subsec:jcc_ARM}
+
+\mysubparagraph{\OptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_O3_signed.asm}
+
+\myindex{ARM!Condition codes}
+% FIXME \ref -> which instructions?
+
+Many instructions in ARM mode could be executed only when specific flags are set.
+E.g. this is often used when comparing numbers.
+
+\myindex{ARM!\Instructions!ADD}
+\myindex{ARM!\Instructions!ADDAL}
+
+For instance, the \ADD instruction is in fact named \TT{ADDAL} internally, where \TT{AL} stands for
+\IT{Always}, i.e., execute always.
+The predicates are encoded in 4 high bits of the 32-bit ARM instructions (\IT{condition field}).
+\myindex{ARM!\Instructions!B}
+The \TT{B} instruction for unconditional jumping is in fact conditional and encoded just like any other
+conditional jump, but has \TT{AL} in the \IT{condition field}, and it implies \IT{execute ALways}, 
+ignoring flags.
+
+\myindex{ARM!\Instructions!ADR}
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!CMP}
+
+The \TT{ADRGT} instruction works just like \TT{ADR} but executes only in case the previous \CMP
+instruction founds one of the numbers greater than the another, while comparing the two (\IT{Greater Than}).
+
+\myindex{ARM!\Instructions!BL}
+\myindex{ARM!\Instructions!BLcc}
+
+The next \TT{BLGT} instruction behaves exactly as \TT{BL} 
+and is triggered only if the result of the comparison has been (\IT{Greater Than}). 
+\TT{ADRGT} writes a pointer to the string \TT{a>b\textbackslash{}n} into \Reg{0} and \TT{BLGT} calls \printf.
+Therefore, instructions suffixed with \TT{-GT} are to execute only in case the value in \Reg{0} (which is $a$) is bigger than the value in \Reg{4} (which is $b$).
+
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!BLcc}
+
+Moving forward we see the \TT{ADREQ} and \TT{BLEQ} instructions.
+They behave just like \TT{ADR} and \TT{BL}, but are to be executed only if operands were equal to each
+other during the last comparison.
+Another \CMP is located before them (because the \printf execution may have tampered the flags).
+
+\myindex{ARM!\Instructions!LDMccFD}
+\myindex{ARM!\Instructions!LDMFD}
+
+Then we see \TT{LDMGEFD}, this instruction works just like \TT{LDMFD}\footnote{\ac{LDMFD}},
+but is triggered only when one of the values is greater or equal than the other (\IT{Greater or Equal}).
+The \TT{LDMGEFD SP!, \{R4-R6,PC\}} instruction acts like a function epilogue, but it will be triggered only if $a>=b$, and only then the function execution will finish.
+
+\myindex{Function epilogue}
+
+But if that condition is not satisfied, i.e., $a<b$, then the control flow will continue to the next \\
+\TT{\q{LDMFD SP!, \{R4-R6,LR\}}} instruction, which is one more function epilogue. This instruction restores not only the \TT{R4-R6} registers state, but also \ac{LR} instead of \ac{PC}, thus, it does not return from the function.
+The last two instructions call \printf with the string <<a<b\textbackslash{}n>> as a sole argument.
+We already examined an unconditional jump to the \printf function instead of function return in <<\PrintfSeveralArgumentsSectionName>> section~(\myref{ARM_B_to_printf}).
+
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!BLcc}
+\myindex{ARM!\Instructions!LDMccFD}
+\TT{f\_unsigned} is similar, only the \TT{ADRHI}, \TT{BLHI}, and \TT{LDMCSFD} instructions are used there, these predicates (\IT{HI = Unsigned higher, CS = Carry Set (greater than or equal)}) are analogous to those examined before, but for unsigned values.
+
+There is not much new in the \main function for us:
+
+\lstinputlisting[caption=\main,style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_O3_main.asm}
+
+That is how you can get rid of conditional jumps in ARM mode.
+
+\myindex{RISC pipeline}
+Why is this so good? Read here: \myref{branch_predictors}.
+
+\myindex{x86!\Instructions!CMOVcc}
+
+There is no such feature in x86, except the \TT{CMOVcc} instruction, it is the same as \MOV,
+but triggered only when specific flags are set, usually set by \CMP.
+
+\mysubparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_thumb_signed.asm}
+
+\myindex{ARM!\Instructions!BLE}
+\myindex{ARM!\Instructions!BNE}
+\myindex{ARM!\Instructions!BGE}
+\myindex{ARM!\Instructions!BLS}
+\myindex{ARM!\Instructions!BCS}
+\myindex{ARM!\Instructions!B}
+\myindex{ARM!\ThumbMode}
+
+Only \TT{B} instructions in Thumb mode may be supplemented by \IT{condition codes}, so the Thumb code 
+looks more ordinary.
+
+\TT{BLE} is a normal conditional jump \IT{Less than or Equal}, 
+\TT{BNE}---\IT{Not Equal}, 
+\TT{BGE}---\IT{Greater than or Equal}.
+
+\TT{f\_unsigned} is similar, only other instructions are used while dealing 
+with unsigned values: \TT{BLS} 
+(\IT{Unsigned lower or same}) and \TT{BCS} (\IT{Carry Set (Greater than or equal)}).

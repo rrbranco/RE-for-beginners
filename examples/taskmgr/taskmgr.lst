@@ -1,0 +1,30 @@
+.text:10000B4B3          xor     r9d, r9d
+.text:10000B4B6          lea     rdx, [rsp+0C78h+var_C58] ; buffer
+.text:10000B4BB          xor     ecx, ecx
+.text:10000B4BD          lea     ebp, [r9+40h]
+.text:10000B4C1          mov     r8d, ebp
+.text:10000B4C4          call    cs:__imp_NtQuerySystemInformation ; 0
+.text:10000B4CA          xor     ebx, ebx
+.text:10000B4CC          cmp     eax, ebx
+.text:10000B4CE          jge     short loc_10000B4D7
+.text:10000B4D0
+.text:10000B4D0 loc_10000B4D0:                          ; CODE XREF: InitPerfInfo(void)+97
+.text:10000B4D0                                         ; InitPerfInfo(void)+AF
+.text:10000B4D0          xor     al, al
+.text:10000B4D2          jmp     loc_10000B5EA
+.text:10000B4D7 ; ---------------------------------------------------------------------------
+.text:10000B4D7
+.text:10000B4D7 loc_10000B4D7:                          ; CODE XREF: InitPerfInfo(void)+36
+.text:10000B4D7          mov     eax, [rsp+0C78h+var_C50]
+.text:10000B4DB          mov     esi, ebx
+.text:10000B4DD          mov     r12d, 3E80h
+.text:10000B4E3          mov     cs:?g_PageSize@@3KA, eax ; ulong g_PageSize
+.text:10000B4E9          shr     eax, 0Ah
+.text:10000B4EC          lea     r13, __ImageBase
+.text:10000B4F3          imul    eax, [rsp+0C78h+var_C4C]
+.text:10000B4F8          cmp     [rsp+0C78h+var_C20], bpl
+.text:10000B4FD          mov     cs:?g_MEMMax@@3_JA, rax ; __int64 g_MEMMax
+.text:10000B504          movzx   eax, [rsp+0C78h+var_C20] ; number of CPUs
+.text:10000B509          cmova   eax, ebp
+.text:10000B50C          cmp     al, bl
+.text:10000B50E          mov     cs:?g_cProcessors@@3EA, al ; uchar g_cProcessors

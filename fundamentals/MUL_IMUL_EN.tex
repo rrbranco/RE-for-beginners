@@ -1,0 +1,42 @@
+% TODO translate
+\subsection{Using IMUL over MUL}
+\label{IMUL_over_MUL}
+
+\myindex{x86!\Instructions!MUL}
+\myindex{x86!\Instructions!IMUL}
+Example like \lstref{unsigned_multiply_C} where two unsigned values are multiplied compiles into \lstref{unsigned_multiply_lst} where \IMUL is used instead of \MUL.
+
+This is important property of both \MUL and \IMUL instructions.
+First of all, they both produce 64-bit value if two 32-bit values are multiplied, or 128-bit value if two 64-bit values are multiplied (biggest possible \gls{product} in 32-bit environment is \\
+\GTT{0xffffffff*0xffffffff=0xfffffffe00000001}).
+But \CCpp standards have no way to access higher half of result, and a \gls{product} always has the same size as multiplicands. % TODO \gls{}?
+And both \MUL and \IMUL instructions works in the same way if higher half is ignored, i.e., they both generate
+the same lower half.
+This is important property of \q{two's complement} way of representing signed numbers.
+
+So \CCpp compiler can use any of these instructions.
+
+But \IMUL is more versatile than \MUL because it can take any register(s) as source, while \MUL requires one of multiplicands stored in \AX/\EAX/\RAX register.
+Even more than that: \MUL stores result in \GTT{EDX:EAX} pair in 32-bit environment, or \GTT{RDX:RAX} in 64-bit one, so it always calculates the whole result.
+On contrary, it's possible to set a single destination register while using \IMUL instead of pair, and then \ac{CPU} will calculate only lower half, which works faster [see Torborn Granlund, \IT{Instruction latencies and throughput for AMD and Intel x86 processors}\footnote{\url{http://yurichev.com/mirrors/x86-timing.pdf}]}).
+
+Given than, \CCpp compilers may generate \IMUL instruction more often then \MUL.
+
+\myindex{Compiler intrinsic}
+Nevertheless, using compiler intrinsic, it's still possible to do unsigned multiplication and get \IT{full} result.
+This is sometimes called \IT{extended multiplication}.
+MSVC has intrinsic for this called \IT{\_\_emul}\footnote{\url{https://msdn.microsoft.com/en-us/library/d2s81xt0(v=vs.80).aspx}} and another one: \IT{\_umul128}\footnote{\url{https://msdn.microsoft.com/library/3dayytw9%28v=vs.100%29.aspx}}.
+GCC offer \IT{\_\_int128} data type, and if 64-bit multiplicands are first promoted to 128-bit ones,
+then a \gls{product} is stored into another \IT{\_\_int128} value, then result is shifted by 64 bits right,
+you'll get higher half of result\footnote{Example: \url{http://stackoverflow.com/a/13187798}}.
+
+\subsubsection{MulDiv() function in Windows}
+\myindex{Windows!Win32!MulDiv()}
+
+Windows has MulDiv() function
+\footnote{\url{https://msdn.microsoft.com/en-us/library/windows/desktop/aa383718(v=vs.85).aspx}},
+fused multiply/divide function, it multiplies two 32-bit integers into intermediate 64-bit value
+and then divides it by a third 32-bit integer.
+It is easier than to use two compiler intrinsic, so Microsoft developers made a special function for it.
+And it seems, this is busy function, judging by its usage.
+

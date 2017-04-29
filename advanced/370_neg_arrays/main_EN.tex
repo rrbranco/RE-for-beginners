@@ -1,0 +1,93 @@
+\section{Negative array indices}
+\label{negative_array_indices}
+
+It's possible to address the space \IT{before} an array by supplying a negative index, e.g., $array[-1]$.
+
+\subsection{Addressing string from the end}
+
+\myindex{Python}
+Python \ac{PL} allows to address arrays and strings from the end.
+For example, \IT{string[-1]} returns the last character, \IT{string[-2]} returns penultimate, etc.
+Hard to believe, but this is also possible in C/C++:
+
+\lstinputlisting[style=customc]{\CURPATH/pythonesque_addressing.c}
+
+It works, but \textit{s\_end} must always has an address of terminating zero byte at the end of \textit{s} string.
+If \textit{s} string's size get changed, \textit{s\_end} must be updated.
+
+The trick is dubious, but again, this is a demonstration of negative indices.
+
+\subsection{Addressing some kind of block from the end}
+
+Let's first recall why stack grows backwards (\myref{stack_grow_backwards}).
+There is some kind of block in memory and you want to store both heap and stack there, and you are not sure,
+how big they both can grow during runtime.
+
+You can set a \IT{heap} pointer to the beginning of the block,
+then you can set a \IT{stack} pointer to the end of the block (\IT{heap + size\_of\_block}),
+and then you can address \IT{nth} element of stack like \IT{stack[-n]}.
+For example, \IT{stack[-1]} for 1st element, \IT{stack[-2]} for 2nd, etc.
+
+This will work in the same fashion, as our trick of addressing string from the end.
+
+You can easily check if the structures has not begun to overlap each other:
+just be sure that address of the last element in \IT{heap} is below the address of the last element of \IT{stack}.
+
+Unfortunately, $-0$ as index will not work,
+since two's complement way of representing negative numbers (\myref{sec:signednumbers}) don't allow negative zero,
+so it cannot be distinguished from positive zero.
+
+This method is also mentioned in ``Transaction processing'', Jim Gray, 1993,
+``The Tuple-Oriented File System'' chapter, p. 755.
+
+\subsection{Arrays started at 1}
+\label{arrays_at_one}
+
+\myindex{Fortran}
+\myindex{Mathematica}
+Fortran and Mathematica defined first element of array as 1th, probably because this is tradition in mathematics.
+Other \ac{PL}s like \CCpp defined it as 0th.
+Which is better?
+\myindex{Edsger W. Dijkstra}
+Edsger W. Dijkstra argued that latter is better
+\footnote{See \url{https://www.cs.utexas.edu/users/EWD/transcriptions/EWD08xx/EWD831.html}}.
+
+But programmers may still have a habit after Fortran, so using this little trick, it's possible to address the first element
+in \CCpp using index 1:
+
+\lstinputlisting[style=customc]{\CURPATH/neg_array.c}
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2010,label=neg_array_c,numbers=left,style=customasmx86]{\CURPATH/neg_array_EN.asm}
+
+So we have \TT{array[]} of ten elements, filled with $0 \ldots 9$ bytes.
+
+Then we have the \TT{fakearray[]} pointer, which points one byte before \TT{array[]}.
+
+\TT{fakearray[1]} points exactly to \TT{array[0]}.
+But we are still curious, what is there before \TT{array[]}?
+We have added \TT{random\_value} before \TT{array[]} and set 
+it to \TT{0x11223344}.
+The non-optimizing compiler allocated the variables in the order they were declared, so yes, the 32-bit \TT{random\_value}
+is right before the array.
+
+We ran it, and:
+
+\begin{lstlisting}
+first element 0
+second element 1
+last element 9
+array[-1]=11, array[-2]=22, array[-3]=33, array[-4]=44
+\end{lstlisting}
+
+Here is the stack fragment we will copypaste from \olly's stack window (with comments added by the author):
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2010]{\CURPATH/stack_EN.txt}
+
+The pointer to the \TT{fakearray[]} (\TT{0x001DFBD3}) is indeed 
+the address of \TT{array[]} in the stack (\TT{0x001DFBD4}), 
+but minus 1 byte.
+
+It's still very hackish and dubious trick. Doubtfully anyone should use it in production code,
+but as a demonstration, it fits perfectly here.
+
+

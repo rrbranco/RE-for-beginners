@@ -1,0 +1,28 @@
+.text:107D4B29 mov  dx, [ecx+42h]
+.text:107D4B2D cmp  edx, 1
+.text:107D4B30 jz   short loc_107D4B4A
+.text:107D4B32 push 1ECh
+.text:107D4B37 push offset aWrite_c ; "write.c"
+.text:107D4B3C push offset aTdTd_planarcon ; "td->td_planarconfig == PLANARCONFIG_CON"...
+.text:107D4B41 call ds:_assert
+
+...
+
+.text:107D52CA mov  edx, [ebp-4]
+.text:107D52CD and  edx, 3
+.text:107D52D0 test edx, edx
+.text:107D52D2 jz   short loc_107D52E9
+.text:107D52D4 push 58h
+.text:107D52D6 push offset aDumpmode_c ; "dumpmode.c"
+.text:107D52DB push offset aN30     ; "(n & 3) == 0"
+.text:107D52E0 call ds:_assert
+
+...
+
+.text:107D6759 mov  cx, [eax+6]
+.text:107D675D cmp  ecx, 0Ch
+.text:107D6760 jle  short loc_107D677A
+.text:107D6762 push 2D8h
+.text:107D6767 push offset aLzw_c   ; "lzw.c"
+.text:107D676C push offset aSpLzw_nbitsBit ; "sp->lzw_nbits <= BITS_MAX"
+.text:107D6771 call ds:_assert

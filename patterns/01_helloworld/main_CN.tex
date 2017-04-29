@@ -1,0 +1,32 @@
+\section{\HelloWorldSectionName}
+\label{sec:helloworld}
+
+我们来使用\KRBook中的著名例子吧:
+
+\lstinputlisting[style=customc]{patterns/01_helloworld/hw.c}
+
+\subsection{x86}
+
+\input{patterns/01_helloworld/MSVC_x86}
+\input{patterns/01_helloworld/GCC_x86}
+\input{patterns/01_helloworld/string_patching_EN} % TODO translate
+
+\subsection{x86-64}
+\input{patterns/01_helloworld/MSVC_x64}
+\input{patterns/01_helloworld/GCC_x64}
+\input{patterns/01_helloworld/address_patching_EN} % TODO translate
+
+\input{patterns/01_helloworld/GCC_one_more}
+\input{patterns/01_helloworld/ARM/main}
+\input{patterns/01_helloworld/MIPS/main}
+
+\subsection{\Conclusion{}}
+
+x86/ARM架构和x64/ARM64架构，在代码上的主要区别是，后者对于字符串的指针大小是64位长度的。
+事实上，由于内存价格走低，以及更多现代应用程序对64位架构的需求增大，目前的\ac{CPU}大多是64位的。
+由于64位指针比32位指针的寻址空间大了很多，我们可以向计算机中添加更多的内存。
+基于以上几点，目前(64位架构)所有的指针都是64位的。
+
+% sections
+\input{patterns/01_helloworld/exercises}
+

@@ -1,0 +1,35 @@
+\begin{center}
+\begin{tikzpicture}[thick,scale=0.85, every node/.style={scale=0.85}]
+	\tikzstyle{every path}=[thick]
+	\tikzstyle{node1}=[draw,rectangle,minimum height=1cm, minimum width=2.5cm, text width=2.5cm, fill=gray!20]
+
+	\node [node1] (n1next) {Next};
+	\node [node1] (n1prev) [below of=n1next] {Prev};
+	\node [node1] (n1x) [below of=n1prev] {X=\garbage{}};
+	\node [node1] (n1y) [below of=n1x] {Y=\garbage{}};
+
+	\node [node1] (variable) [above=1.5cm of n1next] {\RU{Переменная}\EN{Variable} std::list};
+	
+	\node [node1] (itbegin) [above left=1.5cm and 0.2cm of n1next] {list.begin()};
+	\node [node1] (itend) [above right=1.5cm and 0.2cm of n1next] {list.end()};
+	
+	\draw [->] (itbegin.south) -- (n1next.north);
+	
+	\draw [->] (variable.south) -- (n1next.north);
+	
+	\draw [->] (itend.south) -- (n1next.north);
+	
+	\node (ia1) [inner sep=0pt, above left=0.5cm and 0.5cm of n1next] {};
+	\node (ia2) [inner sep=0pt, left=0.5cm of n1next] {};
+	\node (ib1) [inner sep=0pt, above right=0.5cm and 0.5cm of n1next] {};
+	\node (ib2) [inner sep=0pt, right=0.5cm of n1next] {};
+	
+	\node (oa1) [inner sep=0pt, above left=1cm and 1cm of n1next] {};
+	\node (oa2) [inner sep=0pt, left=1cm of n1prev] {};
+	\node (ob1) [inner sep=0pt, above right=1cm and 1cm of n1next] {};
+	\node (ob2) [inner sep=0pt, right=1cm of n1prev] {};
+
+	\draw [->] (n1next.east) -- (ib2) -- (ib1) -- (ia1) -- (ia2) -- (n1next.west);
+	\draw [->] (n1prev.west) -- (oa2) -- (oa1) -- (ob1) -- (ob2) -- (n1prev.east);
+\end{tikzpicture}
+\end{center}

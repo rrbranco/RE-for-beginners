@@ -1,0 +1,91 @@
+\section{Strings}
+\label{sec:digging_strings}
+
+\input{digging_into_code/strings/main_EN}
+
+\subsection{Finding strings in binary}
+
+\epigraph{Actually, the best form of Unix documentation is frequently running the
+\textbf{strings} command over a program’s object code. Using \textbf{strings}, you can get
+a complete list of the program’s hard-coded file name, environment variables,
+undocumented options, obscure error messages, and so forth.}{The Unix-Haters Handbook}
+
+\myindex{UNIX!strings}
+The standard UNIX \IT{strings} utility is quick-n-dirty way to see strings in file.
+For example, these are some strings from OpenSSH 7.2 sshd executable file:
+
+\lstinputlisting{digging_into_code/sshd_strings.txt}
+
+There are options, error messages, file paths, imported dynamic modules and functions, some other strange strings (keys?)
+There is also unreadable noise---x86 code sometimes has chunks consisting of printable ASCII characters, up to ~8 characters.
+
+Of course, OpenSSH is open-source program.
+But looking at readable strings inside of some unknown binary is often a first step of analysis.
+\myindex{UNIX!grep}
+
+\IT{grep} can be applied as well.
+
+\myindex{Hiew}
+\myindex{Sysinternals}
+Hiew has the same capability (Alt-F6), as well as Sysinternals ProcessMonitor.
+
+\subsection{Error/debug messages}
+
+Debugging messages are very helpful if present.
+In some sense, the debugging messages are reporting
+what's going on in the program right now. Often these are \printf-like functions,
+which write to log-files, or sometimes do not writing anything but the calls are still present 
+since the build is not a debug one but \IT{release} one.
+\myindex{\oracle}
+
+If local or global variables are dumped in debug messages, it might be helpful as well 
+since it is possible to get at least the variable names.
+For example, one of such function in \oracle is \TT{ksdwrt()}.
+
+Meaningful text strings are often helpful.
+The \IDA disassembler may show from which function and from which point this specific string is used.
+Funny cases sometimes happen\footnote{\href{http://go.yurichev.com/17223}{blog.yurichev.com}}.
+
+The error messages may help us as well.
+In \oracle, errors are reported using a group of functions.\\
+You can read more about them here: \href{http://go.yurichev.com/17224}{blog.yurichev.com}.
+
+\myindex{Error messages}
+
+It is possible to find quickly which functions report errors and in which conditions.
+
+By the way, this is often the reason for copy-protection systems to inarticulate cryptic error messages 
+or just error numbers. No one is happy when the software cracker quickly understand why the copy-protection
+is triggered just by the error message.
+
+One example of encrypted error messages is here: \myref{examples_SCO}.
+
+\subsection{Suspicious magic strings}
+
+Some magic strings which are usually used in backdoors looks pretty suspicious.
+
+For example, there was a backdoor in the TP-Link WR740 home router\footnote{\url{http://sekurak.pl/tp-link-httptftp-backdoor/}}.
+The backdoor can activated using the following URL:\\
+\url{http://192.168.0.1/userRpmNatDebugRpm26525557/start_art.html}.\\
+
+Indeed, the \q{userRpmNatDebugRpm26525557} string is present in the firmware.
+
+This string was not googleable until the wide disclosure of information about the backdoor.
+
+You would not find this in any \ac{RFC}.
+
+You would not find any computer science algorithm which uses such strange byte sequences.
+
+And it doesn't look like an error or debugging message.
+
+So it's a good idea to inspect the usage of such weird strings.\\
+\\
+\myindex{base64}
+
+Sometimes, such strings are encoded using base64.
+
+So it's a good idea to decode them all and to scan them visually, even a glance should be enough.\\
+\\
+\myindex{Security through obscurity}
+More precise, this method of hiding backdoors is called \q{security through obscurity}.
+

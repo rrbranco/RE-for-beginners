@@ -1,0 +1,97 @@
+\subsubsection{Множественное наследование}
+
+Множественное наследование --- это создание класса наследующего поля и методы от двух или более классов.
+
+
+Снова напишем простой пример:
+
+\lstinputlisting[style=customc]{\CURPATH/classes/classes3_multiple.cpp}
+
+Снова скомпилируем в MSVC 2008 с опциями \Ox и \Obzero и посмотрим код методов \TT{box::dump()},\\
+\TT{solid\_object::dump()} и \TT{solid\_box::dump()}:
+
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_1.asm}
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_2.asm}
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_3.asm}
+
+Выходит, имеем такую разметку в памяти для всех трех классов:
+
+
+класс \IT{box}:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \tableheader{} \\
+\hline
+  +0x0 & width \\
+\hline
+  +0x4 & height \\
+\hline
+  +0x8 & depth \\
+\hline
+\end{tabular}
+\end{center}
+
+класс \IT{solid\_object}:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \tableheader{} \\
+\hline
+  +0x0 & density \\
+\hline
+\end{tabular}
+\end{center}
+
+Можно сказать, что разметка класса \IT{solid\_box} \IT{объединённая}:
+
+
+Класс \IT{solid\_box}:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \tableheader{} \\
+\hline
+  +0x0 & width \\
+\hline
+  +0x4 & height \\
+\hline
+  +0x8 & depth \\
+\hline
+  +0xC & density \\
+\hline
+\end{tabular}
+\end{center}
+
+Код методов \TT{box::get\_volume()} и \TT{solid\_object::get\_density()} тривиален:
+
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_4.asm}
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_5.asm}
+
+А вот код метода \TT{solid\_box::get\_weight()} куда интереснее:
+
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes3_6.asm}
+
+\TT{get\_weight()} просто вызывает два метода, но для \TT{get\_volume()} он передает просто указатель на \TT{this}, а для \TT{get\_density()}, он передает указатель на \TT{this} сдвинутый на 12 байт (либо \TT{0xC} байт), а там, 
+в разметке класса \TT{solid\_box}, как раз начинаются поля класса \TT{solid\_object}.
+
+
+Так, метод \TT{solid\_object::get\_density()} будет полагать что работает с обычным классом \\
+\TT{solid\_object}, а метод \TT{box::get\_volume()} будет работать только со своими тремя полями, полагая, 
+что работает с обычным экземпляром класса \TT{box}.
+
+
+Таким образом, можно сказать, что экземпляр класса-наследника нескольких классов представляет в памяти просто 
+\IT{объединённый} класс, содержащий все унаследованные поля. А каждый унаследованный метод вызывается с передачей
+ему указателя на соответствующую часть структуры.
+
+

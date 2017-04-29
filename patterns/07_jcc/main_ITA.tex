@@ -1,0 +1,113 @@
+\section{Jump condizionali}
+\label{sec:Jcc}
+\myindex{\CLanguageElements!if}
+
+% sections
+\input{patterns/07_jcc/simple/main}
+\input{patterns/07_jcc/abs/main}
+\input{patterns/07_jcc/cond_operator/main}
+\input{patterns/07_jcc/minmax/main}
+
+\subsection{\Conclusione{}}
+
+\subsubsection{x86}
+
+La forma grezza di un jump condizionale e' la seguente:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+CMP register, register/value
+Jcc true ; cc=condition code
+false:
+... codice da eseguire se il risultato del confronto e' false ...
+JMP exit 
+true:
+... codice da eseguire se il risultato del confronto e' true ...
+exit:
+\end{lstlisting}
+
+\subsubsection{ARM}
+
+\begin{lstlisting}[caption=ARM,style=customasmARM]
+CMP register, register/value
+Bcc true ; cc=condition code
+false:
+... codice da eseguire se il risultato del confronto e' false ...
+JMP exit 
+true:
+... codice da eseguire se il risultato del confronto e' true ...
+exit:
+\end{lstlisting}
+
+\subsubsection{MIPS}
+
+\begin{lstlisting}[caption=Check for zero,style=customasmMIPS]
+BEQZ REG, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check for less than zero (using pseudoinstruction),style=customasmMIPS]
+BLTZ REG, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check for equal values,style=customasmMIPS]
+BEQ REG1, REG2, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check for non-equal values,style=customasmMIPS]
+BNE REG1, REG2, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check for less than (signed),style=customasmMIPS]
+SLT REG1, REG2, REG3
+BEQ REG1, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check for less than (unsigned),style=customasmMIPS]
+SLTU REG1, REG2, REG3
+BEQ REG1, label
+...
+\end{lstlisting}
+
+\subsubsection{Branchless}
+
+\myindex{ARM!\Instructions!MOVcc}
+\myindex{x86!\Instructions!CMOVcc}
+\myindex{ARM!\Instructions!CSEL}
+Se il corpo di uno statement condizionale e' molto piccolo, puo' essere utilizzata l'istruzione "move" condizionale: 
+\INS{MOVcc} in ARM (in ARM mode), \INS{CSEL} in ARM64, \INS{CMOVcc} in x86.
+
+\myparagraph{ARM}
+
+In ARM e' possibile usare suffissi condizionali per alcune istruzioni:
+
+\begin{lstlisting}[caption=ARM (\ARMMode),style=customasmARM]
+CMP register, register/value
+instr1_cc ; istruzione che sara' eseguita se il condition code e' true
+instr2_cc ; altra istruzione che sara' eseguita se il condition code e' true
+... etc...
+\end{lstlisting}
+
+Ovviamente non c'e' limite al numero di istruzioni con il suffisso condizionale, a patto che le flag CPU non siano modificate da nessuna istruzione. 
+% FIXME: list of such instructions or \myref{} to it
+
+\myindex{ARM!\Instructions!IT}
+
+La modalita' Thumb ha l'istruzione \INS{IT}, che permette di aggiungere suffissi condizionali alle prossime quattro istruzioni.
+Maggiori informazioni qui: \myref{ARM_Thumb_IT}.
+
+\begin{lstlisting}[caption=ARM (\ThumbMode),style=customasmARM]
+CMP register, register/value
+ITEEE EQ ; set these suffixes: if-then-else-else-else
+instr1   ; istruzione da eseguire se la condizione e' true
+instr2   ; istruzione da eseguire se la condizione e' false
+instr3   ; istruzione da eseguire se la condizione e' false
+instr4   ; istruzione da eseguire se la condizione e' false
+\end{lstlisting}
+
+\subsection{\Esercizio}
+
+(ARM64) Prova a riscrivere il codice in \lstref{cond_ARM64} rimuovendo tutti i jump condizionali e usando al loro posto l'istruzione \TT{CSEL} instruction.

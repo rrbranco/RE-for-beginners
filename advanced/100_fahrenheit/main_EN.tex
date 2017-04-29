@@ -1,0 +1,100 @@
+\section{Temperature converting}
+
+Another very popular example in 
+programming books for beginners is a small program that converts Fahrenheit temperature to Celsius or back.
+
+\[
+	C=\frac{5 \cdot (F-32)}{9}
+\]
+
+We can also add simple error handling:
+1) we must check if the user has entered a correct number;
+2) we must check if the Celsius temperature is not below $-273$ 
+(which is below absolute zero, as we may recall from school physics lessons).
+
+\myindex{\CStandardLibrary!exit()}
+The \TT{exit()} function terminates 
+the program instantly, without returning to the \gls{caller} function.
+
+\subsection{Integer values}
+
+\lstinputlisting[style=customc]{\CURPATH/i.c}
+
+\subsubsection{\Optimizing MSVC 2012 x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x86,style=customasmx86]{\CURPATH/i_MSVC_2012_Ox_x86_EN.asm}
+
+What we can say about it:
+
+\begin{itemize}
+\item The address of \printf is first loaded in the 
+\ESI register, so the subsequent
+\printf calls are done just by the \TT{CALL ESI} instruction.
+It's a very popular compiler 
+technique, possible if several consequent calls to the same function are present
+in the code, and/or if there is a free register which can be used for this.
+
+\item We see the \TT{ADD EAX, -32} 
+instruction at the place where 32 has to be subtracted from the value.
+$EAX=EAX+(-32)$ is equivalent to $EAX=EAX-32$ 
+and somehow, the compiler decided to use \TT{ADD} instead of \TT{SUB}.
+Maybe it's worth it, it's hard to be sure.
+
+\myindex{x86!\Instructions!LEA}
+\item The \LEA instruction is used when 
+the value is to be multiplied by 5: \TT{lea ecx, DWORD PTR [eax+eax*4]}.
+Yes, $i+i*4$ is equivalent to $i*5$ and \LEA 
+works faster then \TT{IMUL}.\\
+By the way, the \TT{SHL EAX, 2 / ADD EAX, EAX} instruction pair could be also used here instead---
+some compilers do it like.
+
+\item The division by multiplication trick (\myref{sec:divisionbymult}) 
+is also used here.
+
+\item \main returns 0 if we don't have \TT{return 0} 
+at its end.
+The C99 standard tells us \InSqBrackets{\CNineNineStd 5.1.2.2.3} that \main 
+will return 0 in case the 
+\TT{return} statement is missing.
+This rule works only for the \main function.
+
+Though, MSVC doesn't officially support C99, but maybe it support it partially?
+\end{itemize}
+
+\subsubsection{\Optimizing MSVC 2012 x64}
+
+The code is almost the same, but we can find \TT{INT 3} instructions after each \TT{exit()} call.
+
+\begin{lstlisting}[style=customasmx86]
+	xor	ecx, ecx
+	call	QWORD PTR __imp_exit
+	int	3
+\end{lstlisting}
+
+\TT{INT 3} is a debugger breakpoint.
+
+It is known that \TT{exit()} is one of the functions which can never return
+\footnote{another popular one is \TT{longjmp()}},
+so if it does, something really odd has happened and it's time to load the debugger.
+
+\subsection{Floating-point values}
+
+\lstinputlisting[style=customc]{\CURPATH/f.c}
+
+MSVC 2010 x86 uses \ac{FPU} instructions\dots
+
+\lstinputlisting[caption=\Optimizing MSVC 2010 x86,style=customasmx86]{\CURPATH/f_MSVC_2010_x86_Ox_EN.asm}
+
+\dots but MSVC  2012 uses \ac{SIMD} instructions instead:
+
+\lstinputlisting[caption=\Optimizing MSVC 2010 x86,style=customasmx86]{\CURPATH/f_MSVC_2012_x86_Ox_EN.asm}
+
+Of course, \ac{SIMD} instructions are available in x86 mode, 
+including those working with floating point numbers.
+
+It's somewhat easier to use them for calculations, so the new Microsoft compiler uses them.
+
+We can also see that the $-273$ value 
+is loaded into \XMM{0} register too early.
+And that's OK, because the compiler may emit instructions not in 
+the order they are in the source code.

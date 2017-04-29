@@ -1,0 +1,26 @@
+\subsection{De nombreux cas}
+
+Si une déclaration \TT{switch()} contient beaucoup de cas, il n'est pas très pratique
+pour le compilateur de générer un trop gros code avec de nombreuses instructions
+\JE/\JNE.
+
+\lstinputlisting[label=switch_lot_c,style=customc]{patterns/08_switch/2_lot/lot.c}
+
+\input{patterns/08_switch/2_lot/lot_x86_FR}
+\input{patterns/08_switch/2_lot/lot_ARM_FR}
+\input{patterns/08_switch/2_lot/lot_MIPS_FR}
+
+\subsubsection{\Conclusion{}}
+
+Squelette grossier d'un \IT{switch()}:
+
+% TODO: ARM, MIPS skeleton
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/08_switch/2_lot/skel1_FR.lst}
+
+Le saut a une adresse de la table de saut peut aussi être implémenté en utilisant
+cette instruction: \\
+\TT{JMP jump\_table[REG*4]}.
+Ou \TT{JMP jump\_table[REG*8]} en x64.
+
+Une table de saut est juste un tableau de pointeurs, comme celle décrite plus
+loin: \myref{array_of_pointers_to_strings}. 

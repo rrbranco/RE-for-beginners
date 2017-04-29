@@ -1,0 +1,30 @@
+\subsubsection{ARM}
+
+\myparagraph{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/04_scanf/3_checking_retval/ex3_ARM_Keil_thumb_O3.asm}
+
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!BEQ}
+Die neuen Befehle hier sind \CMP und \ac{BEQ}.
+\CMP verhält sich analog zum x86 Befehl gleichen Namens, er zieht ein Argument vom anderen ab und aktualisiert die
+Flags, falls nötig.
+% TODO: в мануале ARM $op1 + NOT(op2) + 1$ вместо вычитания
+
+\myindex{ARM!\Registers!Z}
+\myindex{x86!\Instructions!JZ}
+\ac{BEQ} springt zu einer anderen Adresse, falls die beiden Operanden gleich waren oder das Ergebnis der letzten
+Berechnung 0 war oder das Zero Flag auf 1 gesetzt ist. Der Befehl verhält sich wie \JZ in x86.
+
+Der Rest ist einfach: der Ausführung verläuft in zwei Zweigen, dann vereinen sich die Zweige an der Stelle wieder, an
+der 0 als Rückgabewert der Funktion in \Reg{0} geschrieben wird, und der Funktionsablauf endet. 
+
+\myparagraph{ARM64}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1
+ARM64,numbers=left,style=customasmARM]{patterns/04_scanf/3_checking_retval/ARM64_GCC491_O0_DE.s}
+
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!Bcc}
+Der Kontrollfluss wird in diesem Fall mithilfe von \INS{CMP}/\INS{BNE} (Branch if Not Equal) aufgespalten.
+

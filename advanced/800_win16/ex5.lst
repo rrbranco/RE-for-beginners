@@ -1,0 +1,153 @@
+string_compare  proc near
+
+arg_0 = word ptr  4
+arg_2 = word ptr  6
+
+      push    bp
+      mov     bp, sp
+      push    si
+      mov     si, [bp+arg_0]
+      mov     bx, [bp+arg_2]
+
+loc_12: ; CODE XREF: string_compare+21j
+      mov     al, [bx]
+      cmp     al, [si]
+      jz      short loc_1C
+      xor     ax, ax
+      jmp     short loc_2B
+
+
+loc_1C: ; CODE XREF: string_compare+Ej
+      test    al, al
+      jz      short loc_22
+      jnz     short loc_27
+
+loc_22: ; CODE XREF: string_compare+16j
+      mov     ax, 1
+      jmp     short loc_2B
+
+
+loc_27: ; CODE XREF: string_compare+18j
+      inc     bx
+      inc     si
+      jmp     short loc_12
+
+
+loc_2B: ; CODE XREF: string_compare+12j
+        ; string_compare+1Dj
+      pop     si
+      pop     bp
+      retn    4
+string_compare  endp
+
+string_compare_far proc near ; CODE XREF: WinMain+18p
+
+arg_0 = word ptr  4
+arg_2 = word ptr  6
+arg_4 = word ptr  8
+arg_6 = word ptr  0Ah
+
+      push    bp
+      mov     bp, sp
+      push    si
+      mov     si, [bp+arg_0]
+      mov     bx, [bp+arg_4]
+
+loc_3A: ; CODE XREF: string_compare_far+35j
+      mov     es, [bp+arg_6]
+      mov     al, es:[bx]
+      mov     es, [bp+arg_2]
+      cmp     al, es:[si]
+      jz      short loc_4C
+      xor     ax, ax
+      jmp     short loc_67
+
+
+loc_4C: ; CODE XREF: string_compare_far+16j
+      mov     es, [bp+arg_6]
+      cmp     byte ptr es:[bx], 0
+      jz      short loc_5E
+      mov     es, [bp+arg_2]
+      cmp     byte ptr es:[si], 0
+      jnz     short loc_63
+
+loc_5E: ; CODE XREF: string_compare_far+23j
+      mov     ax, 1
+      jmp     short loc_67
+
+
+loc_63: ; CODE XREF: string_compare_far+2Cj
+      inc     bx
+      inc     si
+      jmp     short loc_3A
+
+
+loc_67: ; CODE XREF: string_compare_far+1Aj
+        ; string_compare_far+31j
+      pop     si
+      pop     bp
+      retn    8
+string_compare_far endp
+
+remove_digits   proc near ; CODE XREF: WinMain+1Fp
+
+arg_0 = word ptr  4
+
+      push    bp
+      mov     bp, sp
+      mov     bx, [bp+arg_0]
+
+loc_72: ; CODE XREF: remove_digits+18j
+      mov     al, [bx]
+      test    al, al
+      jz      short loc_86
+      cmp     al, 30h ; '0'
+      jb      short loc_83
+      cmp     al, 39h ; '9'
+      ja      short loc_83
+      mov     byte ptr [bx], 2Dh ; '-'
+
+loc_83: ; CODE XREF: remove_digits+Ej
+        ; remove_digits+12j
+      inc     bx
+      jmp     short loc_72
+
+
+loc_86: ; CODE XREF: remove_digits+Aj
+      pop     bp
+      retn    2
+remove_digits   endp
+
+WinMain proc near ; CODE XREF: start+EDp
+      push    bp
+      mov     bp, sp
+      mov     ax, offset aAsd ; "asd"
+      push    ax
+      mov     ax, offset aDef ; "def"
+      push    ax
+      call    string_compare
+      push    ds
+      mov     ax, offset aAsd ; "asd"
+      push    ax
+      push    ds
+      mov     ax, offset aDef ; "def"
+      push    ax
+      call    string_compare_far
+      mov     ax, offset aHello1234World ; "hello 1234 world"
+      push    ax
+      call    remove_digits
+      xor     ax, ax
+      push    ax
+      push    ds
+      mov     ax, offset aHello1234World ; "hello 1234 world"
+      push    ax
+      push    ds
+      mov     ax, offset aCaption ; "caption"
+      push    ax
+      mov     ax, 3 ; MB_YESNOCANCEL
+      push    ax
+      call    MESSAGEBOX
+      xor     ax, ax
+      pop     bp
+      retn    0Ah
+WinMain endp

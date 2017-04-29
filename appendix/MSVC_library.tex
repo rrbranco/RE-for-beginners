@@ -1,0 +1,35 @@
+
+\section{\RU{Некоторые библиотечные функции MSVC}\EN{Some MSVC library functions}\DE{Einige MSVC-Bibliotheks-Funktionen}}
+\myindex{MSVC}
+\label{sec:MSVC_library_func}
+
+\TT{ll} \RU{в имени функции означает}\EN{in function name stands for}\DE{in Funktionsnamen steht für} \q{long long}, \RU{т.е. 64-битный тип данных}
+\EN{e.g., a 64-bit data type}\DE{z.B. einen 64-Bit-Datentyp}.
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor \RU{имя}\EN{name}\DE{Name} & \HeaderColor \RU{значение}\EN{meaning}\DE{Bedeutung} \\
+\hline \TT{\_\_alldiv} & \RU{знаковое деление}\EN{signed division}\DE{vorzeichenbehaftete Division} \\
+\hline \TT{\_\_allmul} & \RU{умножение}\EN{multiplication}\DE{Multiplikation} \\
+\hline \TT{\_\_allrem} & \RU{остаток от знакового деления}\EN{remainder of signed division}\DE{Rest einer vorzeichenbehafteten Division} \\
+\hline \TT{\_\_allshl} & \RU{сдвиг влево}\EN{shift left}\DE{Schiebe links} \\
+\hline \TT{\_\_allshr} & \RU{знаковый сдвиг вправо}\EN{signed shift right}\DE{Schiebe links, vorzeichenbehaftet} \\
+\hline \TT{\_\_aulldiv} & \RU{беззнаковое деление}\EN{unsigned division}\DE{vorzeichenlose Division} \\
+\hline \TT{\_\_aullrem} & \RU{остаток от беззнакового деления}\EN{remainder of unsigned division}\DE{Rest (Modulo) einer vorzeichenlosen Division} \\
+\hline \TT{\_\_aullshr} & \RU{беззнаковый сдвиг вправо}\EN{unsigned shift right}\DE{Schiebe rechts, vorzeichenlos} \\
+\hline
+\end{tabular}
+\end{center}
+
+\RU{Процедуры умножения и сдвига влево, одни и те же и для знаковых чисел, и для беззнаковых,
+поэтому здесь только одна функция для каждой операции}
+\EN{Multiplication and shift left procedures are the same for both signed and unsigned numbers, hence there is only one function 
+for each operation here}.
+\DE{Multiplikation und Links-Schiebebefehle sind sowohl für vorzeichenbehaftete als auch vorzeichenlose Zahlen,
+da hier für jede Operation nur ein Befehl existiert}. \\
+\\
+\RU{Исходные коды этих функций можно найти в установленной \ac{MSVS}, в}\EN{The source code of these function
+can be found in the installed \ac{MSVS}, in} \TT{VC/crt/src/intel/*.asm}
+\DE{Der Quellcode dieser Funktionen kann im Pfad des installierten \ac{MSVS}, gefunden werden: } \TT{VC/crt/src/intel/*.asm}.
+

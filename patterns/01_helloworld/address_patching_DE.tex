@@ -1,0 +1,72 @@
+\subsubsection{Adress-Patching (Win64)}
+
+Wenn das Beispiel in MSCV2013 mit der Option \TT{\textbackslash{}MD} kompiliert wird
+(was zu einer kleineren ausfühbaren Datei durch das linken mit \TT{MSVCR*.DLL} führt),
+kommt zuerst die \main-Funktion und kann einfach gefunden werden:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/01_helloworld/hiew_incr1.png}
+\caption{Hiew}
+\label{}
+\end{figure}
+
+Als Experiment kann die Adresse des Pointers um 1 \gls{increment} werden:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/01_helloworld/hiew_incr2.png}
+\caption{Hiew}
+\label{}
+\end{figure}
+
+Hiew zeigt \q{ello, world} als Zeichenkette und beim Ausführen der gepatchten
+Datei wird eben dieser Text ausgegeben.
+
+\subsubsection{Aussuchen einer anderen Zeichenkette einer Binärdatei (Linux x64)}
+
+Die Binärdatei die beim Kompilieren des Beispiels mit GCC 5.4.0 unter Linux x64
+entsteht, beinhaltet noch viele andere Zeichenketten: die meisten sind importierte
+Funktions- und Bibliotheksnamen.
+
+Mit objdump können die Inhalte aller Sektionen der kompilierten Datei ausgegeben werden:
+
+\begin{lstlisting}[basicstyle=\ttfamily, mathescape]
+$\$$ objdump -s a.out
+
+a.out:     file format elf64-x86-64
+
+Contents of section .interp:
+ 400238 2f6c6962 36342f6c 642d6c69 6e75782d  /lib64/ld-linux-
+ 400248 7838362d 36342e73 6f2e3200           x86-64.so.2.
+Contents of section .note.ABI-tag:
+ 400254 04000000 10000000 01000000 474e5500  ............GNU.
+ 400264 00000000 02000000 06000000 20000000  ............ ...
+Contents of section .note.gnu.build-id:
+ 400274 04000000 14000000 03000000 474e5500  ............GNU.
+ 400284 fe461178 5bb710b4 bbf2aca8 5ec1ec10  .F.x[.......^...
+ 400294 cf3f7ae4                             .?z.
+
+...
+\end{lstlisting}
+
+Es ist kein Problem die Adresse der Zeichenkette \q{/lib64/ld-linux-x86-64.so.2}
+an \TT{printf()} zu übergeben:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+    printf(0x400238);
+    return 0;
+}
+\end{lstlisting}
+
+Schwer zu glauben, aber dieser Code gibt die erwähnte Zeichenkette aus.
+
+Beim Ändern der Adresse zu \TT{0x400260} wird die Zeichenkette \q{GNU} ausgegeben.
+Diese Adresse gilt für die hier verwendete GCC-Version, Toolkonfiguration und so weiter.
+Auf anderen Systemen kann die ausfühbare Datei leicht unterschiedlich sein, was auch
+die Adressen verändern kann.
+Auch das Hinzufügen und Entfernen von Quellcode kann Adressen vor- und zurückschieben.

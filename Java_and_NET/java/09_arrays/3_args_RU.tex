@@ -1,0 +1,50 @@
+% TODO proof-reading
+\subsubsection{Единственный аргумент \main это также массив}
+
+
+Будем использовать единственный аргумент \main, который массив строк:
+
+\begin{lstlisting}[style=customjava]
+public class UseArgument
+{
+	public static void main(String[] args)
+	{
+		System.out.print("Hi, ");
+		System.out.print(args[1]);
+		System.out.println(". How are you?");
+	}
+}
+\end{lstlisting}
+
+
+Нулевой аргумент это имя программы (как в \CCpp, итд),
+так что первый аргумент это тот, что пользователь добавил первым.
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=3, locals=1, args_size=1
+         0: getstatic     #2      // Field java/lang/System.out:Ljava/io/PrintStream;
+         3: ldc           #3      // String Hi, 
+         5: invokevirtual #4      // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+         8: getstatic     #2      // Field java/lang/System.out:Ljava/io/PrintStream;
+        11: aload_0       
+        12: iconst_1      
+        13: aaload        
+        14: invokevirtual #4      // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+        17: getstatic     #2      // Field java/lang/System.out:Ljava/io/PrintStream;
+        20: ldc           #5      // String . How are you?
+        22: invokevirtual #6      // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+        25: return        
+\end{lstlisting}
+
+
+\TT{aload\_0} на 11 загружают \IT{reference} на нулевой слот \ac{LVA} 
+(первый и единственный аргумент \main).
+
+\TT{iconst\_1} и \TT{aaload} на 12 и 13 берут \IT{reference} на первый (считая с 0) 
+элемент массива.
+
+\IT{Reference} на строковый объект на \ac{TOS} по смещению 14, и оттуда он 
+берется методом \TT{println}.

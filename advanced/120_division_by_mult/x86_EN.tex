@@ -1,0 +1,32 @@
+﻿\subsection{x86}
+
+\dots is compiled in a very predictable way:
+
+\lstinputlisting[caption=MSVC,style=customasmx86]{\CURPATH/11_1_msvc_EN.asm}
+
+\myindex{x86!\Instructions!IDIV}
+
+\IDIV divides the 64-bit number stored in the \TT{EDX:EAX} register pair by the value in the \ECX.
+As a result, \EAX will contain the \gls{quotient}, and \EDX --- the remainder.
+The result is returned from the \ttf function in the \EAX register, 
+so the value is not moved after the division 
+operation, it is in right place already.
+
+Since \IDIV uses the value in the \TT{EDX:EAX} register pair, the \TT{CDQ} instruction (before \IDIV) extends 
+the value in \EAX to a 64-bit value taking its sign into account, just as \MOVSX does.
+
+If we turn optimization on (\Ox), we get:
+
+\lstinputlisting[caption=\Optimizing MSVC,style=customasmx86]{\CURPATH/11_1_msvc_Ox.asm}
+
+This is division by multiplication. Multiplication operations work much faster. 
+And it is possible to use this trick
+\footnote{Read more about division by multiplication in \InSqBrackets{\HenryWarren 10-3}}
+to produce code which is effectively equivalent and faster.
+
+This is also called \q{strength reduction} in compiler optimizations.
+
+GCC 4.4.1 generates almost the same code even without additional optimization flags, 
+just like MSVC with optimization turned on:
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.1,style=customasmx86]{\CURPATH/11_2_gcc.asm}

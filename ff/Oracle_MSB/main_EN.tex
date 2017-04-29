@@ -1,0 +1,194 @@
+﻿\section{\oracle: .MSB-files\ESph{}\PTBRph{}\PLph{}\ITAph{}\DEph{}\NLph{}}
+\myindex{\oracle}
+\epigraph{When working toward the solution of a problem, it always helps if you know the answer.}{Murphy's Laws, Rule of Accuracy}
+
+This is a binary file that contains error messages with their corresponding numbers.
+Let's try to understand 
+its format and find a way to unpack it.
+
+There are \oracle error message files in text form, 
+so we can compare the text and packed binary files
+\footnote{Open-source text files don't exist in \oracle for every .MSB file, so that's why we will work on their file format}.
+
+This is the beginning of the ORAUS.MSG text file with some irrelevant comments stripped:
+
+\begin{lstlisting}[caption=Beginning of ORAUS.MSG file without comments]
+00000, 00000, "normal, successful completion"
+00001, 00000, "unique constraint (%s.%s) violated"
+00017, 00000, "session requested to set trace event"
+00018, 00000, "maximum number of sessions exceeded"
+00019, 00000, "maximum number of session licenses exceeded"
+00020, 00000, "maximum number of processes (%s) exceeded"
+00021, 00000, "session attached to some other process; cannot switch session"
+00022, 00000, "invalid session ID; access denied"
+00023, 00000, "session references process private memory; cannot detach session"
+00024, 00000, "logins from more than one process not allowed in single-process mode"
+00025, 00000, "failed to allocate %s"
+00026, 00000, "missing or invalid session ID"
+00027, 00000, "cannot kill current session"
+00028, 00000, "your session has been killed"
+00029, 00000, "session is not a user session"
+00030, 00000, "User session ID does not exist."
+00031, 00000, "session marked for kill"
+...
+\end{lstlisting}
+
+The first number is the error code.
+The second is perhaps maybe some additional flags.
+
+\clearpage
+Now let's open the ORAUS.MSB 
+binary file and find these text strings. 
+And there are:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_MSB/1.png}
+\caption{Hiew: first block}
+\label{fig:oracle_MSB_1}
+\end{figure}
+
+We see the text strings (including those from the beginning of the ORAUS.MSG file) 
+interleaved with some binary values.
+By quick investigation, we can see that main part of the binary file is divided by blocks of 
+size 0x200 (512) bytes.
+
+\clearpage
+Let's see the contents of the first block:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_MSB/2.png}
+\caption{Hiew: first block}
+\label{fig:oracle_MSB_2}
+\end{figure}
+
+Here we see the texts of the first messages errors.
+What we also see is 
+that there are no zero bytes between the error messages.
+This implies that these are not null-terminated C strings.
+As a consequence, 
+the length of each error message must be encoded somehow.
+Let's also try to find the error numbers.
+The ORAUS.MSG files starts with these: 
+0, 1, 17 (0x11), 18 (0x12), 19 (0x13), 20 (0x14), 21 (0x15), 22 (0x16), 23 (0x17), 24 (0x18)...
+We will find these numbers at the beginning 
+of the block and mark them with red lines.
+The period between error codes is 6 bytes.
+
+This implies that there are probably 6 bytes of information allocated for each error message.
+
+The first 16-bit value (0xA here or 10) means the number of messages in each block: this can be checked by investigating other blocks.
+Indeed: the error messages have arbitrary size. 
+Some are longer, some are shorter. 
+But block size is always fixed, hence,
+you never know how many text messages can be packed in each block.
+
+As we already noted, since these are not null-terminated C strings, their size must be encoded somewhere.
+The size of the first string \q{normal, successful completion} is 
+29 (0x1D) bytes.
+The size of the second string \q{unique constraint (\%s.\%s) violated} 
+is 34 (0x22) bytes.
+We can't find these values (0x1D or/and 0x22) in the block.%
+
+There is also another thing.
+\oracle 
+has to determine the position of the string it needs to load in the block, right?
+The first string \q{normal, successful completion} starts 
+at  position 0x1444 (if we count starting at the beginning of the file) or at 0x44 (from the block's start).
+The second string \q{unique constraint (\%s.\%s) violated} 
+starts at position 0x1461 (from the
+file's start) or at 0x61 (from the at the block's start).
+These numbers (0x44 and 0x61) are familiar somehow! 
+We can clearly see them at the start of the block.
+
+So, each 6-byte block is:
+
+\begin{itemize}
+\item 16-bit error number; 
+\item 16-bit zero (maybe additional flags); 
+\item 16-bit starting position of 
+the text string within the current block.
+\end{itemize}
+
+We can quickly check the other values and be sure our guess is correct.
+And there is also the last \q{dummy} 6-byte block 
+with an error number of zero and starting position beyond the last error message's last character.
+Probably that's how text message length is 
+determined?
+We just enumerate 6-byte blocks to find the error number
+we need, then we get the text string's position, then we get the position of the text string by looking at the next
+6-byte block!
+This way we determine the string's boundaries!
+This method allows to 
+save some space by not saving the text string's size in the file!
+
+It's not possible to say it saves a lot of space, but it's a clever trick.
+
+\clearpage
+Let's back to the header of .MSB-file:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_MSB/3.png}
+\caption{Hiew: file header}
+\label{fig:oracle_MSB_3}
+\end{figure}
+
+Now we can quickly find the number of blocks in the file (marked by red).
+We can checked other .MSB-files and we see that it's true for all of them.
+
+There are a lot of other values, but we will not investigate them, since our job (an unpacking utility) is done.
+
+If we have to write a .MSB file packer, we would probably have to understand the meaning of the other values.
+
+\clearpage
+There is also a table that came after the header which probably contains 16-bit values:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_MSB/4.png}
+\caption{Hiew: last\_errnos table}
+\label{fig:oracle_MSB_4}
+\end{figure}
+
+Their size can be determined visually (red lines are drawn here).
+
+While dumping these values, we have found that each 16-bit number is the last error code for each block.
+
+So that's how \oracle quickly finds the error message:
+
+\begin{itemize}
+\item load a table we will call last\_errnos (that contains the last error number for each block);
+
+\item find a block that contains the error code we need, assuming all error codes 
+increase across each block and across the file as well;
+
+\item load the specific block;
+
+\item enumerate the 6-byte structures until the specific error number is found;
+
+\item get the position of the first character from the current 6-byte block;
+
+\item get the position of the last character from the next 6-byte block;
+
+\item load all characters of the message in this range.
+\end{itemize}
+
+This is C program that we wrote which unpacks .MSB-files:
+\href{http://go.yurichev.com/17213}{beginners.re}.
+
+There are also the two files which were used in the example 
+(\oracle 11.1.0.6):
+\href{http://go.yurichev.com/17214}{beginners.re},
+\href{http://go.yurichev.com/17215}{beginners.re}.
+
+\subsection{Summary}
+
+The method is probably too 
+old-school for modern computers.
+Supposedly, this file format was developed in the mid-80's by 
+someone who also coded for \IT{big iron} with
+memory/disk space economy in mind.
+Nevertheless, it has been an interesting and yet easy task 
+to understand a proprietary file format without looking into \oracle's code.

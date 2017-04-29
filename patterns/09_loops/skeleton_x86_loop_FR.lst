@@ -1,0 +1,7 @@
+﻿    ; compter de 10 §à§ 1
+    MOV ECX, 10
+body:
+    ; corps de la boucle
+    ; faire quelque chose ici
+    ; utiliser le compteur dans ECX, mais ne pas le modifier!
+    LOOP body

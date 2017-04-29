@@ -1,0 +1,13 @@
+\subsubsection{MIPS}
+Auf dem lokalen Stack wird Platz für die Variable $x$ reserviert und als $\$sp+24$ referenziert.
+
+\myindex{MIPS!\Instructions!LW}
+Die Adresse wird an \scanf übergeben und der Userinput wird mithilfe des Befehls \INS{LW} (\q{Load Word}) geladen und dann an \printf übergeben.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/04_scanf/1_simple/MIPS/ex1.O3_DE.s}
+
+IDA stellt das Stack Layout wie folgt dar:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/04_scanf/1_simple/MIPS/ex1.O3.IDA_DE.lst}
+
+% TODO non-optimized version?

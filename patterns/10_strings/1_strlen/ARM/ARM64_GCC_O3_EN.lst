@@ -1,0 +1,13 @@
+my_strlen:
+	mov	x1, x0
+	; X1 is now temporary pointer (eos), acting like §\IT{cursor}§
+.L58:
+	; load byte from X1 to W2, increment X1 (post-index)
+	ldrb	w2, [x1],1
+	; Compare and Branch if NonZero: compare W2 with 0, jump to .L58 if it is not
+	cbnz	w2, .L58
+	; calculate difference between initial pointer in X0 and current address in X1
+	sub	x0, x1, x0
+	; decrement lowest 32-bit of result
+	sub	w0, w0, #1
+	ret

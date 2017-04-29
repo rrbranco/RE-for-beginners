@@ -1,0 +1,98 @@
+\subsection{Возврат строки}
+
+Классическая ошибка из \RobPikePractice{}:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+char* amsg(int n, char* s)
+{
+        char buf[100];
+
+        sprintf (buf, "error %d: %s\n", n, s) ;
+
+        return buf;
+};
+
+int main()
+{
+        amsg ("%s\n", interim (1234, "something wrong!"));
+};
+\end{lstlisting}
+
+Она упадет.
+В начале, попытаемся понять, почему.
+
+Это состояние стека перед возвратом из amsg():
+
+\begin{lstlisting}
+[amsg(): 100 байт][RA][два аргумента amsg][что-то еще][локальные переменные main()]
+                   ^^
+                текущий SP
+\end{lstlisting}
+
+Когда управление возвращается из amsg() в \main, пока всё хорошо.
+Но когда \printf вызывается из \main, который, в свою очередь, использует стек для своих нужд, затирая 100-байтный буфер.
+В лучшем случае, будет выведен случайный мусор.
+
+Трудно поверить, но я знаю, как это исправить:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+char* amsg(int n, char* s)
+{
+        char buf[100];
+
+        sprintf (buf, "error %d: %s\n", n, s) ;
+
+        return buf;
+};
+
+char* interim (int n, char* s)
+{
+        char large_buf[8000];
+        // используем локальный массив.
+        // а иначе компилятор выбросит его при оптимизации, как неиспользуемый.
+        large_buf[0]=0;
+        return amsg (n, s);
+};
+
+int main()
+{
+        printf ("%s\n", interim (1234, "something wrong!"));
+};
+\end{lstlisting}
+
+Это заработает если скомпилировано в MSVC 2013 без оптимизаций и с опцией \TT{/GS-}\footnote{Выключить защиту от переполнения буфера}.
+MSVC предупредит: ``warning C4172: returning address of local variable or temporary'', но код запустится и сообщение выведется.
+Посмотрим состояние стека в момент, когда amsg() возвращает управление в interim():
+
+\begin{lstlisting}
+[amsg(): 100 байт][RA][два аргумента amsg()][вледения interim(), включая 8000 байт][еще что-то][локальные переменные main()]
+                   ^^
+                текущий SP
+\end{lstlisting}
+
+Теперь состояние стека на момент, когда interim() возвращает управление в \main{}:
+
+\begin{lstlisting}
+[amsg(): 100 байт][RA][два аргумента amsg()][вледения interim(), включая 8000 байт][еще что-то][локальные переменные main()]
+                                                                                        ^^
+                                                                                     текущий SP
+\end{lstlisting}
+
+Так что когда \main вызывает \printf, он использует стек в месте, где выделен буфер в interim(),
+и не затирает 100 байт с сообщение об ошибке внутри, потому что 8000 байт (или может быть меньше) это достаточно для всего,
+что делает \printf и другие нисходящие ф-ции!
+
+Это также может сработать, если между ними много ф-ций, например:
+\main $\rightarrow$ f1() $\rightarrow$ f2() $\rightarrow$ f3() ... $\rightarrow$ amsg(),
+и тогда результат amsg() используется в \main.
+Дистанция между \ac{SP} в \main и адресом буфера \TT{buf[]} должна быть достаточно длинной.
+
+Вот почему такие ошибки опасны: иногда ваш код работает (и бага прячется незамеченной). иногда нет.
+\label{heisenbug}
+\myindex{Хейзенбаги}
+Такие баги в шутку называют хейзенбаги или шрёдинбаги\footnote{\url{https://en.wikipedia.org/wiki/Heisenbug}}.
+

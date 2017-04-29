@@ -1,0 +1,11 @@
+@TApplication@IdleAction$qv
+@TApplication@ProcessMDIAccels$qp6tagMSG
+@TModule@$bctr$qpcpvt1
+@TModule@$bdtr$qv
+@TModule@ValidWindow$qp14TWindowsObject
+@TrueColorTo8BitN$qpviiiiiit1iiiiii
+@TrueColorTo16BitN$qpviiiiiit1iiiiii
+@DIB24BitTo8BitBitmap$qpviiiiiit1iiiii
+@TrueBitmap@$bctr$qpcl
+@TrueBitmap@$bctr$qpvl
+@TrueBitmap@$bctr$qiilll

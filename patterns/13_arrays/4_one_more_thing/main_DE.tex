@@ -1,0 +1,23 @@
+\subsection{Noch ein Wort zu Arrays}
+Wir verstehen nun warum es nicht möglich ist etwas wie das Folgende in \CCpp Code zu schreiben:
+
+\begin{lstlisting}[style=customc]
+void f(int size)
+{
+    int a[size];
+...
+};
+\end{lstlisting}
+Das liegt daran, dass der Compiler die exakte Größe des Arrays zur Compilerzeit kennen muss, um Platz auf dem lokalen
+Stack zu reservieren.
+
+\myindex{\CLanguageElements!C99!variable length arrays}
+\myindex{\CStandardLibrary!alloca()}
+Wenn man ein Array beliebiger Größe benötigt, muss es über \TT{malloc()} angelegt werden und dann über den reservieren
+Speicherblock als Arrays von Variablen des benötigten Typs angesprochen werden.
+
+Oder man verwendet das C99 Standardfeature \InSqBrackets{\CNineNineStd 6.7.5/2}, dass intern wie
+\IT{alloca()}~(\myref{alloca}) arbeitet.
+
+Es ist auch möglich, C-Bibliotheken zu verwenden, die als Garbagecollector fungieren.
+Des Weiteren gibt es auch Bibliotheken für C++, die intelligente Pointer unterstützen.

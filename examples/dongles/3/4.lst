@@ -1,0 +1,16 @@
+seg030:01BF             get_rand proc far ; CODE XREF: check_dongle+25p
+seg030:01BF
+seg030:01BF             arg_0    = word ptr  6
+seg030:01BF
+seg030:01BF 55                   push    bp
+seg030:01C0 8B EC                mov     bp, sp
+seg030:01C2 9A 3D 21 00+         call    _rand
+seg030:01C7 66 0F BF C0          movsx   eax, ax
+seg030:01CB 66 0F BF 56+         movsx   edx, [bp+arg_0]
+seg030:01D0 66 0F AF C2          imul    eax, edx
+seg030:01D4 66 BB 00 80+         mov     ebx, 8000h
+seg030:01DA 66 99                cdq
+seg030:01DC 66 F7 FB             idiv    ebx
+seg030:01DF 5D                   pop     bp
+seg030:01E0 CB                   retf
+seg030:01E0             get_rand endp

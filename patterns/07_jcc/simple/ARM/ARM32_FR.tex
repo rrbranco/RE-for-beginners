@@ -1,0 +1,120 @@
+\myparagraph{ARM 32-bit}
+\label{subsec:jcc_ARM}
+
+\mysubparagraph{\OptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_O3_signed.asm}
+
+\myindex{ARM!Condition codes}
+% FIXME \ref -> which instructions?
+
+Beaucoup d'instructions en mode ARM ne peuvent être exécutées que lorsque certains
+flags sont mis.
+E.g, ceci est souvent utilisé lorsque l'on compare les nombres
+
+\myindex{ARM!\Instructions!ADD}
+\myindex{ARM!\Instructions!ADDAL}
+
+Par exemple, l'instruction \ADD est en fait appelée \TT{ADDAL} en interne, oú \TT{AL}
+signifie \IT{Always}, i.e., toujours exécuter.
+Les préficats sont encodés dans les 4 bits du haut des instructions ARM 32-bit. (\IT{condition field}).
+\myindex{ARM!\Instructions!B}
+L'instruction de saut inconditionnel \TT{B} est en fait conditionnelle et encodée
+comme toutes les autres instructions de saut conditionnel, mais a \TT{AL} dans le
+\IT{champ de condition}, et \IT{s'exécute toujours} (ALways), ignorants les flags.
+
+\myindex{ARM!\Instructions!ADR}
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!CMP}
+
+L'instruction \TT{ADRGT} fonctionne comme \TT{ADR} mais ne s'exécute que dans le
+cas oú l'instruction \CMP précédente a trouvé un des nombres plus grand que l'autre,
+en comparant les deux (\IT{Greater Than}).
+
+\myindex{ARM!\Instructions!BL}
+\myindex{ARM!\Instructions!BLcc}
+
+L'instruction \TT{BLGT} se comporte exactement comme \TT{BL} et n'est effectuée
+que si le résultat de la comparaison était \IT{Greater Than} (plus grand).
+\TT{ADRGT} écrit un pointeur sur la chaîne \TT{a>b\textbackslash{}n} dans \Reg{0}
+et \TT{BLGT} appelle \printf.
+Donc, les instructions suffixées par \TT{-GT} ne sont exécutées que si la valeur
+dans \Reg{0} (qui est $a$) est plus grande que la valeur dans \Reg{4} (qui est $b$).
+
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!BLcc}
+
+En avançant, nous voyons les instructions \TT{ADREQ} et \TT{BLEQ}.
+Elles se comportent comme \TT{ADR} et \TT{BL}, mais ne sont exécutées que si les
+opérandes étaient égales lors de la dernière comparaison.
+Un autre \CMP se trouve avant elles (car l'exécution de \printf pourrait avoir
+modifiée les flags).
+
+\myindex{ARM!\Instructions!LDMccFD}
+\myindex{ARM!\Instructions!LDMFD}
+
+Ensuite nous voyons \TT{LDMGEFD}, cette instruction fonctionne comme \TT{LDMFD}\footnote{\ac{LDMFD}},
+mais n'est exécutée que si l'une des valeurs est supérieure ou égale à l'autre
+(\IT{Greater or Equal}).
+L'instruction \TT{LDMGEFD SP!, \{R4-R6,PC\}} se comporte comme une fonction épilogue,
+mais elle ne sera exécutée que si $a>=b$, et seulement lorsque l'exécution de la
+fonction se terminera.
+
+\myindex{Function epilogue}
+
+Mais si cette condition n'est pas satisfaite, i.e., $a<b$, alors le flux d'exécution
+continue à l'instruction suivante, \TT{\q{LDMFD SP!, \{R4-R6,LR\}}}, qui est aussi
+un épilogue de la fonction. Cette instruction ne restaure pas seulement l'état des
+registres \TT{R4-R6}, mais aussi \ac{LR} au lieu de \ac{PC}, donc il ne retourne
+pas de la fonction.
+Les deux dernières instructions appellent \printf avec la chaîne <<a<b\textbackslash{}n>>
+comme unique argument.
+Nous avons déjà examiné un saut inconditionnel à la fonction \printf au lieu
+d'un appel avec retour dans <<\PrintfSeveralArgumentsSectionName>> section~(\myref{ARM_B_to_printf}).
+
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!BLcc}
+\myindex{ARM!\Instructions!LDMccFD}
+\TT{f\_unsigned} est très similaire, à part les instructions \TT{ADRHI}, \TT{BLHI},
+et \TT{LDMCSFD} utilisées ici, ces prédicats (\IT{HI = Unsigned higher, CS = Carry
+Set (greater than or equal)}) sont analogues à ceux examinés avant, mais pour des
+valeurs non signées.
+
+Il n'y a pas grand chose de nouveau pour nous dans la fonction \main:
+
+\lstinputlisting[caption=\main,style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_O3_main.asm}
+
+C'est ainsi que vous pouvez vous débarrasser des sauts conditionnels en mode ARM.
+
+\myindex{RISC pipeline}
+Pourquoi est-ce que c'est si utile? Lire ici: \myref{branch_predictors}.
+
+\myindex{x86!\Instructions!CMOVcc}
+
+Il n'y a pas de telle caractéristique en x86, exceptée l'instruction \TT{CMOVcc},
+qui est comme un \MOV, mais effectuée seulement lorsque certains flags sont mis,
+en général mis par \CMP.
+
+\mysubparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_thumb_signed.asm}
+
+\myindex{ARM!\Instructions!BLE}
+\myindex{ARM!\Instructions!BNE}
+\myindex{ARM!\Instructions!BGE}
+\myindex{ARM!\Instructions!BLS}
+\myindex{ARM!\Instructions!BCS}
+\myindex{ARM!\Instructions!B}
+\myindex{ARM!\ThumbMode}
+
+En mode Thumb, seules les instructions \TT{B} peuvent être complètées par un
+\IT{condition codes}, (code de condition) donc le code Thumb paraît plus ordinaire.
+
+\TT{BLE} est un saut conditionnel normal \IT{Less than or Equal} (inférieur ou égal),
+\TT{BNE}---\IT{Not Equal} (non égal),
+\TT{BGE}---\IT{Greater than or Equal} (supérieur ou égal).
+
+\TT{f\_unsigned} est similaire, seules d'autres instructions sont utilisées
+pour travailler avec des valeurs non-signées: \TT{BLS}
+(\IT{Unsigned lower or same} non signée, inférieur ou égal) et \TT{BCS} (\IT{Carry
+Set (Greater than or equal)} supérieur ou égal).

@@ -1,0 +1,106 @@
+\clearpage
+\myparagraph{MSVC + \olly}
+\myindex{\olly}
+Zwei Paare aus 32-bit Worten sind im Stack rot markiert.
+Jedes Paar ist eine double-Zahl im IEEE 754 Format und wurde von \main
+übergeben.
+
+Wie sehen wie zunächst \FLD einen Wert ($1.2$) von Stack lädt und diesen in
+\ST{0} ablegt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/1_simple/olly1.png}
+\caption{\olly: der erste \FLD wurde ausgeführt}
+\label{fig:FPU_simple_olly_1}
+\end{figure}
+Aufgrund der unvermeidlichen Konversionsfehler von der 64-bit IEEE 754
+Fließkommazahl in ein 80-bit-Format (das intern in der FPU verwendet wird),
+sehen wird hier 1.1999\ldots, was näherungsweise 1.2 entspricht.
+
+\EIP zeigt nun auf den nächsten Befehl (\FDIV), der eine double-Zahl (eine
+Konstante) aus dem Speicher lädt. Zur besseren Übersicht zeigt \olly deren Wert
+an: 3.14
+
+\clearpage
+Verfolgen wir das ganze etwas weiter.
+\FDIV wurde ausgeführt, nun enthält \ST{0} also 0.382\ldots (\glslink{quotient}{Quotient}):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/1_simple/olly2.png}
+\caption{\olly: \FDIV wurde ausgeführt}
+\label{fig:FPU_simple_olly_2}
+\end{figure}
+
+\clearpage
+Dritter Schritt: der nächste \FLD Befehl wurde ausgeführt; er lud 3.4 nach
+\ST{0} (wir sehen hier den Näherungswert 3.39999\ldots):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/1_simple/olly3.png}
+\caption{\olly: der zweite \FLD wurde ausgeführt}
+\label{fig:FPU_simple_olly_3}
+\end{figure}
+Gleichzeitig wird der \glslink{quotient}{Quotient} nach \ST{1} verschoben.
+In diesem Moment zeigt \EIP auf den nächsten Befehl: \FMUL.
+Dieser lädt die Konstante 4.1 aus dem Speicher, wie \olly zeigt.
+
+\clearpage
+Dann: \FMUL wurde ausgeführt, sodass das \glslink{product}{Produkt} jetzt in \ST{0} liegt.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/1_simple/olly4.png}
+\caption{\olly: \FMUL wurde ausgeführt}
+\label{fig:FPU_simple_olly_4}
+\end{figure}
+
+\clearpage
+Dann: der Befehl \FADDP wurde ausgeführt, sodass sich in \ST{0} nunmehr das
+Ergebnis der Addition befindet und \ST{1} wird gelöscht:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/12_FPU/1_simple/olly5.png}
+\caption{\olly: \FADDP wurde ausgeführt}
+\label{fig:FPU_simple_olly_5}
+\end{figure}
+Das Ergebnis bleibt in \ST{0}, denn die Funktion liefert ihren Rückgabewert über
+\ST{0} zurück.
+
+Später liest \main diesen Wert aus dem Register.
+
+Wir sehen außerdem etwas Ungewöhnliches: der Wert 13.93\ldots befindet sich nun
+in \ST{7}. Warum?
+
+\label{FPU_is_rather_circular_buffer}
+Wie bereits vorher in diesem Buch beschrieben, bilden die \ac{FPU} einen Stack:
+\myref{FPU_is_stack}. Dabei handelt es sich jedoch um eine vereinfachte
+Darstellung.
+
+Stellen wir uns vor, es wäre genau wie beschrieben in \IT{Hardware}
+implementiert, dann müssten die Inhalte aller 7 Register während der push und
+pop-Befehle in jeweils benachbarte Register verschoben (oder kopiert) werden und
+das würde eine Menge Aufwand bedeuten.
+
+In Wirklichkeit hat die \ac{FPU} nur 8 Register und einen Pointer (\GTT{TOP}
+genannt), der die Registernummer enthält, die derzeit oben auf dem Stack liegt.
+
+Wenn ein Wert auf dem Stack abgelegt wird, zeigt \GTT{TOP} auf das nächste
+verfügbare Register und dann wird der Wert in dieses Register geschrieben.
+
+Dieser Vorgang läuft umgekehrt ab, wenn ein Wert vom Stack geholt wird, aber das
+freigewordene Register wird nicht gelöscht (es könnnte möglicherweise gelöscht
+werden, aber dies würde einen Mehraufwand bedeuten und die Performance
+herabsetzen). 
+Genau das sehen wir hier.
+
+Man kann sagen, dass \FADDP die Summe auf dem Stack gespeichert hat und dann ein
+Element vom Stack geholt hat.
+
+Aber in Wirklichkeit hat der Befehl die Summe gespeichert und dann \GTT{TOP}
+verschoben.
+
+Genauer gesagt bilden die Register der \ac{FPU} einen Ringpuffer. 

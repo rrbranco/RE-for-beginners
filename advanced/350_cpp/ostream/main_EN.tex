@@ -1,0 +1,32 @@
+\subsection{ostream}
+\myindex{\Cpp!ostream}
+
+Let's start again with a \q{hello world} example, but now we are going to use \IT{ostream}:
+
+\lstinputlisting[style=customc]{\CURPATH/ostream/1.cpp}
+
+Almost any \Cpp textbook tells us that the \TT{<<} operation can be defined (\IT{overloaded})
+for other types.
+That is what is done in \IT{ostream}.
+We see that \TT{operator<<} is called for \IT{ostream}:
+
+\lstinputlisting[caption=MSVC 2012 (reduced listing),style=customasmx86]{\CURPATH/ostream/1.asm}
+
+Let's modify the example:
+
+\lstinputlisting[style=customc]{\CURPATH/ostream/2.cpp}
+
+And again, from many \Cpp textbooks we know that the result of each \TT{operator<<} in ostream is forwarded to the
+next one.
+Indeed:
+
+\lstinputlisting[caption=MSVC 2012,style=customasmx86]{\CURPATH/ostream/2_EN.asm}
+
+If we would rename \TT{operator<<} method name to \ttf{}, that code will looks like:
+
+\begin{lstlisting}[style=customc]
+f(f(std::cout, "Hello, "), "world!");
+\end{lstlisting}
+
+GCC generates almost the same code as MSVC.
+

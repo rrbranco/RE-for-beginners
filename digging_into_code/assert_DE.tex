@@ -1,0 +1,17 @@
+\section{assert() Aufrufe}
+\myindex{\CStandardLibrary!assert()}
+
+Manchmal ist die Pr\"asenz des \TT{assert()} macro's ebenfalls n\"utzlich:
+allgemein erlaubt dieses Makro R\"uckschl\"usse auf source code Dateinamen,
+Zeilen nummern und die Bedienung f\"ur das Makro im Code.
+
+Die n\"utzlichste Informationen ist enthalten in der Bedingung von assert, wir k\"onnen Variablennamen oder Namen
+von Struct Feldern ableiten. Ein weiteres n\"utzliches St\"uck Information sind die Datei Namen---Wir k\"onnen versuchen
+abzuleiten von welcher Art der Code ist. 
+Es ist ebenfalls m\"oglich bekannte open-source library-Namen von den Datei Namen abzuleiten.
+
+\lstinputlisting[caption=Example of informative assert() calls,style=customasmx86]{digging_into_code/assert_examples.lst}
+
+Es ist Empfehlenswert beides die Konditionen und die Datei Namen in \q{google} zu suchen, was zu einer open-source library f\"uhren kann. 
+Zum Beispiel, wenn wir \q{sp->lzw\_nbits <= BITS\_MAX} in \q{google} suchen, ist es absehbar das wir als Ergebnis Code aus der 
+Open-Source library f\"ur die LZW Kompression bekommen. 

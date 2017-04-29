@@ -1,0 +1,27 @@
+\subsection{Pointer to function}
+
+A function name in \CCpp without brackets, like ``printf'' is a pointer to function of \IT{void (*)()} type.
+Let's try to read function's contents and patch it:
+
+\lstinputlisting[style=customc]{advanced/450_more_ptrs/6.c}
+
+It tells, that the first 3 bytes of functions are \TT{55 89 e5}.
+Indeed, these are opcodes of \INS{PUSH EBP} and \INS{MOV EBP, ESP} instructions (these are x86 opcodes).
+But then our program crashes, because \IT{text} section is readonly.
+
+We can recompile our example and make \IT{text} section writable
+\footnote{\url{http://stackoverflow.com/questions/27581279/make-text-segment-writable-elf}}:
+
+\begin{lstlisting}
+gcc --static -g -Wl,--omagic -o example example.c
+\end{lstlisting}
+
+That works!
+
+\begin{lstlisting}
+we are in print_something()
+first 3 bytes: 55 89 e5...
+going to call patched print_something():
+it must exit at this point
+\end{lstlisting}
+

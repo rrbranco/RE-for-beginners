@@ -1,0 +1,59 @@
+\subsubsection{memcpy()}
+\myindex{\CStandardLibrary!memcpy()}
+
+\myparagraph{Короткие блоки}
+\label{copying_short_blocks}
+
+\myindex{x86!\Instructions!MOV}
+Если нужно скопировать немного байт, то, нередко, 
+\TT{memcpy()} заменяется на несколько инструкций \MOV.
+
+
+\lstinputlisting[caption=пример с memcpy(),style=customc]{\CURPATH/str_mem/memcpy_7.c}
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{\CURPATH/str_mem/memcpy_7_MSVC_2010_Ox.asm}
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1,style=customasmx86]{\CURPATH/str_mem/memcpy_7_GCC_O3.s}
+
+Обынчо это происходит так: в начале копируются 4-байтные блоки, затем 16-битное слово (если нужно), 
+затем последний байт (если нужно).
+
+
+Точно так же при помощи \MOV копируются структуры: \myref{short_struct_copying_using_MOV}.
+
+\myparagraph{Длинные блоки}
+
+Здесь компиляторы ведут себя по-разному.
+
+\lstinputlisting[caption=пример с memcpy(),style=customc]{\CURPATH/str_mem/memcpy.c}
+
+\myindex{x86!\Instructions!MOVSD}
+При копировании 128 байт, MSVC может обойтись одной инструкцией \TT{MOVSD} (ведь 128 кратно 4):
+
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{\CURPATH/str_mem/memcpy_128_MSVC_2010_Ox.asm}
+
+При копировании 123-х байт, в начале копируется 30 32-битных слов при помощи \TT{MOVSD} 
+(это 120 байт), 
+затем копируется 2 байта при помощи \TT{MOVSW}, 
+затем еще один байт при помощи \TT{MOVSB}.
+
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{\CURPATH/str_mem/memcpy_123_MSVC_2010_Ox.asm}
+
+GCC во всех случаях вставляет большую универсальную функцию, работающую для всех размеров блоков:
+
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1,style=customasmx86]{\CURPATH/str_mem/memcpy_GCC.s}
+
+Универсальные функции копирования блоков обычно работают по следующей схеме: 
+вычислить, сколько 32-битных слов
+можно скопировать, затем сделать это при помощи \TT{MOVSD}, затем скопировать остатки.
+
+
+\myindex{SIMD}
+Более сложные функции копирования используют \ac{SIMD} и учитывают выравнивание в памяти.
+
+Как пример функции strlen() использующую SIMD
+: \myref{SIMD_strlen}.
+

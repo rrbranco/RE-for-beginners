@@ -1,0 +1,18 @@
+\subsubsection{\OptimizingKeilVI (\ThumbMode)}
+
+\begin{lstlisting}[label=ARM_leaf_example2,style=customasmARM]
+.text:0000005E 48 43          MULS    R0, R1
+.text:00000060 80 18          ADDS    R0, R0, R2
+.text:00000062 70 47          BX      LR
+\end{lstlisting}
+
+L'instruction \TT{MLA} n'est pas disponible dans le mode Thumb, donc le compilateur
+génère le code effectuant ces deux opérations (multiplication et addition) séparémment.
+\myindex{ARM!\Instructions!MULS}
+\myindex{ARM!\Instructions!ADDS}
+
+Tout d'abord, la première instruction \TT{MULS} multiplie \Reg{0} par \Reg{1}, laissant
+le résultat dans le registre\Reg{0}.
+La seconde instruction (\TT{ADDS}) ajoute le résultat et \Reg{2} laissant le résultat
+dans le registre \Reg{0}.
+

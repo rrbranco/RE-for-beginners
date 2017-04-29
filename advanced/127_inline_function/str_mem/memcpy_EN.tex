@@ -1,0 +1,61 @@
+\subsubsection{memcpy()}
+\myindex{\CStandardLibrary!memcpy()}
+
+\myparagraph{Short blocks}
+\label{copying_short_blocks}
+
+\myindex{x86!\Instructions!MOV}
+
+The routine to copy short blocks is often implemented as a sequence of \MOV instructions.
+
+\lstinputlisting[caption=memcpy() example,style=customc]{\CURPATH/str_mem/memcpy_7.c}
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{\CURPATH/str_mem/memcpy_7_MSVC_2010_Ox.asm}
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1,style=customasmx86]{\CURPATH/str_mem/memcpy_7_GCC_O3.s}
+
+
+That's usually done as follows: 4-byte blocks are copied first, then a 16-bit word (if needed), 
+then the last byte (if needed).
+
+Structures are also copied using
+\MOV: \myref{short_struct_copying_using_MOV}.
+
+\myparagraph{Long blocks}
+
+The compilers behave differently in this case.
+
+\lstinputlisting[caption=memcpy() example,style=customc]{\CURPATH/str_mem/memcpy.c}
+
+\myindex{x86!\Instructions!MOVSD}
+
+For copying 128 bytes, MSVC uses a single \TT{MOVSD} instruction (because 128 
+divides evenly by 4):
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{\CURPATH/str_mem/memcpy_128_MSVC_2010_Ox.asm}
+
+
+When copying 123 bytes, 30 32-byte words are copied first using \TT{MOVSD}
+(that's 120 bytes),
+then 2 bytes are copied using \TT{MOVSW}, 
+then one more byte using \TT{MOVSB}.
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{\CURPATH/str_mem/memcpy_123_MSVC_2010_Ox.asm}
+
+
+GCC uses one big universal functions, that works for any block size:
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1,style=customasmx86]{\CURPATH/str_mem/memcpy_GCC.s}
+
+
+Universal memory copy functions usually work as follows:
+calculate how many 32-bit words can be copied, then copy them using \TT{MOVSD}, then copy
+the remaining bytes.
+
+\myindex{SIMD}
+
+More advanced and complex copy functions use \ac{SIMD} instructions and also take the memory alignment
+in consideration.
+
+As an example of SIMD strlen() function: \myref{SIMD_strlen}.
+

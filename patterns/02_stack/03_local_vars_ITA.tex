@@ -1,0 +1,14 @@
+\subsubsection{Memorizzazione di variabili locali}
+
+Una funzione puo' allocare spazio nello stack per le sue variabili locali, semplicemente decrementando
+lo \gls{stack pointer} verso il basso (indirizzi piu' bassi) dello stack.
+
+% I think here, "stack bottom" means the lowest address in the stack space,
+% but the reader might also think it means towards the top of the stack space,
+% like in a pop, so you might change "towards the stack bottom" to
+% "towards the lowest address of the stack", or just take it out,
+% since "decreasing" also suggests that.
+
+Pertanto l'operazione risulta molto veloce, a prescinedere dal numero di variabili locali definite.
+Anche in questo caso utilizzare lo stack per memorizzare variabili locali non e' un requisito necessario.
+Si possono memorizzare dove si vuole, ma tradizionalmente si fa cosi'.

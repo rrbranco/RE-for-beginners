@@ -1,0 +1,15 @@
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/12_FPU/2_passing_floats/MIPS_O3_IDA_EN.lst}
+
+And again, we see here \INS{LUI} loading a 32-bit part of a \Tdouble number into \$V0.
+And again, it's hard to comprehend why.
+
+\myindex{MIPS!\Instructions!MFC1}
+
+The new instruction for us here is \INS{MFC1} (\q{Move From Coprocessor 1}).
+The FPU is coprocessor number 1, hence \q{1} in the instruction name.
+This instruction transfers values from the coprocessor's registers to the registers of the CPU (\ac{GPR}).
+So at the end the result of \TT{pow()} is moved to registers \$A3 and \$A2, 
+and \printf takes a 64-bit double value from this register pair.
+

@@ -1,0 +1,6 @@
+f_max:
+; S0 - a, S1 - b
+	fcmpe	s0, s1
+	fcsel	s0, s0, s1, gt
+; Ergebnis jetzt in S0
+	ret

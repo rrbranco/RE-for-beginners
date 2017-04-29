@@ -1,0 +1,84 @@
+\section{Appels systèmes (syscall-s)}
+
+\label{syscalls}
+\myindex{syscall}
+
+\myindex{kernel space}
+\myindex{user space}
+Comme nous le savons, tous les processus d'un \ac{OS} sont divisés en deux catégories:
+ceux qui ont un accès complet au matériel (\q{kernel space} espace noyau)
+et ceux qui ne l'ont pas (\q{user space} espace utilisateur).
+
+Le noyau de l'OS et, en général, les drivers sont dans la première catégorie.
+
+Toutes les applications sont d'habitude dans la seconde catégorie.
+
+\myindex{Glibc}
+Par exemple, le noyai Linux est dans le \IT{kernel space}, mais la Glibc est dans
+le \IT{user space}.
+
+Cette séparation est cruciale pour la sécurité de l'\ac{OS}: il est très important
+de ne pas donner la possibilité à n'importe quel processus de casser quelque chose
+dans un autre processus ou même dans le noyau de l'\ac{OS}.
+\myindex{kernel panic}
+\myindex{BSoD}
+D'un autre côté, un driver qui plante ou une erreur dans le noyau de l'\ac{OS} se
+termine en général par un kernel panic ou un \ac{BSOD}.
+
+La protection en anneau dans les processeurs x86 permet de séparer l'ensemble dans
+quatre niveaux de protection (rings), mais tant dans Linux que Windows, seuls deux
+d'entre eux sont utilisés: ring0 (\q{kernel space}) et ring3 (\q{user space}).
+
+Les appels systèmes (syscall-s) sont un point oú deux zones sont connectées.
+
+On peut dire que c'est la principale \ac{API} fournit aux applications.
+
+Comme dans \gls{Windows NT}, la table des appels système se trouve dans la \ac{SSDT}.
+
+\myindex{Shellcode}
+
+L'utilisation des appels système est très répandue parmis les auteurs de shellcode
+et de virus, car il est difficile de déterminer l'adresse des fonctions nécessaires
+dans les bibliothèques système, mais il est simple d'utiliser les appels système.
+Toutefois, il est nécessaire d'écrire plus de code à cause du niveau d'abstraction
+plus bas de l'\ac{API}.
+
+Il faut aussi noter que les numéros des appels systèmes peuvent être différent dans
+différentes versions d'un OS.
+
+\subsection{Linux}
+\label{linux_syscall}
+
+\myindex{x86!\Instructions!INT!INT 0x80}
+Sous Linux, un appel système s'effectue d'habitude par \TT{int 0x80}.
+Le numéro de l'appel est passé dans le registre \EAX, et tout autre paramètre~---dans
+les autres registres.
+
+\lstinputlisting[caption=Un exemple simple de l'utilisation de deux appels système,style=customasmx86]{OS/linux_syscall.s}
+
+Compilation:
+
+\begin{lstlisting}
+nasm -f elf32 1.s
+ld 1.o
+\end{lstlisting}
+
+La liste complète des appels systèmes sous Linux: \url{http://go.yurichev.com/17319}.
+
+Pour intercepter les appels système et les suivre sous Linux, strace(\myref{strace})
+peut être utilisé.
+
+\subsection{Windows}
+
+\myindex{x86!\Instructions!INT!INT 0x2e}
+\myindex{x86!\Instructions!SYSENTER}
+
+Ici, ils sont appelés via \TT{int 0x2e} ou en utilisant l'instruction x86 spéciale
+\TT{SYSENTER}.
+
+La liste complète des appels systèmes sous Windows: \url{http://go.yurichev.com/17320}.
+
+Pour aller plus loin:
+
+\q{Windows Syscall Shellcode} par Piotr Bania: \url{http://go.yurichev.com/17321}.
+

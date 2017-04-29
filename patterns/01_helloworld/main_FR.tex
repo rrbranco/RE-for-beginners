@@ -1,0 +1,33 @@
+\section{\HelloWorldSectionName}
+\label{sec:helloworld}
+
+Utilisons le fameux exemple du livre \KRBook:
+
+\lstinputlisting[style=customc]{patterns/01_helloworld/hw.c}
+
+\subsection{x86}
+
+\input{patterns/01_helloworld/MSVC_x86}
+\input{patterns/01_helloworld/GCC_x86}
+\input{patterns/01_helloworld/string_patching_FR}
+
+\subsection{x86-64}
+\input{patterns/01_helloworld/MSVC_x64}
+\input{patterns/01_helloworld/GCC_x64}
+\input{patterns/01_helloworld/address_patching_FR}
+
+\input{patterns/01_helloworld/GCC_one_more}
+\input{patterns/01_helloworld/ARM/main}
+\input{patterns/01_helloworld/MIPS/main}
+
+\subsection{\Conclusion{}}
+
+La différence principale entre le code x86/ARM et x64/ARM64 est que le pointeur sur la chaîne a une taille de 64 bits.
+Le fait est que les \ac{CPU}s modernes sont maintenant 64-bit à cause le la baisse du coût de la mémoire et du grand
+besoin de cette dernière par les applications modernes.
+Nous pouvons ajouter bien plus de mémoire à nos ordinateurs que les pointeurs 32-bit ne peuvent en adresser.
+Ainsi, tous les pointeurs sont maintenant 64-bit.
+
+% sections
+\input{patterns/01_helloworld/exercises}
+

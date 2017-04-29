@@ -1,0 +1,68 @@
+\subsubsection{\OptimizingXcodeIV (\ARMMode)}
+
+Xcode 4.6.3 without optimization turned on produces a lot of redundant code so we'll study optimized output, where the instruction count is as small as possible, setting the compiler switch \Othree.
+
+\begin{lstlisting}[caption=\OptimizingXcodeIV (\ARMMode),style=customasmARM]
+__text:000028C4             _hello_world
+__text:000028C4 80 40 2D E9   STMFD           SP!, {R7,LR}
+__text:000028C8 86 06 01 E3   MOV             R0, #0x1686
+__text:000028CC 0D 70 A0 E1   MOV             R7, SP
+__text:000028D0 00 00 40 E3   MOVT            R0, #0
+__text:000028D4 00 00 8F E0   ADD             R0, PC, R0
+__text:000028D8 C3 05 00 EB   BL              _puts
+__text:000028DC 00 00 A0 E3   MOV             R0, #0
+__text:000028E0 80 80 BD E8   LDMFD           SP!, {R7,PC}
+
+__cstring:00003F62 48 65 6C 6C+aHelloWorld_0  DCB "Hello world!",0
+\end{lstlisting}
+
+The instructions \TT{STMFD} and \TT{LDMFD} are already familiar to us.
+
+\myindex{ARM!\Instructions!MOV}
+
+The \MOV instruction just writes the number \TT{0x1686} into the \Reg{0} register.
+This is the offset pointing to the \q{Hello world!} string.
+
+The \TT{R7} register (as it is standardized in \IOSABI) is a frame pointer. More on that below.
+
+\myindex{ARM!\Instructions!MOVT}
+The \TT{MOVT R0, \#0} (MOVe Top) instruction writes 0 into higher 16 bits of the register.
+The issue here is that the generic \MOV instruction in ARM mode may write only the lower 16 bits of the register.
+
+Keep in mind, all instruction opcodes in ARM mode are limited in size to 32 bits. Of course, this limitation is not related to moving data between registers.
+That's why an additional instruction \TT{MOVT} exists for writing into the higher bits (from 16 to 31 inclusive).
+Its usage here, however, is redundant because the \TT{MOV R0, \#0x1686} instruction above cleared the higher part of the register.
+This is supposedly a shortcoming of the compiler.
+% TODO:
+% I think, more specifically, the string is not put in the text section,
+% ie. the compiler is actually not using position-independent code,
+% as mentioned in the next paragraph.
+% MOVT is used because the assembly code is generated before the relocation,
+% so the location of the string is not yet known,
+% and the high bits may still be needed.
+
+\myindex{ARM!\Instructions!ADD}
+The \TT{ADD R0, PC, R0} instruction adds the value in the \ac{PC} to the value in the \Reg{0}, to calculate the absolute address of the \q{Hello world!} string. 
+As we already know, it is \q{\PICcode} so this correction is essential here.
+
+The \INS{BL} instruction calls the \puts function instead of \printf.
+
+\label{puts}
+\myindex{\CStandardLibrary!puts()}
+\myindex{puts() instead of printf()}
+
+GCC replaced the first \printf call with \puts.
+Indeed: \printf with a sole argument is almost analogous to \puts. 
+
+\IT{Almost}, because the two functions are producing the same result only in case the 
+string does not contain printf format identifiers starting with \IT{\%}. 
+In case it does, the effect of these two functions would be different
+\footnote{It has also to be noted the \puts does not require a `\textbackslash{}n' new line symbol 
+at the end of a string, so we do not see it here.}.
+
+Why did the compiler replace the \printf with \puts? Presumably because \puts is faster
+\footnote{\href{http://go.yurichev.com/17063}{ciselant.de/projects/gcc\_printf/gcc\_printf.html}}. 
+
+Because it just passes characters to \gls{stdout} without comparing every one of them with the \IT{\%} symbol.
+
+Next, we see the familiar \TT{MOV R0, \#0} instruction intended to set the \Reg{0} register to 0.

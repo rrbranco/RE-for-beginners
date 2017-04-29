@@ -1,0 +1,8 @@
+﻿    MOV REG, 2 ; initialisation
+body:
+    ; corps de la boucle
+    ; faire quelque chose ici
+    ; utiliser le compteur dans REG, mais ne pas le modifier!
+    INC REG ; §incrémenter§
+    CMP REG, 10
+    JL body

@@ -1,0 +1,12 @@
+﻿    MOV [counter], 2 ; initialisation
+    JMP check
+body:
+    ; corps de la boucle
+    ; faire quelque chose ici
+    ; utiliser la variable compteur dans la pile locale
+    MOV REG, [counter] ; §incrémenter§
+    INC REG 
+    MOV [counter], REG
+check:
+    CMP [counter], 9
+    JLE body

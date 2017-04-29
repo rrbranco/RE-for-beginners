@@ -1,0 +1,12 @@
+my_abs:
+; jump if $a0<0:
+                bltz    $a0, locret_10
+; just return input value ($a0) in $v0:
+                move    $v0, $a0
+                jr      $ra
+                or      $at, $zero ; branch delay slot, NOP
+locret_10:
+; negate input value and store it in $v0:
+                jr      $ra
+; this is pseudoinstruction. in fact, this is "subu $v0,$zero,$a0" ($v0=0-$a0)
+                negu    $v0, $a0

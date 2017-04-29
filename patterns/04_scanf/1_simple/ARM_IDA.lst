@@ -1,0 +1,15 @@
+.text:00000042             scanf_main
+.text:00000042
+.text:00000042             var_8           = -8
+.text:00000042
+.text:00000042 08 B5        PUSH    {R3,LR}
+.text:00000044 A9 A0        ADR     R0, aEnterX  ; "Enter X:\n"
+.text:00000046 06 F0 D3 F8  BL      __2printf
+.text:0000004A 69 46        MOV     R1, SP
+.text:0000004C AA A0        ADR     R0, aD  ; "%d"
+.text:0000004E 06 F0 CD F8  BL      __0scanf
+.text:00000052 00 99        LDR     R1, [SP,#8+var_8]
+.text:00000054 A9 A0        ADR     R0, aYouEnteredD___ ; "You entered %d...\n"
+.text:00000056 06 F0 CB F8  BL      __2printf
+.text:0000005A 00 20        MOVS    R0, #0
+.text:0000005C 08 BD        POP     {R3,PC}

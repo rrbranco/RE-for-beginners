@@ -1,0 +1,35 @@
+\section{Prologo y epilogo de funciones}
+\label{sec:prologepilog}
+\myindex{\ESph{}} % Function epilogue
+\myindex{\ESph{}} % Function prologue
+
+El prologo de una funcion es una secuencia de instrucciones al inicio de esta.
+Por lo general luce mas o menos como el siguiente fragmento de codigo:
+
+\begin{lstlisting}[style=customasmx86]
+    push    ebp
+    mov     ebp, esp
+    sub     esp, X
+\end{lstlisting}
+
+Lo que estas instrucciones hacen es: guardan el valor en el registro \EBP, establece el valor del registro \EBP al valor del registro \ESP y luego asigna espacio en la pila para variables locales.
+
+El valor de \EBP permanece igual durante el periodo de ejecucion de la funcion, y es usado para variables locales y acceso a los argumentos.
+Para los mismos fines uno puede usar \ESP, pero como este cambia con el tiempo, este enfoque no es muy conveniente.
+
+El epilogo de la funcion libera el espacio asignado en la pila, coloca el valor del registro \EBP vuelta su estado inicial y retorna el control de flujo a la la funcion llamada:
+
+\begin{lstlisting}[style=customasmx86]
+    mov    esp, ebp
+    pop    ebp
+    ret    0
+\end{lstlisting}
+
+Los prologos y epilogos de funciones usualmente son detectados por desensambladores para la delimitacion de funciones.
+
+\subsection{\Recursion}
+\myindex{\Recursion}
+
+Epilogos y prologos pueden afectar negativamente el rendimiento de la recursion.
+Mas acerca de la recursion en este libro: \myref{Recursion_and_tail_call}.
+

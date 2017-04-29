@@ -1,0 +1,29 @@
+\subsubsection{MIPS}
+
+\myparagraph{\NonOptimizing GCC}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5
+(IDA),style=customasmMIPS]{patterns/14_bitfields/4_popcnt/MIPS_O0_IDA_DE.lst}
+
+\myindex{MIPS!\Instructions!SLL}
+\myindex{MIPS!\Instructions!SLLV}
+Umständlich: alle lokalen Variablen liegen auf dem lokalen Stack und werden bei
+jedem Zugriff neu geladen.
+
+Der Befehl \SLLV bedeutet \q{Shift Word Left Logical Variable}. Er unterscheidet
+sich von \SLL nur dadurch, dass die Anzahl der Verschiebungen im \SLL Befehl
+kodiert sind (und dadurch nicht veränderbar). \SLLV hingegen erhält die Anzahl
+der Verschiebungen aus einem Register.
+
+\myparagraph{\Optimizing GCC}
+Hier ist es knapper gehalten.
+Warum aber gibt es zwei Schiebebefehle anstatt eines?
+
+Es ist möglich, den ersten \SLLV Befehl durch einen unbedingte
+Verzweigungsbefehl zu ersetzen, der direkt zum zweiten \SLLV springt. 
+Das zieht aber einen zweiten Verzweigungsbefehl nach sich und es ist stets
+vorteilhaft sich dieser zu entledigen:\myref{branch_predictors}.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA),style=customasmMIPS]{patterns/14_bitfields/4_popcnt/MIPS_O3_IDA_DE.lst}
+

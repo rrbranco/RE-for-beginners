@@ -1,0 +1,28 @@
+\subsection{\RU{Функции работы со строками и памятью}\EN{Strings and memory functions}}
+
+\RU{Другая очень частая оптимизация это вставка кода строковых функций таких как}
+\EN{Another very common automatic optimization tactic is the inlining of string functions like}
+\IT{strcpy()}, \IT{strcmp()}, \IT{strlen()}, \IT{memset()}, \IT{memcmp()}, \IT{memcpy()}, \RU{итд}\EN{etc.}.
+
+\RU{Иногда это быстрее, чем вызывать отдельную функцию.}\EN{Sometimes it's faster than to call a separate function.}
+
+\RU{Это очень часто встречающиеся шаблонные вставки, которые желательно распознавать 
+reverse engineer-ам \q{на глаз}.}
+\EN{These are very frequent patterns and it is highly advisable for reverse engineers 
+to learn to detect automatically.}
+
+% subsections
+\input{\CURPATH/str_mem/strcmp}
+\input{\CURPATH/str_mem/strlen}
+\input{\CURPATH/str_mem/strcpy}
+\EN{\input{\CURPATH/str_mem/memset_EN}}\RU{\input{\CURPATH/str_mem/memset_RU}}
+\EN{\input{\CURPATH/str_mem/memcpy_EN}}\RU{\input{\CURPATH/str_mem/memcpy_RU}}
+\input{\CURPATH/str_mem/memcmp}
+\input{\CURPATH/str_mem/strcat}
+
+\subsubsection{\RU{Скрипт для IDA}\EN{IDA script}}
+
+\myindex{IDA}
+\RU{Есть также небольшой скрипт для \IDA для поиска и сворачивания таких очень часто попадающихся inline-функций:}
+\EN{There is also a small \IDA script for searching and folding such very frequently seen pieces of inline code:}
+\par \href{\YurichevIDAIDCScripts}{GitHub}.

@@ -1,0 +1,32 @@
+\myindex{\CStandardLibrary!memcmp()}
+\myindex{x86!\Instructions!CMPSB}
+\myindex{x86!\Instructions!CMPSW}
+\myindex{x86!\Instructions!CMPSD}
+\myindex{x86!\Instructions!CMPSQ}
+\item[CMPSB/CMPSW/CMPSD/CMPSQ] (M) \RU{сравнить}\EN{compare} \RU{байт}\EN{byte}/
+16-\RU{битное слово}\EN{bit word}/
+32-\RU{битное слово}\EN{bit word}/
+64-\RU{битное слово}\EN{bit word} \RU{из места, адрес которого находится в}\EN{from the 
+address which is in} SI/ESI/RSI \RU{со значением, адрес которого находится
+в}\EN{with the variable at the address stored in} DI/EDI/RDI.
+\RU{Выставить флаги так же, как это делает \CMP}\EN{Set flags as \CMP does}.
+
+\label{REPE_CMPSx}
+\RU{Вместе с префиксом REPE, инструкция будет исполняться в цикле, счетчик будет
+находится в регистре CX/ECX/RCX, процесс будет продолжаться пока флаг ZF=0 (т.е. до тех пор,
+пока все сравниваемые значения равны, отсюда \q{E} в REPE)}
+\EN{Together with the REP prefix, it is to be repeated in a loop, the counter is stored in the CX/ECX/RCX register,
+the process will run until the ZF flag is zero (e.g., until the compared values are equal to each
+other, hence \q{E} in REPE)}.
+
+\RU{Это работает как}\EN{It works like} memcmp() \RU{в Си}\EN{in C}.
+
+\RU{Пример из ядра Windows NT}\EN{Example from the Windows NT kernel} (\ac{WRK} v1.2):
+
+\lstinputlisting[caption=base\textbackslash{}ntos\textbackslash{}rtl\textbackslash{}i386\textbackslash{}movemem.asm,style=customasmx86]{appendix/x86/instructions/RtlCompareMemory_WRK12.asm}
+
+N.B.: \RU{эта функция использует сравнение 32-битных слов (CMPSD) если длина блоков
+кратна 4-м байтам, либо побайтовое сравнение (CMPSB) если не кратна}
+\EN{this function uses a 32-bit word comparison (CMPSD) if the block size is a multiple of 4,
+or per-byte comparison (CMPSB) otherwise}.
+

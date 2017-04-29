@@ -1,0 +1,31 @@
+\subsubsection{\WorkingWithFloatAsWithStructSubSubSectionName}
+\label{sec:floatasstruct}
+Wie wir bereits im Abschnitt über die FPU~(\myref{sec:FPU}) besprochen haben, bestehen \Tfloat und \Tdouble jeweils aus
+einem Vorzeichen, einem Signifikanden (oder Bruch) und einem Exponenten.
+Wir wollen am Beispiel des Typs \Tfloat untersuchen, ob wir direkt mit diesen Feldern arbeiten können.
+
+\input{float_IEEE754.tex}
+
+\lstinputlisting[style=customc]{patterns/15_structs/6_bitfields/float/float_DE.c}
+
+Das struct \TT{float\_as\_struct} belegt den gleichen Speicherplatz wie ein \Tfloat, d.h., 4 Byte oder 32 Bit.
+
+Wir setzen das negative Vorzeichen im Eingabewert und multiplizieren die gesamte Zahl mit \TT{$2^2$}, d.h. 4, indem wir
+zum Exponenten 2 hinzuaddieren.
+
+Kompilieren wir das Beispiel mit MSVC 2008 ohne Optimierung:
+
+\lstinputlisting[caption=\NonOptimizing MSVC
+2008,style=customasmx86]{patterns/15_structs/6_bitfields/float/float_msvc_DE.asm}
+Ein wenig redundant.
+Hätten wir mit dem Flag \Ox kompiliert, wäre dort ein Aufruf von TT{memcpy()}, sondern die Variable \TT{f} wäre direkt
+verwendet worden.
+Einfacher ist es aber auf jeden Fall, sich die nicht optimierte Version anzuschauen.
+
+Was würde GCC 4.4.1 mit \Othree hier tun?
+
+\lstinputlisting[caption=\Optimizing GCC
+4.4.1,style=customasmx86]{patterns/15_structs/6_bitfields/float/float_gcc_O3_DE.asm}
+Die Funktion \ttf ist fast verständlich. Viel interessanter ist jedoch, dass GCC trotz des Sammelsuriums an Feldern in
+der Lage war, das Ergebnis von \TT{f(1.234)} während des Kompilierens zu berechnen und der Funktion \printf 
+während der Compilezeit als vorberechneten Wert bereitzustellen.

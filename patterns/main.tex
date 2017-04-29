@@ -1,0 +1,127 @@
+\ifdefined\SPANISH
+\chapter{Patrones de código}
+
+\epigraph{Todo es relativo}{Autor desconocido}
+\fi % SPANISH
+
+\ifdefined\GERMAN
+\chapter{Code-Muster}
+
+\epigraph{Erkenntnis kommt durch Vergleich}{Autor unbekannt}
+% Dfficult to find a real source
+\fi % GERMAN
+
+\ifdefined\ENGLISH
+\chapter{Code patterns}
+
+\epigraph{Everything is comprehended through comparison}{Author unknown}
+% this is popular Russian proverb and is close to "everything is comprehended in comparison", but the source is lost, however,
+% it's traditionally attributed to all sorts of philosophers, including (but not limited to) Friedrich Nietzsche..
+% I don't know exact analogue in English language, but OK, let it be so.
+% if i get it right, a probable english translation is  "everything is known/comprehended through comparison"
+% it also reminds of Heraclitus of Ephesus
+\fi % ENGLISH
+
+\ifdefined\ITALIAN
+\chapter{Forme di codice}
+% maybe "strutture di codice", find a better translation
+
+\epigraph{Tutto si comprende tramite confronto}{Proverbio russo, autore sconosciuto}
+\fi % ITALIAN
+
+\ifdefined\RUSSIAN
+\chapter{Образцы кода}
+\epigraph{Всё познается в сравнении}{Автор неизвестен}
+\fi % RUSSIAN
+
+\ifdefined\BRAZILIAN
+\chapter{Padrões de códigos}
+\fi % BRAZILIAN
+
+\ifdefined\THAI
+\chapter{รูปแบบของโค้ด}
+\fi % THAI
+
+\ifdefined\FRENCH
+\chapter{Modèle de code}
+\epigraph{Tout se comprend par comparaison}{Proverbe russe, auteur inconnu}
+\fi % FRENCH
+
+% sections
+\EN{\input{patterns/patterns_opt_dbg_EN}}
+\ES{\input{patterns/patterns_opt_dbg_ES}}
+\ITA{\input{patterns/patterns_opt_dbg_ITA}}
+\PTBR{\input{patterns/patterns_opt_dbg_PTBR}}
+\RU{\input{patterns/patterns_opt_dbg_RU}}
+\THA{\input{patterns/patterns_opt_dbg_THA}}
+\DE{\input{patterns/patterns_opt_dbg_DE}}
+\FR{\input{patterns/patterns_opt_dbg_FR}}
+
+\RU{\section{Некоторые базовые понятия}}
+\EN{\section{Some basics}}
+\DE{\section{Einige Grundlagen}}
+\FR{\section{Quelques bases}}
+\ES{\ESph{}}
+\ITA{\ITAph{Alcune basi teoriche}}
+\PTBR{\PTBRph{}}
+\THA{\THAph{}}
+
+% sections:
+\EN{\input{patterns/intro_CPU_ISA_EN}}
+\ES{\input{patterns/intro_CPU_ISA_ES}}
+\ITA{\input{patterns/intro_CPU_ISA_ITA}}
+\PTBR{\input{patterns/intro_CPU_ISA_PTBR}}
+\RU{\input{patterns/intro_CPU_ISA_RU}}
+\DE{\input{patterns/intro_CPU_ISA_DE}}
+\FR{\input{patterns/intro_CPU_ISA_FR}}
+
+\EN{\input{patterns/numeral_EN}}
+\RU{\input{patterns/numeral_RU}}
+\ITA{\input{patterns/numeral_ITA}}
+\DE{\input{patterns/numeral_DE}}
+\FR{\input{patterns/numeral_FR}}
+
+% chapters
+\input{patterns/00_empty/main}
+\input{patterns/011_ret/main}
+\input{patterns/01_helloworld/main}
+\input{patterns/015_prolog_epilogue/main}
+\input{patterns/02_stack/main}
+\input{patterns/03_printf/main}
+\input{patterns/04_scanf/main}
+\input{patterns/05_passing_arguments/main}
+\input{patterns/06_return_results/main}
+\input{patterns/061_pointers/main}
+\input{patterns/065_GOTO/main}
+\input{patterns/07_jcc/main}
+\input{patterns/08_switch/main}
+\input{patterns/09_loops/main}
+\input{patterns/10_strings/main}
+\input{patterns/11_arith_optimizations/main}
+\input{patterns/12_FPU/main}
+\input{patterns/13_arrays/main}
+\input{patterns/14_bitfields/main}
+\EN{\input{patterns/145_LCG/main_EN}}
+\RU{\input{patterns/145_LCG/main_RU}}
+\input{patterns/15_structs/main}
+\input{patterns/17_unions/main}
+\input{patterns/18_pointers_to_functions/main}
+\input{patterns/185_64bit_in_32_env/main}
+
+\EN{\input{patterns/19_SIMD/main_EN}}
+\RU{\input{patterns/19_SIMD/main_RU}}
+\DE{\input{patterns/19_SIMD/main_DE}}
+
+\EN{\input{patterns/20_x64/main_EN}}
+\RU{\input{patterns/20_x64/main_RU}}
+
+\EN{\input{patterns/205_floating_SIMD/main_EN}}
+\RU{\input{patterns/205_floating_SIMD/main_RU}}
+\DE{\input{patterns/205_floating_SIMD/main_DE}}
+
+\EN{\input{patterns/ARM/main_EN}}
+\RU{\input{patterns/ARM/main_RU}}
+\DE{\input{patterns/ARM/main_DE}}
+
+\input{patterns/MIPS/main}
+

@@ -1,0 +1,73 @@
+% TODO to be resynced with EN version
+\section{La función más simple}
+
+La función más simple posible es sin duda uno que simplemente devuelve un valor constante:
+
+Ejemplo:
+
+\lstinputlisting[caption=\ESph{},style=customc]{patterns/011_ret/1.c}
+
+Vamos a compilar!
+
+\subsection{x86}
+
+Esto es lo que optimiza el GCC  y los compiladores de MSVC los cuales se producen en la plataforma x86:
+
+\lstinputlisting[caption=\Optimizing GCC/MSVC (\assemblyOutput),style=customasmx86]{patterns/011_ret/1.s}
+
+\myindex{x86!\Instructions!RET}
+Hay solo dos instrucciones: los primeros lugares el valor 123 en el registro \EAX, que se utiliza por convención para almacenar el valor de retorno y el segundo es \RET, que devuelve la ejecución al llamado.
+
+La persona que llama tomar el resultado del registro \EAX.
+
+\subsection{ARM}
+
+Hay algunas diferencias en la plataforma ARM:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) ASM Output,style=customasmARM]{patterns/011_ret/1_Keil_ARM_O3.s}
+
+ARM utiliza el registro \Reg{0} para el retorno de los resultados de las funciones, por lo que se copia 123 en \Reg{0}.
+
+La dirección que retorna no es guardada en la pila local de la ARM \ac{ISA}, sino más bien en el registro de enlace,
+entonces la instrucción \INS{BX LR} provoca que la ejecución de un salto a la dirección eficazmente retornando la ejecución a donde fue llamada(caller ``nuestro llamador'').
+
+\myindex{ARM!\Instructions!MOV}
+\myindex{x86!\Instructions!MOV}
+Vale la pena señalar que \MOV es un nombre engañoso para la instrucción tanto en x86 y ARM \ac{ISA}s.
+
+Los datos de hecho, no se \IT{mueven}, sino que se \IT{copian}.
+
+\subsection{MIPS}
+
+\label{MIPS_leaf_function_ex1}
+Hay dos convenciones de nomenclatura utilizadas en el mundo de MIPS al nombrar registros: por número (de \$0 a \$31) o por seudónimo (\$V0, \$A0, etc.).
+
+El ensamblado de GCC produce una salida en listando los registros por numeros:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/011_ret/MIPS.s}
+
+\dots Mientras que \IDA lo hace por sus seudónimos:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/011_ret/MIPS_IDA.lst}
+
+El \$2 (o \$V0) registro es usado para almacenar el valor devuelto por la función.
+\myindex{MIPS!\Pseudoinstructions!LI}
+\INS{LI} significa ``Load Immediate'' (``carga inmediata'') y es el MIPS equivalente a \MOV.
+
+\myindex{MIPS!\Instructions!J}
+La otra instrucción es el jump (``salto'') que es  (J o JR) el cual retorna la ejecución fluida para el llamado, da un salto a la dirección del registro \$31 (o \$RA).
+
+Este es el registro análoga a \ac{LR} en ARM.
+
+\myindex{MIPS!Branch delay slot}
+Es posible que se pregunte por qué posiciones de la instrucción de la carga (LI) y el salto instrucciones (J y JR) se intercambian.Esto es debido a una característica llamada RISC (``ranura de retardo rama'').
+
+La razón por la que esto sucede es una peculiaridad en la arquitectura RISC de algunas ISA y no es importante para nuestros propósitos --– sólo tenemos que recordar que en MIPS, la instrucción que sigue a un salto o instrucción de salto se ejecuta antes de la instrucción / rama salto en sí.
+
+Como consecuencia, las instrucciones de ramificación siempre intercambiar lugares con la instrucción que debe ser ejecutado de antemano.
+
+\subsubsection{Una nota acerca de la instrucción MIPS nombres / Registro}
+
+Registros y nombre de instrucciones en el mundo de MIPS tradicionalmente se escriben en minúsculas.
+Sin embargo, en aras de la  coherencia, que me quedo con el uso de letras mayúsculas, ya que es la convención seguida por el resto de las ISAs destacados aquí.
+

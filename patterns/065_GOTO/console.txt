@@ -1,0 +1,6 @@
+C:\...>goto.exe
+
+begin
+skip me!
+end
+

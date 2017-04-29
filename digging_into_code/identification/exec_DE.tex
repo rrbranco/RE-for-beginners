@@ -1,0 +1,140 @@
+\section{Ausf\"uhrbare Dateien Identifizieren}
+
+\subsection{Microsoft Visual C++}
+\label{MSVC_versions}
+
+MSVC Versionen und DLLs die Importiert werden k\"onnen:
+
+\small
+\begin{center}
+\begin{tabular}{ | l | l | l | l | l | }
+\hline
+\HeaderColor Marketing ver. & 
+\HeaderColor Internal ver. & 
+\HeaderColor CL.EXE ver. &
+\HeaderColor DLLs imported &
+\HeaderColor Release date \\
+\hline
+% 4.0, April 1995
+% 97 & 5.0 & February 1997
+6		&  6.0	& 12.00	& msvcrt.dll	& June 1998		\\
+		&	&	& msvcp60.dll	&			\\
+\hline
+.NET (2002)	&  7.0	& 13.00	& msvcr70.dll	& February 13, 2002	\\
+		&	&	& msvcp70.dll	&			\\
+\hline
+.NET 2003	&  7.1	& 13.10 & msvcr71.dll	& April 24, 2003	\\
+		&	&	& msvcp71.dll	&			\\
+\hline
+2005		&  8.0	& 14.00 & msvcr80.dll	& November 7, 2005	\\
+		&	&	& msvcp80.dll	&			\\
+\hline
+2008		&  9.0	& 15.00 & msvcr90.dll	& November 19, 2007	\\
+		&	&	& msvcp90.dll	&			\\
+\hline
+2010		& 10.0	& 16.00 & msvcr100.dll	& April 12, 2010 	\\
+		&	&	& msvcp100.dll	&			\\
+\hline
+2012		& 11.0	& 17.00 & msvcr110.dll	& September 12, 2012 	\\
+		&	&	& msvcp110.dll	&			\\
+\hline
+2013		& 12.0	& 18.00 & msvcr120.dll	& October 17, 2013 	\\
+		&	&	& msvcp120.dll	&			\\
+\hline
+\end{tabular}
+\end{center}
+\normalsize
+
+msvcp*.dll hat \Cpp{}-bezogene Funktionen, bedeutet wenn die library importiert wird,
+ist das Programm das sie importiert wahrscheinlich ein \Cpp program.
+
+\subsubsection{Name mangling} 
+
+Die Namen fangen normal an mit dem \TT{?} Symbol.
+
+Hier: \myref{namemangling} kann man mehr lesen \"uber MSVC's \gls{name mangling} . 
+
+\subsection{GCC}
+\myindex{GCC}
+
+Neben *NIX Umgebungen, ist GCC auch in win32 Umgebungen pr\"asent, in der Form von Cygwin and MinGW. 
+
+\subsubsection{Name mangling} 
+
+Namen fangen hier normal mit dem \TT{\_Z} Symbolen an.
+
+Man kann mehr lesen \"uber GCC's \gls{name mangling} hier: \myref{namemangling}.
+
+\subsubsection{Cygwin}
+\myindex{Cygwin}
+
+cygwin1.dll wird oft importiert.
+
+\subsubsection{MinGW}
+\myindex{MinGW}
+
+msvcrt.dll wird vielleicht importiert.
+
+\subsection{Intel Fortran}
+\myindex{Fortran}
+
+
+libifcoremd.dll, libifportmd.dll and libiomp5md.dll (OpenMP Support) werden vielleicht importiert.
+
+libifcoremd.dll hat eine menge an Funktionen die das \TT{for\_} Pr\"afix haben, was \IT{Fortran} bedeutet.
+
+\subsection{Watcom, OpenWatcom}
+\myindex{Watcom}
+\myindex{OpenWatcom}
+
+\subsubsection{Name mangling}
+
+Namen fangen normal mit dem \TT{W} Symbol an. 
+
+Zum Beispiel wird so eine Methode benannt \q{method} der Klasse \q{class} die keine Argumente hat und \Tvoid zur\"uck gibt: % <-- Finde was besseres!
+% For example, that is how the method named \q{method} of the class \q{class} that does not have any arguments and returns
+% \Tvoid is encoded:
+
+\begin{lstlisting}
+W?method$_class$n__v
+\end{lstlisting}
+
+\subsection{Borland}
+\myindex{Borland Delphi}
+\myindex{Borland C++Builder}
+
+Hier ist ein Beispiel f\"ur Borland Delphi's und C++Builder's \gls{name mangling}:
+
+\lstinputlisting{digging_into_code/identification/borland_mangling.txt}
+
+Die Namen fangen immer mit dem \TT{@} Symbol an, dann haben wir den Namen
+der Klassen Namen, Methoden Namen, und codiert die Typen der Argumente der Methode.
+
+Diese Namen k\"onnen in den .exe Imports, .dll Exports, Debug Daten und etc existieren.
+
+Borland Visual Component Libraries (VCL) 
+werden in .bpl Dateien gehalten anstatt .dll's, zum Beispiel vcl50.dll, rtl60.dll.
+
+Eine weitere DLL die vielleicht importiert wird: BORLNDMM.DLL
+
+\subsubsection{Delphi}
+
+Fast alle Delphi executables haben den \q{Boolean} Text String am Anfang des Code Segments, zusammen mit den Namen anderer Typen liegen.
+% Almost all Delphi executables has the \q{Boolean} text string at the beginning of the code segment, along with other type names.
+
+Dies ist ein sehr typischer Anfang f\"ur das \TT{CODE} Segment bei einem 
+Delphi Programm, dieser Block kam direkt nach dem win32 PE Datei header:
+
+\lstinputlisting{digging_into_code/identification/delphi.txt}
+
+Die ersten 4 Btyes des Daten Segments (\TT{DATA}) k\"onnen \TT{00 00 00 00}, \TT{32 13 8B C0} oder \TT{FF FF FF FF} sein.
+
+Diese Informationen k\"onnen n\"utzlich sein wenn man mit gepackten oder verschl\"usselten Delphi executables arbeiten muss. 
+
+\subsection{Other known DLLs}
+
+\myindex{OpenMP}
+\begin{itemize}
+\item vcomp*.dll---Microsoft's Implementierung von OpenMP. 
+\end{itemize}
+

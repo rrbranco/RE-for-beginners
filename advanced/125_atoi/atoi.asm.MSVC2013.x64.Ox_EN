@@ -1,0 +1,31 @@
+s$ = 8
+my_atoi	PROC
+; load first character
+	movzx	r8d, BYTE PTR [rcx]
+; EAX is allocated for "rt" variable
+; its 0 at start
+	xor	eax, eax
+; first character is zero-byte, i.e., string terminator?
+; exit then.
+	test	r8b, r8b
+	je	SHORT $LN9@my_atoi
+$LL2@my_atoi:
+	lea	edx, DWORD PTR [rax+rax*4]
+; EDX=RAX+RAX*4=rt+rt*4=rt*5
+	movsx	eax, r8b
+; EAX=input character
+; load next character to R8D
+	movzx	r8d, BYTE PTR [rcx+1]
+; shift pointer in RCX to the next character:
+	lea	rcx, QWORD PTR [rcx+1]
+	lea	eax, DWORD PTR [rax+rdx*2]
+; EAX=RAX+RDX*2=input character + rt*5*2=input character + rt*10
+; correct digit by subtracting 48 (0x30 or '0')
+	add	eax, -48				; ffffffffffffffd0H
+; was last character zero?
+	test	r8b, r8b
+; jump to loop begin, if not
+	jne	SHORT $LL2@my_atoi
+$LN9@my_atoi:
+	ret	0
+my_atoi	ENDP

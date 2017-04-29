@@ -1,0 +1,114 @@
+\subsubsection{std::map and std::set}
+\myindex{\Cpp!STL!std::map}
+\myindex{\Cpp!STL!std::set}
+\myindex{Binary tree}
+
+The binary tree is another fundamental data structure.
+
+As its name states, this is a tree where each node has at most 2 links to other nodes.
+Each node has key and/or value:
+\TT{std::set} provides only key at each node,
+\TT{std::map} provides both key and value at each node.
+
+Binary trees are usually the structure used in the implementation of \q{dictionaries} of key-values (\ac{AKA} \q{associative arrays}).
+
+There are at least three important properties that a binary trees has:
+\begin{itemize}
+\item All keys are always stored in sorted form.
+\item Keys of any types can be stored easily.
+Binary tree algorithms are unaware of the key's type, 
+only a key comparison function is required.
+\item 
+Finding a specific key is relatively fast in comparison with lists and arrays.
+\end{itemize}
+
+Here is a very simple example: let's store these numbers in a binary tree:
+0, 1, 2, 3, 5, 6, 9, 10, 11, 12, 20, 99, 100, 101, 107, 1001, 1010.
+
+\input{\CURPATH/STL/map_set/example_tikz}
+
+All keys that are smaller than the node key's value are stored on the left side.
+
+All keys that are bigger than the node key's value are stored on the right side.
+
+Hence, the lookup algorithm is straightforward: if the value that you are looking for is smaller than the current node's key value:
+move left, if it is bigger: move right, stop if the value required is equal to the node key's value.
+
+That is why the searching algorithm may search for numbers, text strings, etc., as long as 
+a key comparison function is provided.
+
+All keys have unique values.
+
+Having that, one needs $\approx \log_{2} n$ steps in order to find a key in a balanced binary tree with $n$ keys.
+This implies that $\approx 10$ steps are needed $\approx 1000$ keys, or $\approx 13$ 
+steps for $\approx 10000$ keys.
+
+Not bad, but the tree has always to be balanced for this: i.e., the keys has to be distributed evenly on all levels.
+The insertion and removal operations do some maintenance to keep the tree in a balanced state.
+
+There are several popular balancing algorithms available, including the AVL tree and the red-black tree.
+
+The latter extends each node with a \q{color} value to simplify the balancing process, hence, 
+each node may be \q{red} or \q{black}.
+
+Both GCC's and MSVC's \TT{std::map} and \TT{std::set} template implementations use red-black trees.
+
+\TT{std::set} has only keys.
+\TT{std::map} is the \q{extended} version of std::set: it also has a value at each node.
+
+\myparagraph{MSVC}
+
+\lstinputlisting[style=customc]{\CURPATH/STL/map_set/MSVC_EN.cpp}
+
+\lstinputlisting[caption=MSVC 2012]{\CURPATH/STL/map_set/MSVC.txt}
+
+The structure is not packed, so both \Tchar values occupy 4 bytes each.
+
+As for \TT{std::map}, \TT{first} and \TT{second} can be viewed as a single value of type \TT{std::pair}.
+\TT{std::set} 
+has only one value at this address in the structure instead.
+
+The current size of the tree is always present, as in the case of the implementation of \TT{std::list} in MSVC (\myref{MSVC_std_list}).
+
+As in the case of \TT{std::list}, 
+the iterators are just pointers to nodes.
+The \TT{.begin()} iterator points to the minimal key.
+
+That pointer is not stored anywhere (as in lists), the minimal key of the tree is looked up every time.
+\TT{operator--} and \TT{operator++} 
+move the current node pointer to the predecessor or successor respectively, i.e., the nodes which have the previous or next key.
+
+The algorithms for all these operations are explained in
+[Cormen, Thomas H. and Leiserson, Charles E. and Rivest, Ronald L. and Stein, Clifford,
+\IT{Introduction to Algorithms, Third Edition}, (2009)].
+
+The \TT{.end()} iterator points to the dummy node, it has 1 in \TT{Isnil}, which implies that 
+the node has no key and/or value.
+It can be viewed as a \q{landing zone} in \ac{HDD}
+and often called \IT{sentinel} [see N. Wirth, \IT{Algorithms and Data Structures}, 1985]
+\footnote{\url{http://www.ethoberon.ethz.ch/WirthPubl/AD.pdf}}.
+
+The \q{parent} field of the dummy node points to the root node, which serves
+as a vertex of the tree and contains information.
+
+\myparagraph{GCC}
+
+\lstinputlisting[style=customc]{\CURPATH/STL/map_set/GCC.cpp}
+
+\lstinputlisting[caption=GCC 4.8.1]{\CURPATH/STL/map_set/GCC.txt}
+
+GCC's implementation is very similar
+\footnote{\url{http://go.yurichev.com/17084}}.
+The only difference is the absence of the \TT{Isnil} field,
+so the structure occupies slightly less space in memory than its implementation in MSVC.
+
+The dummy node is also used as a place to point the \TT{.end()} iterator also has no key and/or value.
+
+\myparagraph{Rebalancing demo (GCC)}
+
+Here is also a demo showing us how a tree is rebalanced after some insertions.
+
+\lstinputlisting[caption=GCC,style=customc]{\CURPATH/STL/map_set/GCC_rebalancing_demo.cpp}
+
+\lstinputlisting[caption=GCC 4.8.1]{\CURPATH/STL/map_set/GCC_rebalancing_demo.txt}
+

@@ -1,0 +1,119 @@
+\section{Saut conditionnels}
+\label{sec:Jcc}
+\myindex{\CLanguageElements!if}
+
+% sections
+\input{patterns/07_jcc/simple/main}
+\input{patterns/07_jcc/abs/main}
+\input{patterns/07_jcc/cond_operator/main}
+\input{patterns/07_jcc/minmax/main}
+
+\subsection{\Conclusion{}}
+
+\subsubsection{x86}
+
+Voici le squelette générique d'un saut conditionnel:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+CMP registre, registre/valeur
+Jcc true ; cc=condition code, code de condition
+false:
+... §le code qui sera exécuté si le résultat de la comparaison est faux (false)§ ...
+JMP exit 
+true:
+... §le code qui sera exécuté si le résultat de la comparaison est vrai (true)§ ...
+exit:
+\end{lstlisting}
+
+\subsubsection{ARM}
+
+\begin{lstlisting}[caption=ARM,style=customasmARM]
+CMP registre, registre/valeur
+Bcc true ; cc=condition code
+false:
+... §le code qui sera exécuté si le résultat de la comparaison est faux (false)§ ...
+JMP exit 
+true:
+... §le code qui sera exécuté si le résultat de la comparaison est vrai (true)§ ...
+exit:
+\end{lstlisting}
+
+\subsubsection{MIPS}
+
+\begin{lstlisting}[caption=Check si zéro (Branch if EQual Zero),style=customasmMIPS]
+BEQZ REG, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check si plus petit que zéro (Branch if Less Than Zero) en utilisant une pseudo instruction,style=customasmMIPS]
+BLTZ REG, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check si les valeurs sont égales (Branch if EQual),style=customasmMIPS]
+BEQ REG1, REG2, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check si les valeurs ne sont pas égales (Branch if Not Equal),style=customasmMIPS]
+BNE REG1, REG2, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check REG2 plus petit que REG3 (signé),style=customasmMIPS]
+SLT REG1, REG2, REG3
+BEQ REG1, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check REG2 plus petit que REG3 (non signé),style=customasmMIPS]
+SLTU REG1, REG2, REG3
+BEQ REG1, label
+...
+\end{lstlisting}
+
+\subsubsection{Sans branchement}
+
+\myindex{ARM!\Instructions!MOVcc}
+\myindex{x86!\Instructions!CMOVcc}
+\myindex{ARM!\Instructions!CSEL}
+Si le corps d'instruction conditionnelle est très petit, l'instruction de déplacement
+conditionnel peut être utilisée:
+\INS{MOVcc} en ARM (en mode ARM), \INS{CSEL} en ARM64, \INS{CMOVcc} en x86.
+
+\myparagraph{ARM}
+
+Il est possible d'utiliser les suffixes conditionnels pour certaines instructions
+ARM:
+
+\begin{lstlisting}[caption=ARM (\ARMMode),style=customasmARM]
+CMP registre, registre/valeur
+instr1_cc ; §cette instruction sera exécutée si le code conditionnel est vrai§ (true)
+instr2_cc ; §cette autre instruction sera exécutée si cet autre code conditionnel est vrai§ (true)
+... etc.
+\end{lstlisting}
+
+Bien sûr, il n'y a pas de limite au nombre d'instructions avec un suffixe de code
+conditionnel, tant que les flags du CPU ne sont pas modifiés par l'une d'entre elles.
+% FIXME: list of such instructions or \myref{} to it
+
+\myindex{ARM!\Instructions!IT}
+
+Le mode Thumb possède l'instruction \INS{IT}, permettant d'ajouter le suffixe conditionnel
+pour les quatres instructions suivantes.
+Lire à ce propos: \myref{ARM_Thumb_IT}.
+
+\begin{lstlisting}[caption=ARM (\ThumbMode),style=customasmARM]
+CMP registre, registre/valeur
+ITEEE EQ ; met ces suffixes: if-then-else-else-else
+instr1   ; §instruction exécutée si la condition est vraie§
+instr2   ; §instruction exécutée si la condition est fausse§
+instr3   ; §instruction exécutée si la condition est fausse§
+instr4   ; §instruction exécutée si la condition est fausse§
+\end{lstlisting}
+
+\subsection{\Exercise}
+
+(ARM64) Essayez de récrire le code pour \lstref{cond_ARM64} en supprimant toutes
+les instructions de saut conditionnel et en utilisant l'instruction \TT{CSEL}.
+

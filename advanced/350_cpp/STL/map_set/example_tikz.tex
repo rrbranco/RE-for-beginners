@@ -1,0 +1,48 @@
+\tikzset
+{
+  treenode/.style = {align=center, inner sep=0pt, text centered},
+  key/.style = {treenode, circle, white, draw=black, fill=black, minimum size=2.0em, text width=2.0em},
+  empty/.style = {treenode, rectangle, draw=black, minimum width=0.5em, minimum height=0.5em}
+}
+
+\begin{center}
+\begin{tikzpicture}[->,>=stealth',
+		level 1/.style={sibling distance=6cm},
+		level 2/.style={sibling distance=2.7cm},
+		level 3/.style={sibling distance=1.7cm},
+		level 4/.style={sibling distance=0.7cm}] 
+	\node [key] {10}
+	child { node [key] {1} 
+		child{ node [key] {0} 
+		}
+		child{ node [key] {5}
+			child{ node [key] {3}
+				child{ node[key] {2}}
+				child{ node[empty] {}}
+			}
+			child{ node [key] {6}
+				child{ node[empty] {}}
+				child{ node[key] {9}}
+			}
+		}                            
+	}
+	child { node [key] {100}
+		child { node [key] {20}
+			child{ node [key] {12}
+				child{ node[key] {11}}
+				child{ node[empty] {}}
+			}
+			child{ node [key] {99}
+			}
+		}
+		child{ node [key] {107}
+			child{ node [key] {101}}
+			child{ node [key] {1001}
+				child{ node[empty] {}}
+				child{ node[key] {1010}}
+			}
+		}
+	}
+	; 
+\end{tikzpicture}
+\end{center}

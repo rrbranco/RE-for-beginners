@@ -1,0 +1,39 @@
+\subsubsection{GCC: x86-64}
+
+\myindex{x86-64}
+Essayons GCC sur un Linux 64-bit:
+
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{patterns/01_helloworld/GCC_x64_FR.s}
+
+Une méthode de passage des arguments à la fonction dans des registres est aussi utilisée sur Linux, *BSD et
+\MacOSX est \SysVABI.
+
+Les 6 premiers arguments sont passés dans les registres \RDI, \RSI, \RDX, \RCX, \Reg{8}, \Reg{9} et les autres---par
+la pile.
+
+Donc le pointeur sur la chaîne est passé dans \EDI (la partie 32-bit du registre).
+Mais pourquoi ne pas utiliser la partie 64-bit, \RDI?
+
+Il est important de garder à l'esprit que toutes les instructions \MOV en mode 64-bit qui écrivent quelque chose
+dans la partie 32-bit inférieur du registre efface également les 32-bit supérieur (comme indiqué dans les manuels Intel:
+\myref{x86_manuals}).\\
+I.e., l'instruction \INS{MOV EAX, 011223344h} écrit correctement une valeur dans \RAX, puisque que les bits supérieurs
+sont mis à zéro.
+
+Si nous ouvrons le fichier objet compilé (.o), nous pouvons voir tous les opcodes des instructions
+\footnote{Ceci doit être activé dans \textbf{Options $\rightarrow$ Disassembly $\rightarrow$ Number of opcode bytes}}:
+
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{patterns/01_helloworld/GCC_x64.lst}
+
+\label{hw_EDI_instead_of_RDI}
+Comme on le voit, l'instruction qui écrit dans \EDI en \TT{0x4004D4} occupe 5 octets.
+La même instruction qui écrit une valeur sur 64-bit dans \RDI occupe 7 octets.
+Il semble que GCC essaye d'économiser un peu d'espace.
+En outre, cela permet d'être sûr que le segment de données contenant la chaîne ne sera pas alloué à une adresse supérieure
+à 4 \gls{GiB}.
+
+\label{SysVABI_input_EAX}
+Nous voyons aussi que le registre \EAX est mis à zéro avant l'appel à la fonction \printf.
+Ceci, car conformément à l' \ac{ABI} standard mentionnée plus haut,
+le nombre de registres vectoriel utilisés est passé dans \EAX sur les systèmes *NIX en x86-64.
+

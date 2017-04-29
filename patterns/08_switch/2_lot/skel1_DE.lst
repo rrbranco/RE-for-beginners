@@ -1,0 +1,36 @@
+﻿MOV REG, input
+CMP REG, 4 ; maximale Anzahl von Fällen
+JA default
+SHL REG, 2 ; finde Element in der Tabelle. 3 Bits schieben in x64.
+MOV REG, jump_table[REG]
+JMP REG
+
+case1:
+    ; beliebiger Code
+    JMP exit
+case2:
+    ; beliebiger Code
+    JMP exit
+case3:
+    ; beliebiger Code
+    JMP exit
+case4:
+    ; beliebiger Code
+    JMP exit
+case5:
+    ; beliebiger Code
+    JMP exit
+
+default:
+
+    ...
+
+exit:
+
+    ....
+
+jump_table dd case1
+           dd case2
+           dd case3
+           dd case4
+           dd case5

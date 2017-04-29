@@ -1,0 +1,77 @@
+\subsubsection{MSVC: x86}
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/2_global/ex2_MSVC.asm}
+
+Dans ce cas, la variable \TT{x} est définie dans la section \TT{\_DATA} et il n'y
+a pas de mémoire allouée sur la pile locale. Elle est accédée directement, pas par
+la pile.
+Les variables globales non initialisées ne prennent pas de place dans le fichier
+exécutable (en effet, pourquoi aurait-on besoin d'allouer de l'espace pour des variables
+initialement mises à zéro ?), mais lorsque quelqu'un accède à leur adresse, l'\ac{OS}
+va y allouer un bloc de zéros\footnote{cwC'est comme ça que secomporte les \ac{VM}}.
+
+Maintenant, assignons explicitement une valeur à la variable:
+
+\lstinputlisting[style=customc]{patterns/04_scanf/2_global/default_value_FR.c}
+
+Nous obtenons:
+
+\begin{lstlisting}[style=customasmx86]
+_DATA	SEGMENT
+_x	DD	0aH
+
+...
+\end{lstlisting}
+
+Ici nous voyons une valeur \TT{0xA} de type DWORD (DD signifie DWORD = 32 bit) pour
+cette variable.
+
+Si vous ouvrez le .exe compilé dans \IDA, vous pouvez voir la variable \IT{x} placée
+au début du segment \TT{\_DATA}, et après elle vous pouvez voir la chaîne de texte.
+
+Si vous ouvrez le .exe compilé de l'exemple précédent dans \IDA, oú la valeur de
+\IT{x} n'était pas mise, vous verrez quelque chose comme ça:
+
+\lstinputlisting[caption=\IDA,style=customasmx86]{patterns/04_scanf/2_global/IDA.lst}
+
+\TT{\_x} est marquée avec \TT{?} avec le reste des variables qui ne doivent pas être
+initialisées.
+Ceci implique qu'après avoir chargé le .exe en mémoire, de l'espace pour toutes ces
+variables doit être alloué et rempli avec des zéros \InSqBrackets{\CNineNineStd 6.7.8p10}.
+Mais dans le fichier .exe, ces variables non initialisées n'occupent rien du tout.
+C'est pratique pour les gros tableaux, par exemple.
+
+\input{patterns/04_scanf/2_global/olly.tex}
+
+\subsubsection{GCC: x86}
+
+\myindex{ELF}
+Le schéma sous Linux est presque le même, avec la différence que les variables
+non initialisées se trouvent dans le segment \TT{\_bss}.
+Dans un fichier \ac{ELF} ce segment possède les attributs suivants:
+
+\begin{lstlisting}
+; Segment type: Uninitialized
+; Segment permissions: Read/Write
+\end{lstlisting}
+
+Si toutefois vous initialisez la variable avec une velauer quelconque, e.g. 10,
+elle sera placée dans le segment \TT{\_data}, qui possède les attributs suivants:
+
+\begin{lstlisting}
+; Segment type: Pure data
+; Segment permissions: Read/Write
+\end{lstlisting}
+
+\subsubsection{MSVC: x64}
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/04_scanf/2_global/ex2_MSVC_x64_FR.asm}
+
+Le code est presque le même qu'en x86.
+Notez toutefois que l'adresse de la variable $x$ est passée à \TT{scanf()} en utilisant
+une instruction \LEA, tandis que la valeur de la variable est passée au second \printf
+en utilisant une instruction \MOV.
+\TT{DWORD PTR}---fait partie du langage d'assemblage (aucune relation avec le code machine),
+indique que la taille de la variable est 32-bit et que l'instruction \MOV doit être
+encodée en conséquence.
+

@@ -1,0 +1,66 @@
+% TODO proof-reading
+\subsection{Passing arguments}
+
+Let's extend our \TT{min()}/\TT{max()} example:
+
+
+\begin{lstlisting}[style=customjava]
+public class minmax
+{
+	public static int min (int a, int b)
+	{
+		if (a>b)
+			return b;
+		return a;
+	}
+
+	public static int max (int a, int b)
+	{
+		if (a>b)
+			return a;
+		return b;
+	}
+
+	public static void main(String[] args)
+	{
+		int a=123, b=456;
+		int max_value=max(a, b);
+		int min_value=min(a, b);
+		System.out.println(min_value);
+		System.out.println(max_value);
+	}
+}
+\end{lstlisting}
+
+Here is \main function code:
+
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=5, args_size=1
+         0: bipush        123
+         2: istore_1      
+         3: sipush        456
+         6: istore_2      
+         7: iload_1       
+         8: iload_2       
+         9: invokestatic  #2       // Method max:(II)I
+        12: istore_3      
+        13: iload_1       
+        14: iload_2       
+        15: invokestatic  #3       // Method min:(II)I
+        18: istore        4
+        20: getstatic     #4       // Field java/lang/System.out:Ljava/io/PrintStream;
+        23: iload         4
+        25: invokevirtual #5       // Method java/io/PrintStream.println:(I)V
+        28: getstatic     #4       // Field java/lang/System.out:Ljava/io/PrintStream;
+        31: iload_3       
+        32: invokevirtual #5       // Method java/io/PrintStream.println:(I)V
+        35: return        
+\end{lstlisting}
+
+Arguments are passed to the other function in the stack, and the return value is left on \ac{TOS}.
+
+

@@ -1,0 +1,71 @@
+\subsection{Pseudozufallszahlengenerator Beispiel}
+\label{FPU_PRNG}
+Wenn wir Zufallszahlen vom Typ \Tfloat zwischen 0 und 1 brauchen, ist die einfachste Möglichkeit einen \ac{PRNG} wie den
+Mersenne-Twister zu verwenden.
+Er produziert vorzeichenlose 32-Bit-Werte (mit anderen Worten: er erzeugt 32 zufällige Bits).
+Diesen Wert können wir in einen \Tfloat umwandeln und dann durch \GTT{RAND\_MAX} (\GTT{0xFFFFFFFF} in unserem Fall)
+teilen---wir erhalten einen Wert im Intervall 0..1.
+
+Wie wir jedoch wissen, ist die Division langsam.
+Auch würden wir gerne so wenig FPU Operation wie möglich verwenden.
+Deshalb fragen wir uns, ob wir die Division loswerden können.
+
+\myindex{IEEE 754}
+Erinnern wir uns an den Aufbau einer Fließkommazahl: sie besteht aus einem Vorzeichenbit, Bits im Signifikanden und Bits
+im Exponenten.
+Wir müssen also lediglich Zufallsbits in allen Bits des Signifikanden speichern um einen zufällige Fließkommazahl zu
+erhalten!
+
+Der Exponent kann nicht null sein (in diesem Fall ist die Fließkommazahl denormalisiert); also speichern wir 0b01111111
+im Exponenten---das bedeutet, dass der Exponent 1 ist.
+Dann füllen wir den Signifikanden mit Zufallsbits, setzen das Vorzeichenbit auf 0 (entspricht einer positiven Zahl) und
+voilà.
+Die erzeugte Zahl liegt zwischen 1 und 2; wir müssen also am Ende noch 1 abziehen.
+
+\newcommand{\URLXOR}{\url{http://go.yurichev.com/17308}}
+Ein sehr einfacher linearer Kongruenzgenerator für Zufallszahlen wird in meinem Beispiel\footnote{die Idee stammt von:
+\URLXOR} vorgestellt: er erzeugt 32-Bit-Zahlen.
+Der \ac{PRNG} wird mit der aktuellen Zeit um UNIX-Timestamp-Format initialisiert.
+
+Wir stellen hier den Typ \Tfloat als \IT{union} dar--das ist die \CCpp Konstruktion, die es uns ermöglicht, einen
+Speicherblock als unterschiedliche Typen aufzufassen.
+In unserem Fall sind wir in der Lage eine Variable vom Typ \IT{union} zu erzeugen und dann auf diese wie auf einen
+\Tfloat oder \IT{uint32\_t} zuzugreifen.
+Man kann sagen, dass es sich dabei um einen Hack, d.h. Trick handelt. Sogar um einen sehr schmutzigen.
+
+% WTF?
+Der \ac{PRNG} Code für Integer ist der bereits betrachtete: \myref{LCG_simple}.
+Deshalb verzichten wir an dieser Stelle auf ein erneutes Listing des kompilierten Codes.
+
+\lstinputlisting[style=customc]{patterns/17_unions/FPU_PRNG/FPU_PRNG_EN.cpp}
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{patterns/17_unions/FPU_PRNG/MSVC2010_Ox_Ob0_DE.asm}
+Die Namen der Funktionen sind hier so seltsam, weil das Beispiel als C++ kompiliert wurde, und hier name mangling in C++
+vorliegt. Dies werden wir später besprechen: \myref{namemangling}.
+Wenn wir das Beispiel mit MSVC 2012 kompilieren, verwendet es SIMD Befehle für die FPU; mehr dazu unter:
+\myref{FPU_PRNG_SIMD}.
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5,style=customasmMIPS]{patterns/17_unions/FPU_PRNG/MIPS_O3_IDA_DE.lst}
+Hier wurde auch ein unnützer \INS{LUI} Befehl aus unerfindlichen Gründen hinzugefügt.
+Wir haben solch ein Artefakt schon früher betrachtet: \myref{MIPS_FPU_LUI}.
+
+\subsubsection{ARM (\ARMMode)}
+
+\lstinputlisting[caption=\Optimizing GCC 4.6.3
+(IDA),style=customasmARM]{patterns/17_unions/FPU_PRNG/raspberry_GCC_O3_IDA_DE.lst}
+
+\myindex{objdump}
+\myindex{binutils}
+\myindex{IDA}
+Wir ziehen auch einen Dump in objdump und shen, dass die FPU Befehle andere Namen als in \IDA haben.
+Offenbar haben die Entwickler von \IDA und binutils unterschiedliche Handbücher verwendet.
+Möglicherweise ist es hilfreich, beide Varianten der Befehlsnamen zu kennen.
+
+\lstinputlisting[caption=\Optimizing GCC 4.6.3 (objdump),style=customasmARM]{patterns/17_unions/FPU_PRNG/raspberry_GCC_O3_objdump.lst}
+
+Die Befehle an den Stellen 0x5c in \TT{float\_rand()} und 0x38 in \main sind (Pseudo-)Zufallsrauschen.
+

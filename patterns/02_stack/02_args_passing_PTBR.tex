@@ -1,0 +1,71 @@
+\subsubsection{Passando argumento de funções}
+
+A maneira mais comum de se passar parâmetros no x86 é chamada \q{cdecl}:
+
+\begin{lstlisting}[style=customasmx86]
+push arg3
+push arg2
+push arg1
+call f
+add esp, 12 ; 4*3=12
+\end{lstlisting}
+
+Uma função chamada recebe seus argumentos pelo ponteiro da pilha.
+
+Portanto, é assim que os valores dos argumentos são alocados na pilha antes da execução das primeiras intruções da função \ttf{}:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+ESP & endereço de retorno \\
+\hline
+ESP+4 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+ESP+8 & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+ESP+0xC & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+
+\PTBRph{}
+
+Vale ressaltar que nada obriga o programador a passar os argumentos pela pilha. Não é um requerimento.
+Você pode implementar qualquer outro método usando a pilha da maneira que desejar.
+
+Por exemplo, é possível alocar um espaço para argumentos na \gls{heap}, preencher e passar para a função via um ponteiro para esse bloco no registrador \EAX{}.
+% TBT: \InSqBrackets{\TAOCPvolI{}, 189} mentions even weirder schemes particularly convenient on IBM System/360.
+
+Isso vai funcionar, entretando, é de senso comum no x86 e ARM a usar a pilha para esse fim.
+
+\par
+A propósito, a função chamada não tem nenhuma informação sobre quantos argumentos foram passados.
+Funções em C com um número variável de argumentos (como \printf) determina seu número usando formatações específicas de string (que começam com o símbolo \%).
+
+Se nós escrevermos algo como:
+
+\begin{lstlisting}
+printf("%d %d %d", 1234);
+\end{lstlisting}
+
+\printf vai mostrar 1234, e então dois números aleatórios, que estariam próximos a stack\footnote{\ac{TBT}}.
+
+\par
+É por isso que não é muito importante como declaramos a função \main{}: como \main{}, \TT{main(int argc, char *argv[])} ou \TT{main(int argc, char *argv[], char *envp[])}.
+
+Na verdade, o código da C Runtime Library está chamando grosseiramente \main{} dessa maneira:
+	
+\begin{lstlisting}[style=customasmx86]
+push envp
+push argv
+push argc
+call main
+...
+\end{lstlisting}
+
+Se você declarar \main como \main sem argumentos, mesmo assim eles ainda estarão presentes na pilha, mas não são usados.
+Se você declarar \main como \TT{main(int argc, char *argv[])}, você será capaz de utilizar os primeiros dois argumentos e o terceiro vai continuar \q{invisível} para a sua função.
+Da mesma maneira, é possível declarar a \main como \TT{main(int argc)} e ainda assim vai funcionar.
+

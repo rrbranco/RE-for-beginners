@@ -1,0 +1,14 @@
+\myparagraph{ARM64: \Optimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[caption=f\_signed(),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM64_GCC_O3_signed_EN.lst}
+
+\lstinputlisting[caption=f\_unsigned(),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM64_GCC_O3_unsigned_EN.lst}
+
+The comments were added by the author of this book.
+What is striking is that the compiler is not aware that some conditions are not possible at all,
+so there is dead code at some places, which can never be executed.
+
+\mysubparagraph{\Exercise}
+
+Try to optimize these functions manually for size, removing redundant instructions, without adding new ones.
+

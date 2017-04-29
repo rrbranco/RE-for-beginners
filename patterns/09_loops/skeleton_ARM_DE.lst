@@ -1,0 +1,10 @@
+    MOV R4, 2 ; Initialisierung
+    B check
+body:
+    ; Schleifenkörper
+    ; tue etwas
+    ; verwende Zähler in R4, aber verändere ihn nicht!
+    ADD R4,R4, #1 ; inkrementieren
+check:
+    CMP R4, #10
+    BLT body

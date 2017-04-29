@@ -1,0 +1,148 @@
+% TODO proof-reading
+\subsection{Loops}
+
+\begin{lstlisting}[style=customjava]
+public class Loop
+{
+	public static void main(String[] args)
+	{ 
+		for (int i = 1; i <= 10; i++)
+		{
+			System.out.println(i); 
+		}               
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=2, args_size=1
+         0: iconst_1      
+         1: istore_1      
+         2: iload_1       
+         3: bipush        10
+         5: if_icmpgt     21
+         8: getstatic     #2         // Field java/lang/System.out:Ljava/io/PrintStream;
+        11: iload_1       
+        12: invokevirtual #3         // Method java/io/PrintStream.println:(I)V
+        15: iinc          1, 1
+        18: goto          2
+        21: return        
+\end{lstlisting}
+
+\TT{iconst\_1} loads 1 into \ac{TOS}, \TT{istore\_1} stores it in the \ac{LVA} at slot 1.
+
+Why not the zeroth slot?
+Because the \main function has one argument (array of \TT{String}) 
+and a pointer to it (or \IT{reference}) is now in the zeroth slot.
+
+
+So, the \IT{i} local variable will always be in 1st slot.
+
+
+Instructions at offsets 3 and 5 compare \IT{i} with 10.
+
+If \IT{i} is larger, execution flow passes to offset 21, where the function ends.
+
+If it's not, \TT{println} is called.
+
+\IT{i} is then reloaded at offset 11, for \TT{println}.
+
+By the way, we call the \TT{println} method for an \IT{integer}, 
+and we see this in the comments: \q{(I)V}
+(\IT{I} means \IT{integer} and \IT{V} means the return type is \IT{void}).
+
+
+When \TT{println} finishes, \IT{i} is incremented at offset 15.
+
+The first operand of the instruction is the  number of a slot (1), 
+the second is the number (1) to add to the variable.
+
+
+\TT{goto} is just GOTO, it jumps to the beginning of the loop's body offset 2.
+
+
+Let's proceed with a more complex example:
+
+
+\begin{lstlisting}[style=customjava]
+public class Fibonacci
+{
+	public static void main(String[] args)
+	{ 
+		int limit = 20, f = 0, g = 1;
+
+		for (int i = 1; i <= limit; i++)
+		{
+			f = f + g;
+			g = f - g;
+			System.out.println(f); 
+		}
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=5, args_size=1
+         0: bipush        20
+         2: istore_1      
+         3: iconst_0      
+         4: istore_2      
+         5: iconst_1      
+         6: istore_3      
+         7: iconst_1      
+         8: istore        4
+        10: iload         4
+        12: iload_1       
+        13: if_icmpgt     37
+        16: iload_2       
+        17: iload_3       
+        18: iadd          
+        19: istore_2      
+        20: iload_2       
+        21: iload_3       
+        22: isub          
+        23: istore_3      
+        24: getstatic     #2         // Field java/lang/System.out:Ljava/io/PrintStream;
+        27: iload_2       
+        28: invokevirtual #3         // Method java/io/PrintStream.println:(I)V
+        31: iinc          4, 1
+        34: goto          10
+        37: return        
+\end{lstlisting}
+        
+Here is a map of the \ac{LVA} slots:
+
+
+\begin{itemize}
+\item 0 --- the sole argument of \main
+\item 1 --- \IT{limit}, always contains 20
+\item 2 --- \IT{f}
+\item 3 --- \IT{g}
+\item 4 --- \IT{i}
+\end{itemize}
+
+We can see that the Java compiler allocates variables in \ac{LVA} slots in the same order 
+they were declared in the source code.
+
+
+There are separate \TT{istore} instructions for accessing slots 0, 1, 2 and 3, 
+but not for 4 and larger, so there is \TT{istore} with an additional operand at offset 8 
+which takes the slot number as an operand.
+
+It's the same with \TT{iload} at offset 10.
+
+
+But isn't it dubious to allocate another slot for the \IT{limit} variable, which 
+always contains 20 (so it's a constant in essence), and reload its value so often?
+
+\ac{JVM} \ac{JIT} compiler is usually good enough to optimize such things.
+
+Manual intervention in the code is probably not worth it.
+
+

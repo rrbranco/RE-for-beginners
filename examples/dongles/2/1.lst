@@ -1,0 +1,147 @@
+.text:00022AB8        public SSQC
+.text:00022AB8 SSQC   proc near ; CODE XREF: SSQ+7p
+.text:00022AB8
+.text:00022AB8 var_44 = byte ptr -44h
+.text:00022AB8 var_29 = byte ptr -29h
+.text:00022AB8 arg_0  = dword ptr  8
+.text:00022AB8
+.text:00022AB8        push    ebp
+.text:00022AB9        mov     ebp, esp
+.text:00022ABB        sub     esp, 44h
+.text:00022ABE        push    edi
+.text:00022ABF        mov     edi, offset unk_4035D0
+.text:00022AC4        push    esi
+.text:00022AC5        mov     esi, [ebp+arg_0]
+.text:00022AC8        push    ebx
+.text:00022AC9        push    esi
+.text:00022ACA        call    strlen
+.text:00022ACF        add     esp, 4
+.text:00022AD2        cmp     eax, 2
+.text:00022AD7        jnz     loc_22BA4
+.text:00022ADD        inc     esi
+.text:00022ADE        mov     al, [esi-1]
+.text:00022AE1        movsx   eax, al
+.text:00022AE4        cmp     eax, '3'
+.text:00022AE9        jz      loc_22B84
+.text:00022AEF        cmp     eax, '4'
+.text:00022AF4        jz      loc_22B94
+.text:00022AFA        cmp     eax, '5'
+.text:00022AFF        jnz     short loc_22B6B
+.text:00022B01        movsx   ebx, byte ptr [esi]
+.text:00022B04        sub     ebx, '0'
+.text:00022B07        mov     eax, 7
+.text:00022B0C        add     eax, ebx
+.text:00022B0E        push    eax
+.text:00022B0F        lea     eax, [ebp+var_44]
+.text:00022B12        push    offset aDevSlD  ; "/dev/sl%d"
+.text:00022B17        push    eax
+.text:00022B18        call    nl_sprintf
+.text:00022B1D        push    0               ; int
+.text:00022B1F        push    offset aDevRbsl8 ; char *
+.text:00022B24        call    _access
+.text:00022B29        add     esp, 14h
+.text:00022B2C        cmp     eax, 0FFFFFFFFh
+.text:00022B31        jz      short loc_22B48
+.text:00022B33        lea     eax, [ebx+7]
+.text:00022B36        push    eax
+.text:00022B37        lea     eax, [ebp+var_44]
+.text:00022B3A        push    offset aDevRbslD ; "/dev/rbsl%d"
+.text:00022B3F        push    eax
+.text:00022B40        call    nl_sprintf
+.text:00022B45        add     esp, 0Ch
+.text:00022B48
+.text:00022B48 loc_22B48: ; CODE XREF: SSQC+79j
+.text:00022B48        mov     edx, [edi]
+.text:00022B4A        test    edx, edx
+.text:00022B4C        jle     short loc_22B57
+.text:00022B4E        push    edx             ; int
+.text:00022B4F        call    _close
+.text:00022B54        add     esp, 4
+.text:00022B57
+.text:00022B57 loc_22B57: ; CODE XREF: SSQC+94j
+.text:00022B57        push    2               ; int
+.text:00022B59        lea     eax, [ebp+var_44]
+.text:00022B5C        push    eax             ; char *
+.text:00022B5D        call    _open
+.text:00022B62        add     esp, 8
+.text:00022B65        test    eax, eax
+.text:00022B67        mov     [edi], eax
+.text:00022B69        jge     short loc_22B78
+.text:00022B6B
+.text:00022B6B loc_22B6B: ; CODE XREF: SSQC+47j
+.text:00022B6B        mov     eax, 0FFFFFFFFh
+.text:00022B70        pop     ebx
+.text:00022B71        pop     esi
+.text:00022B72        pop     edi
+.text:00022B73        mov     esp, ebp
+.text:00022B75        pop     ebp
+.text:00022B76        retn
+.text:00022B78
+.text:00022B78 loc_22B78: ; CODE XREF: SSQC+B1j
+.text:00022B78        pop     ebx
+.text:00022B79        pop     esi
+.text:00022B7A        pop     edi
+.text:00022B7B        xor     eax, eax
+.text:00022B7D        mov     esp, ebp
+.text:00022B7F        pop     ebp
+.text:00022B80        retn
+.text:00022B84
+.text:00022B84 loc_22B84: ; CODE XREF: SSQC+31j
+.text:00022B84        mov     al, [esi]
+.text:00022B86        pop     ebx
+.text:00022B87        pop     esi
+.text:00022B88        pop     edi
+.text:00022B89        mov     ds:byte_407224, al
+.text:00022B8E        mov     esp, ebp
+.text:00022B90        xor     eax, eax
+.text:00022B92        pop     ebp
+.text:00022B93        retn
+.text:00022B94
+.text:00022B94 loc_22B94: ; CODE XREF: SSQC+3Cj
+.text:00022B94        mov     al, [esi]
+.text:00022B96        pop     ebx
+.text:00022B97        pop     esi
+.text:00022B98        pop     edi
+.text:00022B99        mov     ds:byte_407225, al
+.text:00022B9E        mov     esp, ebp
+.text:00022BA0        xor     eax, eax
+.text:00022BA2        pop     ebp
+.text:00022BA3        retn
+.text:00022BA4
+.text:00022BA4 loc_22BA4: ; CODE XREF: SSQC+1Fj
+.text:00022BA4        movsx   eax, ds:byte_407225
+.text:00022BAB        push    esi
+.text:00022BAC        push    eax
+.text:00022BAD        movsx   eax, ds:byte_407224
+.text:00022BB4        push    eax
+.text:00022BB5        lea     eax, [ebp+var_44]
+.text:00022BB8        push    offset a46CCS   ; "46%c%c%s"
+.text:00022BBD        push    eax
+.text:00022BBE        call    nl_sprintf
+.text:00022BC3        lea     eax, [ebp+var_44]
+.text:00022BC6        push    eax
+.text:00022BC7        call    strlen
+.text:00022BCC        add     esp, 18h
+.text:00022BCF        cmp     eax, 1Bh
+.text:00022BD4        jle     short loc_22BDA
+.text:00022BD6        mov     [ebp+var_29], 0
+.text:00022BDA
+.text:00022BDA loc_22BDA: ; CODE XREF: SSQC+11Cj
+.text:00022BDA        lea     eax, [ebp+var_44]
+.text:00022BDD        push    eax
+.text:00022BDE        call    strlen
+.text:00022BE3        push    eax             ; unsigned int
+.text:00022BE4        lea     eax, [ebp+var_44]
+.text:00022BE7        push    eax             ; void *
+.text:00022BE8        mov     eax, [edi]
+.text:00022BEA        push    eax             ; int
+.text:00022BEB        call    _write
+.text:00022BF0        add     esp, 10h
+.text:00022BF3        pop     ebx
+.text:00022BF4        pop     esi
+.text:00022BF5        pop     edi
+.text:00022BF6        mov     esp, ebp
+.text:00022BF8        pop     ebp
+.text:00022BF9        retn
+.text:00022BFA        db 0Eh dup(90h)
+.text:00022BFA SSQC   endp

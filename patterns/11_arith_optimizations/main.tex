@@ -1,0 +1,34 @@
+\section{\ArithOptimizations}
+
+\ifdefined\ENGLISH
+In the pursuit of optimization, one instruction may be replaced by another, or even with a group of instructions.
+For example, \ADD and \SUB can replace each other:
+line 18 in \lstref{neg_array_c}.
+
+For example, the \LEA instruction is often used for simple arithmetic calculations: \myref{sec:LEA}.
+\fi % ENGLISH
+
+\ifdefined\RUSSIAN
+В целях оптимизации одна инструкция может быть заменена другой, или даже группой инструкций.
+Например, \ADD и \SUB могут заменять друг друга:
+строка 18 в \lstref{neg_array_c}.
+
+Более того, не всегда замена тривиальна. Инструкция \LEA, несмотря на оригинальное назначение, нередко применяется для простых арифметических действий: \myref{sec:LEA}.
+\fi % RUSSIAN
+
+\ifdefined\GERMAN
+
+\DEph{}
+
+\fi % GERMAN
+
+% sections
+\EN{\input{patterns/11_arith_optimizations/mult_EN}}
+\RU{\input{patterns/11_arith_optimizations/mult_RU}}
+\DE{\input{patterns/11_arith_optimizations/mult_DE}}
+
+\EN{\input{patterns/11_arith_optimizations/div_EN}}
+\RU{\input{patterns/11_arith_optimizations/div_RU}}
+\DE{\input{patterns/11_arith_optimizations/div_DE}}
+
+\input{patterns/11_arith_optimizations/exercises}

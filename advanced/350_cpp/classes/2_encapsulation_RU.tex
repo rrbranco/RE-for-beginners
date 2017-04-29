@@ -1,0 +1,71 @@
+\subsubsection{Инкапсуляция}
+
+Инкапсуляция --- это сокрытие данных в \IT{private} секциях класса, например, чтобы разрешить доступ к ним только 
+для методов этого класса, но не более.
+
+Однако, маркируется ли как-нибудь в коде тот сам факт, что некоторое поле --- приватное, 
+а некоторое другое --- нет?
+
+Нет, никак не маркируется.
+
+Попробуем простой пример:
+
+\lstinputlisting[style=customc]{\CURPATH/classes/classes2_0.cpp}
+
+Снова скомпилируем в MSVC 2008 с опциями \Ox и \Obzero и посмотрим код метода \TT{box::dump()}:
+
+\lstinputlisting[style=customasmx86]{\CURPATH/classes/classes2_1.asm}
+
+Разметка полей в классе выходит такой:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \tableheader{} \\
+\hline
+  +0x0 & int color \\
+\hline
+  +0x4 & int width \\
+\hline
+  +0x8 & int height \\
+\hline
+  +0xC & int depth \\
+\hline
+\end{tabular}
+\end{center}
+
+Все поля приватные и недоступные для модификации из других функций, но, зная эту разметку, 
+сможем ли мы создать код модифицирующий эти поля? 
+
+Для этого добавим функцию \TT{hack\_oop\_encapsulation()}, которая если обладает 
+приведенным ниже телом, то просто не скомпилируется:
+
+\lstinputlisting[style=customc]{\CURPATH/classes/classes2_2_RU.cpp}
+
+Тем не менее, если преобразовать тип \IT{box} к типу \IT{указатель на массив int}, 
+и если модифицировать полученный массив \Tint{}-ов, тогда всё получится.
+
+\lstinputlisting[style=customc]{\CURPATH/classes/classes2_3.cpp}
+
+Код этой функции довольно прост --- можно сказать, функция берет на вход указатель на массив \Tint{}-ов и 
+записывает \IT{123} во второй \Tint{}:
+
+\lstinputlisting[style=customasmx86]{\CURPATH/classes/classes2_5.asm}
+
+Проверим, как это работает:
+
+\lstinputlisting[style=customc]{\CURPATH/classes/classes2_4.cpp}
+
+Запускаем:
+
+\begin{lstlisting}
+this is box. color=1, width=10, height=20, depth=30
+this is box. color=1, width=123, height=20, depth=30
+\end{lstlisting}
+
+Выходит, инкапсуляция --- это защита полей класса только на стадии компиляции.
+
+Компилятор ЯП \Cpp не позволяет сгенерировать код прямо
+модифицирующий защищенные поля, тем не менее, используя \IT{грязные трюки} --- это вполне возможно.
+
+

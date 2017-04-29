@@ -1,0 +1,76 @@
+\subsection{Иногда вместо массива можно использовать структуру в Си}
+
+\subsubsection{Арифметическое среднее}
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int mean(int *a, int len)
+{
+	int sum=0;
+	for (int i=0; i<len; i++)
+		sum=sum+a[i];
+	return sum/len;
+};
+
+struct five_ints
+{
+	int a0;
+	int a1;
+	int a2;
+	int a3;
+	int a4;
+};
+
+int main()
+{
+	struct five_ints a;
+	a.a0=123;
+	a.a1=456;
+	a.a2=789;
+	a.a3=10;
+	a.a4=100;
+	printf ("%d\n", mean(&a, 5));
+	// test: https://www.wolframalpha.com/input/?i=mean(123,456,789,10,100)
+};
+\end{lstlisting}
+
+Это работает: ф-ция \IT{mean()} никогда не будет читать за концом структуры \IT{five\_ints},
+потому что передано 5, означая, что только 5 целочисленных значений будет прочитано.
+
+\subsubsection{Сохраняем строку в структуре}
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+struct five_chars
+{
+	char a0;
+	char a1;
+	char a2;
+	char a3;
+	char a4;
+} __attribute__ ((aligned (1),packed));
+
+int main()
+{
+	struct five_chars a;
+	a.a0='h';
+	a.a1='i';
+	a.a2='!';
+	a.a3='\n';
+	a.a4=0;
+	printf (&a); // §это печатает "hi!"§
+};
+\end{lstlisting}
+
+Нужно использовать атрибут \IT{((aligned (1),packed))} потому что иначе, каждое поле структуры будет выровнено по 4-байтной
+или 8-байтной границе.
+
+\subsubsection{Итог}
+
+Это просто еще один пример, как структуры и массивы сохраняются в памяти.
+Вероятно, ни один программист в трезвом уме не будет делать так, как в этом примере, за исключением, может быть, какого-то
+очень специального хака.
+Или может быть в случае обфускации исходных текстов?
+

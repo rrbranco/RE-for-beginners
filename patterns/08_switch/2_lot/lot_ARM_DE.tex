@@ -1,0 +1,88 @@
+\subsubsection{ARM: \OptimizingKeilVI (\ARMMode)}
+\label{sec:SwitchARMLot}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/08_switch/2_lot/lot_ARM_ARM_O3.asm}
+Dieser Code verwendet das ARM mode Feature, das alle Befehle eine feste Länge von 4 Byte haben.
+
+Vergessen wir nicht, dass der Maximalwert für $a$ 4 beträgt und jeder größere Wert zur Ausgabe des \IT{<<something
+unknown\textbackslash{}n>>} Strings führt.
+
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!ADDCC}
+Der erste \TT{CMP R0, \#5} Befehl vergleich den Eingabewert $a$ mit 5.
+
+\footnote{ADD---Addition}
+Der nächste \TT{ADDCC PC, PC, R0,LSL\#2} Befehl wird nur ausgeführt, falls $R0 < 5$ (\IT{CC=Carry clear / kleiner als}).
+Wenn \TT{ADDCC} nicht ausgeführt wird (d.h. $R0\geq 5$), wird ein Sprung zum \IT{default\_case} Label ausgeführt.
+
+Aber wenn $R0 < 5$ und \TT{ADDCC} ausgeführt wird, wird das Folgende geschehen:
+
+Der Wert in \Reg{0} wird mit 4 multipliziert.
+Der Suffix \TT{LSL2} am Befehl steht dabei für \q{shift left by 2 bits}.
+Aber wie wir später~(\myref{division_by_shifting}) im Abschnitt \q{\ShiftsSectionName} sehen werden, ist eine
+Verschiebung um 2 Bits nach links äquivalent zu einer Multiplikation mit 4.
+
+Danach addieren wir $R0\cdot 4$ zum aktuellen Wert in \ac{PC} und springen dadurch zu einem der unteren \TT{B}
+(\IT{Branch}) Befehle.
+
+Im Moment der Ausführung von\TT{ADDCC} ist der Wert von \ac{PC} (\TT{0x180}) 8 Bytes - oder mit anderen Worten: 2
+Befehle - größer als die Adresse, an der sich der \TT{ADDCC} Befehl befindet (\TT{0x178})
+
+\myindex{ARM!Pipeline}
+So funktioniert die Pipeline in ARM Prozessoren: wenn \TT{ADDCC} ausgeführt wird, beginnt der Prozessor den Befehl
+nach dem nächsten abzuarbeiten und deshalb zeigt \ac{PC} hierher. Das müssen wir im Kopf behalten.
+
+Wenn $a=0$, dann wird dies zum Wert in \ac{PC} addiert und der aktuelle Wert des \ac{PC} wird nach \ac{PC} geschrieben
+(welcher 8 Byte größer ist) und es wird zum Label \IT{loc\_180} gesprungen, welches 8 Byte größer ist als die Adresse
+des \TT{ADDCC} Befehls.
+
+Wenn $a=1$, dann wird $PC+8+a\cdot 4 = PC+8+1\cdot 4 = PC+12 = 0x184$ nach \ac{PC} geschrieben,was der Adresse des
+\IT{loc\_184} Labels entspricht.
+
+Jedes Mal wenn $a$ um 1 erhöht wird, erhöht sich der \ac{PC} um 4.
+
+Dabei ist 4 die Länge eines Befehls im ARM mode und auch die Länge jedes \TT{B} Befehls, von denen sich hier 5 befinden.
+
+Jeder dieser fünf \TT{B} Befehle gibt den Control Flow weiter so wie es im \IT{switch()} Ausdruck programmiert wurde.
+
+Hier werden jeweils die Pointer auf die zugehörigen Strings geladen, etc.
+
+\subsubsection{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/08_switch/2_lot/lot_ARM_thumb_O3.asm}
+
+\myindex{ARM!\ThumbMode}
+\myindex{ARM!\ThumbTwoMode}
+Man kann sich nicht sicher sein, dass alle Befehle im Thumb und Thumb-2 mode dieselbe Größe haben.
+Man kann sogar sagen, dass die Befehle hier genau wie in x86 variable Längen haben.
+
+\myindex{jumptable}
+Deshalb wird hier eine spezielle Tabelle verwendet, die Informationen darüber enthält wie viele Fälle vorliegen (ohne
+den Default-Case) und es wird für jeden Fall ein Label mit einem Offset für den Control Flow im zugehörigen Fall
+angegeben.
+
+
+\myindex{ARM!Mode switching}
+\myindex{ARM!\Instructions!BX}
+Hier taucht eine spezielle Funktion namens \IT{\_\_ARM\_common\_switch8\_thumb} auf, die mit der Tabelle und der
+Übergabe des Control Flows umgeht.
+Sie beginnt mit \TT{BX PC}, dessen Aufgabe es ist, den Prozessor in den ARM mode zu versetzen.
+Danach finden wir die Funktion für den Umgang mit der Tabelle.
+
+Es ist hier zu fortgeschritten um weiter ins Details zu gehen, daher lassen wir es für den Moment hierbei bewenden. 
+
+% TODO explain it...
+
+\myindex{ARM!\Registers!Link Register}
+Ist ist interessant festzustellen, dass die Funktion das \ac{LR} Register als Pointer auf die Tabelle verwendet.
+
+Tatsächlich enthält \ac{LR} nach dem Aufruf der Funktion die Adresse nach dem Befehl\\
+\TT{BL \_\_ARM\_common\_switch8\_thumb}, an dem die Tabelle beginnt.
+
+Es ist auch bemerkenswert, dass der Code als eine separate Funktion erzeugt wird, um wiederverwendet werden zu können,
+sodass der Compiler nicht für jeden switch() Ausdruck den gleichen Code erzeugen muss.
+
+\IDA hat erfolgreich ermittelt, dass es sich um eine Servicefunktion und eine Tabelle handelt und hat Kommentare wie
+etwa \TT{jumptable 000000FA case 0} zu den Labels hinzugefügt.
+
+

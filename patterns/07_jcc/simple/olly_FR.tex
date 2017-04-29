@@ -1,0 +1,93 @@
+\clearpage
+\myparagraph{x86 + MSVC + \olly}
+\myindex{\olly}
+\myindex{x86!\Registers!\Flags}
+
+Nous pouvons voir comment les flags sont mis en lançant cet exemple dans \olly.
+Commençons par \TT{f\_unsigned()}, qui utilise des entiers non signés.
+
+\CMP est exécuté trois fois ici, mais avec les même arguments, donc les flags
+sont les même à chaque fois.
+
+Résultat de la première comparaison:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_unsigned1.png}
+\caption{\olly: \TT{f\_unsigned()}: premier saut conditionnel}
+\label{fig:jcc_olly_unsigned_1}
+\end{figure}
+
+Donc, les flags sont: C=1, P=1, A=1, Z=0, S=1, T=0, D=0, O=0.
+
+Ils sont nommés avec une seule lettre dans \olly par concision.
+
+\olly indique que le saut (\JBE) va être suivi maintenant.
+En effet, si nous regardons dans le manuel d'Intel (\myref{x86_manuals}), nous pouvons
+lire que \JBE est déclenchée si CF=1 ou ZF=1.
+La condition est vraie ici, donc le saut est effectué.
+
+\clearpage
+Le saut conditionnel suivant:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_unsigned2.png}
+\caption{\olly: \TT{f\_unsigned()}: second saut conditionnel}
+\label{fig:jcc_olly_unsigned_2}
+\end{figure}
+
+\olly indique que le saut \JNZ va être effectué maintenant.
+En effet, \JNZ est déclenché si ZF=0 (Zero Flag).
+
+\clearpage
+Le troisième saut conditionnel, \JNB:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_unsigned3.png}
+\caption{\olly: \TT{f\_unsigned()}: troisième saut conditionnel}
+\label{fig:jcc_olly_unsigned_3}
+\end{figure}
+
+Dans le manuel d'Intel (\myref{x86_manuals}) nous pouvons voir que \JNB est déclenché
+si CF=0 (Carry Flag - flag de retenue).
+Ce qui n'est pas vrai dans notre cas, donc le troisième \printf sera exécuté.
+
+\clearpage
+Maintenant, regardons la fonction \TT{f\_signed()}, qui fonctionne avec des entiers
+non signés.
+Les flags sont mis de la même manière: C=1, P=1, A=1, Z=0, S=1, T=0, D=0, O=0.
+Le premier saut conditionnel \JLE est effectué:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_signed1.png}
+\caption{\olly: \TT{f\_signed()}: premier saut conditionnel}
+\label{fig:jcc_olly_signed_1}
+\end{figure}
+
+Dans les manuels d'Intel (\myref{x86_manuals}) nous trouvons que cette instruction
+est déclenchée si ZF=1 ou SF$\neq$OF.
+SF$\neq$OF dans notre cas, donc le saut est effectué.
+
+\clearpage
+Le second saut conditionnel, \JNZ, est effectué: si ZF=0 (Zero Flag):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_signed2.png}
+\caption{\olly: \TT{f\_signed()}: second saut conditionnel}
+\label{fig:jcc_olly_signed_2}
+\end{figure}
+
+\clearpage
+Le troisième saut conditionnel, \JGE, ne sera pas effectué car il ne l'est que
+si SF=OF, et que ce n'est pas vrai dans notre cas:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_signed3.png}
+\caption{\olly: \TT{f\_signed()}: troisième saut conditionnel}
+\label{fig:jcc_olly_signed_3}
+\end{figure}

@@ -1,0 +1,26 @@
+\subsubsection{MSVC: x86-64}
+
+\myindex{x86-64}
+Vamos tentar também o MSVC 64-bits:
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/01_helloworld/MSVC_x64.asm}
+
+\myindex{fastcall}
+
+No x86-64, todos os registradores foram extendidos para 64-bits e agora seus nomes contém um \TT{R-} no prefixo.
+A fim de diminuir a frequência com que a stack (pilha) é usada (em outras palavras, para acessar memória externa/cache menos vezes),
+existe uma maneira popular de passar argumentos para funções através dos registradores (\IT{fastcall}) \myref{fastcall}.
+Por exemplo, uma parte dos argumentos da função é passada nos registradores, o resto pela stack.
+No Win64, 4 argumentos de funções são passados através dos registradores \RCX, \RDX, \Reg{8}, \Reg{9}.
+Que é o que nós vemos, um ponteiro para a string para o printf() não é passado pela stack, mas no registrador \RCX.
+Os ponteiros são 64-bits agora, então, eles são passados através dos registradores de 64-bits (que tem prefixo \TT{R-}).
+Entretanto, para compatibilidade, ainda é possível acessar partes de 32-bits, usando o prefixo \TT{E-}.
+É assim que os registradores \RAX/\EAX/\AX/\AL se parecem no x86-64:
+
+\RegTableOne{RAX}{EAX}{AX}{AH}{AL}
+
+A função \main retorna um valor do tipo inteiro, que em \CCpp é melhor para compatibilidade com versões anteriores e portabilidade,
+de 32-bits, por isso o registrador \EAX é limpo no final da função (a parte de 32-bits do registrador) ao invés de \RAX.
+Há também 40 bytes alocados na pilha local.
+Que é chamado de ``shadow space'', o qual falaremos mais tarde: \myref{shadow_space}.
+

@@ -1,0 +1,182 @@
+\section{More about results returning}
+
+\myindex{x86!\Registers!EAX}
+
+In x86, the result of function execution is usually returned
+\footnote{\Seealso: MSDN: Return Values (C++): \href{http://go.yurichev.com/17258}{MSDN}}
+in the \EAX register. 
+If it is byte type or a character (\Tchar), then the lowest part of register \EAX (\AL) is used. 
+If a function returns a \Tfloat number, the FPU register \ST{0} is used instead.
+\myindex{ARM!\Registers!R0}
+In ARM, the result is usually returned in the \Reg{0} register.
+
+\subsection{Attempt to use the result of a function returning \Tvoid}
+
+So, what if the \main function return value was declared of type \Tvoid and not \Tint?
+The so-called startup-code is calling \main roughly as follows:
+
+\begin{lstlisting}[style=customasmx86]
+push envp
+push argv
+push argc
+call main
+push eax
+call exit
+\end{lstlisting}
+
+In other words:
+
+\begin{lstlisting}[style=customc]
+exit(main(argc,argv,envp));
+\end{lstlisting}
+
+If you declare \main as \Tvoid, nothing is to be returned explicitly (using the \IT{return} statement),
+then something random, that has been stored in the \EAX register at the end of \main becomes 
+the sole argument of the exit() function.
+Most likely, there will be a random value, left from your function execution, so the exit code of program is pseudorandom.
+\par
+We can illustrate this fact. 
+Please note that here the \main function has a \Tvoid return type:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+void main()
+{
+	printf ("Hello, world!\n");
+};
+\end{lstlisting}
+
+Let's compile it in Linux.
+
+\myindex{puts() instead of printf()}
+GCC 4.8.1 replaced \printf with \puts 
+(we have seen this before: \myref{puts}), but that's OK,
+since \puts returns the number of characters printed out, just like \printf.
+Please notice that \EAX is not zeroed before \main's end.
+
+This implies that the value of \EAX at the end of \main contains what \puts has left there.
+
+\begin{lstlisting}[caption=GCC 4.8.1,style=customasmx86]
+.LC0:
+	.string	"Hello, world!"
+main:
+	push	ebp
+	mov	ebp, esp
+	and	esp, -16
+	sub	esp, 16
+	mov	DWORD PTR [esp], OFFSET FLAT:.LC0
+	call	puts
+	leave
+	ret
+\end{lstlisting}
+
+\myindex{bash}
+
+Let' s write a bash script that shows the exit status:
+
+\begin{lstlisting}[caption=tst.sh]
+#!/bin/sh
+./hello_world
+echo $?
+\end{lstlisting}
+
+And run it:
+
+\begin{lstlisting}
+$ tst.sh 
+Hello, world!
+14
+\end{lstlisting}
+
+14 is the number of characters printed.
+The number of characters printed is \textit{slips} from \printf{} through \TT{EAX}/\TT{RAX} into \q{exit code}.
+
+\myindex{Hex-Rays}
+By the way, when we decompile C++ in Hex-Rays, we can often encounter a function which terminated with destructor of
+some class:
+
+\begin{lstlisting}[style=customasmx86]
+...
+
+call    ??1CString@@QAE@XZ ; CString::~CString(void)
+mov     ecx, [esp+30h+var_C]
+pop     edi
+pop     ebx
+mov     large fs:0, ecx
+add     esp, 28h
+retn
+\end{lstlisting}
+
+By C++ standard, destructor doesn't return anything, but when Hex-Rays don't know about it, and thinks that both
+destructor and this function returns \Tint, we can see something like that in output:
+
+\begin{lstlisting}[style=customc]
+...
+
+	return CString::~CString(&Str);
+}
+\end{lstlisting}
+
+\subsection{What if we do not use the function result?}
+
+\printf returns the count of characters successfully output, but the result of this function 
+is rarely used in practice.
+
+It is also possible to call a function whose essence is in returning a value, and not use it:
+
+\begin{lstlisting}[style=customc]
+int f()
+{
+    // skip first 3 random values:
+    rand();
+    rand();
+    rand();
+    // and use 4th:
+    return rand();
+};
+\end{lstlisting}
+
+The result of the rand() function is left in \EAX, in all four cases.
+
+But in the first 3 cases, the value in \EAX is just not used.
+
+\subsection{Returning a structure}
+
+\myindex{\CLanguageElements!return}
+
+Let's go back to the fact that the return value is left in the \EAX register.
+
+That is why old C compilers cannot create functions capable of returning something that does not fit in one 
+register (usually \Tint), but if one needs it, one have to return information via pointers passed 
+as function's arguments.
+
+So, usually, if a function needs to return several values, it returns only one, and 
+all the rest---via pointers.
+
+Now it has become possible to return, let's say, an entire structure, but that is still not very popular. 
+If a function has to return a large structure, the \gls{caller} must allocate it and pass a pointer to it via the first argument, transparently for the programmer. 
+That is almost the same as to pass a pointer in the first argument manually, but the compiler hides it.
+
+Small example:
+
+\lstinputlisting[style=customc]{patterns/06_return_results/6_1.c}
+
+\dots what we got (MSVC 2010 \Ox):
+
+\lstinputlisting[style=customasmx86]{patterns/06_return_results/6_1.asm}
+
+The macro name for internal passing of pointer to a structure here is \GTT{\$T3853}.
+
+\myindex{\CLanguageElements!C99}
+This example can be rewritten using
+the C99 language extensions:
+
+\lstinputlisting[style=customc]{patterns/06_return_results/6_1_C99.c}
+
+\lstinputlisting[caption=GCC 4.8.1,style=customasmx86]{patterns/06_return_results/6_1_C99.asm}
+
+As we see, the function is just filling the structure's fields allocated by
+the caller function,
+as if a pointer to the structure has been passed.
+So there are no performance drawbacks.

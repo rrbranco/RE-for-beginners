@@ -1,0 +1,32 @@
+my_strlen:
+; Funktionsprolog
+	sub	sp, sp, #32
+; erstes Argument (str) wird in [sp,8] gespeichert
+	str	x0, [sp,8]
+	ldr	x0, [sp,8]
+; kopiere "str" in die "eos" Variable
+	str	x0, [sp,24]
+	nop
+.L62:
+; eos++
+	ldr	x0, [sp,24]  ; lade "eos" nach X0
+	add	x1, x0, 1    ; erhöhe X0
+	str	x1, [sp,24]  ; sichere X0 in "eos"
+; lade Byte aus dem Speicher von Adresse in X0 nach W0
+	ldrb	w0, [x0]
+; null gefunden? (das 32-bit Register WZR enthält stets 0)
+	cmp	w0, wzr
+; springe, falls nicht null (Zweig ungleich)
+	bne	.L62
+; Nullbyte gefunden, berechne jetzt Differenz
+; lade "eos" nach X1
+	ldr	x1, [sp,24]
+; lade "str" nach X0
+	ldr	x0, [sp,8]
+; berechne Differenz
+	sub	x0, x1, x0
+; dekrementiere Ergebnis
+	sub	w0, w0, #1
+; Funktionsepilog
+	add	sp, sp, 32
+	ret

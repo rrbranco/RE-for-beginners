@@ -1,0 +1,49 @@
+% N.B.: \Conclusion{} is a macro name, do not translate
+\subsection{\Conclusion{}}
+
+Gerüst einer Schleife von einschließlich 2 bis einschließlich 9:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_optimized_DE.lst}
+
+Das Inkrementieren kann in nicht optimiertem Code durch 3 Instruktionen
+dargestellt werden:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_DE.lst}
+
+Falls der Körper einer Schleife besonders kurz ist, kann ein Register als Zähler
+verwendet werden:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_reg_DE.lst}
+
+Einige Teile der Schleife können vom Compiler in unterschiedlichen Reihenfolgen
+generiert werden:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_order_DE.lst}
+
+Normalerweise wird die Bedingung \IT{vor} dem Körper geprüft, aber der Compiler
+kann den Code auch so anordnen, dass die Bedingung \IT{nach} dem Körper geprüft
+wird.
+
+Dies geschieht dann, wenn der Compiler sicher sein kann, dass die Bedingung im
+ersten Durchlauf stets \IT{wahr} ist, sodass der Körper der Schleife mindestens
+einmal tatsächlich ausgeführt wird:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_reorder_DE.lst}
+
+\myindex{x86!\Instructions!LOOP}
+
+Verwendung des \IT{LOOP} Befehls. Sehr selten, Compiler verwenden ihn nicht.
+Wenn er auftaucht, ist dies ein Zeichen dafür, dass das entsprechende
+Codesegment von Hand geschrieben worden ist:
+
+　
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_loop_DE.lst}
+
+ARM. 
+
+Das \Reg{4} Register fungiert in diesem Beispiel als Zähler:
+
+　
+\lstinputlisting[caption=ARM,style=customasmARM]{patterns/09_loops/skeleton_ARM_DE.lst}
+
+% TODO MIPS

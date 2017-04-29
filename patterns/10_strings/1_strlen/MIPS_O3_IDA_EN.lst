@@ -1,0 +1,18 @@
+my_strlen:
+; "eos" variable will always reside in $v1:
+                move    $v1, $a0
+
+loc_4:
+; load byte at address in "eos" into $a1:
+                lb      $a1, 0($v1)
+                or      $at, $zero ; load delay slot, NOP
+; if loaded byte is not zero, jump to loc_4:
+                bnez    $a1, loc_4
+; increment "eos" anyway:
+                addiu   $v1, 1 ; branch delay slot
+; loop finished. invert "str" variable:
+                nor     $v0, $zero, $a0
+; $v0=-str-1
+                jr      $ra
+; return value = $v1 + $v0 = eos + ( -str-1 ) = eos - str - 1
+                addu    $v0, $v1, $v0 ; branch delay slot

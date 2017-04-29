@@ -1,0 +1,55 @@
+\subsubsection{x86: Функция alloca()}
+\label{alloca}
+\myindex{\CStandardLibrary!alloca()}
+
+\newcommand{\AllocaSrcPath}{C:\textbackslash{}Program Files (x86)\textbackslash{}Microsoft Visual Studio 10.0\textbackslash{}VC\textbackslash{}crt\textbackslash{}src\textbackslash{}intel}
+
+Интересен случай с функцией \TT{alloca()}
+\footnote{В MSVC, реализацию функции можно посмотреть в файлах \TT{alloca16.asm} и \TT{chkstk.asm} в \\
+\TT{\AllocaSrcPath{}}}. 
+Эта функция работает как \TT{malloc()}, но выделяет память прямо в стеке.
+Память освобождать через \TT{free()} не нужно, так как эпилог функции~(\myref{sec:prologepilog})
+вернет \ESP в изначальное состояние и выделенная память просто \IT{выкидывается}.
+Интересна реализация функции \TT{alloca()}.
+Эта функция, если упрощенно, просто сдвигает \ESP вглубь стека на столько байт, сколько вам нужно и возвращает \ESP в качестве указателя на выделенный блок.
+
+Попробуем:
+
+\lstinputlisting[style=customc]{patterns/02_stack/04_alloca/2_1.c}
+
+Функция \TT{\_snprintf()} работает так же, как и \printf, только вместо выдачи результата в \gls{stdout} (т.е. на терминал или в консоль),
+записывает его в буфер \TT{buf}. Функция \puts выдает содержимое буфера \TT{buf} в \gls{stdout}. Конечно, можно было бы
+заменить оба этих вызова на один \printf, но здесь нужно проиллюстрировать использование небольшого буфера.
+
+\myparagraph{MSVC}
+
+Компилируем (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/02_stack/04_alloca/2_2_msvc.asm}
+
+\myindex{Compiler intrinsic}
+Единственный параметр в \TT{alloca()} передается через \EAX, а не как обычно через стек
+\footnote{Это потому, что alloca()~--- это не сколько функция, сколько т.н. \IT{compiler intrinsic} (\myref{sec:compiler_intrinsic})
+Одна из причин, почему здесь нужна именно функция, а не несколько инструкций прямо в коде в том, что в реализации 
+функции alloca() от \ac{MSVC}
+есть также код, читающий из только что выделенной памяти, чтобы \ac{OS} подключила физическую память к этому региону \ac{VM}.
+После вызова \TT{alloca()} \ESP указывает на блок в 600 байт, который мы можем использовать под \TT{buf}.}.
+
+\myparagraph{GCC + \IntelSyntax}
+
+А GCC 4.4.1 обходится без вызова других функций:
+
+\lstinputlisting[caption=GCC 4.7.3,style=customasmx86]{patterns/02_stack/04_alloca/2_1_gcc_intel_O3_RU.asm}
+
+\myparagraph{GCC + \ATTSyntax}
+
+Посмотрим на тот же код, только в синтаксисе AT\&T:
+
+\lstinputlisting[caption=GCC 4.7.3,style=customasmx86]{patterns/02_stack/04_alloca/2_1_gcc_ATT_O3.s}
+
+\myindex{\ATTSyntax}
+Всё то же самое, что и в прошлом листинге.
+
+Кстати, \INS{movl \$3, 20(\%esp)}~--- это аналог \INS{mov DWORD PTR [esp+20], 3} в синтаксисе Intel.
+Адресация памяти в виде \IT{регистр+смещение} записывается в синтаксисе AT\&T как \TT{смещение(\%{регистр})}.
+

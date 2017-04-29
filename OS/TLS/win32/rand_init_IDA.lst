@@ -1,0 +1,13 @@
+.tls:00404000 ; Segment type: Pure data
+.tls:00404000 ; Segment permissions: Read/Write
+.tls:00404000 _tls            segment para public 'DATA' use32
+.tls:00404000                 assume cs:_tls
+.tls:00404000                 ;org 404000h
+.tls:00404000 TlsStart        db    0         ; DATA XREF: .rdata:TlsDirectory
+.tls:00404001                 db    0
+.tls:00404002                 db    0
+.tls:00404003                 db    0
+.tls:00404004                 dd 1234
+.tls:00404008 TlsEnd          db    0         ; DATA XREF: .rdata:TlsEnd_ptr
+...
+

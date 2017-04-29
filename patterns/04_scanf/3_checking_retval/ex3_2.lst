@@ -1,0 +1,21 @@
+.text:00401000 _text segment para public 'CODE' use32
+.text:00401000       assume cs:_text
+.text:00401000       ;org 401000h
+.text:00401000 ; ask for X
+.text:00401012 ; get X
+.text:00401024       cmp  eax, 1
+.text:00401027       jnz  short error
+.text:00401029 ; print result
+.text:0040103B       jmp  short exit
+.text:0040103D
+.text:0040103D error: ; CODE XREF: _main+27
+.text:0040103D       push offset aWhat ; "What you entered? Huh?\n"
+.text:00401042       call ds:printf
+.text:00401048       add  esp, 4
+.text:0040104B
+.text:0040104B exit: ; CODE XREF: _main+3B
+.text:0040104B       xor  eax, eax
+.text:0040104D       mov  esp, ebp
+.text:0040104F       pop  ebp
+.text:00401050       retn
+.text:00401050 _main endp

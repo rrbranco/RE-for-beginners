@@ -1,0 +1,55 @@
+\subsection{Вычисление абсолютной величины}
+\label{sec:abs}
+
+Это простая функция:
+
+\lstinputlisting[style=customc]{abs.c}
+
+\subsubsection{\Optimizing MSVC}
+
+Обычный способ генерации кода:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{patterns/07_jcc/abs/abs_MSVC2012_Ox_x64_RU.asm}
+
+GCC 4.9 делает почти то же самое.
+
+\subsubsection{\OptimizingKeilVI: \ThumbMode}
+
+\lstinputlisting[caption=\OptimizingKeilVI: \ThumbMode,style=customasmARM]{patterns/07_jcc/abs/abs_Keil_thumb_O3_RU.s}
+
+\myindex{ARM!\Instructions!RSB}
+В ARM нет инструкции для изменения знака, так что компилятор Keil использует инструкцию \q{Reverse Subtract},
+которая просто вычитает, но с операндами, переставленными наоборот.
+
+\subsubsection{\OptimizingKeilVI: \ARMMode}
+
+В режиме ARM можно добавлять коды условий к некоторым инструкций, что компилятор Keil и сделал:
+
+\lstinputlisting[caption=\OptimizingKeilVI: \ARMMode,style=customasmARM]{patterns/07_jcc/abs/abs_Keil_ARM_O3_RU.s}
+
+Теперь здесь нет условных переходов и это хорошо:
+ 
+\myref{branch_predictors}.
+
+\subsubsection{\NonOptimizing GCC 4.9 (ARM64)}
+
+\myindex{ARM!\Instructions!XOR}
+В ARM64 есть инструкция \INS{NEG} для смены знака:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 (ARM64),style=customasmARM]{patterns/07_jcc/abs/abs_GCC49_ARM64_O0_RU.s}
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/07_jcc/abs/MIPS_O3_IDA_RU.lst}
+
+\myindex{MIPS!\Instructions!BLTZ}
+Видим здесь новую инструкцию: \INS{BLTZ} (\q{Branch if Less Than Zero}).
+\myindex{MIPS!\Instructions!SUBU}
+\myindex{MIPS!\Pseudoinstructions!NEGU}
+Тут есть также псевдоинструкция \INS{NEGU}, которая на самом деле вычитает из нуля.
+Суффикс \q{U} в обоих инструкциях \INS{SUBU} и \INS{NEGU} означает, что при целочисленном переполнении исключение не
+сработает.
+
+\subsubsection{Версия без переходов?}
+
+Возможна также версия и без переходов, мы рассмотрим её позже: \myref{chap:branchless_abs}.

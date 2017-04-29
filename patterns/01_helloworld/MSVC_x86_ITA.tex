@@ -1,0 +1,101 @@
+\subsubsection{MSVC}
+
+Compiliamolo in MSVC 2010:
+
+\begin{lstlisting}
+cl 1.cpp /Fa1.asm
+\end{lstlisting}
+
+(l'opzione \TT{/Fa} indica al compilatore di generare un file con il listato assembly)
+
+\begin{lstlisting}[caption=MSVC 2010,style=customasmx86]
+CONST	SEGMENT
+$SG3830	DB	'hello, world', 0AH, 00H
+CONST	ENDS
+PUBLIC	_main
+EXTRN	_printf:PROC
+; Function compile flags: /Odtp
+_TEXT	SEGMENT
+_main	PROC
+	push	ebp
+	mov	ebp, esp
+	push	OFFSET $SG3830
+	call	_printf
+	add	esp, 4
+	xor	eax, eax
+	pop	ebp
+	ret	0
+_main	ENDP
+_TEXT	ENDS
+\end{lstlisting}
+
+\ITAph{}
+La differenza tra le sintassi Intel e AT\&T-syntax sarà discussa al \myref{ATT_syntax}.
+
+Il compilatore ha generato il file, \TT{1.obj}, che deve essere linkato (collegato) in \TT{1.exe}.
+Nel nostro caso, il file contiene due segmentu: \TT{CONST} (per i dati constanti) e \TT{\_TEXT} (per il codice).
+
+\myindex{\CLanguageElements!const}
+\label{string_is_const_char}
+La stringa \TT{hello, world} in \CCpp ha tipo \TT{const char[]}\InSqBrackets{\TCPPPL p176, 7.3.2}, ma non ha un nome proprio.
+Il compilatore deve in qualche modo aver a che fare con la stringa, e la definisce quindi con il nome interno \TT{\$SG3830}.
+
+Questo è il motivo per cui l'esempio potrebbe essere riscritto nel modo seguente:
+
+\lstinputlisting[style=customc]{patterns/01_helloworld/hw_2.c}
+
+Torniamo al listato assembly. Come possiamo vedere, la stringa è terminata con un byte zero, che è lo standard per la terminazione delle stringhe \CCpp.
+\ITAph{}: \myref{C_strings}.
+
+Nel code segment, \TT{\_TEXT}, esiste fino ad ora solo una funzione: \main{}.
+La funzione \main inizia con il codice di prologo (prologue code) e termina con il codice di epilogo (epilogue code) (come quasi qualunque funzione)
+\footnote{Maggiori informazioni si trovano nella sezione su prologo ed epilogo delle funzioni ~(\myref{sec:prologepilog}).}.
+
+\myindex{x86!\Instructions!CALL}
+Dopo il prologo della funzione, notiamo la chiamata alla funzione \printf{} : \INS{CALL \_printf}.
+\myindex{x86!\Instructions!PUSH}
+Prima della chiamata, l'indirizzo della stringa (o un puntatore ad essa) contenente il saluto viene messo sullo stack con l'aiuto dell'istruzione \PUSH.
+
+Quando la funzione \printf restituisce il controllo alla funzione \main , l'indirizzo della stringa (o il puntatore) si trova ancora sullo stack.
+Poichè non ne abbiamo più bisogno, lo \gls{stack pointer} (il registro \ESP ) deve essere corretto.
+
+\myindex{x86!\Instructions!ADD}
+\INS{ADD ESP, 4} significa aggiungi 4 al valore del registro \ESP.
+
+Perchè 4? Essendo questo un programma a 32-bit, abbiamo esattamente bisogno di 4 bytes per passare un indirizzo attraverso lo stack. Se fosse stato codice x64 ne sarebbero serviti 8.
+\INS{ADD ESP, 4} è a tutti gli effetti equivalente a \TT{POP register} ma senza usare alcun registro\footnote{i flag CPU vengono comunque modificati}.
+
+\myindex{Intel C++}
+\myindex{\oracle}
+\myindex{x86!\Instructions!POP}
+
+Per lo stesso scopo, alcuni compilatori (come l'Intel C++ Compiler) potrebbero emettere l'istruzione \TT{POP ECX} 
+invece di \ADD (ad esempio, queto tipo di pattern può essere nel codice di \oracle{} che è compilato con l' Intel C++ compiler).
+Questa istruzione ha pressoché lo stesso effetto ma il contenuto del registro \ECX sarà sovrascritto.
+Il compilatore Intel C++ usa probabilmente \TT{POP ECX} poichè l'opcode di questa istruzione è più corto di \TT{ADD ESP, x} (1 byte per \TT{POP} contro 3 per \TT{ADD}).
+
+Ecco un esempio dell'uso di \POP al posto di \ADD da \oracle{}:
+
+\begin{lstlisting}[caption=\oracle 10.2 Linux (\ITAph{}),style=customasmx86]
+.text:0800029A                 push    ebx
+.text:0800029B                 call    qksfroChild
+.text:080002A0                 pop     ecx
+\end{lstlisting}
+
+\myindex{\CLanguageElements!return}
+Dopo la chiamata a \printf, il codice \CCpp originale contiene la direttiva \TT{return 0}~---restituisci 0 come risultato dalla funzione \main.
+
+\myindex{x86!\Instructions!XOR}
+Nel codice generato, questa è implementata dall'istruzione \INS{XOR EAX, EAX}.
+
+\myindex{x86!\Instructions!MOV}
+
+\XOR è infatti semplicemente \q{eXclusive OR, ovvero OR esclusivo}\footnote{\href{http://go.yurichev.com/17118}{wikipedia}} ma i compilatori lo usano spesso al posto di 
+\INS{MOV EAX, 0}---ancora una volta poichè è un opcode leggermente più corto (2 byte per \XOR contro 5 per \MOV).
+
+\myindex{x86!\Instructions!SUB}
+Alcuni compilatori emettono l'istruzione \INS{SUB EAX, EAX}, che significa \IT{sottrai (SUBtract) il valore nel registro} \EAX \IT{dal valore nel registro} \EAX, che, in ogni caso, risulta uguale a zero.
+
+\myindex{x86!\Instructions!RET}
+L'ultima istruzione \RET restituisce il controllo al chiamante (\gls{caller}). Solitamente, questo è codice \CCpp \ac{CRT} , che, a sua volta, restituisce il controllo all' \ac{OS}.
+

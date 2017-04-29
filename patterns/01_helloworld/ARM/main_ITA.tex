@@ -1,0 +1,30 @@
+\subsection{ARM}
+\label{sec:hw_ARM}
+
+\myindex{\idevices}
+\myindex{Raspberry Pi}
+\myindex{Xcode}
+\myindex{LLVM}
+\myindex{Keil}
+Per gli esperimenti con i processori ARM, sono stati utilizzati diversi compilatori:
+
+\begin{itemize}
+\item Diffuso nel settore embedded: Keil Release 6/2013.
+
+\item Apple Xcode 4.6.3 IDE con il compilatore LLVM-GCC 4.2
+\footnote{Apple Xcode 4.6.3 utilizza il compilatore open-source GCC come compilatore front-end ed il generatore di codice LLVM}.
+
+\item GCC 4.9 (Linaro) (\ITAph{} ARM64), \ITAph{} \url{http://go.yurichev.com/17325}.
+
+\end{itemize}
+
+In qesto libro, se non diversamente specificato, viene utilizzato codice ARM a 32-bit ARM (incluse le modalita' Thumb e Thumb-2).
+\ITAph{}
+
+% subsections
+\input{patterns/01_helloworld/ARM/keil_ARM_ITA}
+% TODO translate: \input{patterns/01_helloworld/ARM/keil_T_ITA}
+% TODO translate: \input{patterns/01_helloworld/ARM/xcode_ARM_ITA}
+% TODO translate: \input{patterns/01_helloworld/ARM/xcode_T2_ITA}
+% TODO translate: \input{patterns/01_helloworld/ARM/ARM64_ITA}
+

@@ -1,0 +1,139 @@
+\subsubsection{\OptimizingXcodeIV (\ThumbTwoMode)}
+
+Di default Xcode 4.6.3 genera codice per Thumb-2 in questo modo:
+
+\begin{lstlisting}[caption=\OptimizingXcodeIV (\ThumbTwoMode),style=customasmARM]
+__text:00002B6C                   _hello_world
+__text:00002B6C 80 B5          PUSH            {R7,LR}
+__text:00002B6E 41 F2 D8 30    MOVW            R0, #0x13D8
+__text:00002B72 6F 46          MOV             R7, SP
+__text:00002B74 C0 F2 00 00    MOVT.W          R0, #0
+__text:00002B78 78 44          ADD             R0, PC
+__text:00002B7A 01 F0 38 EA    BLX             _puts
+__text:00002B7E 00 20          MOVS            R0, #0
+__text:00002B80 80 BD          POP             {R7,PC}
+
+...
+
+__cstring:00003E70 48 65 6C 6C 6F 20+aHelloWorld  DCB "Hello world!",0xA,0
+\end{lstlisting}
+
+% Q: If you subtract 0x13D8 from 0x3E70,
+% you actually get a location that is not in this function, or in _puts.
+% How is PC-relative addressing done in THUMB2?
+% A: it's not Thumb-related. there are just mess with two different segments. TODO: rework this listing.
+
+\myindex{\ThumbTwoMode}
+\myindex{ARM!\Instructions!BL}
+\myindex{ARM!\Instructions!BLX}
+
+Le istruzioni \TT{BL} e \TT{BLX} in Thumb mode, come ricordiamo, sono codificate con una coppia di istruzioni 16-bit.
+In Thumb-2 questi opcode \IT{surrogati} sono estesi in modo tale che le nuove istruzioni possano essere codificate in istruzioni a 32-bit.
+
+Cio' appare ovvio considerando che che gli opcodes delle istruzioni Thumb-2 iniziano sempre con \TT{0xFx} o \TT{0xEx}.
+
+Ma nel listato \IDA 
+i byte degli opcode sono invertiti poiche' per i processori ARM le istruzioni sono codificate secondo il seguente principio: 
+l'ultimo byte viene prima ed e' seguito dal primo byte ( per le modalita' Thumb e Thumb-2 ) 
+oppure, per istruzioni in ARM mode il quarto byte viene prima, seguito dal terzo, dal secondo ed infine dal primo (a causa
+della diversa \gls{endianness}).
+
+Quindi i byte nei listati IDA sono collocati cosi':
+\begin{itemize}
+\item per ARM and ARM64 modes: 4-3-2-1;
+\item per Thumb mode: 2-1;
+\item per coppie di istruzioni a 16-bit in Thumb-2 mode: 2-1-4-3.
+\end{itemize}
+
+\myindex{ARM!\Instructions!MOVW}
+\myindex{ARM!\Instructions!MOVT.W}
+\myindex{ARM!\Instructions!BLX}
+
+Come possiamo vedere, le istruzioni \TT{MOVW}, \TT{MOVT.W} e \TT{BLX} iniziano con \TT{0xFx}.
+
+Ona delle istruzioni Thumb-2 e' \TT{MOVW R0, \#0x13D8} ~---memorizza un valore a 16-bit nella parte bassa del registro \Reg{0} ,
+azzerando i bit piu' alti.
+
+Allo stesso modo, \TT{MOVT.W R0, \#0} ~funziona come \TT{MOVT} nel precedente esempio, ma in Thumb-2.
+
+\myindex{ARM!mode switching}
+\myindex{ARM!\Instructions!BLX}
+
+Tra le altre differenze, l'istruzione \TT{BLX} in questo caso e' usata al posto di \TT{BL}.
+
+La differenza sta nel fatto che, oltre a salvare \ac{RA} nel registro \ac{LR} e passare il controllo alla funzione \puts,
+il processore passa dalla modalita' Thumb/Thumb-2 alla modalita' ARM mode (o viceversa).
+
+Questa istruzione e' posta qui poiche' l'istruzione a cui il controllo viene passato appare cosi' (e' codificata in ARM mode):
+
+\begin{lstlisting}[style=customasmARM]
+__symbolstub1:00003FEC _puts           ; CODE XREF: _hello_world+E
+__symbolstub1:00003FEC 44 F0 9F E5     LDR  PC, =__imp__puts
+\end{lstlisting}
+
+E' essenzialmente un jump alla zona dove l'indirizzo di \puts e' scritto nella imports section.
+
+Il lettore attento potrebbe chiedere: perche' non chiamare \puts proprio nel punto del codice, dove serve effettivamente?
+
+Perche' non e' efficiente in termini di spazio.
+
+\myindex{Dynamically loaded libraries}
+Quasi tutti i programmi utilizzano librerie esterne dinamiche (come le DLL in Windows, .so in *NIX o .dylib in \MacOSX).
+Le librerie dinamiche contengono funzioni usate di frequente, inclusa la funzione C standard \puts.
+
+\myindex{Relocation}
+In un file eseguibile (Windows PE .exe, ELF o Mach-O) e' presente una import section.
+E' una lista di simboli (symbols - funzioni o variabili globali) importata da moduli esterni insieme ai nomi dei moduli stessi.
+
+Il loade dell' \ac{OS} carica tutti i moduli necessari e, mentre enumera gli import symbols nel modulo primario, determina gli indirizzi
+corretti per ciascun simbolo.
+
+Nel nostro caso, \IT{\_\_imp\_\_puts} e' una variabile a 32-bit usata dal loader dell'\ac{OS} per memorizzare l'indirizzo corretto
+della funzione in una libreria esterna. 
+Successivamente l'istruzione \TT{LDR} legge semplicemente il valore a 32-bit da questa variabile e lo scrive nel registro \ac{PC},
+passando il controllo ad esso.
+
+Quindi, per ridurre il tempo necessario al loader dell'\ac{OS} per completare questa procedura, e' una buona idea scrivere l'indirizzo
+di ogni simbolo solo una volta, in un punto dedicato.
+
+\myindex{thunk-functions}
+Inoltre, come abbiamo gia' capito, e' impossibile caricare un valore a 32-bit value in un registro utilizzando solo una istruzione senza
+accesso alla memoria.
+
+Pertanto, la soluzione ottimale e' quella di allocare una funzione separata, che funziona in ARM mode, con il solo scopo di passare
+il controllo alla libreria dinamica e quindi saltare dal codice Thumb a questa piccola funzione di una sola istruzione (and then to jump to this short one-instruction)
+(la cosiddetta \gls{thunk function}).
+
+\myindex{ARM!\Instructions!BL}
+A proposito, nel precedente esempio (compilato per ARM mode) il controllo e' passato da \TT{BL} alla stessa \gls{thunk function}.
+La modalita' del processore pero' non viene cambiata (da cui l'assenza di una \q{X} nella instruction mnemonic).
+
+\myparagraph{More about thunk-functions}
+\myindex{thunk-functions}
+
+Le thunk-functions sono difficili da comprendere, apparentemente, a causa di una denominazione impropria.
+Il modo migliore per capirle e' pensarle come adattatori o convertitori da un tipo di jack ad un altro.
+Ad esempio, un adattatore che consente l'inserimento di una spina elettrica Inglese in una presa Americana, o viceversa.
+Le thunk functions sono a volte anche dette \IT{wrappers}.
+
+Seguono altre descrizioni di queste funzioni:
+
+\begin{framed}
+\begin{quotation}
+“Un pezzo di codice che fornisce un indirizzo:”, secondo to P. Z. Ingerman, 
+che ha inventato le thunks nel 1961 come un modo di legare i parameters alle loro definizioni formali 
+nelle chiamate a procedura in Algol-60. Se una procedura e' chiamata con un'espressione al posto di un parametro formale,
+il compilatore genera una thunk che calcola l'espressione e lascia l'indirizzo del risultato in una posizione standard.
+
+\dots
+
+Microsoft e IBM hanno definito, nei loro sistemi basati su Intel, un “ambiente a 16-bit” 
+(con orrendi segment registers e limitazioni di indirizzi a 64K) e un “ambiente a 32-bit” 
+(con indirizzamento piatto e gestione della memoria semi reale). I due ambienti possono girare contemporaneamente
+sullo stesso computer e OS (grazie a quello che, nel mondo Microsoft, e' detto WOW, acronimo per Windows On Windows).
+MS e IBM hanno entrambi deciso che il processo di di passare da 16- a 32-bit e viceversa e' detto un “thunk”; in Windows 95, 
+esiste anche un tool, THUNK.EXE, detto “thunk compiler”.
+\end{quotation}
+\end{framed}
+% TODO FIXME move to bibliography and quote properly above the quote
+( \href{http://go.yurichev.com/17362}{The Jargon File} )

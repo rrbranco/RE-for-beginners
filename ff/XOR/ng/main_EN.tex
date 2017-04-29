@@ -1,0 +1,96 @@
+\clearpage
+\subsection{Norton Guide: simplest possible 1-byte XOR encryption}
+\label{norton_guide}
+
+Norton Guide\footnote{\href{http://go.yurichev.com/17116}{wikipedia}} was popular in the epoch of MS-DOS, it was a resident program that worked as a hypertext reference manual.
+
+Norton Guide's databases are files with the extension .ng, the contents of which look encrypted:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/XOR/ng/ng1.png}
+\caption{Very typical look}
+\end{figure}
+
+Why did we think that it's encrypted but not compressed?
+
+We see that the 0x1A byte (looking like \q{$\rightarrow$}) occurs often, it would not be possible in a compressed file.
+
+We also see long parts that consist only of Latin letters, and they look like strings in an unknown
+language.
+
+\clearpage
+Since the 0x1A byte occurs so often, we can try to decrypt the file, assuming that it's encrypted
+by the simplest XOR-encryption.
+
+If we apply XOR with the 0x1A constant to each byte in Hiew, we can see familiar English text strings:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/XOR/ng/ng2.png}
+\caption{Hiew XORing with 0x1A}
+\end{figure}
+
+XOR encryption with one single constant byte is the simplest possible encryption method, which is, nevertheless,
+encountered sometimes.
+
+Now we understand why the 0x1A byte is occurring so often: because there are so many zero bytes and they
+were replaced by 0x1A in encrypted form.
+
+But the constant might be different.
+In this case, we could try every constant in the 0..255 range and look for something familiar in the decrypted
+file. 256 is not so much.
+
+More about Norton Guide's file format: \url{http://go.yurichev.com/17317}.
+
+\subsubsection{Entropy}
+\myindex{Wolfram Mathematica}
+\myindex{Entropy}
+
+A very important property of such primitive encryption systems is that the information entropy
+of the encrypted/decrypted block is the same.
+
+Here is my analysis in Wolfram Mathematica 10.
+
+\begin{lstlisting}[caption=Wolfram Mathematica 10,style=custommath]
+In[1]:= input = BinaryReadList["X86.NG"];
+
+In[2]:= Entropy[2, input] // N
+Out[2]= 5.62724
+
+In[3]:= decrypted = Map[BitXor[#, 16^^1A] &, input];
+
+In[4]:= Export["X86_decrypted.NG", decrypted, "Binary"];
+
+In[5]:= Entropy[2, decrypted] // N
+Out[5]= 5.62724
+
+In[6]:= Entropy[2, ExampleData[{"Text", "ShakespearesSonnets"}]] // N
+Out[6]= 4.42366
+\end{lstlisting}
+
+What we do here is load the file, get its entropy, decrypt it, save it and get the entropy again (the same!).
+
+Mathematica also offers some well-known English language texts for analysis.
+
+So we also get the entropy of Shakespeare's sonnets, and it is close to the entropy of the file we just analyzed.
+
+The file we analyzed consists of English language sentences, which are close to the language 
+of Shakespeare.
+
+And the XOR-ed bitwise English language text has the same entropy.
+
+% I checked!
+However, this is not true when the file is XOR-ed with a pattern larger than one byte.
+
+The file we analyzed can be downloaded here: \url{http://go.yurichev.com/17350}.
+
+\myparagraph{One more word about base of entropy}
+
+\newcommand{\FNENTURL}{\footnote{\url{http://www.fourmilab.ch/random/}}}
+
+Wolfram Mathematica calculates entropy with base of $e$ (base of the natural logarithm),
+and the UNIX \IT{ent} utility\FNENTURL uses base 2.
+
+So we set base 2 explicitly in \TT{Entropy} command, so Mathematica will give us the same results as the \IT{ent} utility.
+

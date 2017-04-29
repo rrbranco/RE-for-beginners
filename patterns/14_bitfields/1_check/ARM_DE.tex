@@ -1,0 +1,52 @@
+\subsubsection{ARM}
+
+\myindex{Linux}
+
+Das \TT{O\_CREAT} Bit wird im Linux Kernel 3.8.0 anders überprüft:
+
+\begin{lstlisting}[caption=linux kernel 3.8.0,style=customc]
+struct file *do_filp_open(int dfd, struct filename *pathname,
+		const struct open_flags *op)
+{
+...
+	filp = path_openat(dfd, pathname, &nd, op, flags | LOOKUP_RCU);
+...
+}
+
+static struct file *path_openat(int dfd, struct filename *pathname,
+		struct nameidata *nd, const struct open_flags *op, int flags)
+{
+...
+	error = do_last(nd, &path, file, op, &opened, pathname);
+...
+}
+
+
+static int do_last(struct nameidata *nd, struct path *path,
+		   struct file *file, const struct open_flags *op,
+		   int *opened, struct filename *name)
+{
+...
+	if (!(open_flag & O_CREAT)) {
+    ...
+		error = lookup_fast(nd, path, &inode);
+    ...
+	} else {
+    ...
+		error = complete_walk(nd);
+        }
+...
+}
+\end{lstlisting}
+So sieht der für den ARM mode kompilierte Kernel in \IDA aus:
+
+\lstinputlisting[caption=do\_last() aus vmlinux
+(IDA),style=customasmARM]{patterns/14_bitfields/1_check/IDA.lst}
+
+\myindex{ARM!\Instructions!TST}
+\myindex{x86!\Instructions!TEST}
+\TT{TST} ist analog zum Befehl \TEST in x86.
+Wir können dies in diesem Codefragment daran erkennen, dass entweder
+\TT{lookup\_fast()} oder \TT{complete\_walk()} ausgeführt wird.
+Dies entspricht dem Quellcode der Funktion \TT{do\_last()}. 
+Das Makro \TT{O\_CREAT} entspricht hier \TT{0x40}.

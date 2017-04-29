@@ -1,0 +1,126 @@
+\subsubsection{GCC}
+
+Als nächstes wird der gleiche \CCpp-Code mit GCC 4.4.1 unter Linux kompiliert: \TT{gcc 1.c -o 1}.
+Mithilfe des \IDA-Disassemblers wird untersucht, wie die \main-Funktion erzeugt wurde.
+\IDA nutzt, genau wie MSVX den Intel-Syntax\footnote{GCC kann Assembler-Ausgaben im Intel-Syntax erzeugen mit der Options \TT{-S -masm=intel}.}.
+
+\begin{lstlisting}[caption=Code in \IDA,style=customasmx86]
+main            proc near
+
+var_10          = dword ptr -10h
+
+                push    ebp
+                mov     ebp, esp
+                and     esp, 0FFFFFFF0h
+                sub     esp, 10h
+                mov     eax, offset aHelloWorld ; "hello, world\n"
+                mov     [esp+10h+var_10], eax
+                call    _printf
+                mov     eax, 0
+                leave
+                retn
+main            endp
+\end{lstlisting}
+
+\myindex{Function prologue}
+\myindex{x86!\Instructions!AND}
+Das Ergebnis ist fast das gleiche.
+Die Adresse der \TT{hello, world}-Zeichenkette (im Daten-Segment) wird zunächst in das \EAX-Register geladen und anschließend auf dem Stack gesichert.\\
+Zusätzlich beinhaltet der Funktions-Prolog \INS{AND ESP, 0FFFFFFF0h}~---diese
+Anweisung richtet den \ESP-Register-Wert an eine 16-Byte-Grenze aus.
+Dies führt dazu, dass alle Werte im Stack auf die gleiche Weise ausgerichtet sind.
+Die CPU kann Anweisungen schneller ausführen, wenn die zu verarbeitenden Daten auf einer an 4- oder 16-Byte-Grenzen ausgerichteten Adresse liegen\footnote{\URLWPDA}.
+
+\myindex{x86!\Instructions!SUB}
+\INS{SUB ESP, 10h} reserviert 16 Byte auf dem Stack, auch wenn - wie später gezeigt wird - nur 4 Byte benötigt werden.
+
+Der Grund liegt darin, dass auch die Größe des Stacks an eine 16-Byte-Grenze ausgerichtet ist.
+
+% TODO1: rewrite.
+\myindex{x86!\Instructions!PUSH}
+Die Adresse der Zeichenkette (oder ein Zeiger darauf) wird anschließend direkt ohne die \PUSH-Anweisung auf dem Stack gespeichert.
+IT{var\_10}~---ist eine lokale Variable und ein Argument für \printf{}.
+Mehr dazu später.
+
+Anschließend wird die \printf-Funktion aufgerufen.
+
+Anders als MSVC erzeugt GCC ohne Optimierung Die Anweisung \TT{MOV EAX, 0} anstatt des kürzeren OpCodes.
+
+\myindex{x86!\Instructions!LEAVE}
+Die letzte Anweisung \LEAVE ist ein Äquivalent zu der Kombination aus \TT{MOV ESP, EBP} und \TT{POP EBP}.
+Mit anderen Worten: diese Anweisung setzt den \gls{stack pointer} (\ESP) zurück und stellt die initalen Werte des \EBP-Registers wieder her.
+Dies ist notwendig weil die Registerwerte (\ESP und \EBP) zu Beginn der Funktion (durch \INS{MOV EBP, ESP} / \INS{AND ESP, \ldots}).
+
+\subsubsection{GCC: \ATTSyntax}
+\label{ATT_syntax}
+
+Im nächsten Beispiel ist sichtbar, wie dies im AT\%T-Syntax dargestellt werden kann.
+Dieser Syntax ist sehr viel populärer in der UNIX-Welt.
+
+\begin{lstlisting}[caption=Das Beispiel kompiliert mit GCC 4.7.3]
+gcc -S 1_1.c
+\end{lstlisting}
+
+Das Ergebnis ist wie folgt:
+
+\lstinputlisting[caption=GCC 4.7.3,style=customasmx86]{patterns/01_helloworld/GCC.s}
+
+Der Quellcode beinhaltet Makros (beginnend mit einem Punkt), die hier aber nicht von Belang sind.
+
+An dieser Stelle werden aus Gründen der Übersichtlichkeit alle Makros au0er \IT{.string}
+ignoriert. Letzeres kodiert eine Null-terminierte Zeichenkette, die einem C-String entspricht.
+
+Die resultierende Ausgabe ist diese
+\footnote{Um die \q{unnötigen} Makros zu unterdrücen kann die GCC-Option \IT{-fno-asynchronous-unwind-tables} genutzt werden}:
+
+\lstinputlisting[caption=GCC 4.7.3,style=customasmx86]{patterns/01_helloworld/GCC_refined.s}
+
+\myindex{\ATTSyntax}
+\myindex{\IntelSyntax}
+Einige der Hauptunterschiede zwischen Intel und AT\&T-Syntax sin:
+
+\begin{itemize}
+
+\item
+Quell- und Zieloperanden sind in umgekehrter Reihenfolge angegeben.
+
+Im Intel-Syntax: <Anweisung> <Ziel-Operand> <Quell-Operand>.
+
+Im AT\&T-Syntax: <Anweisung> <Quell-Operand> <Ziel-Operand>.
+
+\myindex{\CStandardLibrary!memcpy()}
+\myindex{\CStandardLibrary!strcpy()}
+Hier ist eine einfache Möglichkeit um sich den Unterschied zu merken:
+Beim Umgang mit dem Intel-Syntax, kann man sich ein Gleichheitszeichen ($=$) zwischen den Operanden vorstellen
+und beim AT\&T-Syntax einen Pfeil nach rechts ($\rightarrow$)
+\footnote{Einige C-Standard-Funktionen (z.B. memcpy(), strcpy()) sind die Parameter ebenfalls wie im
+Intel-Syntax aufgelistet: erst der Zeiger zum Ziel, dann der Zeiger auf die Speicher-Quelle)}.
+
+\item
+AT\&T: Vor einem Register-Namen muss ein Prozentzeichen (\%) und vor Zahlen ein Dollarzeichen (\$) stehen.
+Statt eckigen werden runde Klammern genutzt.
+
+\item
+AT\&T: An eine Anweisung ist ein Suffix angehängt, der die Operandengröße angibt:
+
+\begin{itemize}
+\item q --- quad (64 bits)
+\item l --- long (32 bits)
+\item w --- word (16 bits)
+\item b --- byte (8 bits)
+\end{itemize}
+
+% TODO1 simple example may be? \RU{Например mov\textbf{l}, movb, movw представляют различые версии инсструкция mov} \EN {For example: movl, movb, movw are variations of the mov instruciton} \DE {Zum Beispiel sind movl, movb und movw Variationen der mov-Anweisung}
+
+\end{itemize}
+
+Nochmals zu dem kompilierten Ergebnis: Dieses ist identisch mit der Anzeige in \IDA,
+jedoch mit einem kleinen Unterschied: \TT{0FFFFFFF0h} wird als \TT{\$-16} angezeigt.
+Der eigentliche Wert ist der selbe: \TT{16} im Dezimalsystem ist \TT{0x10} im Hexadezimalsystem.
+Für 32-Bit-Datentypen ist \TT{-0x10} identisch mit \TT{0xFFFFFFF0}.
+
+\myindex{x86!\Instructions!MOV}
+Eine weitere Sache: der Rückgabewert ist mittels \MOV auf Null gesetzt, nicht mit \XOR.
+\MOV läd lediglich einen Wert in ein Register.
+Der Name ist irreführend, da die Daten nicht verschoben, sondern kopiert werden.
+In anderen Architekturen ist wird dieser Befehl \q{LOAD} oder \q{STORE} oder ähnlich genannt.

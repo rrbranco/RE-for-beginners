@@ -1,0 +1,108 @@
+\section{C99 restrict}
+\myindex{\CLanguageElements!C99!restrict}
+\myindex{Fortran}
+
+Here is a reason why Fortran programs, in some cases, work faster than \CCpp ones.
+
+\begin{lstlisting}[style=customc]
+void f1 (int* x, int* y, int* sum, int* product, int* sum_product, int* update_me, size_t s)
+{
+	for (int i=0; i<s; i++)
+	{
+		sum[i]=x[i]+y[i];
+		product[i]=x[i]*y[i];
+		update_me[i]=i*123; // some dummy value
+		sum_product[i]=sum[i]+product[i];	
+	};
+};
+\end{lstlisting}
+
+That's very simple example with one specific
+thing in it: 
+the pointer to the \TT{update\_me} array could be
+a pointer to the
+\TT{sum} array, \TT{product} array, or even the 
+\TT{sum\_product} array---nothing forbids that, right?
+
+The compiler is fully aware of this, so it generates code with four stages in the loop body:
+\begin{itemize}
+\item calculate next \TT{sum[i]}
+\item calculate next \TT{product[i]}
+\item calculate next \TT{update\_me[i]}
+\item calculate next \TT{sum\_product[i]}---on this stage, we need to load from memory
+the already calculated \TT{sum[i]} and \TT{product[i]}
+\end{itemize}
+
+Is it possible to optimize the last stage?
+Since we have already calculated \TT{sum[i]} and \TT{product[i]} 
+it is not necessary to load them again from memory.
+
+Yes, but compiler is not sure that nothing has been overwritten at the 3rd stage!
+This is called \q{pointer aliasing}, 
+a situation when the compiler cannot be sure that a memory to which a pointer is pointing hasn't been changed.
+
+\IT{restrict} in the C99 standard \InSqBrackets{\CNineNineStd{} 6.7.3/1}
+is a promise, given by programmer to the compiler that the function arguments 
+marked by this keyword always points to different memory locations and never intersects.
+
+To be more precise and describe this formally, \IT{restrict} shows that only this pointer is to be used
+to access an object, and no other pointer will be used for it.
+
+It can be even said the object will be accessed
+only via one single pointer, if it is marked as \IT{restrict}.
+
+Let's add this keyword to each pointer argument:
+
+\begin{lstlisting}[style=customc]
+void f2 (int* restrict x, int* restrict y, int* restrict sum, int* restrict product, int* restrict sum_product, 
+	int* restrict update_me, size_t s)
+{
+	for (int i=0; i<s; i++)
+	{
+		sum[i]=x[i]+y[i];
+		product[i]=x[i]*y[i];
+		update_me[i]=i*123; // some dummy value
+		sum_product[i]=sum[i]+product[i];	
+	};
+};
+\end{lstlisting}
+
+Let's see results:
+
+\lstinputlisting[caption=GCC x64: f1(),style=customasmx86]{\CURPATH/f1_EN.asm}
+
+\lstinputlisting[caption=GCC x64: f2(),style=customasmx86]{\CURPATH/f2_EN.asm}
+
+The difference between the compiled \TT{f1()} and \TT{f2()} functions is as follows:
+in \TT{f1()}, \TT{sum[i]} and \TT{product[i]} 
+are reloaded in the middle of the loop,
+and in \TT{f2()} 
+there is no such thing,
+the already calculated values are used, 
+since we \q{promised} the compiler 
+that no one and nothing will change the values in \TT{sum[i]} 
+and \TT{product[i]} during the execution of the loop's body, 
+so it is \q{sure} that there is no need to load the value from memory again.
+
+Obviously, the second example works faster.
+
+But what if the pointers in the function's arguments intersect somehow?
+
+This is on the programmer's conscience, and the results will be incorrect.
+
+Let's go back to Fortran. 
+
+Compilers of this programming language treats all pointers as such, 
+so when it was not possible to set \IT{restrict} in C, Fortran could generate faster code in these cases.
+
+How practical is it? 
+
+In the cases when the function works with several big blocks in memory.
+
+There are a lot of such in linear algebra, for instance.
+
+Supercomputers/\ac{HPC} are very busy with linear algebra, so probably that is why, traditionally, Fortran is still
+used there [Eugene Loh, \IT{The Ideal HPC Programming Language}, (2010)].
+
+But when the number of iterations is not very big,
+certainly, the speed boost may not to be significant.

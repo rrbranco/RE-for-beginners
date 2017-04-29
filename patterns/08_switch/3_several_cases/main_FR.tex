@@ -1,0 +1,83 @@
+\subsection{Losrqu'il y a quelques déclarations \IT{case} dans un bloc}
+
+Voici une construction très répandue: quelques déclarations \IT{case} pour un seul bloc:
+
+\lstinputlisting[style=customc]{patterns/08_switch/3_several_cases/several_cases.c}
+
+C'est souvent du gaspillage de générer un bloc pour chaque cas possible, c'est
+pourquoi ce qui se fait d'habitude, c'est de générer un bloc et une sorte de répartiteur.
+
+\subsubsection{MSVC}
+
+\lstinputlisting[caption=MSVC 2010 \Optimizing,numbers=left,style=customasmx86]{patterns/08_switch/3_several_cases/several_cases_MSVC_2010_Ox_FR.asm}
+
+Nous voyons deux tables ici: la première (\TT{\$LN10@f}) est une table d'index,
+et la seconde (\TT{\$LN11@f}) est un tableau de pointeurs sur les blocs.
+
+Tout d'abord, la valeur entrée est utilisée comme un index dans la table d'index
+(ligne 13).
+
+Voici un petit récapitulatif pour les valeurs dans la table:
+0 est le premier bloc \IT{case} (pour les valeurs 1, 2, 7, 10),
+1 est le second (pour les valeurs 3, 4, 5),
+2 est le troisième (pour les valeurs 8, 9, 21),
+3 est le quatrième (pour la valeur 22),
+4 est pour le bloc par défaut.
+
+Ici, nous obtenons un index pour la seconde table de pointeurs sur du code et nous
+y sautons (ligne 14).
+
+Il est intéressant de remarquer qu'il n'y a pas de cas pour une valeur d'entrée
+de 0.
+
+C'est pourquoi nous voyons l'instruction \DEC à la ligne 10, et la table commence
+à $a=1$, car il n'y a pas besoin d'allouer un élément dans la table pour $a=0$.
+
+C'est un pattern très répandu.
+
+Donc, pourquoi est-ce que c'est économique ?
+Pourquoi est-ce qu'il n'est pas possible de faire comme avant (\myref{switch_lot_GCC}),
+avec une seule table consistant en des pointeurs vers les blocs?
+La raison est que les index des éléments de la table sont 8-bit, donc c'est plus
+compact.
+
+\subsubsection{GCC}
+
+GCC génère du code de la façon dont nous avons déjà discuté (\myref{switch_lot_GCC}),
+en utilisant juste une table de pointeurs.
+
+\subsubsection{ARM64: GCC 4.9.1 \Optimizing}
+
+Il n'y a pas de code à exécuter si la valeur entrée est 0, c'est pourquoi GCC
+essaye de rendre la table des sauts plus compacte et donc il commence avec la
+valeur d'entrée 1.
+
+GCC 4.9.1 pour ARM64 utilise un truc encore plus astucieux.
+Il est capable d'encoder tous les offsets en octets 8-bit.
+
+Rappelons-nous que toutes les instructions ARM64 ont une taille de 4 octets.
+
+GCC utilise le fait que tous les offsets de mon petit exemple sont tous proche l'un
+de l'autre. Donc la table des sauts consiste en de simple octets.
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 ARM64,style=customasmARM]{patterns/08_switch/3_several_cases/ARM64_GCC491_O3_FR.s}
+
+Compilons cet exemple en fichier objet et ouvrons-le dans \IDA. Voici la table des
+sauts:
+
+\lstinputlisting[caption=jumptable in IDA,style=customasmARM]{patterns/08_switch/3_several_cases/ARM64_GCC491_O3_IDA.lst}
+
+Donc dans le cas de 1, 9 est multiplié par 4 et ajouté à l'adresse
+du label \TT{Lrtx4}.
+
+Dans le cas de 22, 0 est multiplié par 4, ce qui donne 0.
+
+Juste après le label \TT{Lrtx4} se trouve le label \TT{L7}, oú se trouve le code
+qui affiche \q{22}.
+
+Il n'y a pas de table des sauts dans le segment de code, elle est allouée dans
+la section .rodata (il n'y a pas de raison de l'allouer dans le segment de code).
+
+Il y a aussi des octets négatifs (0xF7), ils sont utilisés pour sauter en arrière
+dans le code qui affiche la chaîne\q{default} (en \TT{.L2}).
+

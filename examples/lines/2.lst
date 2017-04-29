@@ -1,0 +1,5 @@
+.text:00402BBB                 mov     eax, dword_40C058 ; 5 here
+.text:00402BC0                 push    eax
+.text:00402BC1                 call    random
+.text:00402BC6                 add     esp, 4
+.text:00402BC9                 inc     eax

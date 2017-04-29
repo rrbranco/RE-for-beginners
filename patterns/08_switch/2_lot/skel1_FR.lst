@@ -1,0 +1,36 @@
+﻿MOV REG, input
+CMP REG, 4 ; nombre maximal de cas
+JA default
+SHL REG, 2 ; §trouver l'élément dans la table. décaler de 3 bits en x64.§
+MOV REG, jump_table[REG]
+JMP REG
+
+case1:
+    ; faire quelque chose
+    JMP exit
+case2:
+    ; faire quelque chose
+    JMP exit
+case3:
+    ; faire quelque chose
+    JMP exit
+case4:
+    ; faire quelque chose
+    JMP exit
+case5:
+    ; faire quelque chose
+    JMP exit
+
+default:
+
+    ...
+
+exit:
+
+    ....
+
+jump_table dd case1
+           dd case2
+           dd case3
+           dd case4
+           dd case5

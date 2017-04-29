@@ -1,0 +1,67 @@
+15-Sep-2016: More fundamentals and examples
+14-Sep-2016: More of my blog posts are copypasted into the book
+06-Sep-2016: Blog posts about FAT12 and fortune file has been copypasted into the book
+05-Sep-2016: Blog posts about entropy and encrypted DB case #1 has been
+             copypasted into the book
+22-Jul-2016: Russian only: new example: ancient "Marriage" DOS game hack
+20-Jul-2016: The book is now licensed under CC BY-SA 4.0 (like Wikipedia)
+             instead of CC NC-ND 3.0.
+16-Jul-2016: Blog posts about C/C++ pointers has been copypasted into the book
+14-Jul-2016: No more LITE version, which was somewhat unpopular
+04-Nov-2015: All exercises has been moved to http://challenges.re
+21-Mar-2015: toupper() function example
+18-Mar-2015: Lite (introductory) version
+01-Mar-2015: Java examples
+04-Dec-2014: restructured: "code patterns" part splitted into "code patterns" and "more advanced examples"
+19-Nov-2014: Norton Guide: simplest XOR encryption
+11-Nov-2014: a lot of MIPS examples	
+20-Oct-2014: more about TLS and TLS callbacks.
+03-Oct-2014: atoi() example.
+24-Sep-2014: calculating machine epsilon examples (IEEE 754); Duff's device example;
+             pointer to function argument example; variadic functions example;
+             endianness example.
+01-Aug-2014: new code pattern: conditional operator
+31-Jul-2014: Minesweeper (Windows XP) cheat example
+30-Jul-2014: Color Lines game practical joke; Oracle .MSB files example
+29-Jul-2014: simple cheating in Millenium DOS game
+21-Jul-2014: Oracle .SYM files example
+09-Jun-2014: Fibonacci example
+28-Apr-2014: A5 version for e-book readers
+06-Apr-2014: new exercise: data compressor with a bug
+30-Mar-2014: simple patching examples
+29-Mar-2014: simple example of cracking simple hash-function by Z3 SMT-solver
+25-Mar-2014: more exercises; short GCC, GDB, MSVC, OllyDbg cheatsheets.
+05-Mar-2014: text strings, unicode
+04-Mar-2014: Fahrenheit to Celsius converter
+03-Mar-2014: examples: "10 PRINT" demo, EICAR test file
+27-Feb-2014: working with float point numbers using SIMD in x64
+26-Feb-2014: more exercises added
+25-Feb-2014: some basic examples are extended to x86-64
+10-Feb-2014: win16 code examples, IDA cheatsheet.
+05-Feb-2014: Obfuscation
+03-Feb-2014: Incorrectly disassembled code examples
+02-Feb-2014: Changed title to shorter "Reverse Engineering for Beginners".
+31-Jan-2014: 64-bit in 32-bit environment
+28-Jan-2014: SEH3/4
+25-Jan-2014: CRT (win32)
+16-Jan-2014: OpenMP
+10-Jan-2014: C++ STL std::map, std::set
+             Getting divisor in division by multiplication cases
+05-Jan-2014: C++ STL std::vector, INT3.
+04-Jan-2014: C++ STL std::list.
+29-Dec-2013: C++ ostream, C++ STL std::string.
+12-Dec-2013: Itanium; Profile-guided optimization (Oracle RDBMS example).
+09-Dec-2013: REP/REPE/REPNE prefixes, MOVSx, SCASx, STOSx, CMPSx instructions.
+01-Dec-2013: LOCK prefix, critical sections.
+29-Nov-2013: (examples) 1) dongle-protected software for SCO OpenServer; 2) another for MS-DOS
+28-Nov-2013: (examples) dongle-protected software for Mac OS Classic and PowerPC
+05-Nov-2013: (exercises) vulnerable toy webserver.
+01-Nov-2013: a lot of exercises added.
+29-Oct-2013: Not a quick anymore, but still for beginners.
+             Changing title to "An introduction to reverse engineering for beginners".
+20-Oct-2013: LD_PRELOAD
+19-Oct-2013: PE file format.
+13-Aug-2013: pointers, C++ references.
+10-Aug-2013: ARM CPU, C99 restrict keyword.
+03-Jul-2013: C++ objects, Oracle RDBMS examples.
+15-Mar-2013: Initial version.

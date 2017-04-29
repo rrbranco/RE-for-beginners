@@ -1,0 +1,13 @@
+seg030:0034             out_port proc far ; CODE XREF: sent_pro+22p
+seg030:0034                               ; sent_pro+2Ap ...
+seg030:0034
+seg030:0034             arg_0    = byte ptr  6
+seg030:0034
+seg030:0034 55                   push    bp
+seg030:0035 8B EC                mov     bp, sp
+seg030:0037 8B 16 7E E7          mov     dx, _out_port ; 0x378
+seg030:003B 8A 46 06             mov     al, [bp+arg_0]
+seg030:003E EE                   out     dx, al
+seg030:003F 5D                   pop     bp
+seg030:0040 CB                   retf
+seg030:0040             out_port endp

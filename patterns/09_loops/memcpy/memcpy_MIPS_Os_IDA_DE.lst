@@ -1,0 +1,29 @@
+my_memcpy:
+; §springe zum Prüfen der Schleifenbedingung:§
+                b       loc_14
+; §initialisiere Zähler (i) mit 0§
+; bleibt stets in $v0:
+                move    $v0, $zero ; branch delay slot
+
+loc_8:                                   # CODE XREF: my_memcpy+1C
+; lade unsigned Byte von $t0 nach $v1:
+                lbu     $v1, 0($t0)
+; §erhöhe Zähler (i):§
+                addiu   $v0, 1
+; speichere Byte an der Stelle $a3
+                sb      $v1, 0($a3)
+
+loc_14:                                  # CODE XREF: my_memcpy
+; §prüfe, ob Zähler§ (i) in $v0 immer noch kleiner ist als das dritte
+; Funktionsargument ("cnt" in $a2):
+                sltu    $v1, $v0, $a2
+; Byteadresse in Quellblock bilden:
+                addu    $t0, $a1, $v0
+; $t0 = $a1+$v0 = src+i
+; §springe zum Schleifenkörper, falls der Zähler immer noch kleiner ist als "cnt":§
+                bnez    $v1, loc_8
+; Byteadresse im Zielblock bilden ($a3 = $a0+$v0 = dst+i):
+                addu    $a3, $a0, $v0 ; branch delay slot
+; beenden, falls BNEZ nicht getriggert wurde:
+                jr      $ra
+                or      $at, $zero ; branch delay slot, NOP

@@ -1,0 +1,153 @@
+\section{\SignedNumbersSectionName}
+\label{sec:signednumbers}
+\myindex{Signed numbers}
+
+\newcommand{\URLS}{\href{http://go.yurichev.com/17117}{wikipedia}}
+
+Es gibt verschiedene Arten vorzeichenbehaftete Zahlen\footnote{\URLS} darzustellen,
+jedoch ist das \q{Zweierkomplement} die am weitesten verbreitete in Computern.
+
+Hier ist eine Tabelle für einige Byte-Werte:
+
+\begin{center}
+\begin{tabular}{ | l | l | l | l | }
+\hline
+\HeaderColor binär & \HeaderColor hexadezimal & \HeaderColor vorzeichenlos & \HeaderColor vorzeichenbehaftet \\
+\hline
+01111111 & 0x7f & 127 & 127 \\
+\hline
+01111110 & 0x7e & 126 & 126 \\
+\hline
+\multicolumn{4}{ |c| }{...} \\
+\hline
+00000110 & 0x6 & 6 & 6 \\
+\hline
+00000101 & 0x5 & 5 & 5 \\
+\hline
+00000100 & 0x4 & 4 & 4 \\
+\hline
+00000011 & 0x3 & 3 & 3 \\
+\hline
+00000010 & 0x2 & 2 & 2 \\
+\hline
+00000001 & 0x1 & 1 & 1 \\
+\hline
+00000000 & 0x0 & 0 & 0 \\
+\hline
+11111111 & 0xff & 255 & -1 \\
+\hline
+11111110 & 0xfe & 254 & -2 \\
+\hline
+11111101 & 0xfd & 253 & -3 \\
+\hline
+11111100 & 0xfc & 252 & -4 \\
+\hline
+11111011 & 0xfb & 251 & -5 \\
+\hline
+11111010 & 0xfa & 250 & -6 \\
+\hline
+\multicolumn{4}{ |c| }{...} \\
+\hline
+10000010 & 0x82 & 130 & -126 \\
+\hline
+10000001 & 0x81 & 129 & -127 \\
+\hline
+10000000 & 0x80 & 128 & -128 \\
+\hline
+\end{tabular}
+\end{center}
+
+\myindex{x86!\Instructions!JA}
+\myindex{x86!\Instructions!JB}
+\myindex{x86!\Instructions!JL}
+\myindex{x86!\Instructions!JG}
+Der Unterschied zwischen vorzeichenbehafteten und vorzeichenlosen Zahlen ist, dass wenn \TT{0xFFFFFFFE}
+und \TT{0x00000002} ohne Vorzeichen repräsentiert werden, die erste Zahl (4294967294) größer ist als
+die zweite Zahl (2).
+Wenn beide Zahlen als vorzeichenbehaftet repräsentiert werden, wird die erste Zahl $-2$ und ist kleiner
+als die zweite Zahl (2).
+Das ist der Grund, warum bedingte Sprünge ~(\myref{sec:Jcc}) sowohl für vorzeichenbehaftete (e.g. \JG, \JL)
+als auch vorzeichenlose (\JA, \JB) Operationen vorhanden sind.
+
+Aus Gründen der Einfachheit ist hier was man wissen muss:
+
+\begin{itemize}
+\item Zahlen können mit oder ohne Vorzeichen sein.
+
+\item vorzeichenbehaftete Datentypen in \CCpp:
+
+  \begin{itemize}
+    \item \TT{int64\_t} (-9,223,372,036,854,775,808 .. 9,223,372,036,854,775,807)
+	  (-~9.2..~9.2 Quintillionen) oder \\
+                \TT{0x8000000000000000..0x7FFFFFFFFFFFFFFF}),
+    \item \Tint (-2,147,483,648..2,147,483,647 (-~2.15..~2.15Gb) oder \\
+	    \TT{0x80000000..0x7FFFFFFF}),
+    \item \Tchar (-128..127 oder \TT{0x80..0x7F}),
+    \item \TT{ssize\_t}.
+   \end{itemize}
+
+	Vorzeichenlos:
+  \begin{itemize}
+	  \item \TT{uint64\_t} (0..18,446,744,073,709,551,615 
+		  (~18 Quintillionen) oder \TT{0..0xFFFFFFFFFFFFFFFF}),
+   \item \TT{unsigned int} (0..4,294,967,295 (~4.3Gb) oder \TT{0..0xFFFFFFFF}),
+   \item \TT{unsigned char} (0..255 oder \TT{0..0xFF}), 
+   \item \TT{size\_t}.
+  \end{itemize}
+
+\item Vorzeichenbehaftete Typen haben das Vorzeichen am \ac{MSB}: 1 bedeutet \q{Minus}, 0 bedeutet \q{Plus}.
+
+\item Erweitern auf größere Datentypen ist einfach:
+\myref{subsec:sign_extending_32_to_64}.
+
+\label{sec:signednumbers:negation}
+\item Negieren ist einfach: es müssen lediglich alle Bits invertiert und anschließend 1 addiert werden.
+
+%TODO Not sure how to translate this into an understandable in german.
+%We can keep in mind that a number of inverse sign is located on the opposite side at the same proximity from zero.
+%The addition of one is needed because zero is present in the middle.
+
+\myindex{x86!\Instructions!IDIV}
+\myindex{x86!\Instructions!DIV}
+\myindex{x86!\Instructions!IMUL}
+\myindex{x86!\Instructions!MUL}
+\myindex{x86!\Instructions!CBW}
+\myindex{x86!\Instructions!CWD}
+\myindex{x86!\Instructions!CWDE}
+\myindex{x86!\Instructions!CDQ}
+\myindex{x86!\Instructions!CDQE}
+\myindex{x86!\Instructions!MOVSX}
+\myindex{x86!\Instructions!SAR}
+\item 
+	Die Addition und Subtraktion funktioniert sowohl für Zahlen mit als auch ohne Vorzeichen.
+	Für Multiplikation und Division gibt es bei x86 unterschiedliche Anweisungen:
+	\TT{IDIV}/\TT{IMUL} für vorzeichenbehaftete und \TT{DIV}/\TT{MUL} für vorzeichenlose Zahlen.
+\item
+	Hier sind einige weitere Anweisungen die mit vorzeichenbehafteten Zahlen arbeiten:\\
+	\TT{CBW/CWD/CWDE/CDQ/CDQE} (\myref{ins:CBW_CWD_etc}), \TT{MOVSX} (\myref{MOVSX}), \TT{SAR} (\myref{ins:SAR}).
+\end{itemize}
+
+Eine Tabelle mit negativen und positiven Werten (\ref{signed_tbl}) sieht aus wie ein Thermometer mit Celsius-Skala.
+Das ist der Grund warum Addition und Subtraktion für Zahlen mit und ohne Vorzeichen gleich funktioniert:
+wenn der erste Summand eine Markierung auf dem Thermometer ist und ein weiterer Summand addiert werden soll,
+der positiv ist, muss lediglich die Markierung auf dem Thermometer um den Wert des zweiten Summanden nach
+oben verschoben werden.
+Ist der zweite Summand negativ, wird die Markierung um den entsprechenden, absoluten Wert nach unten verschoben.
+
+Die Addition zweier negativer Zahlen funktioniert wie folgt:
+Wenn beispielsweise -2 und -3 unter Verwendung eines 16-Bit-Registers addiert werden sollen,
+ist die Darstellung 0xfffe beziehungsweise 0xfffd.
+Wenn diese Werte ohne Vorzeichen addiert werden, ist das Ergebnis 0xfffe+0xfffd=0x1fffb.
+Allerdings sollen 16-Bit-Register verwendet werden, also wird beim Ergebis die erste 1 abgeschnitten.
+Es bleibt 0xfffb was -5 entspricht.
+Dies funktioniert, weil -2 (oder 0xfffe) in natürlicher Sprache wie folgt repräsentiert werden kann:
+``2 fehlt bei diesem Werte bis zum maximalen Wert in einem 16-Bit-Register + 1''.
+-3 kann repräsentiert werden als ``\dots 3 fehlt in diesem Wert bis zu \dots''.
+Der maximale Wert eines 16-Bit-Registers + 1 ist 0x10000.
+Bei der Addition der beiden Zahlen und \IT{Abschneiden}  durch $2^{16}$ modulo,
+wird $2+3=5$ \IT{fehlen}.
+
+% subsections:
+\input{fundamentals/MUL_IMUL_DE}
+\input{fundamentals/one_more_DE}
+

@@ -1,0 +1,229 @@
+\subsubsection{ARM}
+
+\myparagraph{\OptimizingXcodeIV (\ARMMode)}
+
+\lstinputlisting[caption=\OptimizingXcodeIV (\ARMMode),style=customasmARM]{patterns/12_FPU/3_comparison/ARM/Xcode_ARM_EN.lst}
+
+\myindex{ARM!\Registers!APSR}
+\myindex{ARM!\Registers!FPSCR}
+A very simple case.
+The input values are placed into the \GTT{D17} and \GTT{D16} registers and then compared using the \INS{VCMPE} instruction.
+
+Just like in the x86 coprocessor, the ARM coprocessor has its own status and flags register (\ac{FPSCR}),
+since there is a necessity to store coprocessor-specific flags.
+% TODO -> расписать регистр по битам
+\myindex{ARM!\Instructions!VMRS}
+And just like in x86, there are no conditional jump instruction in ARM, 
+that can check bits in the status register of the coprocessor. 
+So there is \INS{VMRS}, which copies 4 bits (N, Z, C, V) from the coprocessor status word into bits of the \IT{general} status register (\ac{APSR}).
+
+\myindex{ARM!\Instructions!VMOVGT}
+\INS{VMOVGT} is the analog of the \INS{MOVGT}, 
+instruction for D-registers, it executes if one operand is greater than the other while comparing (\IT{GT---Greater Than}). 
+
+If it gets executed, the value of $a$ is to be written into \GTT{D16} (that is currently stored in in \GTT{D17}).
+Otherwise the value of $b$ stays in the \GTT{D16} register.
+
+\myindex{ARM!\Instructions!VMOV}
+
+The penultimate instruction \INS{VMOV} prepares the value in the \GTT{D16} register for returning it via the \Reg{0} and \Reg{1}
+register pair.
+
+\myparagraph{\OptimizingXcodeIV (\ThumbTwoMode)}
+
+\begin{lstlisting}[caption=\OptimizingXcodeIV (\ThumbTwoMode),style=customasmARM]
+VMOV            D16, R2, R3 ; b
+VMOV            D17, R0, R1 ; a
+VCMPE.F64       D17, D16
+VMRS            APSR_nzcv, FPSCR
+IT GT 
+VMOVGT.F64      D16, D17
+VMOV            R0, R1, D16
+BX              LR
+\end{lstlisting}
+
+Almost the same as in the previous example, however slightly different.
+As we already know, many instructions in ARM mode can be supplemented by condition predicate.
+But there is no such thing in Thumb mode. 
+There is no space in the 16-bit instructions for 4 more bits in which conditions can be encoded.
+
+\myindex{ARM!\ThumbTwoMode}
+
+However, Thumb-2 was extended to make it possible to specify predicates to old Thumb instructions.
+Here, in the \IDA-generated listing, we see the \INS{VMOVGT} instruction, as in previous example.
+
+In fact, the usual \INS{VMOV} is encoded there, but \IDA adds the \GTT{-GT} suffix to it, 
+since there is a \INS{IT GT} instruction placed right before it.
+
+\label{ARM_Thumb_IT}
+\myindex{ARM!\Instructions!IT}
+\myindex{ARM!if-then block}
+The \INS{IT} instruction defines a so-called \IT{if-then block}. 
+
+After the instruction it is possible to place up to 4 instructions, 
+each of them has a predicate suffix.
+In our example, \INS{IT GT} implies that the next instruction is to be executed, if the \IT{GT} (\IT{Greater Than}) condition is true.
+
+\myindex{Angry Birds}
+Here is a more complex code fragment, by the way, from Angry Birds (for iOS):
+
+\begin{lstlisting}[caption=Angry Birds Classic,style=customasmARM]
+...
+ITE NE
+VMOVNE          R2, R3, D16
+VMOVEQ          R2, R3, D17
+BLX             _objc_msgSend ; not suffixed
+...
+\end{lstlisting}
+
+\INS{ITE} stands for \IT{if-then-else} 
+
+and it encodes suffixes for the next two instructions.
+
+The first instruction executes if the condition encoded in \INS{ITE} (\IT{NE, not equal}) is true at, and the second---if the condition is not true.
+(The inverse condition of \GTT{NE} is \GTT{EQ} (\IT{equal})).
+
+The instruction followed after the second \INS{VMOV} (or \INS{VMOVEQ}) is a normal one, not suffixed (\INS{BLX}).
+
+\myindex{Angry Birds}
+One more that's slightly harder, which is also from Angry Birds:
+
+\begin{lstlisting}[caption=Angry Birds Classic,style=customasmARM]
+...
+ITTTT EQ
+MOVEQ           R0, R4
+ADDEQ           SP, SP, #0x20
+POPEQ.W         {R8,R10}
+POPEQ           {R4-R7,PC}
+BLX             ___stack_chk_fail ; not suffixed
+...
+\end{lstlisting}
+
+Four \q{T} symbols in the instruction mnemonic mean that the four subsequent instructions are to be executed if the condition is true.
+
+That's why \IDA adds the \GTT{-EQ} suffix to each one of them. 
+
+And if there was, for example, \INS{ITEEE EQ} (\IT{if-then-else-else-else}), 
+then the suffixes would have been set as follows:
+
+\begin{lstlisting}
+-EQ
+-NE
+-NE
+-NE
+\end{lstlisting}
+
+\myindex{Angry Birds}
+Another fragment from Angry Birds:
+
+\begin{lstlisting}[caption=Angry Birds Classic,style=customasmARM]
+...
+CMP.W           R0, #0xFFFFFFFF
+ITTE LE
+SUBLE.W         R10, R0, #1
+NEGLE           R0, R0
+MOVGT           R10, R0
+MOVS            R6, #0         ; not suffixed
+CBZ             R0, loc_1E7E32 ; not suffixed
+...
+\end{lstlisting}
+
+\INS{ITTE} (\IT{if-then-then-else}) 
+
+implies that the 1st and 2nd instructions are to be executed if the \GTT{LE} (\IT{Less or Equal})
+condition is true, and the 3rd---if the inverse condition (\GTT{GT}---\IT{Greater Than}) 
+is true.
+
+Compilers usually don't generate all possible combinations.
+\myindex{Angry Birds}
+
+For example, in the mentioned Angry Birds game (\IT{classic} version for iOS)
+only these variants of the \INS{IT} instruction are used: 
+\INS{IT}, \INS{ITE}, \INS{ITT}, \INS{ITTE}, \INS{ITTT}, \INS{ITTTT}.
+\myindex{\GrepUsage}
+How to learn this?
+In \IDA It is possible to produce listing files, so it was created with an option to show 4 bytes for each opcode.
+Then, knowing the high part of the 16-bit opcode (\INS{IT} is \GTT{0xBF}), we do the following using \GTT{grep}:
+
+\begin{lstlisting}
+cat AngryBirdsClassic.lst | grep " BF" | grep "IT" > results.lst
+\end{lstlisting}
+
+\myindex{ARM!\ThumbTwoMode}
+
+By the way, if you program in ARM assembly language manually for Thumb-2 mode, 
+and you add conditional suffixes,
+the assembler will add the \INS{IT} instructions automatically with the required flags where it is necessary.
+
+\myparagraph{\NonOptimizingXcodeIV (\ARMMode)}
+
+\begin{lstlisting}[caption=\NonOptimizingXcodeIV (\ARMMode),style=customasmARM]
+b               = -0x20
+a               = -0x18
+val_to_return   = -0x10
+saved_R7        = -4
+
+                STR             R7, [SP,#saved_R7]!
+                MOV             R7, SP
+                SUB             SP, SP, #0x1C
+                BIC             SP, SP, #7
+                VMOV            D16, R2, R3
+                VMOV            D17, R0, R1
+                VSTR            D17, [SP,#0x20+a]
+                VSTR            D16, [SP,#0x20+b]
+                VLDR            D16, [SP,#0x20+a]
+                VLDR            D17, [SP,#0x20+b]
+                VCMPE.F64       D16, D17
+                VMRS            APSR_nzcv, FPSCR
+                BLE             loc_2E08
+                VLDR            D16, [SP,#0x20+a]
+                VSTR            D16, [SP,#0x20+val_to_return]
+                B               loc_2E10
+
+loc_2E08
+                VLDR            D16, [SP,#0x20+b]
+                VSTR            D16, [SP,#0x20+val_to_return]
+
+loc_2E10
+                VLDR            D16, [SP,#0x20+val_to_return]
+                VMOV            R0, R1, D16
+                MOV             SP, R7
+                LDR             R7, [SP+0x20+b],#4
+                BX              LR
+\end{lstlisting}
+
+Almost the same as we already saw, 
+but there is too much redundant code because the $a$ and $b$ variables are stored in the local stack, as well
+as the return value.
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\begin{lstlisting}[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]
+                PUSH    {R3-R7,LR}
+                MOVS    R4, R2
+                MOVS    R5, R3
+                MOVS    R6, R0
+                MOVS    R7, R1
+                BL      __aeabi_cdrcmple
+                BCS     loc_1C0
+                MOVS    R0, R6
+                MOVS    R1, R7
+                POP     {R3-R7,PC}
+
+loc_1C0
+                MOVS    R0, R4
+                MOVS    R1, R5
+                POP     {R3-R7,PC}
+\end{lstlisting}
+
+
+Keil doesn't generate FPU-instructions since it cannot rely on them being
+supported on the target CPU, and it cannot be done by straightforward bitwise comparing.
+%TODO1: why?
+So it calls an external library function to do the comparison: \GTT{\_\_aeabi\_cdrcmple}. 
+\myindex{ARM!\Instructions!BCS}
+
+N.B. The result of the comparison is to be left in the flags by this function, so the following
+\INS{BCS} (\IT{Carry set---Greater than or equal})
+instruction can work without any additional code.
+

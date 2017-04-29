@@ -1,0 +1,110 @@
+\subsection{Bruit dans la pile}
+\label{bruit_dans_la_pile}
+
+\epigraph{Quand quelqu'un dit que quelques chose est aléatoire,
+  ce que cela signifie en pratique c'est qu'il n'est pas capable de
+  voir les régularités de cette chose}{Stephen Wolfram, A New Kind of Science.}
+
+Dans ce livre les valeurs dites \q{bruité} ou \q{poubelle} présente dans la pile ou dans la mémoire sont souvent mentionner.
+
+D'où viennent-elles ?
+Ces valeurs ont été laissées sur la pile après l'exécution de fonction précédente.
+Par exemple: 
+
+\lstinputlisting[style=customc]{patterns/02_stack/08_noise/st.c}
+
+Compilons \dots
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2010,style=customasmx86]{patterns/02_stack/08_noise/st.asm}
+
+Le compilateur va rouspéter un peu\dots 
+
+\begin{lstlisting}
+c:\Polygon\c>cl st.c /Fast.asm /MD
+Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+st.c
+c:\polygon\c\st.c(11) : warning C4700: uninitialized local variable 'c' used
+c:\polygon\c\st.c(11) : warning C4700: uninitialized local variable 'b' used
+c:\polygon\c\st.c(11) : warning C4700: uninitialized local variable 'a' used
+Microsoft (R) Incremental Linker Version 10.00.40219.01
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+/out:st.exe
+st.obj
+\end{lstlisting}
+
+Mais quand nous lançons le programme compilé \dots
+
+\begin{lstlisting}
+c:\Polygon\c>st
+1, 2, 3
+\end{lstlisting}
+
+Quel résultat étrange ! Aucune variables n'a été initialisées dans \TT{f2()}.
+Ce sont des valeurs \q{fantôme} qui sont toujours dans la pile.
+
+\clearpage
+Chargeons cet exemple dans \olly:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/02_stack/08_noise/olly1.png}
+\caption{\olly: \TT{f1()}}
+\label{fig:stack_noise_olly1}
+\end{figure}
+
+Quand \TT{f1()} assigne les variable $a$, $b$ et $c$, leurs valeur sont stockées à l'adresse \TT{0x1FF860} et ainsi de suite.
+
+\clearpage
+Et quand \TT{f2()} s'exécute:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/02_stack/08_noise/olly2.png}
+\caption{\olly: \TT{f2()}}
+\label{fig:stack_noise_olly2}
+\end{figure}
+
+... $a$, $b$ et $c$ de la fonction \TT{f2()} sont situées à la même adresse !
+Aucunes autre fonction n'a encore écrasées ces valeurs, elles sont donc encore inchangées. Pour que cette situation arrive, il faut que plusieurs fonctions soit appelées les unes après les autres et \ac{SP} doit être le même sur chaque début de fonctions (i.e., les fonctions doivent avoir le même nombre d'arguments). Les variables locales seront donc positionnées au même endroit dans la pile. Pour résumer, toutes les valeurs sur la pile sont des valeurs laissé par des appels de fonction précédent. Ces valeurs laissées sur la pile ne sont pas réellement aléatoire dans le sens strict du terme, mais elles sont imprévisible. 
+Y a t'il une autre option ?
+Il serait probablement possible de nettoyer des parties de la pile avant chaque nouvelle exécution de fonction, mais cela engendrerai du travail et du temps d'exécution (non nécessaire) en plus.
+
+\subsubsection{MSVC 2013}
+
+Cette exemple a été compilé avec MSVC 2010.
+Si vous essayez de compiler cette exemple avec MSVC 2013 et de l'exécuter, ces 3 nombres seront inversé:%
+
+\begin{lstlisting}
+c:\Polygon\c>st
+3, 2, 1
+\end{lstlisting}
+
+Pourquoi ?
+J'ai aussi compilé cette exemple avec MSVC 2013 et constaté ceci: 
+
+
+\begin{lstlisting}[caption=MSVC 2013,style=customasmx86]
+_a$ = -12	; size = 4
+_b$ = -8	; size = 4
+_c$ = -4	; size = 4
+_f2	PROC
+
+...
+
+_f2	ENDP
+
+_c$ = -12	; size = 4
+_b$ = -8	; size = 4
+_a$ = -4	; size = 4
+_f1	PROC
+
+...
+
+_f1	ENDP
+\end{lstlisting}
+
+Contrairement à MSVC 2010, MSVC 2013 alloue les variables a/b/c dans la fonction \TT{f2()} dans l'ordre inverse puisqu'il se comporte différemment en raison d'un changement supposé dans son fonctionnement interne.%
+Ceci est correct, car le standard du \CCpp n'impose aucune règle sur l'ordre d'allocation des variables locales sur la pile.

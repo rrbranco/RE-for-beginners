@@ -1,0 +1,139 @@
+﻿\section{Task manager practical joke (Windows Vista)}
+\myindex{Windows!Windows Vista}
+
+Let's see if it's possible to hack Task Manager slightly so it would detect more \ac{CPU} cores.
+
+\myindex{Windows!NTAPI}
+
+Let us first think, how does the Task Manager know the number of cores?
+
+There is the \TT{GetSystemInfo()} win32 function present in win32 userspace which can tell us this.
+But it's not imported in \TT{taskmgr.exe}.
+
+There is, however, another one in \gls{NTAPI}, \TT{NtQuerySystemInformation()}, 
+which is used in \TT{taskmgr.exe} in several places.
+
+To get the number of cores, one has to call this function with the \TT{SystemBasicInformation} constant
+as a first argument (which is zero
+\footnote{\href{http://go.yurichev.com/17251}{MSDN}}).
+
+The second argument has to point to the buffer which is getting all the information.
+
+So we have to find all calls to the \\
+\TT{NtQuerySystemInformation(0, ?, ?, ?)} function.
+Let's open \TT{taskmgr.exe} in IDA. 
+\myindex{Windows!PDB}
+
+What is always good about Microsoft executables is that IDA can download the corresponding \gls{PDB} 
+file for this executable and show all function names.
+
+It is visible that Task Manager is written in \Cpp and some of the function names and classes are really 
+speaking for themselves.
+There are classes CAdapter, CNetPage, CPerfPage, CProcInfo, CProcPage, CSvcPage, 
+CTaskPage, CUserPage.
+
+Apparently, each class corresponds to each tab in Task Manager.
+
+Let's visit each call and add comment with the value which is passed as the first function argument.
+We will write \q{not zero} at some places, because the value there was clearly not zero, 
+but something really different (more about this in the second part of this chapter).
+
+And we are looking for zero passed as argument, after all.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{examples/taskmgr/IDA_xrefs.png}
+\caption{IDA: cross references to NtQuerySystemInformation()}
+\end{figure}
+
+Yes, the names are really speaking for themselves.
+
+When we closely investigate each place where\\
+\TT{NtQuerySystemInformation(0, ?, ?, ?)} is called,
+we quickly find what we need in the \TT{InitPerfInfo()} function:
+
+\lstinputlisting[caption=taskmgr.exe (Windows Vista),style=customasmx86]{examples/taskmgr/taskmgr.lst}
+
+\TT{g\_cProcessors} is a global variable, and this name has been assigned by 
+IDA according to the \gls{PDB} loaded from Microsoft's symbol server.
+
+The byte is taken from \TT{var\_C20}. 
+And \TT{var\_C58} is passed to\\
+\TT{NtQuerySystemInformation()} 
+as a pointer to the receiving buffer.
+The difference between 0xC20 and 0xC58 is 0x38 (56).
+
+Let's take a look at format of the return structure, which we can find in MSDN:
+
+\begin{lstlisting}[style=customc]
+typedef struct _SYSTEM_BASIC_INFORMATION {
+    BYTE Reserved1[24];
+    PVOID Reserved2[4];
+    CCHAR NumberOfProcessors;
+} SYSTEM_BASIC_INFORMATION;
+\end{lstlisting}
+
+This is a x64 system, so each PVOID takes 8 byte.
+
+All \IT{reserved} fields in the structure take $24+4*8=56$ bytes.
+
+Oh yes, this implies that \TT{var\_C20} is the local stack is exactly the
+\TT{NumberOfProcessors} field of the \TT{SYSTEM\_BASIC\_INFORMATION} structure.
+
+Let's check our guess.
+Copy \TT{taskmgr.exe} from \TT{C:\textbackslash{}Windows\textbackslash{}System32} 
+to some other folder 
+(so the \IT{Windows Resource Protection} 
+will not try to restore the patched \TT{taskmgr.exe}).
+
+Let's open it in Hiew and find the place:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{examples/taskmgr/hiew2.png}
+\caption{Hiew: find the place to be patched}
+\end{figure}
+
+Let's replace the \TT{MOVZX} instruction with ours.
+Let's pretend we've got 64 CPU cores.
+
+Add one additional \ac{NOP} (because our instruction is shorter than the original one):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{examples/taskmgr/hiew1.png}
+\caption{Hiew: patch it}
+\end{figure}
+
+And it works!
+Of course, the data in the graphs is not correct.
+
+At times, Task Manager even shows an overall CPU load of more than 100\%.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{examples/taskmgr/taskmgr_64cpu_crop.png}
+\caption{Fooled Windows Task Manager}
+\end{figure}
+
+The biggest number Task Manager does not crash with is 64.
+
+Apparently, Task Manager in Windows Vista was not tested on computers with a large number of cores.
+
+So there are probably some static data structure(s) inside it limited to 64 cores.
+
+\subsection{Using LEA to load values}
+\label{TaskMgr_LEA}
+
+Sometimes, \TT{LEA} is used in \TT{taskmgr.exe} instead of \TT{MOV} to set the first argument of \\
+\TT{NtQuerySystemInformation()}:
+
+\lstinputlisting[caption=taskmgr.exe (Windows Vista),style=customasmx86]{examples/taskmgr/taskmgr2.lst}
+
+\myindex{x86!\Instructions!LEA}
+
+Perhaps \ac{MSVC} did so because machine code of \INS{LEA} is shorter than \INS{MOV REG, 5} (would be 5 instead of 4).
+
+\INS{LEA} with offset in $-128..127$ range (offset will occupy 1 byte in opcode) with 32-bit registers is even shorter (for lack of REX prefix)---3 bytes.
+
+Another example of such thing is: \myref{using_MOV_and_pack_of_LEA_to_load_values}.

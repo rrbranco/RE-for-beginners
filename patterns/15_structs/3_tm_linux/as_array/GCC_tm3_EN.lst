@@ -1,0 +1,36 @@
+main            proc near
+                push    ebp
+                mov     ebp, esp
+                push    esi
+                push    ebx
+                and     esp, 0FFFFFFF0h
+                sub     esp, 40h
+                mov     dword ptr [esp], 0 ; timer
+                lea     ebx, [esp+14h]
+                call    _time
+                lea     esi, [esp+38h]
+                mov     [esp+4], ebx    ; tp
+                mov     [esp+10h], eax
+                lea     eax, [esp+10h]
+                mov     [esp], eax      ; timer
+                call    _localtime_r
+                nop
+                lea     esi, [esi+0]	; NOP
+loc_80483D8:
+; EBX here is pointer to structure, ESI is the pointer to the end of it.
+                mov     eax, [ebx]	; get 32-bit word from array
+                add     ebx, 4          ; next field in structure
+                mov     dword ptr [esp+4], offset a0x08xD ; "0x%08X (%d)\n"
+                mov     dword ptr [esp], 1
+                mov     [esp+0Ch], eax	; pass value to printf()
+                mov     [esp+8], eax	; pass value to printf()
+                call    ___printf_chk
+                cmp     ebx, esi        ; meet structure end?
+                jnz     short loc_80483D8	; no - load next value then
+                lea     esp, [ebp-8]
+                pop     ebx
+                pop     esi
+                pop     ebp
+                retn
+main            endp
+

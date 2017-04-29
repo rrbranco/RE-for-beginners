@@ -1,0 +1,102 @@
+\subsubsection{ARM64}
+
+\myparagraph{GCC}
+
+Das Beispiel wird im Folgenden mit GCC 4.1.8 in ARM64 kompiliert:
+
+\lstinputlisting[numbers=left,label=hw_ARM64_GCC,caption=\NonOptimizing GCC 4.8.1 + objdump,style=customasmARM]{patterns/01_helloworld/ARM/hw.lst}
+
+Es gibt keine Thumb- oder Thumb-2-Modes in ARM64, sondern nur ARM, also 32-Bit-Anweisungen.
+Die Register-Anzahl ist verdoppelt: \myref{ARM64_GPRs}.
+64-Bit-Register haben einen \TT{X-}Prefix, 32-Bit-Teile ein \TT{W-}.
+
+\myindex{ARM!\Instructions!STP}
+Die \TT{STP}-Anweisung (\IT{Store Pair}) speichert zwei Register auf dem Stack gleichzeitig:
+\RegX{29} und \RegX{30}.
+
+Natürlich kann diese Anweisung dieses Registerpaar an einer beliebigen Stelle im Speicher
+sichern, aber da hier das \ac{SP}-Register angegeben ist, wird das Paar auf dem Stack gesichert.
+
+ARM64-Register sind 64 Bit breit, jedes von ihnen ist 8 Byte groß. Dementsprechend werden 16 Byte
+für das Speichern zweier Register benötigt.
+
+Das Ausrufungszeichen (``!'')  nach dem Operanden bedeutet, dass zunächst der Wert 16 vom \ac{SP}
+subtrahiert werden muss und erst dann die Werte vom Register-Paar auf den Stack geschrieben werden.
+Dies wird auch \IT{pre-index} genannt.
+Mehr über den Unterschied von \IT{post-index} und \IT{pre-index} ist im Abschnitt
+\myref{ARM_postindex_vs_preindex} zu finden.
+
+Im Sprachgebrauch des gebräuchlicheren x86, ist die erste Anweisung analog zu den Anweisungen
+\TT{PUSH X29} und \TT{PUSH X30} zu verstehen.
+\RegX{29} wird als \ac{FP} in ARM64 genutzt, und \RegX{30} als \ac{LR}, weswegen sie am Anfang der
+Funktion gesichert und am Ende wiederhergestellt werden.
+
+Die zweite Anweisung kopiert \ac{SP} in \RegX{29} (oder \ac{FP}) um den Stack Frame vorzubereiten.
+
+\label{pointers_ADRP_and_ADD}
+\myindex{ARM!\Instructions!ADRP/ADD pair}
+\TT{ADRP} und \ADD-Anweisungen werden genutzt um die Adresse der Zeichenkette \q{Hello!} in das
+Register \RegX{0} zu schreiben, da das erste Funktionsargument in an dieser Stelle übergeben wird. 
+
+Es gibt in ARM keine Anweisung, die eine große Zahl in einem Register sichern kann, weil die Länge der
+Anweisungen auf 4 Byte begrenzt ist. Siehe dazu auch \myref{ARM_big_constants_loading}).
+Aus diesem Grund müssen mehrere Anweisungen genutzt werden. Die erste (\TT{ADRP}) schreibt die Adresse
+der 4KiB-Page in der die Zeichenkette sich befindet in das Register \RegX{0}.
+Die zweite (\ADD) addiert lediglich den Rest der Adresse.
+Siehe dazu auch \myref{ARM64_relocs}.
+
+\TT{0x400000 + 0x648 = 0x400648}, und die Zeichenkette \q{Hello!} ist im \TT{.rodata} Daten-Segmet
+an dieser Adresse zu sehen.
+
+\myindex{ARM!\Instructions!BL}
+
+\puts wird anschließend mit der \TT{BL}-Anweisung aufgerufen. Dies wurde bereits diskutiert: \myref{puts}.
+
+\MOV schreibt 0 in \RegW{0}.
+\RegW{0} sind die niederwertigeren 32 Bit des 64-Bit-Registers \RegX{0}:
+
+\input{ARM_X0_register}
+
+Das Ergebnis der Funktion wird über \RegX{0} zurückgegeben und \main gibt 0 zurück.
+Dies ist also der Weg wie das Ergebnis vorbereitet wird.
+Der 32-Bit-Teil wird genutzt,weil der \Tint-Datentyp in ARM64 aus Kompatibilitätsgründen,
+wie in x86-64, 32 Bit breit ist.
+
+Da die Funktion einen 32-Bit \Tint-Wert zurück gibt, müssen lediglich die unteren 32 Bits des
+\RegX{0}-Registers gefüllt werden.
+
+Um dies zu überprüfen wird das Beispiel leicht verändert und neu kompiliert.
+\main soll nun einen 64-Bit-Wert zurück geben:
+
+\begin{lstlisting}[caption=\main gibt einen \TT{uint64\_t}-Datentyp zurück,style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+uint64_t main()
+{
+        printf ("Hello!\n");
+        return 0;
+}
+\end{lstlisting}
+
+Das Ergebnis ist das gleiche, allerdings sieht \MOV nun wie folgt aus:
+
+\begin{lstlisting}[caption=\NonOptimizing GCC 4.8.1 + objdump]
+  4005a4:       d2800000        mov     x0, #0x0      // #0
+\end{lstlisting}
+
+\myindex{ARM!\Instructions!LDP}
+
+\INS{LDP} (\IT{Load Pair}) stellt anschließend die Register \RegX{29} und \RegX{30} wieder her.
+
+An dieser Stelle steht kein Ausrufungszeichen nach der Anweisung: dies impliziert, dass der Wert zunächst
+vom Stack gelesen wird und erst dann wird \ac{SP} um den Wert 16 verringert.
+Dies wird \IT{post-index} genannt.
+
+\myindex{ARM!\Instructions!RET}
+Eine neue Anweisung taucht hier in ARM64 auf \RET.
+Diese arbeitet wie \TT{BX LR}, jedoch wird ein spezielles \IT{Hinweis-}Bit hinzugefügt, welches die \ac{CPU}
+darüber informiert, dass dies ein Rücksprung aus einer Funktion ist und kein anderer Sprung, so dass die
+Ausführung optimiert werden kann.
+
+Aufgrund der Einfachheit dieser Funktion, erstellt der optimierende GCC den gleichen Code.

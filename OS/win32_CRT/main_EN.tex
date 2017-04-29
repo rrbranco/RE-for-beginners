@@ -1,0 +1,115 @@
+\subsection{CRT (win32)}
+\label{sec:CRT}
+\myindex{CRT}
+
+Does the program execution start right at the \main{} function?
+No, it does not.
+
+If we would open any executable file in \IDA or HIEW, 
+we can see \ac{OEP} pointing to some another code block.
+
+This code is doing some maintenance and preparations before passing control flow to our code.
+It is called startup-code or CRT code (C RunTime). \\
+\\
+The \main{} function takes an array of the arguments passed on the command line, and also
+one with environment variables.
+But in fact a generic string is passed to the program,
+the CRT code finds the spaces in it and cuts it in parts.
+The CRT code also prepares the environment
+variables array \TT{envp}.
+
+As for \ac{GUI} win32 applications, \TT{WinMain} is used instead of \main{}, having its own arguments:
+
+\begin{lstlisting}[style=customc]
+int CALLBACK WinMain(
+  _In_  HINSTANCE hInstance,
+  _In_  HINSTANCE hPrevInstance,
+  _In_  LPSTR lpCmdLine,
+  _In_  int nCmdShow
+);
+\end{lstlisting}
+
+The CRT code prepares them as well.
+
+Also, the number returned by the \main{} function is the exit code.
+
+It may be passed in CRT to the \TT{ExitProcess()} function, which takes the exit code as an argument. \\
+\\
+Usually, each compiler has its own CRT code. \\
+\\
+Here is a typical CRT code for MSVC 2008.
+
+\lstinputlisting[numbers=left,style=customasmx86]{OS/win32_CRT/crt_msvc_2008.asm}
+
+Here we can see calls to \TT{GetCommandLineA()} (line 62),
+then to \TT{setargv()} (line 66) and \TT{setenvp()} (line 74),
+which apparently fill the global variables
+\TT{argc}, \TT{argv}, \TT{envp}.
+
+Finally, \main{} is called with these arguments (line 97).
+
+There are also calls to functions
+with self-describing names like \TT{heap\_init()} (line 35), \TT{ioinit()} (line 54).
+
+The \glslink{heap}{heap} is indeed initialized in the \ac{CRT}.
+If you try to use \TT{malloc()} in a program without CRT, it will exit abnormally with the following error:
+
+\begin{lstlisting}
+runtime error R6030
+- CRT not initialized
+\end{lstlisting}
+
+Global object initializations in \Cpp is also occur in the \ac{CRT} before the execution of \main{}: 
+\myref{sec:std_string_as_global_variable}.
+
+The value that \main{} returns is passed to \TT{cexit()}, 
+or in \TT{\$LN32}, which in turn calls \TT{doexit()}.
+
+Is it possible to get rid of the \ac{CRT}?
+Yes, if you know what you are doing.
+
+The \ac{MSVC}'s linker has the \TT{/ENTRY} option for setting an entry point.
+
+\begin{lstlisting}[style=customc]
+#include <windows.h>
+
+int main()
+{
+	MessageBox (NULL, "hello, world", "caption", MB_OK);
+};
+\end{lstlisting}
+
+Let's compile it in MSVC 2008.
+
+\begin{lstlisting}
+cl no_crt.c user32.lib /link /entry:main
+\end{lstlisting}
+
+We are getting a runnable .exe with size 2560 bytes, that has a PE header in it, instructions calling
+\TT{MessageBox}, two strings in the data segment,
+the \TT{MessageBox} function imported from \TT{user32.dll} and nothing else.
+
+This works, but you cannot write \TT{WinMain} with its 4 arguments instead of \main{}.
+
+To be precise, you can, but the arguments are not prepared at the moment of execution.
+
+By the way, it is possible to make the .exe even 
+shorter by aligning the \ac{PE} sections at less than the default 4096 bytes.
+
+\begin{lstlisting}
+cl no_crt.c user32.lib /link /entry:main /align:16
+\end{lstlisting}
+
+Linker says:
+
+\begin{lstlisting}
+LINK : warning LNK4108: /ALIGN specified without /DRIVER; image may not run
+\end{lstlisting}
+
+We get an .exe that's 720 bytes.
+It can be executed in Windows 7 x86, but not in x64 
+(an error message will be shown when you try to execute it).
+
+With even more efforts, it is possible
+to make the executable even shorter, but as you can see, compatibility problems arise quickly.
+

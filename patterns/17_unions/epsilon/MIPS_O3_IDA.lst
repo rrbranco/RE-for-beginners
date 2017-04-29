@@ -1,0 +1,7 @@
+calculate_machine_epsilon:
+                mfc1    $v0, $f12
+                or      $at, $zero ; NOP
+                addiu   $v1, $v0, 1
+                mtc1    $v1, $f2
+                jr      $ra
+                sub.s   $f0, $f2, $f12 ; branch delay slot

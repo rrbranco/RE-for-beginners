@@ -1,0 +1,119 @@
+\subsection{\IT{LD\_PRELOAD} hack in Linux}
+
+\myindex{LD\_PRELOAD}
+\label{ld_preload}
+
+This allows us to load our own dynamic libraries before others, even before system ones, like libc.so.6.
+
+This, in turn, allows us to \q{substitute} our written functions before the original ones in the system libraries.
+For example, it is easy to intercept all calls to 
+time(), read(), write(), etc. \\
+\\
+\myindex{uptime}
+Let's see if we can fool the \IT{uptime} utility.
+As we know, it tells how long the computer has been working.
+\myindex{strace}
+With the help of strace(\myref{strace}), it is possible to see that the utility takes this information the \TT{/proc/uptime} file:
+
+\begin{lstlisting}
+$ strace uptime 
+...
+open("/proc/uptime", O_RDONLY)          = 3
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "416166.86 414629.38\n", 2047)  = 20
+...
+\end{lstlisting}
+
+It is not a real file on disk, it is a virtual one and its contents are generated on fly in the Linux kernel.
+There are just two numbers:
+
+\begin{lstlisting}
+$ cat /proc/uptime
+416690.91 415152.03
+\end{lstlisting}
+
+What we can learn from Wikipedia
+\footnote{\href{http://go.yurichev.com/17043}{wikipedia}}:
+
+\begin{framed}
+\begin{quotation}
+The first number is the total number of seconds the system has been up.
+The second number is how much of that time the machine has spent idle, in seconds.
+\end{quotation}
+\end{framed}
+
+\myindex{\CStandardLibrary!open()}
+\myindex{\CStandardLibrary!read()}
+\myindex{\CStandardLibrary!close()}
+
+Let's try to write our own dynamic library with the open(), read(), close() 
+functions working as we need.
+
+At first, our open() will compare the name of the file to be opened with what we need and if it is so,
+it will write down the descriptor of the file opened.
+
+Second, read(), if called for this file descriptor, will substitute the output,
+and in the rest of the cases will call the original read() from libc.so.6.
+And also close(), 
+will note if the file we are currently following is to be closed.
+
+\myindex{dlopen()}
+\myindex{dlsym()}
+
+We are going to use the dlopen() and dlsym() functions to determine the original function addresses in libc.so.6.
+
+We need them because we must pass control to the \q{real} functions.
+
+\myindex{\CStandardLibrary!strcmp()}
+
+On the other hand, if we intercepted strcmp() and monitored each string
+comparisons in the program, then we would have to implement our version of strcmp(), and not
+use the original function
+\footnote{For example, here is how simple strcmp() interception works in this article
+\footnote{\href{http://go.yurichev.com/17143}{yurichev.com}}
+written by Yong Huang}, that would be easier.
+
+\lstinputlisting[style=customc]{OS/LD_PRELOAD/fool_uptime.c}
+( \href{https://github.com/dennis714/RE-for-beginners/blob/master/OS/LD_PRELOAD/fool_uptime.c}{Source code at GitHub} )
+% FIXME go.yurichev.com...
+
+Let's compile it as common dynamic library:
+
+\begin{lstlisting}
+gcc -fpic -shared -Wall -o fool_uptime.so fool_uptime.c -ldl
+\end{lstlisting}
+
+Let's run \IT{uptime}
+while loading our library before the others:
+
+\begin{lstlisting}
+LD_PRELOAD=`pwd`/fool_uptime.so uptime
+\end{lstlisting}
+
+And we see:
+
+\begin{lstlisting}
+ 01:23:02 up 24855 days,  3:14,  3 users,  load average: 0.00, 0.01, 0.05
+\end{lstlisting}
+
+If the \IT{LD\_PRELOAD} 
+
+environment variable always points to the filename and path of our library, 
+it is to be loaded for all starting programs. \\
+\\
+More examples:
+
+\begin{itemize}
+
+\item
+Very simple interception of the strcmp() (Yong Huang) 
+\url{http://go.yurichev.com/17143}
+
+\item
+Kevin Pulo---Fun with LD\_PRELOAD. A lot of examples and ideas.
+\href{http://go.yurichev.com/17145}{yurichev.com}
+
+\item
+File functions interception for compression/decompression files on fly (zlibc). \url{http://go.yurichev.com/17146}
+
+\end{itemize}

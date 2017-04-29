@@ -1,0 +1,29 @@
+00000000: B001         mov         al,1        ; set 40x25 video mode
+00000002: CD10         int         010
+00000004: 30FF         xor         bh,bh       ; set video page for int 10h call
+00000006: B9D007       mov         cx,007D0    ; 2000 characters to output
+00000009: 31C0         xor         ax,ax
+0000000B: 9C           pushf                   ; push flags
+; get random value from timer chip
+0000000C: FA           cli                     ; disable interrupts
+0000000D: E643         out         043,al      ; write 0 to port 43h
+; read 16-bit value from port 40h
+0000000F: E440         in          al,040
+00000011: 88C4         mov         ah,al
+00000013: E440         in          al,040
+00000015: 9D           popf                    ; enable interrupts by restoring IF flag
+00000016: 86C4         xchg        ah,al
+; here we have 16-bit pseudorandom value
+00000018: D1E8         shr         ax,1
+0000001A: D1E8         shr         ax,1
+; CF currently have second bit from the value
+0000001C: B05C         mov         al,05C ;'\'
+; if CF=1, skip the next instruction
+0000001E: 7202         jc          000000022
+; if CF=0, reload AL register with another character
+00000020: B02F         mov         al,02F ;'/'
+; output character
+00000022: B40E         mov         ah,00E
+00000024: CD10         int         010
+00000026: E2E1         loop        000000009 ; loop 2000 times
+00000028: CD20         int         020       ; exit to DOS

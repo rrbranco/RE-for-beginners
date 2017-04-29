@@ -1,0 +1,29 @@
+                 xor     r9d, r9d
+                 div     dword ptr [rsp+4C8h+WndClass.lpfnWndProc]
+                 lea     rdx, [rsp+4C8h+VersionInformation]
+                 lea     ecx, [r9+2]     ; put 2 to ECX
+                 mov     r8d, 138h
+                 mov     ebx, eax
+; ECX=SystemPerformanceInformation
+                 call    cs:__imp_NtQuerySystemInformation ; 2
+
+                 ...
+
+                 mov     r8d, 30h
+                 lea     r9, [rsp+298h+var_268]
+                 lea     rdx, [rsp+298h+var_258]
+                 lea     ecx, [r8-2Dh]   ; put 3 to ECX
+; ECX=SystemTimeOfDayInformation
+                 call    cs:__imp_NtQuerySystemInformation ; not zero
+
+                 ...
+
+                 mov     rbp, [rsi+8]
+                 mov     r8d, 20h
+                 lea     r9, [rsp+98h+arg_0]
+                 lea     rdx, [rsp+98h+var_78]
+                 lea     ecx, [r8+2Fh]   ; put 0x4F to ECX
+                 mov     [rsp+98h+var_60], ebx
+                 mov     [rsp+98h+var_68], rbp
+; ECX=SystemSuperfetchInformation
+                 call    cs:__imp_NtQuerySystemInformation ; not zero

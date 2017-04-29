@@ -1,0 +1,65 @@
+\section{SIMD}
+
+\label{SIMD_x86}
+\ac{SIMD} ist ein Akronym: \IT{Single Instruction, Multiple Data}.
+Wie der Name schon sagt, verarbeitet SIMD mehrere Daten in nur einem Befehl.
+
+Wie die \ac{FPU} sieht das \ac{CPU}-Subsystem wie ein separater Prozessor innerhalb von x86 aus.
+
+\myindex{x86!MMX}
+
+SIMD begann als MMX in x86. 8 neue 64-Bit-Register erschienen: MM0-MM7.
+
+Jedes MMX Register kann 2 32-Bit-Werte, 4 16-Bit-Werte oder 8 Byte aufnehmen.
+Es ist zum Beispiel möglich, 8 8-Bit-Werte gleichzeitig zu addieren, indem zwei Werte in MMX Registern addiert werden.
+
+Ein einfaches Beispiel ist ein Graphikeditor, der ein Bild als ein zweidimensionales Array darstellt.
+Wenn der User die Helligkeit des Bildes verändert, muss der Editor einen bestimmten Koeffizienten zu jedem Pixelwert
+addieren bzw. von ihm subtrahieren.
+Wenn wir um es einfach zu halten annehmen, dass das Bild in schwarzweiß ist und jeder Pixel durch ein Byte definiert
+ist, dann ist es möglich die Helligkeit von 8 Pixeln gleichzeitig zu verändern.
+
+Das ist übrigens der Grund dafür, dass es in SIMB die Sättigungsbefehle gibt.
+
+Wenn der User die Helligkeit im Graphikeditor verändert, sind Überlauf und Unterlauf nicht erwünscht, weshalb es in SIMD
+Additionsbefehle gibt, die nicht weiter addieren, wenn der Maximalwert bereits erreicht its, etc.
+
+Als MMX erschien befanden sich diese Register räumlich innerhalb der FPU Register.
+Es war möglich entweder die FPU oder MMX zur gleichen Zeit zu benutzen. Man könnte meinen, dass Intel dieses Layout
+gewählt hat um Transistoren zu sparen, aber der wirkliche Grund für diese Symbiose ist trivialer~---ältere
+Betriebssysteme, die die zusätzlichen CPU Register nicht erwarteten, hätten deren Inhalte nicht gesichert, sicherten
+aber sehr wohl den Inhalt der FPU Register.
+Dadurch funktioniert die Kombination aus MMX CPU und altem Betriebssystem, wenn MMX Features verwendet werden. 
+
+\myindex{x86!SSE}
+\myindex{x86!SSE2}
+SSE ist eine Erweriterung der SIMB Register auf 128 Bit. Die Register sind hier von der FPU getrennt.
+
+\myindex{x86!AVX}
+AVX ist eine andere Erweiterung--auf 256 Bits.
+Kommen wir nun zur Verwendung in der Praxis.
+Natürlich gibt es Funktionen zum Kopieren (\TT{memcpy}) oder Vergleichen (\TT{memcmp}) von Speicherblöcken etc.
+
+\myindex{DES}
+Ein weiteres Beispiel: der DES-Verschlüsselungsalgorithmus nimmt einen 64-Bit-Block und einen 56-Bit-Key, verschlüsselt
+den Block und erzeugt ein 64-Bit-Ergebnis. 
+Der DES-Algorithmus kann als sehr großer Schaltkreis aus Drähten und AND/OR/NOT-Gattern aufgefasst werden.
+
+\label{bitslicedes}
+\newcommand{\URLBS}{\url{http://go.yurichev.com/17329}}
+Hinter Bitslice DES\footnote{\URLBS}~---steckt die Idee, mehrere Gruppen von Blöcken und Schlüsseln simultan zu
+verarbeiten. Eine Variable vom Typ \IT{unsigned int} umfasst in x86 beispielsweise 32 Bit, sodass es möglich ist, in ihr
+die Zwischenergebnisse für 32 Block-Schlüssel-Paare gleichzeitig zu speichern, indem $64+56$ Variablen vom Typ
+\IT{unsigned int} verwendet werden.
+
+\myindex{\oracle}
+Es gibt es Tool um \oracle Passwörter und Hashes (die auf DES basieren) per Brute-Force zu knacken. Hierbei wird ein nur
+wenig veränderter Bitslice-DES-Algorithmus für SSE2 und AVX verwendet---nun ist es möglich, 128 oder 256
+Block-Schlüssel-Paare simultan zu verschlüsseln.
+
+\url{http://go.yurichev.com/17313}
+
+% sections
+\input{patterns/19_SIMD/vectorization_DE.tex}
+\input{patterns/19_SIMD/strlen_DE.tex}
+

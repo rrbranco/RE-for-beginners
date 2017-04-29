@@ -1,0 +1,93 @@
+\subsubsection{x86}
+
+\myparagraph{\NonOptimizing MSVC}
+
+Это дает в итоге (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/08_switch/1_few/few_msvc.asm}
+
+Наша функция со оператором switch(), с небольшим количеством вариантов, 
+это практически аналог подобной конструкции:
+
+\lstinputlisting[label=switch_few_ifelse,style=customc]{patterns/08_switch/1_few/few_analogue.c}
+
+\myindex{\CLanguageElements!switch}
+\myindex{\CLanguageElements!if}
+Когда вариантов немного и мы видим подобный код, невозможно сказать с уверенностью, был ли
+в оригинальном исходном коде switch(), либо просто набор операторов if().
+
+\myindex{\SyntacticSugar}
+То есть, switch() это синтаксический сахар для большого количества вложенных проверок 
+при помощи if().
+
+В самом выходном коде ничего особо нового, 
+за исключением того, что компилятор зачем-то 
+перекладывает входящую переменную ($a$) во временную в локальном стеке \TT{v64}\footnote{Локальные переменные в стеке с префиксом \TT{tv}~--- 
+так MSVC называет внутренние переменные для своих нужд}.
+
+Если скомпилировать это при помощи GCC 4.4.1, то будет почти то же самое, даже с максимальной оптимизацией (ключ \Othree).
+
+\myparagraph{\Optimizing MSVC}
+
+% TODO separate various kinds of \TT
+% idea: enclose command lines in a specific environment, like \cmdline{} 
+% assembly instructions in \asm{} (now both \TT and \q{} are used),
+% variables in,  like \var{}
+% messages (string constants) in something else, like \strconst
+% to separate them all. Now they all use \TT, which is not best
+% \INS{} for all instructions including operands? --DY
+
+Попробуем включить оптимизацию кодегенератора MSVC (\Ox): \TT{cl 1.c /Fa1.asm /Ox}
+
+\label{JMP_instead_of_RET}
+\lstinputlisting[caption=MSVC,style=customasmx86]{patterns/08_switch/1_few/few_msvc_Ox.asm}
+
+Вот здесь уже всё немного по-другому, причем не без грязных трюков.
+
+\myindex{x86!\Instructions!JZ}
+\myindex{x86!\Instructions!JE}
+\myindex{x86!\Instructions!SUB}
+Первое: \TT{а} помещается в \EAX и от него отнимается 0. Звучит абсурдно, но нужно это для того, чтобы проверить, 
+0 ли в \EAX был до этого? Если да, то выставится флаг \ZF (что означает, что результат вычитания 0 от числа 
+стал 0) и первый условный переход \JE (\IT{Jump if Equal} или его синоним \JZ~--- \IT{Jump if Zero}) 
+сработает на метку \TT{\$LN4@f}, где выводится сообщение \TT{'zero'}.
+Если первый переход не сработал, от значения отнимается по единице, 
+и если на какой-то стадии в результате образуется 0, то сработает соответствующий переход.
+
+И в конце концов, если ни один из условных переходов не сработал, управление передается \printf
+со строковым аргументом \TT{'something unknown'}.
+
+\label{jump_to_last_printf}
+\myindex{\Stack}
+Второе: мы видим две, мягко говоря, необычные вещи: указатель на сообщение помещается в переменную $a$, 
+и затем \printf вызывается не через \CALL, а через \JMP. Объяснение этому простое. 
+Вызывающая функция заталкивает в стек некоторое значение и через \CALL вызывает нашу функцию. 
+\CALL в свою очередь заталкивает в стек адрес возврата (\ac{RA}) и делает безусловный переход на адрес нашей функции. 
+Наша функция в самом начале (да и в любом её месте, потому что в теле функции нет ни одной инструкции, 
+которая меняет что-то в стеке или в \ESP) имеет следующую разметку стека:
+
+\begin{itemize}
+\item\ESP --- хранится \ac{RA}
+\item\TT{ESP+4} --- хранится значение $a$ 
+\end{itemize}
+
+С другой стороны, чтобы вызвать \printf, нам нужна почти такая же разметка стека, 
+только в первом аргументе нужен указатель на строку. Что, собственно, этот код и делает.
+
+Он заменяет свой первый аргумент на адрес строки, и затем передает управление \printf, как если бы вызвали не 
+нашу функцию \ttf, а сразу \printf. 
+\printf выводит некую строку на \gls{stdout}, затем исполняет инструкцию \RET, 
+которая из стека достает \ac{RA} и управление передается в ту функцию, 
+которая вызывала \ttf, минуя при этом конец функции \ttf.
+
+\myindex{\CStandardLibrary!longjmp()}
+\newcommand{\URLSJ}{\href{http://go.yurichev.com/17121}{wikipedia}}
+% TODO \myref{}
+Всё это возможно, потому что \printf вызывается в \ttf в самом конце. 
+Всё это чем-то даже похоже на \TT{longjmp()}\footnote{\URLSJ}.
+И всё это, разумеется, сделано для экономии времени исполнения.
+
+Похожая ситуация с компилятором для ARM описана в секции \q{\PrintfSeveralArgumentsSectionName}~(\myref{ARM_B_to_printf}).
+
+\input{patterns/08_switch/1_few/olly_RU.tex}
+

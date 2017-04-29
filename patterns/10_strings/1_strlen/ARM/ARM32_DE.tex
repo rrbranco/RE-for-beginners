@@ -1,0 +1,119 @@
+\myparagraph{32-bit ARM}
+
+\mysubparagraph{\NonOptimizingXcodeIV (\ARMMode)}
+
+\lstinputlisting[caption=\NonOptimizingXcodeIV
+(\ARMMode),label=ARM_leaf_example7,style=customasmARM]{patterns/10_strings/1_strlen/ARM/xcode_ARM_O0_DE.asm}
+
+Der nicht optimierende LLVM erzeugt zu viel Code, aber wir können wir erkennen
+wir die Funktion mit lokalen Variablen auf dem Stack arbeitet. 
+Es gibt nur zwei lokale Variablen in unserer Funktion: \IT{eos} und \IT{str}.
+In folgenden von \IDA erzeugten Listing, sind die Variablen \IT{var\_8} und
+\IT{var\_4} in \IT{eos} bzw. \IT{str} umbenannt.
+
+Der erste Befehl speichert lediglich bei Eingabewerte in \IT{str} und \IT{eos}.
+
+Der Körper der Schleife startet beim Label \IT{loc\_2CB8}.
+
+Die ersten drei Befehle des Schleifenkörpers (\TT{LDR}, \ADD, \TT{STR}) laden
+den Wert von \IT{eos} nach \Reg{0}. 
+Anschließend wird der Wert erhöht und zurück in \IT{eos} auf den Stack
+geschrieben.
+
+\myindex{ARM!\Instructions!LDRSB}
+Der folgende Befehl, \TT{LDRSB R0, [R0]} (\q{Load Register Signed Byte}), lädt
+ein Byte aus dem Speicher von der Adresse in \Reg{0} und erweitert es mit
+Vorzeichen auf 32-bit.
+\footnote{Der Keil Compiler behandelt den Typ \Tchar als signed, genau wie
+MSVC und GCC.}.
+\myindex{x86!\Instructions!MOVSX}
+Dies ist vergleichbar zum \MOVSX Befehl in x86.
+
+Der Compiler behandelt dieses Byte als signed, das der \Tchar Typ nach dem
+C-Standard ebenfalls signed ist. 
+Dies wurde in Bezug auf x86 in diesem Abschnitt bereits in~(\myref{MOVSX})
+beschrieben.
+
+\myindex{Intel!8086}
+\myindex{Intel!8080}
+\myindex{ARM}
+
+Man beachte, dass es in ARM unmöglich ist, einen 8- oder 16-bit-Teil eines
+32-bit-Registers alleine zu verwenden, anderes als in x86.
+
+Dies rührt daher, dass x86 eine große Bandbreite and Kompatibilität mit
+Vorgängerversionen besitzt, bis hin zum 16-bit 8086 oder sogar dem 8-bit 8080,
+ARM auf der anderen Seite jedoch von Beginn an als 32-bit RISC-Prozessor geplant
+wurde.
+
+Infolgedessen müssen auch um einzelne Bytes in ARM zu verarbeiten, stets
+komplette 32-bit-Register verwendet werden.
+
+Der Befehl \TT{LDRSB} lädt nun die Bytes des String einzeln nach \Reg{0}.
+Die nachfolgenden \CMP und \ac{BEQ} Befehle prüfen, ob das aktuelle Byte 0 ist.
+Wenn nicht, beginnt der Körper der Schleife erneut.
+Und wenn das aktuelle Byte 0 ist, dann wird die Schleife beendet.
+
+Am Ende der Funktion wird die Differenz zwischen \IT{eos} und \IT{str}
+berechnet, 1 vom Ergebnis abgezogen und das Resultat über das Register \Reg{0}
+zurückgegeben.
+
+N.B. Register wurden in dieser Funktion nicht gespeichert.
+\myindex{ARM!\Registers!scratch registers}
+Das liegt daran, dass gemäß der ARM Aufrufkonventionen die Register \Reg{0} bis
+\Reg{3} sogenannte \q{scratch register} sind, vorgesehen für Parameterübergaben.
+Deshalb ist es nicht notwendig ihren Inhalt am Ende der Funktion
+wiederherzustellen, denn die aufrufende Funktion wird diese Werte nicht weiter
+verwenden. 
+Im weiteren können diese für alles Mögliche benutzt werden.
+
+Es werden hier keine weiteren Register verwendet, sodass wir nichts auf dem
+Stack speichern müssen. 
+
+Dadurch kann der control flow über einen einfachen Sprung (\TT{BX}) an die
+aufrufende Funktion an der Adresse im \ac{LR} Register übergeben werden.
+
+\mysubparagraph{\OptimizingXcodeIV (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingXcodeIV (\ThumbMode),style=customasmARM]{patterns/10_strings/1_strlen/ARM/xcode_thumb_O3.asm}
+Der optimierende LLVM entscheidet also, dass \IT{eos} und \IT{str} keinen Platz
+auf dem Stack benötigen, sondern stets in Registern gespeichert werden können. 
+
+Vor dem Anfang des Schleifenkörpers befindet sich \IT{str} stets in \Reg{0} und
+\IT{eos} in \Reg{1}.
+
+\myindex{ARM!\Instructions!LDRB.W}
+Der Befehl \TT{LDRB.W R2, [R1],\#1} lädt ein Byte aus dem Speicher von der
+Adresse aus \Reg{1} nach \Reg{2}, erweitert es zum einem signed 32-bit-Wert und
+mehr noch: Das \TT{\#1} am Ende des Befehl bewirkt \q{Post-indexed addressing},
+was bedeutet, dass 1 zum Register \Reg{1} addiert wird, nachdem das Byte geladen
+wurde.
+Mehr zum Thema:\myref{ARM_postindex_vs_preindex}. 
+
+Des Weiteren finden wir \CMP und \ac{BNE} im Körper der Schleife; diese Befehle
+werden durchlaufen, bis 0 im String gefunden wurde.
+
+\myindex{ARM!\Instructions!MVNS}
+\myindex{x86!\Instructions!NOT}
+\TT{MVNS}\footnote{MoVe Not} (invertiert alle Bits wie \NOT in x86) und \ADD
+Befehle berechnen $eos - str - 1$.
+Tatsächlich berechnen diese beiden Befehle $R0 =
+~str + eos$, was äquivalent zur Formulierung im Quellcode ist und die Begründung
+dazu wurde bereits hier gegeben ~(\myref{strlen_NOT_ADD}).
+
+Offenbar befindet LLVM genau wie GCC, dass diese Code kürzer (oder schneller)
+ist.
+
+\mysubparagraph{\OptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),label=ARM_leaf_example6,style=customasmARM]{patterns/10_strings/1_strlen/ARM/Keil_ARM_O3.asm}
+
+\myindex{ARM!\Instructions!SUBEQ}
+
+Fast das gleiche wie zuvor, mit der Änderung, dass der $str - eos - 1$
+Ausdruck nicht am Ende der Funktion, sondern mitten in der Schleife berechnet
+wird. Wir erinnern uns, dass der \TT{-EQ} Suffix bedeutet, dass die dieser
+Befehl nur dann ausgeführt wird, wenn die Operanden im \CMP direkt davor gleich
+waren.
+Dadurch werden beide \TT{SUBEQ} Befehle ausgeführt, falls das \Reg{0} Register 0
+enthält und das Ergebnis verbleibt in \Reg{0}.

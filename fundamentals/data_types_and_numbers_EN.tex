@@ -1,0 +1,398 @@
+% TODO rework structure and hierarchy
+\section{Integral datatypes}
+
+Integral datatype is a type for a value which can be converted to number.
+These are numbers, enumerations, booleans.
+
+\subsection{Bit}
+
+Obvious usage for bits are boolean values: 0 for \IT{false} and 1 for \IT{true}.
+
+Set of booleans can be packed into \gls{word}: there will be 32 booleans in 32-bit word, etc.
+This way is called \IT{bitmap} or \IT{bitfield}.
+
+But it has obvious overhead: a bit jiggling, isolating, etc.
+While using \gls{word} (or \IT{int} type) for boolean variable is not economic, but highly efficient.
+
+In C/C++ environment, 0 is for \IT{false} and any non-zero value is for \IT{true}.
+For example:
+
+\lstinputlisting[style=customc]{fundamentals/data_types_and_numbers_EN_lst1.c}
+
+This is popular way of enumerating characters in a C-string:
+
+\lstinputlisting[style=customc]{fundamentals/data_types_and_numbers_EN_lst2.c}
+
+\subsection{Nibble AKA nybble}
+
+\ac{AKA} half-byte, tetrade.
+Equals to 4 bits.
+
+All these terms are still in use today.
+
+\subsubsection{Binary-coded decimal (\ac{BCD})}
+\label{BCD}
+
+\myindex{Intel 4004}
+
+4-bit nibbles were used in 4-bit CPUs like legendary Intel 4004 (used in calculators).
+
+It's interesting to know that there was \IT{binary-coded decimal} (\ac{BCD}) way of representing decimal digit using 4 bits.
+Decimal 0 is represented as 0b0000, decimal 9 as 0b1001 and higher values are not used.
+Decimal 1234 is represented as 0x1234.
+Of course, this way is not economical.
+
+Nevertheless, it has one advantage: decimal to \ac{BCD}-packed number conversion and back is extremely easy.
+BCD-numbers can be added, subtracted, etc., but an additional correction is needed.
+x86 CPUs has rare instructions for that:
+\INS{AAA}/\INS{DAA} (adjust after addition),
+\INS{AAS}/\INS{DAS} (adjust after subtraction),
+\INS{AAM} (after multiplication),
+\INS{AAD} (after division).
+
+\myindex{x86!\Registers!AF}
+The need for CPUs to support \ac{BCD} numbers is a reason why \IT{half-carry flag} (on 8080/Z80) and
+\IT{auxiliary flag} (\TT{AF} on x86)
+are exist: this is carry-flag generated after proceeding of lower 4 bits. The flag is then used for adjustment instructions.
+
+The fact of easy conversion had led to popularity of
+\InSqBrackets{Peter Abel, \IT{IBM PC assembly language and programming} (1987)} book.
+But aside of this book, the author of these notes never seen \ac{BCD} numbers in practice, except for
+\IT{magic numbers} (\myref{magic_numbers}),
+like when someone's birthday is encoded like 0x19861115---this is indeed packed \ac{BCD} number.
+
+\ac{BCD} instructions in x86 were often used for other purposes, especially in undocumented ways, for example:
+
+\begin{lstlisting}[style=customasmx86]
+	cmp al,10
+	sbb al,69h
+	das
+\end{lstlisting}
+
+This obscure code converts number in 0..15 range into \ac{ASCII} character '0'..'9', 'A'..'F'.
+
+\myparagraph{Z80}
+\myindex{Z80}
+
+Z80 was clone of 8-bit Intel 8080 CPU, and because of space constraints, it has 4-bit \ac{ALU}, i.e., each operation
+over two 8-bit numbers had to be proceeded in two steps.
+One side-effect of this was easy and natural generation of \IT{half-carry flag}.
+
+\subsection{Byte}
+
+Byte is primarily used for character storage.
+8-bit bytes were not common as today.
+Punched tapes for teletypes had 5 and 6 possible holes, this is 5 or 6 bits for byte.
+
+\myindex{octet}
+\myindex{fetchmail}
+To emphasize the fact the byte has 8 bits, byte is sometimes called \IT{octet}:
+it least \IT{fetchmail} uses this terminology.
+
+9-bit bytes were exist in 36-bit architectures: 4 9-bit bytes were fit in single \gls{word}.
+Probably because of this fact, C/C++ standard tells that \IT{char} has to have a room for \IT{at least} 8 bits, but more
+bits is allowable.
+
+\subsubsection{Standard ASCII table}
+
+7-bit ASCII table is standard, which has only 128 possible characters.
+Early E-Mail transport software were operating only on 7-bit ASCII codes, so a \ac{MIME} standard needed to encode messages
+in non-Latin writing systems.
+7-bit ASCII code was augmented by parity bit, resulting in 8 bits.
+
+\IT{Data Encryption Standard} (\ac{DES}) has a 56 bits key, this is 8 7-bit bytes,
+leaving a space to parity bit for each character.
+
+There is no need to memorize whole \ac{ASCII} table, but rather ranges.
+\InSqBrackets{0..0x1F} are not control characters (non-printable).
+\InSqBrackets{0x20..0x7E} are printable ones.
+Codes starting at 0x80 are usually used for non-Latin writing systems and/or pseudographics.
+
+Significant codes which will be easily memorized are:
+0 (end of C-string, \TT{'\textbackslash{}0'} in C/C++);
+0xA or 10 (\IT{line feed}, \TT{'\textbackslash{}n'} in C/C++);
+0xD or 13 (\IT{carriage return}, \TT{'\textbackslash{}r'} in C/C++).
+
+0x20 (space) is also often memorized.
+
+\subsubsection{8-bit CPUs}
+
+x86 has capability to work with byte(s) on register level (because they are descendants of 8-bit 8080 CPU),
+RISC CPUs like ARM and MIPS---not.
+
+\subsection{Wide char}
+\myindex{UTF-16}
+\myindex{UCS-2}
+
+This is attempt to support multi-lingual environment by extending byte to 16-bit.
+Most well-known example is Windows NT kernel and win32 functions with \IT{W} suffix.
+This is why each Latin character in plain English text string is interleaved with zero byte.
+This encoding is called UCS-2 or UTF-16
+
+Usually, \IT{wchar\_t} is synonym to 16-bit \IT{short} data type.
+
+\subsection{Signed integer vs unsigned}
+
+Some may argue, why unsigned data types exist at first place, since any unsigned number can be represented as signed.
+Yes, but absence of sign bit in a value extends its range twice.
+Hence, signed byte has range of -128..127, and unsigned one: 0..255.
+Another benefit of using unsigned data types is self-documenting:
+you define a variable which can't be assigned to negative values.
+
+\myindex{Java}
+Unsigned data types absent in Java, for which it's criticized.
+It's hard to implement cryptographical algorithms using boolean operations over signed data types.
+
+Values like 0xFFFFFFFF (-1) are used often, mostly as error codes.
+
+\subsection{Word}
+
+\Gls{word} word is somewhat ambiguous term and usually denotes a data type fitting in \ac{GPR}.
+Bytes are practical for characters, but impractical for other arithmetical calculations.
+
+Hence, many \ac{CPU}s has \ac{GPR}s with width of 16, 32 or 64 bits.
+Even 8-bit CPUs like 8080 and Z80 offers to work with 8-bit register pairs, each pair forms 16-bit \IT{pseudoregister}
+(\IT{BC}, \IT{DE}, \IT{HL}, etc.).
+Z80 has some capability to work with register pairs, and this is, in a sense, some kind of 16-bit CPU emulation.
+
+In general, if a CPU marketed as ``n-bit CPU'', this usually means it has n-bit \ac{GPR}s.
+
+There was a time when hard disks and \ac{RAM} modules were marketed as having \IT{n} kilo-words instead of
+\IT{b} kilobytes/megabytes.
+
+For example, \IT{Apollo Guidance Computer}\footnote{\url{https://en.wikipedia.org/wiki/Apollo_Guidance_Computer}}
+has 2048 words of \ac{RAM}.
+This was a 16-bit computer, so there was 4096 bytes of \ac{RAM}.
+
+\IT{TX-0}\footnote{\url{https://en.wikipedia.org/wiki/TX-0}} had 64K of 18-bit words of magnetic core memory,
+i.e., 64 kilo-words.
+
+\IT{DECSYSTEM-2060}\footnote{\url{https://en.wikipedia.org/wiki/DECSYSTEM-20}}
+could have up to 4096 kilowords of \IT{solid state memory}
+(i.e., hard disks, tapes, etc).
+This was 36-bit computer, so this is 18432 kilobytes or ~18 megabytes.
+
+\myhrule{}
+
+\IT{int} in C/C++ is almost always mapped to \gls{word}.
+(Except of AMD64 architecture where \IT{int} is still 32-bit one, perhaps, for the reason of better portability.)
+
+\IT{int} is 16-bit on PDP-11 and old MS-DOS compilers.
+\IT{int} is 32-bit on VAX, on x86 starting at 80386, etc.
+
+Even more than that, if type declaration for a variable is omitted in C/C++ program, \IT{int} is used silently by default.
+Perhaps, this is inheritance of B programming language\footnote{\url{http://yurichev.com/blog/typeless/}}.
+
+\myhrule{}
+
+\ac{GPR} is usually fastest container for variable, faster than packed bit,
+and sometimes even faster than byte (because there is no need to isolate a single bit/byte from \ac{GPR}).
+Even if you use it as a container for loop counter in 0..99 range.
+
+\myhrule{}
+
+\Gls{word} in assembly language is still 16-bit for x86, because it was so for 16-bit 8086.
+\IT{Double word} is 32-bit, \IT{quad word} is 64-bit.
+That's why 16-bit words are declared using \TT{DW} in x86 assembly, 32-bit ones using \TT{DD} and 64-bit ones using \TT{DQ}.
+
+\Gls{word} is 32-bit for ARM, MIPS, etc., 16-bit data types are called \IT{half-word} there.
+Hence, \IT{double word} on 32-bit RISC is 64-bit data type.
+
+\IT{GDB} has the following terminology: \IT{halfword} for 16-bit, \gls{word} for 32-bit and \IT{giant word} for 64-bit.
+
+16-bit C/C++ environment on PDP-11 and MS-DOS has \IT{long} data type with width of 32 bits, perhaps,
+they meant \IT{long word} or \IT{long int}?
+
+32-bit C/C++ environment has \IT{long long} data type with width of 64 bits.
+
+Now you see why the \IT{word} word is ambiguous.
+
+\subsubsection{Should I use \IT{int}?}
+
+Some people argue that \IT{int} shouldn't be used at all, because it ambiguity can lead to bugs.
+For example, well-known \IT{lzhuf} library uses \IT{int} at one point and everything works fine on 16-bit architecture.
+But if ported to architecture with 32-bit \IT{int}, it can crash: \url{http://yurichev.com/blog/lzhuf/}.
+
+Less ambiguous types are defined in \IT{stdint.h} file:
+\IT{uint8\_t}, \IT{uint16\_t}, \IT{uint32\_t}, \IT{uint64\_t}, etc.
+
+\myindex{Donald E. Knuth}
+Some people like Donald E. Knuth proposed\footnote{\url{http://www-cs-faculty.stanford.edu/~uno/news98.html}}
+more sonorous words
+for these types: \IT{byte/wyde/tetrabyte/octabyte}.
+But these names are less popular than clear terms with inclusion of \IT{u} (\IT{unsigned}) character 
+and number right into the type name.
+
+\subsubsection{Word-oriented computers}
+
+Despite the ambiguity of the \gls{word} term, modern computers are still word-oriented: \ac{RAM} and all levels of cache
+are still organized by words, not by bytes.
+However, size in bytes is used in marketing.
+% <!-- TODO word length on intel, etc... -->
+
+Access to RAM/cache by address aligned by word boundary is often cheaper than non-aligned.
+
+During data structures development, which are supposed to be fast and efficient,
+one should always take into consideration length of the \gls{word} on the CPU to be executed on.
+Sometimes compiler do this for programmer, sometimes not.
+
+\subsection{Address register}
+
+For those who fostered on 32-bit and/or 64-bit x86, and/or RISC of 90s like ARM, MIPS, PowerPC, it's natural that
+address bus has the same width as \ac{GPR} or \gls{word}.
+Nevertheless, width of address bus can be different on other architectures.
+
+8-bit Z80 can address $2^{16}$ bytes, using 8-bit registers pairs or dedicated registers (\IT{IX}, \IT{IY}).
+\IT{SP} and \IT{PC} registers are also 16-bit ones.
+
+\myindex{Cray-1}
+Cray-1 supercomputer has 64-bit GPRs, but 24-bit address registers, so it can address $2^{24}$ 
+(16 megawords or 128 megabytes).
+RAM was very expensive in 1970s, and even in supercomputing environment it cannot be expected it could have more.
+So why to allocate 64-bit register for address or pointer?
+
+8086/8088 CPUs has really weird addressing scheme:
+values of two 16-bit registers were summed in weird manner resulting 20-bit address.
+Perhaps, this was some kind of toy-level virtualization (\myref{8086_memory_model})?
+8086 could run several programs (not simultaneously, though).
+
+\myindex{ARM!ARM1}
+Early ARM1 has interesting artifact:
+
+\begin{framed}
+\begin{quotation}
+Another interesting thing about the register file is the PC register is missing a few bits. Since the ARM1 uses 26-bit addresses, the top 6 bits are not used. Because all instructions are aligned on a 32-bit boundary, the bottom two address bits in the PC are always zero. These 8 bits are not only unused, they are omitted from the chip entirely.
+\end{quotation}
+\end{framed}
+
+( \url{http://www.righto.com/2015/12/reverse-engineering-arm1-ancestor-of.html} )
+
+Hence, it's physically not possible to push a value with one of two last bits set into PC register.
+Nor it's possible to set any bits in high 6 bits of PC.
+
+x86-64 architecture has virtual 64-bit pointers/addresses, but internally, width of address bus is 48 bits
+(seems enough to address 256TB of \ac{RAM}).
+
+\subsection{Numbers}
+
+What numbers are used for?
+
+When you see some number(s) altering in CPU register, you may be interesting, what this number means.
+It's an important skill of reverse engineer to determine possible data type from a set of changing numbers.
+
+\subsubsection{Boolean}
+
+If the number is switching from 0 to 1 and back, most chances that this value has boolean data type.
+
+\subsubsection{Loop counter, array index}
+
+Variable increasing from 0, like: 0, 1, 2, 3\dots---a good chance this is loop counter and/or array index.
+
+\subsubsection{Signed numbers}
+
+If you see a variable which holds very low numbers and sometimes very high numbers,
+like 0, 1, 2, 3, and 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFD,
+it's a good chance this is a signed variable in \IT{two's complement} form (\myref{sec:signednumbers}),
+and last 3 numbers are -1, -2, -3.
+
+\subsubsection{32-bit numbers}
+
+There are numbers so large\footnote{\url{https://en.wikipedia.org/wiki/Large_numbers}},
+that there is even special notation for it exist (Knuth's up-arrow notation
+\footnote{\url{https://en.wikipedia.org/wiki/Knuth\%27s_up-arrow_notation}}).
+These numbers are so large so these are not practical for engineering, science and mathematics.
+
+Almost all engineers and scientists are happy with IEEE 754 double precision floating point, which has maximal
+value around $1.8 \cdot 10^{308}$.
+(As a comparison, the number of atoms in the observable universe, is estimated to be between
+$4 \cdot 10^{79}$ and $4 \cdot 10^{81}$.)
+
+In fact, upper bound in practical computing is much, much lower.
+If you get source code of UNIX v6 for PDP-11
+\footnote{\url{http://minnie.tuhs.org/Archive/PDP-11/Distributions/research/Dennis_v6/}},
+16-bit \IT{int} is used everywhere while 32-bit \IT{long} type is not used at all.
+
+Same story was in MS-DOS era: 16-bit \IT{int} was used almost for everything (array indices, loop counters),
+while 32-bit \IT{long} was used rarely.
+
+During advent of x86-64, it was decided for \IT{int} to stay as 32 bit size integer, because, probably,
+usage of 64-bit \IT{int} is even rarer.
+
+I would say, 16-bit numbers in range 0..65535 are probably most used numbers in computing.
+
+Given that, if you see unusually large 32-bit value like 0x87654321, this is a good chance this can be:
+
+\begin{itemize}
+
+\item this can be still 16-bit number, but signed, between 0xFFFF8000 (-32768) and 0xFFFFFFFF (-1).
+% TODO: [Example](https://github.com/dennis714/random_notes/blob/master/timedate.md).
+\item address of memory cell (can be checked using memory map feature of debugger);
+\item packed bytes (can be checked visually);
+\item bit flags;
+\item something related to (amateur) cryptography;
+\item magic number (\myref{magic_numbers});
+\item IEEE 754 floating point number (can also be checked).
+
+\end{itemize}
+
+Almost same story for 64-bit values.
+
+\myparagraph{\dots so 16-bit \IT{int} is enough for almost everything?}
+
+It's interesting to note: in \InSqBrackets{\MAbrash{} chapter 13}
+we can find that there are plenty cases in which 16-bit variables are just enough.
+In a meantime, Michael Abrash has a pity that 80386 and 80486 CPUs has so little available registers, so he offers to put
+two 16-bit values into one 32-bit register and then to rotate it using
+\INS{ROR reg, 16} (on 80386 and later) (\INS{ROL reg, 16} will also work) or 
+\INS{BSWAP} (on 80486 and later) instruction.
+
+That reminds us Z80 with alternate pack of registers (suffixed with apostrophe), to which CPU can switch
+(and then switch back) using \INS{EXX} instruction.
+
+\subsubsection{Size of buffer}
+
+When a programmer need to declare a size of some buffer, values in form of $2^x$ are usually used (512 bytes, 1024, etc.).
+Values in $2^x$ form are easily recognizable (\myref{2n_numbers_table}) in decimal, hexadecimal and binary base.
+
+But needless to say, programmers are still humans with their decimal culture.
+And somehow, in \ac{DBMS} area, size of textual database fields is often choosen as $10^x$ number, like 100, 200.
+They just think \q{Okay, 100 is enough, wait, 200 will be better}.
+And they are right, of course.
+
+Maximum width of \IT{VARCHAR2} data type in \oracle is 4000 characters, not 4096.
+
+There is nothing wrong with this, this is just a place where numbers like $10^x$ can be encountered.
+
+\subsubsection{Address}
+
+It's always good idea to keep in mind approximate memory map of the process you currently debug.
+For example, many win32 executables started at 0x00401000, so address like 0x00451230 is probably located inside
+executable section. You'll see addresses like these in \TT{EIP} register.
+
+Stack is usually located somewhere below. % TODO
+
+Many debuggers is able to show the memory map of the debuggee, for example: \myref{olly_memory_map_example}.
+
+If a value is increasing by step 4 on 32-bit architecture or by step 8 on 64-bit one,
+this probably sliding address of some elements of array.
+
+It's important to know that win32 doesn't use addresses below 0x10000, so if you see some number below this constant,
+this cannot be an address (see also: \url{https://msdn.microsoft.com/en-us/library/ms810627.aspx}).
+
+Anyway, many debuggers can show you if the value in a register can be an address to something.
+OllyDbg can also show an ASCII string if the value is an address of it.
+
+\subsubsection{Bit field}
+
+If you see a value where one (or more) bit(s) are flipping from time to time like 0xABCD1234 $\rightarrow$ 0xABCD1434 and back,
+this is probably bit field (or bitmap).
+
+\subsubsection{Packed bytes}
+
+\myindex{\CStandardLibrary!strcmp()}
+\myindex{\CStandardLibrary!memcmp()}
+When \IT{strcmp()} or \IT{memcmp()} copies a buffer, it loads/stores 4 (or 8) bytes simultaneously,
+so if a string containing \q{4321}, and it would be copied to another place,
+at one point you'll see 0x31323334 value in some register.
+This is 4 packed bytes into 32-bit value.
+

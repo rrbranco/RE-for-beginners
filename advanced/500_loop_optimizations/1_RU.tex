@@ -1,0 +1,65 @@
+\subsection{Странная оптимизация циклов}
+
+Это самая простая (из всех возможных) реализация memcpy():
+
+\begin{lstlisting}[style=customc]
+void memcpy (unsigned char* dst, unsigned char* src, size_t cnt)
+{
+	size_t i;
+	for (i=0; i<cnt; i++)
+		dst[i]=src[i];
+};
+\end{lstlisting}
+
+Как минимум MVC 6.0 из конца 90-х вплоть до MSVC 2013 может выдавать вот такой странный код (этот листинг создан MSVC 2013
+x86):
+
+\lstinputlisting[style=customasmx86]{advanced/500_loop_optimizations/1_1_RU.lst}
+
+Это всё странно, потому что как люди работают с двумя указателями? Они сохраняют два адреса в двух регистрах или двух
+ячейках памяти.
+Компилятор MSVC в данном случае сохраняет два указателя как один указатель (\IT{скользящий dst} в \EAX)
+и разницу между указателями \IT{src} и \IT{dst} (она остается неизменной во время исполнения цикла, в \ESI).
+Когда нужно загрузить байт из \IT{src}, он загружается на \IT{diff + скользящий dst} и сохраняет байт просто на
+\IT{скользящем dst}.
+
+Должно быть это какой-то трюк для оптимизации. Но я переписал эту ф-цию так:
+
+\lstinputlisting[style=customasmx86]{advanced/500_loop_optimizations/1_2.lst}
+
+\dots и она работает также быстро как и \IT{соптимизированная} версия на моем Intel Xeon E31220 @ 3.10GHz.
+Может быть, эта оптимизация предназначалась для более старых x86-процессоров 90-х, т.к., этот трюк использует
+как минимум древний MS VC 6.0?
+
+Есть идеи?
+
+\myindex{Hex-Rays}
+Hex-Rays 2.2 не распознает такие шаблонные фрагменты кода (будем надеятся, это временно?):
+
+\begin{lstlisting}[style=customc]
+void __cdecl f1(char *dst, char *src, size_t size)
+{
+  size_t counter; // edx@1
+  char *sliding_dst; // eax@2
+  char tmp; // cl@3
+
+  counter = size;
+  if ( size )
+  {
+    sliding_dst = dst;
+    do
+    {
+      tmp = (sliding_dst++)[src - dst];         // разница (src-dst) вычисляется один раз, перед телом цикла
+      *(sliding_dst - 1) = tmp;
+      --counter;
+    }
+    while ( counter );
+  }
+}
+\end{lstlisting}
+
+Тем не менее, этот трюк часто используется в MSVC (и не только в самодельных ф-циях \IT{memcpy()}, но также и во многих
+циклах, работающих с двумя или более массивами), так что для реверс-инжиниров стоит помнить об этом.
+
+% <!-- As of why writting occurred after <b>dst</b> incrementing? -->
+

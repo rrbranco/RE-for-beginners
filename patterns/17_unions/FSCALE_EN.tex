@@ -1,0 +1,18 @@
+\section{FSCALE replacement}
+\myindex{x86!\Instructions!FSCALE}
+
+Agner Fog in his \IT{Optimizing subroutines in assembly language / An optimization guide for x86 platforms} work
+\footnote{\url{http://www.agner.org/optimize/optimizing_assembly.pdf}} states that \INS{FSCALE} \ac{FPU} instruction
+(calculating $2^n$) may be slow on many CPUs, and he offers faster replacement.
+
+Here is my translation of his assembly code to \CCpp:
+
+\lstinputlisting[style=customc]{patterns/17_unions/FSCALE.c}
+
+\INS{FSCALE} instruction may be faster in your environment, but still, it's a good example of \IT{union}'s and the fact
+that exponent is stored in $2^n$ form,
+so an input $n$ value is shifted to the exponent in IEEE 754 encoded number.
+Then exponent is then corrected with addition of 0x3f800000 or 0x3ff0000000000000.
+
+The same can be done without shift using \IT{struct}, but internally, shift operations still occurred.
+

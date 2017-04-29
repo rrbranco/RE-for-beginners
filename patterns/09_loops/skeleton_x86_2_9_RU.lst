@@ -1,0 +1,12 @@
+﻿    MOV [counter], 2 ; инициализация
+    JMP check
+body:
+    ; тело цикла
+    ; делаем тут §что-нибудь§
+    ; используем переменную счетчика в локальном стеке
+    MOV REG, [counter] ; инкремент
+    INC REG 
+    MOV [counter], REG
+check:
+    CMP [counter], 9
+    JLE body
