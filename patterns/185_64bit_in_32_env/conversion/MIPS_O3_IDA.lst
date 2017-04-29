@@ -1,4 +1,0 @@
-f:
-                sra     $v0, $a0, 31
-                jr      $ra
-                move    $v1, $a0

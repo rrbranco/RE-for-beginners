@@ -1,2 +1,0 @@
-                jr      $ra
-                sll     $v0, $a0, 2 ; branch delay slot
