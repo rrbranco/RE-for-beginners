@@ -1,12 +1,10 @@
-\section{\RU{Простой пример}\EN{Simple example}}
+\subsection{\RU{Простой пример}\EN{Simple example}\DEph{}
+\FR{Exemple simple}
+}
 
-\lstinputlisting{patterns/07_jcc/simple/ex.c}
+\lstinputlisting[style=customc]{patterns/07_jcc/simple/ex.c}
 
 % subsections
 \input{patterns/07_jcc/simple/x86}
-\ifdefined\IncludeARM
 \input{patterns/07_jcc/simple/ARM/main}
-\fi
-\ifdefined\IncludeMIPS
 \input{patterns/07_jcc/simple/MIPS}
-\fi

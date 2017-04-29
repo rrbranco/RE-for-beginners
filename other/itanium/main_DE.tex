@@ -1,0 +1,104 @@
+\section{Itanium}
+\label{itanium}
+\myindex{Itanium}
+
+Auch wenn fast gescheitert, ist der Intel Itanium (\ac{IA64}) eine sehr interessante
+Architektur.
+
+Während \ac{OOE}-CPUs entscheiden wie die Anweisungen neu organisiert werden und
+diese parallel ausführen, war \ac{EPIC} ein Versuch diese Entscheidung dem Compiler
+zu überlassen: das Gruppieren der Anweisungen soll während des Kompilierens erfolgen.
+
+Dies führte zu einer berüchtigten Komplexität der Compiler.
+
+Hier ist ein Beispiel von \ac{IA64}-Code, ein einfacher kryptografischer Algorithmus
+aus dem Linux-Kernel:
+
+\lstinputlisting[caption=Linux kernel 3.2.0.4,style=customc]{other/itanium/tea_from_linux.c}
+
+Nachfolgend das Ergebnis des Compilers:
+
+\lstinputlisting[caption=Linux Kernel 3.2.0.4 for Itanium 2 (McKinley)]{other/itanium/ia64_linux_3.2.0.4_mckinley.lst}
+
+Zunächst sind alle \ac{IA64}-Anweisungen in Pakete von 3 Anweisungen zusammengefasst.
+
+Jedes Paket hat eine Größe von 16 Byte (128 Bit) und besteht aus Template-Code
+(5 Bit) und drei Anweisungen (je 41 Bit).
+
+\IDA zeigt die Pakete als 6+6+4 Byte, das Muster ist leicht zu erkennen.
+
+Alle drei Anweisungen von jedem Paket wird in der Regel gleichzeitig ausgeführt,
+außer eine der Anweisungen enthält ein \q{Stop-Bit}.
+
+Vermutlich haben die Intel- und HP-Ingenieure Statistiken über die am meisten verwendeten
+Anweisungsmuster erhoben und entschieden die Pakettypen zu erstellen (\ac{AKA} \q{Templates}): 
+ein Paket-Code definiert den Anweisungstyp im Paket.
+Es existieren 12 von ihnen.
+
+Beispielsweise ist der nullte Pakettyp \TT{MII}, was impliziert, dass die erste
+Anweisung Speicher (Lesen oder Schreiben) ist und die zweite und dritte jeweils
+eine Integer-Anweisung ist.
+
+Ein weiteres Beispiel ist das Paket vom Typ 0x1d: \TT{MFB}:
+die erste Anweisung ist betrifft wieder den Speicher (Lesen oder Schreiben), die
+zweite eine Fließkomma (\ac{FPU} Anweisung) und die dritte ein Springbefehl.
+
+Wenn der Compiler keine passende Anweisung für den entsprechenden Paketplatz finden
+kann, ist es möglich, dass er ein \ac{NOP} einfügt: man kann hier die \TT{nop.i}-Anweisung
+(\ac{NOP} anstelle einer Integer-Anweisung) oder \TT{nop.m} (anstelle einer Speicheroperation)
+sehen .
+
+\ac{NOP}s werden automatisch eingefügt wenn mit Assembler gearbeitet wird.
+
+Dies ist nicht alles: Pakete können ebenfalls grupiert werden.
+
+Jedes Paket kann ein  \q{Stop-Bit} enthalten, so dass alle aufeinander folgenden
+Pakete mit einem terminierenden Paket (mit \q{Stop-Bit}) gleichzeitig verarbeitet
+werden können.
+
+In der Praxis kann Itanium 2 gleichzeitig zwei Pakete ausführen, was zu sechs
+Anweisungen führt.
+
+Also kann keine der Anweisungen innerhalb einer Paket-Gruppe mit einer anderen
+interagieren (es kann also nicht zu Datenkonflikten kommen).
+
+Falls sie auftreten können die Ergebnisse undefiniert sein.
+
+Jedes Stop-Bit ist in Assembler mit zwei Semikolons (\TT{;;}) nach de Anweisung markiert.
+
+Die Anweisungen bei [90-ac] können also simultan ausgeführt werden: sie beeinflussen
+sich gegenseitig nicht. Die nächste Gruppe ist [b0-cc].
+
+Hier ist auch das Stop-Bit bei 10c zu sehen
+Die nächste Anweisung bei 110 hat ebenfalls ein Stop-Bit.
+
+Dies impliziert dass diese Anweisungen von allen anderen getrennt ausgeführt werden
+müssen (wie in \ac{CISC}).
+
+Außerdem ist zu sehen, dass die Anweisung nach 110 das Ergebnis der vorangehenden
+benutzt (Den Wert im Register r26), dementsprechend können sie nicht gleichzeitig
+ausgeführt werden.
+
+Anscheinend war der Compiler nicht in der Lage einen besseren Weg zum Parallelisieren
+der Anweisungen zu finden, also die \ac{CPU} so weit wie möglich auszulasten. Daher
+die vielen Stop-Bits und \ac{NOP}-Anweisungen.
+
+Manuelle Assembler-Programmierung ist ein mühsamer Job: der Programmierer muss
+die Anweisungen selber in Gruppen einteilen.
+
+Der Programmierer ist immer noch in der Lage Stop-Bits zu jeder Anweisung hinzuzufügen,
+doch dies wird die Geschwindigkeit heruntersetzen für die Itanium gemacht wurde.
+
+Ein interessantes Beispiel von manuellem Assembler-Code in \ac{IA64} kann im Code
+des Linux-Kernels gefunden werden:
+
+\url{http://go.yurichev.com/17322}.
+
+Eine weitere Einführung für den Itanium-Assembler:
+[Mike Burrell, \IT{Writing Efficient Itanium 2 Assembly Code} (2010)]\footnote{\AlsoAvailableAs \url{http://yurichev.com/mirrors/RE/itanium.pdf}},
+[papasutra of haquebright, \IT{WRITING SHELLCODE FOR IA-64} (2001)]\footnote{\AlsoAvailableAs \url{http://phrack.org/issues/57/5.html}}.
+
+Weitere sehr interessante Itanium-Features sind \IT{speculative execution} und das
+NaT (\q{not a thing})-Bit, was in gewisser Weise \gls{NaN}-Zahlen ähnelt:
+
+\href{http://go.yurichev.com/17323}{MSDN}

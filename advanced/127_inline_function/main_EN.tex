@@ -1,0 +1,25 @@
+\section{Inline functions}
+\myindex{Inline code}
+\label{inline_code}
+
+Inlined code is when the compiler, instead of placing a call instruction to a small or tiny function,
+just places its body right in-place.
+
+\lstinputlisting[caption=A simple example,style=customc]{\CURPATH/1.c}
+
+\dots is compiled in very predictable way, however, if we turn on GCC optimizations (\Othree), we'll see:
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1,style=customasmx86]{\CURPATH/1.s}
+
+(Here the division is performed by multiplication(\myref{sec:divisionbymult}).)
+
+Yes, our small function \TT{celsius\_to\_fahrenheit()} has just been placed before the \printf call.
+
+Why? It can be faster than executing this function's code plus the overhead of calling/returning.
+
+Modern optimizing compilers are choosing small functions for inlining automatically.
+But it's possible to force compiler additionally to inline some function, if to mark
+it with the \q{inline} keyword in its declaration.
+
+% sections
+\input{\CURPATH/str_mem/main}

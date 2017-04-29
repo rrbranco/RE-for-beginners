@@ -1,0 +1,41 @@
+\clearpage
+\subsubsection{MSVC: x86 + \olly}
+\myindex{\olly}
+
+Hier sehen die Dinge noch einfacher aus:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/2_global/ex2_olly_1.png}
+\caption{\olly: nach Ausführung von \scanf}
+\label{fig:scanf_ex2_olly_1}
+\end{figure}
+
+Die Variable befindet sich im Datensegment.
+Nachdem der \PUSH Befehl (der die Adresse von $x$ speichert) ausgeführt worden ist,
+erscheint die Adresse im Stackfenster. Wir machen einen Rechtsklick auf die Zeile und wählen \q{Follow in dump}.
+Die Variable erscheint nun im Speicherfenster auf der linken Seite. 
+Nachdem wir in der Konsole 123 eingegeben haben, erscheint \TT{0x7B} im Speicherfenster (siehe markiertes Feld im
+Screenshot).
+
+Warum ist das erste Byte \TT{7B}?
+Logisch gedacht müsste dort \TT{00 00 00 7B} sein. 
+Der Grund dafür ist die sogenannte \glslink{endianness}{Endianess} und x86 verwendet \IT{litte Endian}. 
+Dies bedeutet, dass das niederwertigste Byte zuerst und das höchstwertigste zuletzt geschrieben werden.
+Für mehr Informationen dazu siehe: \myref{sec:endianness}.
+Zurück zu Beispiel: der 32-Bit-Wert wird von dieser Speicheradresse nach \EAX geladen und an \printf übergeben. 
+
+Die Speicheradresse von $x$ ist \TT{0x00C53394}.
+
+\clearpage
+In \olly können wir die Speicherzuordnung des Prozesses nachvollziehen (Alt-M) und wir erkennen, dass sich diese Adresse
+innerhalb des \TT{.data} PE-Segments von unserem Programm befindet:
+
+\label{olly_memory_map_example}
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/2_global/ex2_olly_2.png}
+\caption{\olly: Speicherzuordnung}
+\label{fig:scanf_ex2_olly_2}
+\end{figure}
+

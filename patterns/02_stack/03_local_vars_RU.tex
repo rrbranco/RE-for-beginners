@@ -1,0 +1,16 @@
+\subsubsection{Хранение локальных переменных}
+
+Функция может выделить для себя некоторое место в стеке для локальных переменных, просто отодвинув 
+\glslink{stack pointer}{указатель стека} глубже к концу стека.
+
+% I think here, "stack bottom" means the lowest address in the stack space,
+% but the reader might also think it means towards the top of the stack space,
+% like in a pop, so you might change "towards the stack bottom" to
+% "towards the lowest address of the stack", or just take it out,
+% since "decreasing" also suggests that.
+
+Это очень быстро вне зависимости от количества локальных переменных.
+Хранить локальные переменные в стеке не является необходимым требованием. 
+Вы можете хранить локальные переменные где угодно. 
+Но по традиции всё сложилось так.
+

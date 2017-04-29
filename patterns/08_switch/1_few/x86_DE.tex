@@ -1,0 +1,89 @@
+\subsubsection{x86}
+
+\myparagraph{\NonOptimizing MSVC}
+
+Ergebnis (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/08_switch/1_few/few_msvc.asm}
+Unsere Funktionen mit ein paar Fällen in switch() ist analog zu dieser Konstruktion:
+
+\lstinputlisting[label=switch_few_ifelse,style=customc]{patterns/08_switch/1_few/few_analogue.c}
+
+\myindex{\CLanguageElements!switch}
+\myindex{\CLanguageElements!if}
+Wenn wir mit einem switch() mit einigen wenigen Fällen arbeiten, ist es unmöglich sicher zu sein, dass es sich
+tatsächlich im Quellcode um ein switch() handelt und nicht um eine Reihe von if()-Anweisungen.
+
+\myindex{\SyntacticSugar}
+Das bedeutet, dass switch() ein syntaktischer Zucker für eine große Anzahl von verschachtelten if()-Anweisungen ist.
+
+Hier ist nichts Neues für uns im erzeugten Code, mit der Ausnahme, dass der Compiler die Eingabevariable $a$ in einer
+temporären Variable \TT{tv64} speichert\footnote{Lokale Variablen im Stack haben den Präfix \TT{tv}---so benennt MSVC
+interne Variablen für seine Zwecke}.
+
+Wenn wir diesen Code mit GCC 4.4.1 kompilieren, erhalten wir fast das gleiche Ergebnis, sogar unter Verwendung maximaler
+Optimierung (Option \Othree).
+
+\myparagraph{\Optimizing MSVC}
+
+% TODO separate various kinds of \TT
+% idea: enclose command lines in a specific environment, like \cmdline{} 
+% assembly instructions in \asm{} (now both \TT and \q{} are used),
+% variables in,  like \var{}
+% messages (string constants) in something else, like \strconst
+% to separate them all. Now they all use \TT, which is not best
+% \INS{} for all instructions including operands? --DY
+Aktivieren wir nun Optimierung in MSVC (\Ox): \TT{cl 1.c /Fa1.asm /Ox}
+
+\label{JMP_instead_of_RET}
+\lstinputlisting[caption=MSVC,style=customasmx86]{patterns/08_switch/1_few/few_msvc_Ox.asm}
+Hier finden wir ein paar schmutzige Tricks.
+
+\myindex{x86!\Instructions!JZ}
+\myindex{x86!\Instructions!JE}
+\myindex{x86!\Instructions!SUB}
+Zunächst: der Wert von $a$ wird in \EAX abgelegt und 0 wird davon abgezogen. Klingt absurd, muss aber getan werden, um
+zu prüfen, ob der Wert in \EAX null ist. Falls ja, wird das \ZF Flag gesetzt (denn 0 minus 0 ist 0) und der erste
+bedingte Sprung \JE (\IT{Jump if Equal}) oder synonym \JZ~---\IT{Jump if Zero}) wird ausgeführt und der Control Flow
+wird an das Label \TT{\$LN4@f} übergeben, an dem die Nachricht \TT{'zero'} ausgegeben wird.
+Wenn der erste Sprung nicht ausgeführt wird, wird 1 vom Eingabewert abgezogen und wenn an irgendeinem Punkt der
+Ausführung ein Ergebnis von 0 auftritt, wird der zugehörige Sprung ausgeführt. 
+
+Falls aber keiner der Sprünge ausgeführt wird, wird der Control Flow mit dem String Argument \TT{'something unknown'}
+an \printf übergeben.
+
+\label{jump_to_last_printf}
+\myindex{\Stack}
+Zweitens: wir sehen etwas für uns Ungewohntes: ein Pointer auf einen String wird in der Variablen $a$ abgelegt und
+anschließend wird \printf nicht über \CALL, sondern per \JMP aufgerufen. Es gibt hierfür eine einfache Erklärung:
+Der \glslink{caller}{Aufrufer} legt einen Wert auf dem Stack ab und ruft unsere Funktion über \CALL auf.
+\CALL selbst legt die Rücksprungadresse (\ac{RA}) auf dem Stack ab und macht einen unbedingten Sprung zur Adresse
+unserer Funktion. Unsere Funktion hat an jedem Punkt der Ausführung (da sie keine Befehle enthält, die den Stackpointer
+verändern) das folgende Stacklayout:
+
+\begin{itemize}
+\item\ESP---zeigt auf \ac{RA}
+\item\TT{ESP+4}---zeigt auf die Variable $a$ 
+\end{itemize}
+Wenn wir andererseits \printf aufrufen benötigen wir hier exakt das gleiche Stacklayout mit dem Unterschied des ersten
+Arguments von \printf, welches auf den auszugebenden String zeigt. Unser Code tut hier das Folgende:
+
+Er ersetzt das erste Argument der Funktion mit der Adresse (d.i. dem Pointer) auf den String und springt zu \printf als
+ob wir nicht unsere Funktion \ttf, sondern direkt \printf aufrufen würden. Die Funktion \printf gibt einen String auf
+\gls{stdout} aus und führt dann den \RET Befehl aus, der die \ac{RA} vom Stack holt. Der Control Flow wird nicht an \ttf
+übergeben, sondern an den Aufrufer von \ttf, womit effektiv die Funktion \ttf umgangen wird.
+
+\myindex{\CStandardLibrary!longjmp()}
+\newcommand{\URLSJ}{\href{http://go.yurichev.com/17121}{wikipedia}}
+
+% TODO \myref{}
+All dies ist möglich, da \printf in allen Fällen ganz am Ende der Funktion \ttf aufgerufen wird. In gewisser Weise
+besteht Ähnlichkeit zur Funktion \TT{longjmp()}\footnote{\URLSJ}. Natürlich geschieht all dies um die
+Ausführungsgeschwindigkeit zu erhöhen.
+
+Ein ähnlicher Fall mit dem ARM Compiler wird im Abschnitt \q{\PrintfSeveralArgumentsSectionName}
+beschrieben:~(\myref{ARM_B_to_printf}).
+
+
+\input{patterns/08_switch/1_few/olly_DE.tex}
+

@@ -1,0 +1,12 @@
+my_abs:
+; saut si $a0<0:
+                bltz    $a0, locret_10
+; §simplement renvoyer la valeur en entrée (\$a0) dans \$v0:§
+                move    $v0, $a0
+                jr      $ra
+                or      $at, $zero ; §slot de délai de branchement, NOP§
+locret_10:
+; §prendre l'opposée de la valeur entrée et la stocker dans \$v0:§
+                jr      $ra
+; ceci est une pseudo-instruction. En fait, ceci est "subu $v0,$zero,$a0" ($v0=0-$a0)
+                negu    $v0, $a0

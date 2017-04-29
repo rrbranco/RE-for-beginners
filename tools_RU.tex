@@ -1,0 +1,108 @@
+% TODO sync with English version
+\chapter{Инструменты}
+
+\section{Дизассемблеры}
+
+\subsection{IDA}
+
+\label{IDA}
+Старая бесплатная версия доступна для скачивания
+\footnote{\href{http://go.yurichev.com/17031}{hex-rays.com/products/ida/support/download\_freeware.shtml}}.
+
+\ShortHotKeyCheatsheet: \myref{sec:IDA_cheatsheet}
+
+\section{Отладчики}
+
+\subsection{\olly}
+\myindex{\olly}
+
+Очень популярный отладчик пользовательской среды win32: \href{http://go.yurichev.com/17032}{ollydbg.de}.
+
+\ShortHotKeyCheatsheet: \myref{sec:Olly_cheatsheet}
+
+\subsection{GDB}
+\myindex{GDB}
+
+Не очень популярный отладчик у реверсеров, тем не менее, крайне удобный.
+
+Некоторые команды: \myref{sec:GDB_cheatsheet}.
+
+\subsection{tracer}
+
+\myindex{tracer}
+\label{tracer}
+Автор часто использует \IT{tracer}
+\footnote{\href{http://go.yurichev.com/17339}{yurichev.com}}
+вместо отладчика.
+
+Со временем, автор этих строк отказался использовать отладчик, потому что всё что ему нужно от него это иногда подсмотреть 
+какие-либо аргументы какой-либо функции во время исполнения или состояние регистров в определенном месте. 
+Каждый раз загружать отладчик для этого это слишком, поэтому родилась очень простая утилита \IT{tracer}. 
+Она консольная, запускается из командной строки, позволяет перехватывать исполнение функций, 
+ставить точки останова на произвольные места, смотреть состояние регистров, модифицировать их, итд.
+
+Но для учебы очень полезно трассировать код руками в отладчике, наблюдать как меняются значения регистров 
+(например, как минимум классический SoftICE, OllyDbg, WinDbg подсвечивают измененные регистры), 
+флагов, данные, менять их самому, смотреть реакцию, итд.
+
+\section{Трассировка системных вызовов}
+
+\label{strace}
+\myindex{strace}
+\myindex{dtruss}
+\subsubsection{strace / dtruss}
+
+\myindex{syscall}
+Позволяет показать, какие системные вызовы (syscalls(\myref{syscalls})) прямо сейчас вызывает процесс.
+
+Например:
+
+\begin{lstlisting}
+# strace df -h
+
+...
+
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+open("/lib/i386-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0\220\232\1\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0755, st_size=1770984, ...}) = 0
+mmap2(NULL, 1780508, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb75b3000
+\end{lstlisting}
+
+\myindex{\MacOSX}
+В \MacOSX для этого же имеется dtruss.
+
+\myindex{Cygwin}
+В Cygwin также есть strace, впрочем, насколько известно, 
+он показывает результаты только для .exe-файлов скомпилированных для среды самого cygwin.
+
+\section{Декомпиляторы}
+
+Пока существует только один публично доступный декомпилятор в Си высокого качества: Hex-Rays:
+\href{http://go.yurichev.com/17033}{hex-rays.com/products/decompiler/}
+
+% TODO Java, .NET, VB, etc
+
+\section{Прочие инструменты}
+
+\begin{itemize}
+\item
+Microsoft Visual Studio Express\footnote{\href{http://go.yurichev.com/17034}{visualstudio.com/en-US/products/visual-studio-express-vs}}:
+Усеченная бесплатная версия Visual Studio, пригодная для простых экспериментов.
+Некоторые полезные опции: \myref{sec:MSVC_options}.
+
+\item
+\label{Hiew}
+Hiew\footnote{\href{http://go.yurichev.com/17035}{hiew.ru}}:
+для мелкой модификации кода в исполняемых файлах.
+	
+\item
+\myindex{binary grep}
+binary grep: 
+небольшая утилита для поиска констант (либо просто последовательности байт)
+в большом количестве файлов, включая неисполняемые: \BGREPURL.
+\myindex{rafind2}
+В rada.re имеется также rafind2 для тех же целей.
+
+\end{itemize}
+

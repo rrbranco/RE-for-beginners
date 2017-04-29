@@ -1,0 +1,28 @@
+; $a0=a1
+; $a1=a2
+; $a2=cnt
+f:
+; jump to loop check code:
+                beqz    $a2, locret_24
+; initialize counter (i) at 0:
+                move    $v0, $zero ; branch delay slot, NOP
+
+loc_8:
+; load 32-bit word at $a1
+                lw      $a3, 0($a1)
+; increment counter (i):
+                addiu   $v0, 1
+; check for finish (compare "i" in $v0 and "cnt" in $a2):
+                sltu    $v1, $v0, $a2
+; store 32-bit word at $a0:
+                sw      $a3, 0($a0)
+; add 0x1C (28) to $a1 at each iteration:
+                addiu   $a1, 0x1C
+; jump to loop body if i<cnt:
+                bnez    $v1, loc_8
+; add 0xC (12) to $a0 at each iteration:
+                addiu   $a0, 0xC ; branch delay slot
+
+locret_24:
+                jr      $ra
+                or      $at, $zero ; branch delay slot, NOP

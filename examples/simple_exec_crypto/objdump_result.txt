@@ -1,0 +1,38 @@
+$ objdump -b binary -m i386 -D decrypted.bin
+
+...
+
+       5:       8b ff                   mov    %edi,%edi
+       7:       55                      push   %ebp
+       8:       8b ec                   mov    %esp,%ebp
+       a:       51                      push   %ecx
+       b:       53                      push   %ebx
+       c:       33 db                   xor    %ebx,%ebx
+       e:       43                      inc    %ebx
+       f:       84 1d a0 e2 05 01       test   %bl,0x105e2a0
+      15:       75 09                   jne    0x20
+      17:       ff 75 08                pushl  0x8(%ebp)
+      1a:       ff 15 b0 13 00 01       call   *0x10013b0
+      20:       6a 6c                   push   $0x6c
+      22:       ff 35 54 d0 01 01       pushl  0x101d054
+      28:       ff 15 b4 13 00 01       call   *0x10013b4
+      2e:       89 45 fc                mov    %eax,-0x4(%ebp)
+      31:       85 c0                   test   %eax,%eax
+      33:       0f 84 d9 00 00 00       je     0x112
+      39:       56                      push   %esi
+      3a:       57                      push   %edi
+      3b:       6a 00                   push   $0x0
+      3d:       50                      push   %eax
+      3e:       ff 15 b8 13 00 01       call   *0x10013b8
+      44:       8b 35 bc 13 00 01       mov    0x10013bc,%esi
+      4a:       8b f8                   mov    %eax,%edi
+      4c:       a1 e0 e2 05 01          mov    0x105e2e0,%eax
+      51:       3b 05 e4 e2 05 01       cmp    0x105e2e4,%eax
+      57:       75 12                   jne    0x6b
+      59:       53                      push   %ebx
+      5a:       6a 03                   push   $0x3
+      5c:       57                      push   %edi
+      5d:       ff d6                   call   *%esi
+
+...
+

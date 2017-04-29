@@ -1,0 +1,8 @@
+.text:100113E7    push    3
+.text:100113E9    call    sub_100018B0 ; erwartet ein Argument (3)
+.text:100113EE    call    sub_100019D0 ; erwartet kein Argument
+.text:100113F3    call    sub_10006A90 ; erwartet kein Argument
+.text:100113F8    push    1
+.text:100113FA    call    sub_100018B0 ; erwartet ein Argument (1)
+.text:100113FF    add     esp, 8       ; Addiert zwei Argumente auf einmal auf den Stack
+

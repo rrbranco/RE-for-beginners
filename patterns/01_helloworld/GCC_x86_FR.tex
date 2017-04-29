@@ -1,0 +1,132 @@
+\subsubsection{GCC}
+
+Maintenant essayons de compiler le même code \CCpp avec le compilateur GCC 4.4.1 sur Linux: \TT{gcc 1.c -o 1}.
+Ensuite, avec l'aide du désassembleur \IDA, regardons comment la fonction \main a été créée.
+\IDA, comme MSVC, utilise la syntaxe Intel\footnote{GCC peut aussi produire un listing assembleur utilisant la syntaxe Intel en lui passant les options \TT{-S -masm=intel}.}.
+
+\begin{lstlisting}[caption=code in \IDA,style=customasmx86]
+main            proc near
+
+var_10          = dword ptr -10h
+
+                push    ebp
+                mov     ebp, esp
+                and     esp, 0FFFFFFF0h
+                sub     esp, 10h
+                mov     eax, offset aHelloWorld ; "hello, world\n"
+                mov     [esp+10h+var_10], eax
+                call    _printf
+                mov     eax, 0
+                leave
+                retn
+main            endp
+\end{lstlisting}
+
+\myindex{Prologue de fonction}
+\myindex{x86!\Instructions!AND}
+Le résultat est presque le même.
+L'adresse de la chaîne \TT{hello, world} (stockée dans le segment de donnée) est d'abord chargée dans
+ le registre \EAX puis sauvée dans la pile. \\
+En plus, le prologue de la fonction a l'instruction \INS{AND ESP, 0FFFFFFF0h}~---cette
+instruction aligne le registre \ESP sur une limite de 16-octet.
+Ainsi, toutes les valeurs sur la pile seront alignées de la même manière (Le CPU
+est plus performant si les adresses avec lesquelles il travaille en mémoire sont
+alignées sur des limites de 4-octet ou 16-octet)\footnote{\URLWPDA}.
+
+\myindex{x86!\Instructions!SUB}
+\INS{SUB ESP, 10h} réserve 16 octets sur la pile. Pourtant, comme nous allons le voir, seuls 4 sont nécessaires ici.
+
+C'est parce que la taille de la pile allouée est alignée sur une limite de 16-octet.
+
+% TODO1: rewrite.
+\myindex{x86!\Instructions!PUSH}
+L'adresse de la chaîne est (ou un pointeur vers la chaîne) est stockée directement sur la pile sans utiliser
+l'instruction \PUSH.
+\IT{var\_10}~---est une variable locale et est aussi un argument pour \printf{}.
+Lisez à ce propos en dessous.
+
+Ensuite la fonction \printf est appelée.
+
+Contrairement à MSVC, lorsque GCC compile sans optimisation, il génère \TT{MOV EAX, 0} au lieu d'un opcode plus court.
+
+\myindex{x86!\Instructions!LEAVE}
+La dernière instruction, \LEAVE~---est équivalente à la paire d'instruction \TT{MOV ESP, EBP} et \TT{POP EBP}~---en d'autres mots,
+cette instruction déplace le pointeur de pile (\gls{stack pointer}) (\ESP) et remet le registre \EBP dans son état initial.
+Cela est nécessaire puisque nous avons modifié les valeurs de ces registres (\ESP et \EBP) au début de la fonction (en exécutant \INS{MOV EBP, ESP} / \INS{AND ESP, \ldots}).
+
+\subsubsection{GCC: \ATTSyntax}
+\label{ATT_syntax}
+
+Voyons comment cela peut-être représenté en langage d'assemblage avec la syntaxe AT\&T.
+Cette syntaxe est bien plus populaire dans le monde UNIX.
+
+\begin{lstlisting}[caption=compilons avec GCC 4.7.3]
+gcc -S 1_1.c
+\end{lstlisting}
+
+Nous obtenons ceci:
+
+\lstinputlisting[caption=GCC 4.7.3,style=customasmx86]{patterns/01_helloworld/GCC.s}
+
+Le listing contient beaucoup de macros (qui commencent avec un point). Cela ne nous intéresse pas pour le moment.
+
+Pour l'instant, dans un soucis de simplification, nous pouvons les ignorer (excepté la macro \IT{.string}
+qui encode une séquence de caractères terminée par un octet nul, comme une chaîne C).
+Ensuite nous verrons cela\footnote{Cette option de GCC peut être utilisée pour éliminer les macros \q{non necéssaire}:
+\IT{-fno-asynchronous-unwind-tables}}:
+
+\lstinputlisting[caption=GCC 4.7.3,style=customasmx86]{patterns/01_helloworld/GCC_refined.s}
+
+\myindex{\ATTSyntax}
+\myindex{\IntelSyntax}
+Quelques-une des différences majeures entre la syntax Intel et AT\&T sont:
+
+\begin{itemize}
+
+\item
+Opérandes source et destination sont écrites dans l'ordre inverse.
+
+En syntaxe Intel: <instruction> <opérande de destination> <opérande source>.
+
+En syntaxe AT\&T: <instruction> <opérande source> <opérande de destination>.
+
+\myindex{\CStandardLibrary!memcpy()}
+\myindex{\CStandardLibrary!strcpy()}
+Voici un moyen simple de mémoriser la différence:
+lorsque vous avez affaire avec la syntaxe Intel, vous pouvez imaginer qu'il y a un signe
+égal ($=$) entre les opérandes et lorsque vous avez affaire avec la syntaxe AT\&T imaginez
+qu'il y a un flèche droite ($\rightarrow$)
+\footnote{A propos, dans certaine fonction C standard (e.g., memcpy(), strcpy()) les arguments
+sont listés de la même manière que dans la syntaxe Intel: en premier se trouve le pointeur du
+bloc mémoire de destination, et ensuite le pointeur sur le bloc mémoire source.}.
+
+\item
+AT\&T: Avant les noms de registres, un signe pourcent doit être écrit (\%) et avant les nombres, un signe dollar (\$).
+Les parenthèses sont utilisées à la place des crochets.
+
+\item
+AT\&T: un suffixe est ajouté à l'instruction pour définir la taille de l'opérande:
+
+\begin{itemize}
+\item q --- quad (64 bits)
+\item l --- long (32 bits)
+\item w --- word (16 bits)
+\item b --- byte (8 bits)
+\end{itemize}
+
+% TODO1 simple example may be? \RU{Например mov\textbf{l}, movb, movw представляют различые версии инсструкция mov} \EN {For example: movl, movb, movw are variations of the mov instruction}
+% \FR {Par exemple: movl, movb, movw sont des variantes de l'instruction mov}
+
+\end{itemize}
+
+Retournons au résultat compilé: il est identique à ce que l'on voit dans \IDA.
+Avec une différence subtile: \TT{0FFFFFFF0h} est représenté avec \TT{\$-16}.
+C'est la même chose: \TT{16} dans le système décimal est \TT{0x10} en hexadécimal.
+\TT{-0x10} est équivalent à \TT{0xFFFFFFF0} (pour un type de donnée sur 32-bit).
+
+\myindex{x86!\Instructions!MOV}
+Encore une chose: la valeur de retour est mise à 0 en utilisant un \MOV usuel, pas un \XOR.
+\MOV charge seulement la valeur dans le registre.
+Le nom est mal choisi (la donnée n'est pas déplacée, mais plutôt copiée). Dans d'autres architectures, cette instruction
+est nommée \q{LOAD} ou \q{STORE} ou quelque chose de similaire.
+

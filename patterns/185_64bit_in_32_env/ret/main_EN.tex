@@ -1,0 +1,23 @@
+﻿\subsection{Returning of 64-bit value}
+
+\lstinputlisting[style=customc]{patterns/185_64bit_in_32_env/ret/0.c}
+
+\subsubsection{x86}
+
+In a 32-bit environment, 64-bit values are returned from functions in the \EDX{}:\EAX{} register pair.
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{patterns/185_64bit_in_32_env/ret/0_MSVC_2010_Ox.asm}
+
+\subsubsection{ARM}
+
+A 64-bit value is returned in the \Reg{0}-\Reg{1} register pair (\Reg{1} is for the high part and \Reg{0} for the low part):
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/185_64bit_in_32_env/ret/Keil_ARM_O3.s}
+
+\subsubsection{MIPS}
+
+A 64-bit value is returned in the \TT{V0}-\TT{V1} (\$2-\$3) register pair (\TT{V0} (\$2) is for the high part and \TT{V1} (\$3) for the low part):
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (assembly listing),style=customasmMIPS]{patterns/185_64bit_in_32_env/ret/0_MIPS.s}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/185_64bit_in_32_env/ret/0_MIPS_IDA.lst}

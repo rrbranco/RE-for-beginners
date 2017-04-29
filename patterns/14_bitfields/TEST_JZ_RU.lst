@@ -1,0 +1,3 @@
+﻿TEST REG, 40h
+JZ is_cleared
+; бит установлен

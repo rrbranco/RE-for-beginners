@@ -1,0 +1,24 @@
+\subsubsection{MIPS}
+
+\myparagraph{\NonOptimizing GCC}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/14_bitfields/4_popcnt/MIPS_O0_IDA_RU.lst}
+
+\myindex{MIPS!\Instructions!SLL}
+\myindex{MIPS!\Instructions!SLLV}
+Это многословно: все локальные переменные расположены в локальном стеке и перезагружаются каждый раз,
+когда нужны.
+Инструкция \SLLV это \q{Shift Word Left Logical Variable}, она отличается от \SLL только тем что
+количество бит для сдвига кодируется в \SLL (и, следовательно, фиксировано), а \SLL берет количество из регистра.
+
+\myparagraph{\Optimizing GCC}
+
+Это более сжато.
+Здесь две инструкции сдвигов вместо одной.
+Почему?
+Можно заменить первую инструкцию \SLLV на инструкцию безусловного перехода, передав управление прямо
+на вторую \SLLV.
+
+Но это ещё одна инструкция перехода в функции, а от них избавляться всегда выгодно: \myref{branch_predictors}.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/14_bitfields/4_popcnt/MIPS_O3_IDA_RU.lst}

@@ -1,0 +1,46 @@
+\subsection{x86}
+
+\subsubsection{MSVC}
+
+Das ist das Ergebnis nach dem kompilieren (MSVC 2010 Express):
+
+\lstinputlisting[label=src:passing_arguments_ex_MSVC_cdecl,caption=MSVC 2010 Express]{patterns/05_passing_arguments/msvc_DE.asm}
+
+\myindex{x86!\Registers!EBP}
+
+Was wir hier sehen ist das die \main Funktion drei Zahlen auf den Stack schiebt und \TT{f(int,int,int).} aufruft
+
+Der Argument zugriff innerhalb von \ttf wird organisiert mit der Hilfe von Makros wie zum Beispiel:\\
+\TT{\_a\$ = 8}, 
+auf die gleiche weise wie Lokale Variablen allerdings mit positiven Offsets (adressiert mit \IT{plus}).
+
+Also adressieren wir die \IT{äussere} Seite des \glslink{stack frame}{Stack frame} indem wir \TT{\_a\$} Makros zum Wert des \EBP Registers addieren  
+
+\myindex{x86!\Instructions!IMUL}
+\myindex{x86!\Instructions!ADD}
+
+Dann wird der Wert von $a$ in \EAX gespeichert. Nachdem die \IMUL Instruktion ausgeführt wurde, ist
+der Wert in \EAX ein Produkt des Wertes aus \EAX und dem Inhalt von \TT{\_b}.
+
+Nun addiert \ADD den Wert in \TT{\_c} auf \EAX
+
+Der Wert in \EAX muss nicht verschoben werden: Der Wert von \EAX befindet sich schon wo er sein muss
+
+Beim zurück kehren zur \gls{caller} Funktion, wird der Wert aus \EAX genommen und als Argument 
+für den \printf Aufruf benutzt.
+
+
+\input{patterns/05_passing_arguments/olly_DE}
+
+\subsubsection{GCC}
+
+
+Lasst uns das gleiche in GCC kompilieren und die Ergebnisse in \IDA betrachten:
+
+\lstinputlisting[caption=GCC 4.4.1]{patterns/05_passing_arguments/gcc_DE.asm}
+
+Das Ergebnis ist fast das gleiche aber mit kleineren Unterschieden die wir bereits früher
+besprochen haben.
+
+Der \gls{stack pointer} wird nicht zurück gesetzt nach den beiden Funktion aufrufen (f und printf),
+weil die vorletzte \TT{LEAVE} Instruktion (\myref{x86_ins:LEAVE}) sich um das zurück setzen kümmert.

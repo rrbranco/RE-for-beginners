@@ -1,0 +1,29 @@
+my_atoi:
+; load input character into W1
+	ldrb	w1, [x0]
+	mov	x2, x0
+; X2=address of input string
+; is loaded character zero?
+; jump to exit if its so
+; W1 will contain 0 in this case.
+; it will be reloaded into W0 at L4.
+	cbz	w1, .L4
+; W0 will contain "rt" variable
+; initialize it at zero:
+	mov	w0, 0
+.L3:
+; subtract 48 or '0' from input variable and put result into W3:
+	sub	w3, w1, #48
+; load next character at address X2+1 into W1 with pre-increment:
+	ldrb	w1, [x2,1]!
+	add	w0, w0, w0, lsl 2
+; W0=W0+W0<<2=W0+W0*4=rt*5
+	add	w0, w3, w0, lsl 1
+; W0=input digit + W0<<1 = input digit + rt*5*2 = input digit + rt*10
+; if the character we just loaded is not null byte, jump to the loop begin
+	cbnz	w1, .L3
+; variable to be returned (rt) is in W0, ready to be used in caller function
+	ret
+.L4:
+	mov	w0, w1
+	ret

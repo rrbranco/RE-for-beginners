@@ -1,0 +1,32 @@
+\subsection{Einfaches Beispiel}
+
+% subsections
+\input{patterns/09_loops/simple/x86}
+\input{patterns/09_loops/simple/ARM/main}
+\input{patterns/09_loops/simple/MIPS}
+
+\subsubsection{Eine Sache noch}
+Im generierten Code sehen wir folgendes:
+nach der Initialisierung von $i$ wird der Körper der Schleife nicht ausgeführt,
+da die Bedingung für $i$ zuerst geprüft wird und erst danach der Körper der
+Schleife ausgeführt werden kann. Und so ist es auch korrekt.
+
+Denn, falls die Bedingung zu Beginn falsch ist, darf der Körper der Schleife nie
+ausgeführt werden. 
+Dies ist z.B. im folgenden Fall möglich:
+
+
+\lstinputlisting[style=customc]{patterns/09_loops/simple/loops_3_DE.c}
+
+% TBT:
+Wenn \IT{total\_entries\_to\_process} gleich 0 ist, darf der Körper der Schleife
+auf keinen Fall ausgeführt werden. 
+
+Deshalb wird die Bedingung stets vor der Ausführung geprüft. 
+
+% TBT:
+Ein optimierter Compiler kann jedoch das Prüfen der Bedingung und den
+Schleifenkörper vertauschen, falls sichergestellt ist, dass die hier
+beschriebene Situation auf keinen Fall eintreten kann (wie in unserem sehr
+einfachen Beispiel und bei Keil, Xcode (LLVM), MSVC im optimierten Modus).
+

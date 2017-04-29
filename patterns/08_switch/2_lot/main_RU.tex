@@ -1,0 +1,22 @@
+\subsection{И если много}
+
+Если ветвлений слишком много, то генерировать слишком длинный код с многочисленными \JE/\JNE 
+уже не так удобно.
+
+\lstinputlisting[label=switch_lot_c,style=customc]{patterns/08_switch/2_lot/lot.c}
+
+\input{patterns/08_switch/2_lot/lot_x86_RU}
+\input{patterns/08_switch/2_lot/lot_ARM_RU}
+\input{patterns/08_switch/2_lot/lot_MIPS_RU}
+
+\subsubsection{\Conclusion{}}
+
+Примерный скелет оператора \IT{switch()}:
+
+% TODO: ARM, MIPS skeleton
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/08_switch/2_lot/skel1_RU.lst}
+
+Переход по адресу из таблицы переходов может быть также реализован такой инструкцией: \\
+\TT{JMP jump\_table[REG*4]}. Или \TT{JMP jump\_table[REG*8]} в x64.
+
+Таблица переходов (\IT{jumptable}) это просто массив указателей, как это будет вскоре описано: \myref{array_of_pointers_to_strings}.

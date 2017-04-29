@@ -1,0 +1,106 @@
+% TODO proof-reading
+\subsection{Линейный конгруэнтный \ac{PRNG}}
+
+
+Попробуем простой генератор псевдослучайных чисел, 
+который мы однажды уже рассматривали в этой книге (\myref{LCG_simple}):
+
+\begin{lstlisting}[style=customjava]
+public class LCG 
+{
+	public static int rand_state;
+
+	public void my_srand (int init)
+	{
+		rand_state=init;
+	}
+
+	public static int RNG_a=1664525;
+	public static int RNG_c=1013904223;
+
+	public int my_rand ()
+	{
+		rand_state=rand_state*RNG_a;
+		rand_state=rand_state+RNG_c;
+		return rand_state & 0x7fff;
+	}
+}
+\end{lstlisting}
+
+
+Здесь пара полей класса, которые инициализируются в начале.
+Но как?
+
+В выводе \TT{javap} мы можем найти конструктор класса:
+
+\begin{lstlisting}
+  static {};
+    flags: ACC_STATIC
+    Code:
+      stack=1, locals=0, args_size=0
+         0: ldc           #5         // int 1664525
+         2: putstatic     #3         // Field RNG_a:I
+         5: ldc           #6         // int 1013904223
+         7: putstatic     #4         // Field RNG_c:I
+        10: return        
+\end{lstlisting}
+
+
+Так инициализируются переменные.
+
+\TT{RNG\_a} занимает третий слот в классе и \TT{RNG\_c} --- четвертый, 
+и \TT{putstatic} записывает туда константы.
+
+
+Функция \TT{my\_srand()} просто записывает входное значение в \\ 
+\TT{rand\_state}:
+
+\begin{lstlisting}
+  public void my_srand(int);
+    flags: ACC_PUBLIC
+    Code:
+      stack=1, locals=2, args_size=2
+         0: iload_1       
+         1: putstatic     #2         // Field rand_state:I
+         4: return        
+\end{lstlisting}
+
+
+\TT{iload\_1} берет входное значение и заталкивает его в стек. Но почему не \TT{iload\_0}?
+
+Это потому что эта функция может использовать поля класса, а переменная \IT{this} 
+также передается в эту функцию как нулевой аргумент.
+
+Поле \TT{rand\_state} занимает второй слот в классе,
+так что \TT{putstatic} копирует переменную из \ac{TOS} во второй слот.
+
+Теперь \TT{my\_rand()}:
+
+\begin{lstlisting}
+  public int my_rand();
+    flags: ACC_PUBLIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: getstatic     #2         // Field rand_state:I
+         3: getstatic     #3         // Field RNG_a:I
+         6: imul          
+         7: putstatic     #2         // Field rand_state:I
+        10: getstatic     #2         // Field rand_state:I
+        13: getstatic     #4         // Field RNG_c:I
+        16: iadd          
+        17: putstatic     #2         // Field rand_state:I
+        20: getstatic     #2         // Field rand_state:I
+        23: sipush        32767
+        26: iand          
+        27: ireturn       
+\end{lstlisting}
+
+
+Она просто загружает все переменные из полей объекта, производит с ними операции
+и обновляет значение \TT{rand\_state}, используя инструкцию \TT{putstatic}.
+
+По смещению 20, значение \TT{rand\_state} перезагружается снова
+(это потому что оно было выброшено из стека перед этим, инструкцией \TT{putstatic}).
+
+Это выглядит как неэффективный код, но можете быть уверенными, \ac{JVM} обычно достаточно
+хорош, чтобы хорошо оптимизировать подобные вещи.

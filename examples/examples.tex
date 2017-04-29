@@ -1,12 +1,12 @@
-\part{\RU{Примеры \ac{RE}-задач из реальности}\EN{Examples of real-world \ac{RE} tasks}}
+\chapter{\RU{Примеры из практики}\EN{Case studies}\DE{Beispiele aus der Praxis}}
 
-\clearpage
+%\clearpage
 \begin{center}
 \vspace*{\fill}
 
 \begin{figure}[H]
 \centering
-\includegraphics[scale=\FigScale]{cover4.jpg}
+\myincludegraphics{cover4.jpg}
 \end{figure}
 
 \vspace*{\fill}
@@ -14,15 +14,28 @@
 
 \clearpage
 
-% chapters here
-\input{examples/taskmgr/main}
-\input{examples/lines/main}
-\input{examples/minesweeper/main}
-\input{examples/z3/main}
+% sections here
+\EN{\input{examples/taskmgr/main_EN}}\RU{\input{examples/taskmgr/main_RU}}
+\EN{\input{examples/lines/main_EN}}\RU{\input{examples/lines/main_RU}}
+\EN{\input{examples/minesweeper/main_EN}}\RU{\input{examples/minesweeper/main_RU}}
+\EN{\input{examples/timedate/main_EN}}
 \input{examples/dongles/main}
-\input{examples/qr9/qr9}
+\EN{\input{examples/qr9/qr9_EN}}\RU{\input{examples/qr9/qr9_RU}}
+\EN{\input{examples/encrypted_DB1/main_EN}}
+\EN{\input{examples/bitcoin_miner/main_EN}}
+\EN{\input{examples/simple_exec_crypto/main_EN}}
 \input{examples/SAP/main}
 \input{examples/oracle/main}
-\input{examples/handcoding/main}
+\EN{\input{examples/handcoding/main_EN}}\RU{\input{examples/handcoding/main_RU}}
 \input{examples/demos/main}
+\RU{\input{examples/marriage/main_RU}}
+
+\section{\EN{Other examples}\RU{Другие примеры}}
+
+\RU{Здесь также был пример с Z3 и ручной декомпиляцией.}
+\EN{An example about Z3 and manual decompilation was here.}
+\RU{Он (временно) перемещен сюда:}
+\EN{It is (temporarily) moved there:}
+\url{http://yurichev.com/tmp/SAT_SMT_DRAFT.pdf}.
+
 

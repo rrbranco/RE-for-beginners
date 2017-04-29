@@ -1,0 +1,8 @@
+    MOV REG, 2 ; Initialisierung
+body:
+    ; Schleifenkörper
+    ; tue etwas
+    ; verwende Zähler in REG, aber verändere ihn nicht!
+    INC REG ; inkrementieren
+    CMP REG, 10
+    JL body

@@ -1,0 +1,47 @@
+\section{Funktionsprolog und Funktionsepilog}
+\label{sec:prologepilog}
+\myindex{Function epilogue}
+\myindex{Function prologue}
+
+Ein Funktionsprolog besteht aus einer Abfolge von Instruktionen zu Beginn einer
+Funktion. Dieser Prolog sieht häufig ähnlich aus wie das folgende Codefragment:
+
+\begin{lstlisting}[style=customasmx86]
+    push    ebp
+    mov     ebp, esp
+    sub     esp, X
+\end{lstlisting}
+
+Was diese Instruktionen tun: speichern des Wertes im \EBP Register auf dem
+Stack, setzen des Wertes von \EBP auf den Wert in \ESP, zuweisen von Speicherplatz für lokale
+Variablen auf dem Stack.
+
+Der Wert in \EBP verändert sich während der Funktionsausführung nicht und wird
+für den Zugriff auf lokale Variablen und Funktionsargumente verwendet. Zum
+gleichen Zweck kann auch \ESP verwendet werden, aber da sich der Wert von \ESP
+während der Funktionsausführung verändert, ist diese Vorgehensweise nicht allzu
+gebräuchlich.
+
+Der Funktionsepilog gibt den zugewiesenen Speicher auf dem Stack wieder frei,
+setzt das \EBP Register auf den ursprünglichen Wert zurück und gibt den control
+flow an den \gls{caller} zurück:
+
+\begin{lstlisting}[style=customasmx86]
+
+    mov    esp, ebp
+    pop    ebp
+    ret    0
+\end{lstlisting}
+
+% what about calling convention?
+Für gewöhnlich werden Funktionsprolog und -epilog von Disassemblern erkannt und
+zur Markierung und Abgrenzung von Funktionen verwendet.
+
+　
+\subsection{\Rekursion}
+
+\myindex{\Recursion}
+Funktionsprolog und -epilog können sich negativ auf die Performanz bei Rekursion
+auswirken. 
+
+Mehr zum Thema Rekursion im folgenden Buch: \myref{Recursion_and_tail_call}.

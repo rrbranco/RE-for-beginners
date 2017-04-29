@@ -1,0 +1,59 @@
+\section{Suspicious code patterns}
+
+\subsection{XOR instructions}
+\myindex{x86!\Instructions!XOR}
+
+Instructions like \TT{XOR op, op} (for example, \TT{XOR EAX, EAX}) 
+are usually used for setting the register value
+to zero, but if the operands are different, the \q{exclusive or} operation
+is executed.
+
+This operation is rare in common programming, but widespread in cryptography,
+including amateur one.
+It's especially suspicious if the
+second operand is a big number.
+
+This may point to encrypting/decrypting, checksum computing, etc.\\
+\\
+
+One exception to this observation worth noting is the \q{canary} (\myref{subsec:BO_protection}). 
+Its generation and checking are often done using the \XOR instruction. \\
+\\
+\myindex{AWK}
+
+This AWK script can be used for processing \IDA{} listing (.lst) files:
+
+\lstinputlisting{digging_into_code/awk.sh}
+
+It is also worth noting that this kind of script can also match incorrectly disassembled code 
+(\myref{sec:incorrectly_disasmed_code}).
+
+\subsection{Hand-written assembly code}
+
+\myindex{Function prologue}
+\myindex{Function epilogue}
+\myindex{x86!\Instructions!LOOP}
+\myindex{x86!\Instructions!RCL}
+
+Modern compilers do not emit the \TT{LOOP} and \TT{RCL} instructions.
+On the other hand, these instructions are well-known to coders who like to code directly in assembly language.
+If you spot these, it can be said that there is a high probability that this fragment of code was hand-written.
+Such instructions are marked as (M) in the instructions list in this appendix: \myref{sec:x86_instructions}.
+
+\par
+
+Also the function prologue/epilogue are not commonly present in hand-written assembly.
+\par
+
+Commonly there is no fixed system for passing arguments to functions in the hand-written code.
+
+\par
+Example from the Windows 2003 kernel 
+(ntoskrnl.exe file):
+
+\lstinputlisting[style=customasmx86]{digging_into_code/ntoskrnl.lst}
+
+Indeed, if we look in the 
+\ac{WRK} v1.2 source code, this code
+can be found easily in file \\
+\IT{WRK-v1.2\textbackslash{}base\textbackslash{}ntos\textbackslash{}ke\textbackslash{}i386\textbackslash{}cpu.asm}.

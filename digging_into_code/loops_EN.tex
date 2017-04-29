@@ -1,0 +1,14 @@
+\section{Loops}
+
+Whenever your program works with some kind of file, or buffer of some size,
+it has to be some kind of decrypting/processing loop inside of the code.
+
+This is a real example of \tracer tool output.
+There was a code which loads some kind of encryted file of 258 bytes.
+I run it with the intention to get each instruction counts (a \ac{DBI} tool will serve much better these days).
+And I quickly found a piece of code, which executed 259/258 times:
+
+\lstinputlisting{digging_into_code/crypto_loop.txt}
+
+As it turns out, this is the decrypting loop.
+

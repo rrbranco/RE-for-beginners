@@ -1,0 +1,58 @@
+\myparagraph{GCC 4.8.1 with \Othree optimization turned on}
+\label{gcc481_o3}
+
+Some new FPU instructions were added in the P6 Intel family\footnote{Starting at Pentium Pro, Pentium-II, etc.}.
+\myindex{x86!\Instructions!FUCOMI}
+These are \INS{FUCOMI} (compare operands and set flags of the main CPU) and 
+\myindex{x86!\Instructions!FCMOVcc}
+\INS{FCMOVcc} (works like \INS{CMOVcc}, but on FPU registers).
+
+Apparently, the maintainers of GCC decided to drop support of pre-P6 Intel CPUs (early Pentiums, 80486, etc.).
+
+And also, the FPU is no longer separate unit in P6 Intel family, so now it is possible to modify/check flags of the main CPU from the FPU.
+
+So what we get is:
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1,style=customasmx86]{patterns/12_FPU/3_comparison/x86/GCC481_O3_EN.s}
+
+Hard to guess why \INS{FXCH} (swap operands) is here.
+
+It's possible to get rid of it easily by swapping the first two \FLD instructions or by replacing 
+\INS{FCMOVBE} (\IT{below or equal}) by \INS{FCMOVA} (\IT{above}).
+Probably it's a compiler inaccuracy.
+
+So \INS{FUCOMI} compares \ST{0} ($a$) and \ST{1} ($b$) 
+and then sets some flags in the main CPU.
+\INS{FCMOVBE} checks the flags and copies \ST{1} 
+($b$ here at the moment) to 
+\ST{0} ($a$ here) if $ST0 (a) <= ST1 (b)$.
+Otherwise ($a>b$), it leaves $a$ in \ST{0}.
+
+The last \FSTP leaves \ST{0} on top of the stack, discarding the contents of \ST{1}.
+
+Let's trace this function in GDB:
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1 and GDB,numbers=left]{patterns/12_FPU/3_comparison/x86/gdb.txt}
+
+Using \q{ni}, 
+let's execute the first two \FLD instructions.
+
+Let's examine the FPU registers (line 33).
+
+As it was mentioned before, the FPU registers set is a circular buffer rather than a stack (\myref{FPU_is_rather_circular_buffer}).
+And GDB doesn't show \GTT{STx} registers, but internal the FPU registers (\GTT{Rx}). 
+The arrow (at line 35) points to the current top of the stack.
+
+You can also see the \GTT{TOP} register contents in \IT{Status Word} (line 44)---it is 6 now, 
+so the stack top is now pointing to internal register 6.
+
+The values of $a$ and $b$ are swapped after \INS{FXCH} is executed (line 54).
+
+\INS{FUCOMI} is executed (line 83). 
+Let's see the flags: \CF is set (line 95).
+
+\INS{FCMOVBE} has copied the value of $b$ (see line 104).
+
+\FSTP leaves one value at the top of stack (line 136). 
+The value of \GTT{TOP} is now 7, so the FPU stack top is pointing to internal register 7.
+

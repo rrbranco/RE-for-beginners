@@ -1,0 +1,77 @@
+\subsubsection{ARM64}
+
+\myparagraph{\Optimizing GCC (Linaro) 4.9}
+
+\myindex{Fused multiply–add}
+\myindex{ARM!\Instructions!MADD}
+Appare tutto molto semplice.
+\TT{MADD} e' semplicemente un'istruzione che fa una moltiplicazione/addizione combinata (simile alla \TT{MLA} vista in precedenza).
+Tutti i 3 argomenti sono passati tramite le parti a 32-bit dei registri X-.
+Infatti gli argomenti sono tutti di tipo \IT{int} a 32-bit.
+Il risultato e' restituito in \TT{W0}.
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.9,style=customasmARM]{patterns/05_passing_arguments/ARM/ARM64_O3_EN.s}
+
+Estendiamo anche questo esempio usando il tipo \TT{uint64\_t} a 64-bit e vediamo che succede:
+
+\lstinputlisting[style=customc]{patterns/05_passing_arguments/ex64.c}
+
+\begin{lstlisting}[style=customasmARM]
+f:
+	madd	x0, x0, x1, x2
+	ret
+main:
+	mov	x1, 13396
+	adrp	x0, .LC8
+	stp	x29, x30, [sp, -16]!
+	movk	x1, 0x27d0, lsl 16
+	add	x0, x0, :lo12:.LC8
+	movk	x1, 0x122, lsl 32
+	add	x29, sp, 0
+	movk	x1, 0x58be, lsl 48
+	bl	printf
+	mov	w0, 0
+	ldp	x29, x30, [sp], 16
+	ret
+
+.LC8:
+	.string	"%lld\n"
+\end{lstlisting}
+
+La funzione \ttf{} e' rimasta invariata, ma adesso i registri a 64-bit X- sono utilizzati nella loro interezza.
+I valori grandi a 64-bit sono caricati nei registri per parti, come descritto anche qui: \myref{ARM_big_constants_loading}.
+
+\myparagraph{\NonOptimizing GCC (Linaro) 4.9}
+
+L'output del compilatore non ottimizzante e' piu' ridondante:
+
+\begin{lstlisting}[style=customasmARM]
+f:
+	sub	sp, sp, #16
+	str	w0, [sp,12]
+	str	w1, [sp,8]
+	str	w2, [sp,4]
+	ldr	w1, [sp,12]
+	ldr	w0, [sp,8]
+	mul	w1, w1, w0
+	ldr	w0, [sp,4]
+	add	w0, w1, w0
+	add	sp, sp, 16
+	ret
+\end{lstlisting}
+
+Il codice salva gli argomenti in input nello stack locale, nel caso in cui qualcuno (o qualcosa) in questa funzione abbia necessita' 
+di usare i registri \TT{W0...W2} 
+Questo previene l'eventualita' che gli argomenti originali siano sovrascritti, nel caso in cui servano nuovamente nel corso della funzione.
+
+Cio' e' detto \IT{Register Save Area.} (\ARMPCS) ed e' vagamente simile allo \q{Shadow Space}: \myref{shadow_space}.
+La funzione chiamata non e' comunque obbligata a salvarli.
+
+Perche' GCC 4.9 ottimizzante ha eliminato questa porzione di codice che salva gli argomenti?
+Lo ha fatto perche', a seguito di ulteriore ottimizzazione, ha concluso che gli argomenti di questa funzione non sono riutilizzati in futuro e
+che i registri \TT{W0...W2} non saranno utilizzati.
+
+\myindex{ARM!\Instructions!MUL}
+\myindex{ARM!\Instructions!ADD}
+
+Notiamo anche una coppia di istruzioni \TT{MUL}/\TT{ADD} al posto della singola \TT{MADD}.

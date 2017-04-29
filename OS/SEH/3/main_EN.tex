@@ -1,0 +1,24 @@
+\subsubsection{Windows x64}
+
+\label{SEH_win64}
+
+As you might think, it is not very fast to set up the SEH frame at each function prologue.
+Another performance problem is changing the 
+\IT{previous try level} value many times during the function's execution.
+
+So things are changed completely in x64: now all pointers to \TT{try} blocks, filter and handler functions are stored
+in another PE segment \TT{.pdata}, 
+and from there the \ac{OS}'s exception handler takes all the information.
+
+Here are the two examples from the previous section compiled for x64:
+
+\lstinputlisting[caption=MSVC 2012,style=customasmx86]{OS/SEH/3/2_x64.asm}
+
+\lstinputlisting[caption=MSVC 2012,style=customasmx86]{OS/SEH/3/3_x64.asm}
+
+Read \IgorSkochinsky for more detailed information about this.
+
+Aside from exception information, \TT{.pdata}
+is a section that contains the addresses of almost all function starts and ends,
+hence it may be useful for a tools targeted at automated analysis.
+

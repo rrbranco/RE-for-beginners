@@ -1,0 +1,26 @@
+my_abs
+; kopiere von S0 nach R2:
+                FMRS    R2, S0
+; lösche Bit:
+                BIC     R3, R2, #0x80000000
+; kopiere von R3 nach S0:
+                FMSR    S0, R3
+                BX      LR
+
+set_sign
+; kopiere von S0 nach R2:
+                FMRS    R2, S0
+; führe OR aus:
+                ORR     R3, R2, #0x80000000
+; kopiere von R3 nach S0:
+                FMSR    S0, R3
+                BX      LR
+
+negate
+; kopiere von S0 nach R2:
+                FMRS    R2, S0
+; führe ADD aus:
+                ADD     R3, R2, #0x80000000
+; kopiere von R3 nach S0:
+                FMSR    S0, R3
+                BX      LR

@@ -1,32 +1,5 @@
-\section{\RU{И если много}\EN{A lot of cases}}
+\EN{\input{patterns/08_switch/2_lot/main_EN}}
+\RU{\input{patterns/08_switch/2_lot/main_RU}}
+\DE{\input{patterns/08_switch/2_lot/main_DE}}
+\FR{\input{patterns/08_switch/2_lot/main_FR}}
 
-\RU{Если ветвлений слишком много, то генерировать слишком длинный код с многочисленными \JE/\JNE 
-уже не так удобно.}
-\EN{If a \TT{switch()} statement contains a lot of cases, it is not very convenient for the compiler to emit too large code
-with a lot \JE/\JNE instructions.}
-
-\lstinputlisting[label=switch_lot_c]{patterns/08_switch/2_lot/lot.c}
-
-\input{patterns/08_switch/2_lot/lot_x86}
-\ifdefined\IncludeARM
-\input{patterns/08_switch/2_lot/lot_ARM}
-\fi
-\ifdefined\IncludeMIPS
-\input{patterns/08_switch/2_lot/lot_MIPS}
-\fi
-
-\subsection{\Conclusion{}}
-
-\RU{Примерный скелет оператора}\EN{Rough skeleton of} \IT{switch()}:
-
-% TODO: ARM, MIPS skeleton
-\lstinputlisting[caption=x86]{patterns/08_switch/2_lot/skel1.lst.\LANG}
-
-\RU{Переход по адресу из таблицы переходов может быть также реализован такой инструкцией:}
-\EN{The jump to the address in the jump table may also be implemented using this instruction:}
-\TT{JMP jump\_table[REG*4]}.
-\RU{Или}\EN{Or} \TT{JMP jump\_table[REG*8]} \InENRU x64.
-
-\RU{Таблица переходов (\IT{jumptable}) это просто массив указателей, как это будет вскоре описано:}
-\EN{A \IT{jumptable} is just array of pointers, like the one described later:}
-\myref{array_of_pointers_to_strings}.

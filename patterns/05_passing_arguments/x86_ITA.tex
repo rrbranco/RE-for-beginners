@@ -1,0 +1,39 @@
+\subsection{x86}
+
+\subsubsection{MSVC}
+
+Ecco il risultato della compilazione ocn MSVC 2010 Express:
+
+\lstinputlisting[label=src:passing_arguments_ex_MSVC_cdecl,caption=MSVC 2010 Express,style=customasmx86]{patterns/05_passing_arguments/msvc_EN.asm}
+
+\myindex{x86!\Registers!EBP}
+
+Vediamo che la funzione \main fa il push di 3 numeri sullo stack e chiama \TT{f(int,int,int).} 
+
+L'accesso agli argomenti all'interno della funzione \ttf e' gestito con l'aiuto di macro come: \TT{\_a\$ = 8}, 
+allo stesso modo delle variabili locali, ma con offset positivi.
+Si sta quindi indirizzando il lato \IT{esterno} dello \gls{stack frame} sommando la macro \TT{\_a\$} al valore contenuto nel registro \EBP.
+
+\myindex{x86!\Instructions!IMUL}
+\myindex{x86!\Instructions!ADD}
+
+Successivamente il valore di $a$ e' memorizzato in \EAX. A seguito dell'esecuzione dell'istruzione \IMUL, il valore in \EAX e' 
+il \gls{prodotto} del valore in \EAX e del contenuto di \TT{\_b}.
+
+Infine, \ADD aggiunge il valore in \TT{\_c} a \EAX.
+
+Il valore \EAX non necessita di essere spostato: si trova gia' nel posto giusto.
+Al termine, la funzione chiamante (\gls{caller}) prende il valore di \EAX e lo usa come argomento di \printf.
+
+\input{patterns/05_passing_arguments/olly_ITA}
+
+\subsubsection{GCC}
+
+Compiliamo lo stesso esempio con GCC 4.4.1 ed osserviamo il risultato con \IDA:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/05_passing_arguments/gcc_EN.asm}
+
+Il risultato e' pressoche' identico, a meno di piccole differenze gia' discusse in precedenza.
+
+Lo \gls{stack pointer} non viene ripristinato dopo le due chiamate a funzione(f and printf), 
+poiche' se ne occupa la penultima istruzione \TT{LEAVE} (\myref{x86_ins:LEAVE}) alla fine della funizone.

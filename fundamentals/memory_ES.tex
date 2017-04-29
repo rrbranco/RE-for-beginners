@@ -1,0 +1,50 @@
+﻿% TODO probably needs to be resynchronized with EN version
+\section{Memoria}
+
+Existen 3 tipos principales de memoria:
+
+\begin{itemize}
+\item
+Memoria global \ac{AKA} \q{asignaci\'on est\'atica de memoria}.
+No hay necesidad de asignarla expl\'icitamente, la asignaci\'on es realizada al declarar
+variables/arreglos globales.
+Estas variables globales residen en los segmentos de datos o de constantes.
+Est\'an disponibles globalmente (por lo tanto, se consideran un anti-patr\'on).
+No son convenientes para buffers/arreglos porque deben tener un tama\~no fijo.
+Los desbordamientos de buffer que occurren aqu\'i usualmente sobreescriben variables o buffers que residen
+junto a ellos en memoria.
+En este libro hay un ejemplo: \myref{scanf_global_variable}.
+
+\item
+Pila \ac{AKA} \q{asignaci\'on en pila}.
+La asignaci\'on se realiza al declarar variables/arreglos dentro de una funci\'on.
+Son usualmente variables locales a la funci\'on.
+Algunas veces estas variables locales tambi\'en estan disponibles para funciones descendientes
+(funciones llamadas, si aquel que la llama le pasa un apuntador a una de sus variables).
+La asignaci\'on y desasignaci\'on son muy r\'apidas, s\'olo necesita que \ac{SP} sea ajustado.
+\myindex{\CStandardLibrary!alloca()}
+\ESph{}
+Los desbordamientos de buffer suelen reescribir estructuras importantes en la pila: \myref{subsec:bufferoverflow}.
+
+\myindex{\CStandardLibrary!malloc()}
+\myindex{\CStandardLibrary!free()}
+\item
+Heap \ac{AKA} \q{asignaci\'on din\'amica de memoria}.
+La asignaci\'on/desasignaci\'on es realizada llamando a \\
+\TT{malloc()/free()} \ESph{} \TT{new/delete} \ESph{} \Cpp.
+\'Este es el m\'etodo m\'as conveniente: el tama\~no del bloque puede establecerse en tiempo de ejecuci\'on.
+\myindex{\CStandardLibrary!realloc()}
+Cambiar el tama\~no es posible (usando \TT{realloc()}), pero puede ser lento.
+\'Esta es la forma m\'as lenta de asignar memoria:
+el asignador de memoria debe suportar y actualizar todas las estructuras de control
+mientras se asigna y desasigna.
+Los desbordamientos de buffer suelen sobreescribir estas estructuras.
+Las asiganciones en el heap tambi\'en son el origen de problemas de fuga de memoria: cada bloque de memoria tiene
+que ser desasgnado expl\'icitamente, pero uno puede olvidarse de ello, o hacerlo de manera incorrecta.
+\myindex{\CStandardLibrary!free()}
+Otro problema es el \q{uso despu\'es de la liberaci\'on}---usar un bloque de memoria despu\'es
+de que \TT{free()} ha sido llamado en \'el, lo cual es muy peligroso.
+Un ejemplo en este libro:
+\myref{struct_malloc_example}.
+
+\end{itemize}

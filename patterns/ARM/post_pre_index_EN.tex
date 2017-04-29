@@ -1,0 +1,94 @@
+﻿\subsection{Addressing modes}
+\myindex{ARM!Addressing modes}
+\label{ARM_postindex_vs_preindex}
+\myindex{\CLanguageElements!\PostIncrement}
+\myindex{\CLanguageElements!\PostDecrement}
+\myindex{\CLanguageElements!\PreIncrement}
+\myindex{\CLanguageElements!\PreDecrement}
+
+This instruction is possible in ARM64:
+
+\myindex{ARM!\Instructions!LDR}
+\begin{lstlisting}[style=customasmARM]
+ldr	x0, [x29,24]
+\end{lstlisting}
+
+This means add 24 to the value in X29 and load the value from this address.
+
+Please note that 24 is inside the brackets.
+The meaning is different if the number is outside the brackets:
+
+\begin{lstlisting}[style=customasmARM]
+ldr	w4, [x1],28
+\end{lstlisting}
+
+This means load the value at the address in X1, then add 28 to X1.
+
+\myindex{PDP-11}
+
+ARM allows you to add or subtract a constant to/from the address used for loading.
+
+And it's possible to do that both before and after loading.
+
+There is no such addressing mode in x86, but it is present in some other processors, even on PDP-11.
+
+There is a legend that the pre-increment, post-increment, pre-decrement and post-decrement modes in PDP-11,
+
+were \q{guilty} for the appearance of such C language (which developed on PDP-11) constructs as
+*ptr++, *++ptr, *ptr-{}-, *-{}-ptr. 
+
+By the way, this is one of the hard to memorize C features.
+This is how it is:
+
+\small
+% FIXME: add ARM assembly...
+\begin{center}
+\begin{tabular}{ | l | l | l | l | }
+\hline
+\headercolor{} C term & 
+\headercolor{} ARM term & 
+\headercolor{} C statement & 
+\headercolor{} how it works \\
+\hline
+\PostIncrement & 
+post-indexed addressing & 
+\TT{*ptr++} & 
+use \TT{*ptr} value, \\
+& & & then \gls{increment} \\
+& & & \TT{ptr} pointer \\
+\hline
+\PostDecrement & 
+post-indexed addressing & 
+\TT{*ptr-{}-} & 
+use \TT{*ptr} value, \\
+& & & then \gls{decrement} \\
+& & & \TT{ptr} pointer \\
+\hline
+\PreIncrement & 
+pre-indexed addressing & 
+\TT{*++ptr} & 
+\gls{increment} \TT{ptr} pointer, \\
+& & & then use \\
+& & & \TT{*ptr} value \\
+\hline
+\PreDecrement & 
+pre-indexed addressing & 
+\TT{*-{}-ptr} & 
+\gls{decrement} \TT{ptr} pointer, \\
+& & & then use \\
+& & & \TT{*ptr} value \\
+\hline
+\end{tabular}
+\end{center}
+\normalsize
+
+Pre-indexing is marked with an exclamation mark in the ARM assembly language.
+For example, see line 2 in \lstref{hw_ARM64_GCC}.
+
+Dennis Ritchie (one of the creators of the C language) mentioned that it presumably was invented by Ken Thompson
+(another C creator) because this processor feature was present in PDP-7
+\footnote{\url{http://yurichev.com/mirrors/C/c_dmr_postincrement.txt}}, \RitchieDevC{}.
+
+Thus, C language compilers may use it, if it is present on the target processor.
+
+That's very convenient for array processing.

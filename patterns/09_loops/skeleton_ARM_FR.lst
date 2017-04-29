@@ -1,0 +1,10 @@
+﻿    MOV R4, 2 ; initialisation
+    B check
+body:
+    ; corps de la boucle
+    ; faire quelque chose ici
+    ; utiliser le compteur dans R4, mais ne pas le modifier!
+    ADD R4,R4, #1 ; §incrémenter§
+check:
+    CMP R4, #10
+    BLT body

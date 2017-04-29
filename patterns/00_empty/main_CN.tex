@@ -1,0 +1,70 @@
+\section{空函数}
+\label{empty_func}
+
+最简单的函数就是什么都不做的函数:
+
+\lstinputlisting[caption=\EN{\CCpp代码},style=customc]{patterns/00_empty/1.c}
+
+我们来编译一下。
+
+\subsection{x86}
+
+以下的内容是在x86平台上，MSVC和GCC编译器所产生的优化过的输出:
+
+\lstinputlisting[caption=\Optimizing GCC/MSVC (\assemblyOutput),style=customasmx86]{patterns/00_empty/1.s}
+
+\myindex{x86!\Instructions!RET}
+只有一条指令\RET，该指令会将执行权返回给\gls{调用者}。
+
+\subsection{ARM}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) \assemblyOutput,style=customasmARM]{patterns/00_empty/1_Keil_ARM_O3.s}
+
+在ARM \ac{ISA}上，返回值并不存储在栈上，而是存放在连接寄存器(Link Register)中，所以\INS{BX LR}指令会跳转到该地址处——从而有效地将执行权返回给\gls{调用者}。
+
+\subsection{MIPS}
+
+在MIPS中，对于寄存器的命名，存在着两种不同的命名约定: 通过编号命名(从\$0到\$31)或者通过助记符命名(\$V0，\$A0等等)。
+
+下面的GCC汇编输出通过编号来命名寄存器:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/00_empty/MIPS.s}
+
+\dots 然而\IDA通过助记符来命名:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/00_empty/MIPS_IDA.lst}
+
+\myindex{MIPS!\Instructions!J}
+第一条指令是跳转指令(J或JR)，这将执行流导向\gls{调用者}，跳转到存放在\$31(或\$RA)寄存器中的地址。
+
+这个寄存器和ARM架构中的\ac{LR}寄存器类似。
+
+第二条指令是\ac{NOP}，这条指令什么都不会做。
+我们目前可以忽略它。
+
+\subsubsection{关于MIPS指令和寄存器名称的提示}
+
+在MIPS中寄存器名称和指令通常使用小写字母。
+然而在本书中，为了一致性考虑，我们会坚持使用大写字母，以和本书中其他\ac{ISA}的惯例相符。
+
+\subsection{实践中的空函数}
+
+尽管空函数通常是毫无用处的，但是它们在底层代码中是常常出现的。
+
+首先，用于调试的函数是很常见的，像下面这个函数:
+
+\lstinputlisting[caption=\EN{\CCpp Code},style=customc]{patterns/00_empty/dbg_print.c}
+
+在非DEBUG构建中 (例如，RELEASE构建), \TT{\_DEBUG}未被定义，
+所以尽管在执行中\TT{dbg\_print()}函数仍会被调用，但函数体为空。
+
+另外一种常见的软件保护方式是做出多种构建，一种提供给正版用户，一种作为试用版本。
+在试用版本的构建中，会缺少一些重要的函数，像下面这样:
+
+\lstinputlisting[caption=\EN{\CCpp代码},style=customc]{patterns/00_empty/demo.c}
+
+\TT{save\_file()} 函数会在用户点击\TT{文件->保存}菜单时被调用。
+试用版本中，会禁用该菜单项，但即使破解者强行启用了这一项，也只有空函数会被调用。
+
+IDA会将这样的空函数以\TT{nullsub\_00}，\TT{nullsub\_01}这样的名字标记。
+

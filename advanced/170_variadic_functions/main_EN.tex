@@ -1,0 +1,45 @@
+\section{Variadic functions}
+
+Functions like \printf and \scanf can have a variable number of arguments.
+How are these arguments accessed?
+
+% sections
+\input{\CURPATH/arith_EN.tex}
+\input{\CURPATH/die_EN.tex}
+
+% TODO translate to Russian:
+\subsection{Pin case}
+
+\myindex{Pin}
+It's interesting to note how some functions from Pin \ac{DBI} framework takes number of arguments:
+
+\begin{lstlisting}[style=customc]
+            INS_InsertPredicatedCall(
+                ins, IPOINT_BEFORE, (AFUNPTR)RecordMemRead,
+                IARG_INST_PTR,
+                IARG_MEMORYOP_EA, memOp,
+                IARG_END);
+\end{lstlisting}
+(pinatrace.cpp)
+
+And this is how INS\_InsertPredicatedCall() is declared:
+
+\begin{lstlisting}[style=customc]
+extern VOID INS_InsertPredicatedCall(INS ins, IPOINT ipoint, AFUNPTR funptr, ...);
+\end{lstlisting}
+(pin\_client.PH)
+
+Hence, constants starting with IARG\_ are some kinds of arguments to the function,
+which are handled inside of INS\_InsertPredicatedCall().
+You can pass as many arguments, as you need.
+Some commands has additional argument(s), some are not.
+Full list of arguments:
+\url{https://software.intel.com/sites/landingpage/pintool/docs/58423/Pin/html/group__INST__ARGS.html}.
+And it has to be a way to detect an end of arguments list, so the list must be terminated with IARG\_END, without which,
+the function will (try to) handle random noise in the local stack as arguments.
+
+Also, in [\RobPikePractice] we can find a nice example of C/C++ routines very similar to
+pack/unpack\footnote{\url{https://docs.python.org/3/library/struct.html}} in Python.
+
+\input{\CURPATH/fmt_string_exploit_EN.tex}
+

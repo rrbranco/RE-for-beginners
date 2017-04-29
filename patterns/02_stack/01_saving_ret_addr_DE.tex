@@ -1,0 +1,115 @@
+\subsection{Rückgabe Adresse der Funktion speichern}
+
+\myparagraph{x86}
+
+\myindex{x86!\Instructions!CALL}
+Wenn man eine Funktion mit der \CALL Instruktion aufruft, wird die Adresse direkt nach der
+\CALL Instruktion auf dem Stack gespeichert und der unbedingte jump wird ausgeführt.
+
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!JMP}
+Die \CALL Instruktion ist äquivalent zu dem \INS{PUSH address\_after\_call / JMP operand} Instruktions paar.
+
+\myindex{x86!\Instructions!RET}
+\myindex{x86!\Instructions!POP}
+\RET ruft die Rückkehr Adresse vom Stack ab und springt zu dieser~---was äquivalent zu einem \TT{POP tmp / JMP tmp} Instruktions
+paar ist.
+
+\myindex{\Stack!\MLStackOverflow}
+\myindex{\Recursion}
+
+Den Stack zum überlaufen zu bringen ist recht einfach, einfach eine 
+endlos rekursive Funktion Aufrufen:
+
+
+\begin{lstlisting}[style=customc]
+void f()
+{
+	f();
+};
+\end{lstlisting}
+
+
+MSVC 2008 hat eine Erkennung für das Problem:
+
+
+\begin{lstlisting}
+c:\tmp6>cl ss.cpp /Fass.asm
+Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 15.00.21022.08 for 80x86
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ss.cpp
+c:\tmp6\ss.cpp(4) : warning C4717: 'f' : recursive on all control paths, function will cause runtime stack overflow
+\end{lstlisting}
+
+\dots aber der Compiler erzeugt den Code trotzdem:
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+	push	ebp
+	mov	ebp, esp
+; Line 3
+	call	?f@@YAXXZ	; f
+; Line 4
+	pop	ebp
+	ret	0
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+\dots Auch wenn wir die Compiler Optimierungen einschalten (\TT{/0x} Option) wird der optimierte Code nicht
+den Stack zum überlaufen bringen. Stattdessen wird der Code \IT{korrekt}\footnote{Ironie hier} ausgeführt: 
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+$LL3@f:
+; Line 3
+	jmp	SHORT $LL3@f
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+
+GCC 4.4.1 generiert vergleichbaren Code in beiden Fällen, jedoch ohne über das Overflow Problem zu warnen.
+
+
+\myparagraph{ARM}
+
+\myindex{ARM!\Registers!Link Register}
+
+ARM Programme benutzen den Stack um Rücksprung Adressen zu speichern, aber anders.
+Wie bereits erwähnt in \q{\HelloWorldSectionName}~(\myref{sec:hw_ARM}),
+wird der \ac{RA} Wert im \ac{LR} (\gls{link register}) gespeichert.
+Wenn nun eine andere Funktion aufgerufen werden muss und auf das \ac{LR} Register 
+zu greift, muss der aktuelle Wert im Register irgendwo gespeichert werden.
+
+\myindex{Funktion Prologe}
+Normal wird der Wert im Funktion Prolog gespeichert.
+
+\myindex{ARM!\Instructions!PUSH}
+\myindex{ARM!\Instructions!POP}
+
+Oft sieht man Instruktionen wie z.B \INS{PUSH {R4-R7,LR}} zusammen mit dieser Instruktion im 
+Epilog \INS{POP {R4-R7,PC}}---Somit werden Werte die in den Funktionen benötigt werden auf dem 
+Stack gespeichert, inklusive \ac{LR}.
+
+\myindex{ARM!Leaf Funktion}
+Wenn eine Funktion nie eine andere Funktion aufruft, nennt man das in der \ac{RISC} Terminologie eine
+\IT{\glslink{leaf function}{leaf Funktion}}\footnote{\href{http://go.yurichev.com/17064}{infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.faqs/ka13785.html}}.  % <-- attention could be a compilier bug
+Als Konsequenz ergibt sich, das leaf Funktionen nicht das \ac{LR} Register speichern (da sie es nicht modifizieren).
+Wenn solche Funktionen klein sind und nur eine geringe Anzahl an Registern benutzt, ist es möglich das der Stack
+gar nicht benutzt wird. Es ist also möglich leaf Funktionen zu benutzen ohne den Stack zurück zu greifen, die Ausführung
+ist hier schneller als auf älteren x86 Maschinen weil kein externer RAM für den Stack benutzt wird 
+\footnote{Bis vor einer weile war es sehr teuer auf PDP-11 und VAX Maschinen die CALL Instruktion zu benutzen; bis zu 50\%
+der Rechenzeit wurde allein für diese Instruktion verschwendet, man hat dabei festgestellt das eine große Anzahl an kleinen
+Funktionen zu haben ein \gls{anti-pattern} \InSqBrackets{\TAOUP Chapter 4, Part II}.} ist.
+Diese Eigenschaft kann nützlich sein wenn der Speicher für den Stack noch nicht alloziert oder verfügbar ist.
+
+Ein paar Beispiele für leaf Funktionen:
+
+\myref{ARM_leaf_example1}, \myref{ARM_leaf_example2}, 
+\myref{ARM_leaf_example3}, \myref{ARM_leaf_example4}, \myref{ARM_leaf_example5},
+\myref{ARM_leaf_example6}, \myref{ARM_leaf_example7}, \myref{ARM_leaf_example10}.
+

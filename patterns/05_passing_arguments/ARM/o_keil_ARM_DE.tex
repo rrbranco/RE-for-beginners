@@ -1,0 +1,17 @@
+﻿\subsubsection{\OptimizingKeilVI (\ARMMode)}
+
+\begin{lstlisting}[label=ARM_leaf_example1,style=customasmARM]
+.text:00000098             f
+.text:00000098 91 20 20 E0       MLA     R0, R1, R0, R2
+.text:0000009C 1E FF 2F E1       BX      LR
+\end{lstlisting}
+
+\myindex{ARM!\Instructions!MLA}
+
+Und hier wurde die \ttf Funktion mit dem Kreil Compiler und allen Optimierungen (/03) kompiliert .
+
+Die \MOV Instruktion wurde weg optimiert und jetzt benutzt \TT{MLA} alle Eingabe 
+Register und schreibt die Ergebnisse direkt nach \Reg{0}. Genau da wo die 
+aufrufende Funktion das Ergebnis auslesen und benutzten wird.
+
+

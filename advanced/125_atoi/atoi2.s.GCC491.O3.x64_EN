@@ -1,0 +1,59 @@
+.LC0:
+	.string	"Error! Unexpected char: '%c'\n"
+
+my_atoi:
+	sub	rsp, 8
+	movsx	edx, BYTE PTR [rdi]
+; check for minus sign
+	cmp	dl, 45 ; '-'
+	je	.L22
+	xor	esi, esi
+	test	dl, dl
+	je	.L20
+.L10:
+; ESI=0 here if there was no minus sign and 1 if it was
+	lea	eax, [rdx-48]
+; any character other than digit will result in unsigned number greater than 9 after subtraction
+; so if it is not digit, jump to L4, where error will be reported:
+	cmp	al, 9
+	ja	.L4
+	xor	eax, eax
+	jmp	.L6
+.L7:
+	lea	ecx, [rdx-48]
+	cmp	cl, 9
+	ja	.L4
+.L6:
+	lea	eax, [rax+rax*4]
+	add	rdi, 1
+	lea	eax, [rdx-48+rax*2]
+	movsx	edx, BYTE PTR [rdi]
+	test	dl, dl
+	jne	.L7
+; if there was no minus sign, skip NEG instruction
+; if it was, execute it.
+	test	esi, esi
+	je	.L18
+	neg	eax
+.L18:
+	add	rsp, 8
+	ret
+.L22:
+	movsx	edx, BYTE PTR [rdi+1]
+	lea	rax, [rdi+1]
+	test	dl, dl
+	je	.L20
+	mov	rdi, rax
+	mov	esi, 1
+	jmp	.L10
+.L20:
+	xor	eax, eax
+	jmp	.L18
+.L4:
+; report error. character is in EDX
+	mov	edi, 1
+	mov	esi, OFFSET FLAT:.LC0 ; "Error! Unexpected char: '%c'\n"
+	xor	eax, eax
+	call	__printf_chk
+	xor	edi, edi
+	call	exit

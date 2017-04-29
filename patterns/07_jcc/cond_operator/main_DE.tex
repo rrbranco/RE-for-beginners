@@ -1,0 +1,79 @@
+\subsection{Ternärer Vergleichsoperator}
+\label{chap:cond}
+Der ternäre Vergleichsoperator in \CCpp hat die folgende Syntax:
+
+\begin{lstlisting}
+expression ? expression : expression
+\end{lstlisting}
+
+Hier ist ein Beispiel:
+
+\lstinputlisting[style=customc]{patterns/07_jcc/cond_operator/cond.c}
+
+\subsubsection{x86}
+Alte und nicht optimerende Compiler erzeugen Assemblercode als wenn ein \TT{if/else} Ausdruck verwendet wurde:
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2008,style=customasmx86]{patterns/07_jcc/cond_operator/MSVC2008_DE.asm}
+
+\lstinputlisting[caption=\Optimizing MSVC 2008,style=customasmx86]{patterns/07_jcc/cond_operator/MSVC2008_Ox_DE.asm}
+
+Neuere Compiler sind ein wenig präziser:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012
+x64,style=customasmx86]{patterns/07_jcc/cond_operator/MSVC2012_Ox_x64_DE.asm}
+
+\myindex{x86!\Instructions!CMOVcc}
+\Optimizing GCC 4.8 für x86 verwendet ebenfalls den \TT{CMOVcc} Befehl, wohingegen der nicht optimierende GCC 4.8
+bedingte Sprünge verwendet.
+
+\subsubsection{ARM}
+
+\myindex{x86!\Instructions!ADRcc}
+\Optimizing Keil im ARM mode verwendet ebenfalls bedingte Sprungbefehle \TT{ADRcc}:
+
+\lstinputlisting[label=cond_Keil_ARM_O3,caption=\OptimizingKeilVI
+(\ARMMode),style=customasmARM]{patterns/07_jcc/cond_operator/Keil_ARM_O3_DE.s}
+
+Ohne manuellen Eingriff können die beiden Befehle \TT{ADREQ} und \TT{ADRNE} nicht in einem Durchlauf ausgeführt werden.
+
+\Optimizing Keil für Thumb mode muss bedingte Sprungbefehle verwenden, da es keine Ladebefehle gibt, die
+Bedingungsflags unterstützen.
+
+\lstinputlisting[caption=\OptimizingKeilVI
+(\ThumbMode),style=customasmARM]{patterns/07_jcc/cond_operator/Keil_thumb_O3_DE.s}
+
+\subsubsection{ARM64}
+
+\Optimizing GCC (Linaro) 4.9 für ARM64 verwendet auch bedingte Sprünge:
+
+\lstinputlisting[label=cond_ARM64,caption=\Optimizing GCC (Linaro)
+4.9,style=customasmARM]{patterns/07_jcc/cond_operator/ARM64_GCC_O3_DE.s} Das liegt daran, dass ARM64 über keinen
+einfachen Ladebefehl mit Bedingungsflags verfügt wie z.B. \TT{ADRcc} im 32-Bit-ARM-Modus oder \INS{CMOVcc} in x86.
+
+\myindex{ARM!\Instructions!CSEL}
+Es gibt dafür den \q{Conditional SELect} Befehl (\TT{CSEL})\InSqBrackets{\ARMSixFourRef p390, C5.5}, aber GCC 4.9
+scheint nicht ausgereift genug zu sein um ihn in einem solchen Codestück zu verwenden.
+
+\subsubsection{MIPS}
+
+Leider ist GCC 4.4.5 für MIPS auch nicht besser:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(\assemblyOutput),style=customasmMIPS]{patterns/07_jcc/cond_operator/MIPS_O3_DE.s}
+
+\subsubsection{Schreiben wir es mit \TT{if/else}}
+
+\lstinputlisting[style=customc]{patterns/07_jcc/cond_operator/cond2.c}
+
+\myindex{x86!\Instructions!CMOVcc}
+Interessanterweise war der optimierende GCC 4.8 für x86 ebenfalls in der Lage \TT{CMOVcc} hier zu verwenden:
+
+\lstinputlisting[caption=\Optimizing GCC 4.8,style=customasmx86]{patterns/07_jcc/cond_operator/cond2_GCC_O3_DE.s}
+
+\Optimizing Keil im ARM mode erzeugt identischen Code zu \lstref{cond_Keil_ARM_O3}.
+Der optimierende MSVC 2012 ist hingegen (noch) nicht so gut.
+
+
+\subsubsection{\Conclusion{}}
+Warum versuchen optimierende Compiler bedingte Sprünge zu entfernen? Mehr dazu finden Sie hier:
+\myref{branch_predictors}.

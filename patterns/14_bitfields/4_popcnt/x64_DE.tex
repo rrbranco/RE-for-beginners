@@ -1,0 +1,109 @@
+\subsubsection{x64}
+\label{subsec:popcnt}
+Verändern wir das Beispiel ein wenig um es auf 64 Bit zu erweitern:
+
+\lstinputlisting[label=popcnt_x64_example,style=customc]{patterns/14_bitfields/4_popcnt/shifts64.c}
+
+\myparagraph{\NonOptimizing GCC 4.8.2}
+
+So weit, so einfach.
+
+\lstinputlisting[caption=\NonOptimizing GCC
+4.8.2,style=customasmx86]{patterns/14_bitfields/4_popcnt/shifts64_GCC_O0_DE.s}
+
+\myparagraph{\Optimizing GCC 4.8.2}
+
+\lstinputlisting[caption=\Optimizing GCC
+4.8.2,numbers=left,label=shifts64_GCC_O3,style=customasmx86]{patterns/14_bitfields/4_popcnt/shifts64_GCC_O3_DE.s}
+Dieser Code ist kürzer, birgt aber eine Besonderheit.
+
+In allen bisher betrachteten Beispieln haben wir den Wert von \q{rt} nach dem
+Vergleich mit einem speziellen Bit erhöht, aber dieser Code erhöht \q{rt} vorher
+(Zeile 6) und schreibt den neuen Wert in das Register \EDX.
+Dadurch überträgt der Befehl \CMOVNE\footnote{Conditional MOVe if Not Equal}
+(der ein Synonym für \CMOVNZ\footnote{Conditional MOVe if Not Zero} ist) den
+neuen Wert von \q{rt} durch Verschieben des Wertes in \EDX (vorgeschlagener
+Wert von \q{rt}) nach \EAX (\q{aktueller Wert von rt}). Der in \EAX befindliche
+Wert wird schließlich zurückgegeben.
+
+Deshalb wird die Erhöhung des Zählers in jedem Durchlauf der Schleife
+durchgeführt, d.h. 64 mal, ohne dass eine Abhängigkeit vom Eingabewert
+besteht.
+
+Der Vorteil dieses Code ist, dass er nur einen bedingten Sprung enthält (am
+Ende der Schleife) anstatt zwei Sprüngen (Überspringen des Erhöhens von \q{rt}
+und Ende der Schleife). 
+Der Code ist somit auf modernen CPUs mit Branch Pedictors möglicherweise
+schneller:\myref{branch_predictors}.
+
+\label{FATRET}
+\myindex{x86!\Instructions!FATRET}
+Der letzte Befehl hier ist \INS{REP RET} (Opcode \TT{F3 C3}), der von MSVC auch
+\INS{FATRET} genannt wird.
+Hierbei handelt es sich um eine optimierte Version von \RET, die von ARM
+bevorzugt am Ende der Funktion verwendet wird, wenn \RET direkt nach einem
+bedingten Sprung folg:.
+\InSqBrackets{\AMDOptimization p.15}
+\footnote{Mehr Informationen dazu: \url{http://go.yurichev.com/17328}}.
+
+\myparagraph{\Optimizing MSVC 2010}
+
+\lstinputlisting[caption=MSVC
+2010,style=customasmx86]{patterns/14_bitfields/4_popcnt/MSVC_2010_x64_Ox_DE.asm}
+
+\myindex{x86!\Instructions!ROL}
+Hier wird der Befehl \ROL anstelle von \SHL verwendet, welches einer
+\q{Linksrotation} anstatt einer \q{Linksverschiebung} entspricht.
+In diesem Beispiel entspricht \ROL einem \TT{SHL}.
+
+Für mehr Informationen zu Rotationsbefehlen siehe: \myref{ROL_ROR}. 
+
+\Reg{8} zählt hier von 64 auf 0 herunter. 
+Dies entspricht dem invertierten $i$.
+
+Hier ist eine Tabelle einiger Register während der Ausführung des Programms:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor RDX & \HeaderColor R8 \\
+\hline
+0x0000000000000001 & 64 \\
+\hline
+0x0000000000000002 & 63 \\
+\hline
+0x0000000000000004 & 62 \\
+\hline
+0x0000000000000008 & 61 \\
+\hline
+... & ... \\
+\hline
+0x4000000000000000 & 2 \\
+\hline
+0x8000000000000000 & 1 \\
+\hline
+\end{tabular}
+\end{center}
+
+\myindex{x86!\Instructions!FATRET}
+Am Ende finden wir den Befehl \INS{FATRET}, der hier schon erklärt
+wurde:\myref{FATRET}.
+
+\myparagraph{\Optimizing MSVC 2012}
+
+\lstinputlisting[caption=MSVC
+2012,style=customasmx86]{patterns/14_bitfields/4_popcnt/MSVC_2012_x64_Ox_DE.asm}
+
+\myindex{\CompilerAnomaly}
+\label{MSVC2012_anomaly}
+Der optimierende MSVC 2012 erzeugt fast den gleichen Code wie MSVC 2012,
+generiert aber aus irgendeinem Grund zwei identischen Rümpfe für die Schleifen
+und die Schleife zählt nun bis 32 anstatt 64.
+
+Ehrlich gesagt, kann man nicht genau erklären warum. Es könnte sich um einen
+Optimierungstrick handeln. Vielleicht ist es für den Rumpf der Schleife besser
+ein wenig länger zu sein.
+
+Trotzdem ist solcher Code relevant um zu zeigen, dass der Output des Compilers
+manchmal sehr merkwürdig und unlogisch sein kann und dennoch tadellos
+funktioniert.

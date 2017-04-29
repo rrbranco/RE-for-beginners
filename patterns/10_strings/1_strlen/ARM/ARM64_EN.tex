@@ -1,0 +1,30 @@
+﻿\myparagraph{ARM64}
+
+\mysubparagraph{\Optimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[style=customasmARM]{patterns/10_strings/1_strlen/ARM/ARM64_GCC_O3_EN.lst}
+
+The algorithm is the same as in \myref{strlen_MSVC_Ox}: 
+find a zero 
+byte, calculate the difference between the pointers and decrement the result by 1.
+Some comments were added by the author of this book.
+
+The only thing worth noting is that our example is somewhat wrong: \\
+\TT{my\_strlen()} returns 32-bit \Tint, while it has to return \TT{size\_t} or another 64-bit type.
+
+The reason is that, theoretically, \TT{strlen()} can be called for a huge blocks in memory that exceeds
+4GB, so it must able to return a 64-bit value on 64-bit platforms.
+
+Because of my mistake, the last \SUB instruction operates on a 32-bit part of register, while the penultimate
+\SUB instruction works on full the 64-bit register (it calculates the difference between the pointers).
+
+It's my mistake, it is better to leave it as is, as an example of how the code could look like in such case.
+
+\mysubparagraph{\NonOptimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[style=customasmARM]{patterns/10_strings/1_strlen/ARM/ARM64_GCC_O0_EN.lst}
+
+It's more verbose.
+The variables are often tossed here to and from memory (local stack).
+The same mistake here: the decrement operation happens on a 32-bit register part.
+

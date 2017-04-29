@@ -1,0 +1,45 @@
+\section{Using magic numbers while tracing}
+
+Often, our main goal is to understand how the program uses a value that has been either read from file or received via network. 
+The manual tracing of a value is often a very labor-intensive task. One of the simplest techniques for this (although not 100\% reliable) 
+is to use your own \IT{magic number}.
+
+This resembles X-ray computed tomography is some sense: a radiocontrast agent is injected into the patient's blood,
+which is then used to improve the visibility of the patient's internal structure in to the X-rays.
+It is well known how the blood of healthy humans
+percolates in the kidneys and if the agent is in the blood, it can be easily seen on tomography, how blood is percolating,
+and are there any stones or tumors.
+
+We can take a 32-bit number like \TT{0x0badf00d}, or someone's birth date like \TT{0x11101979}
+and write this 4-byte number to some point in a file used by the program we investigate.
+
+\myindex{\GrepUsage}
+\myindex{tracer}
+
+Then, while tracing this program with \tracer in \IT{code coverage} mode, with the help of \IT{grep}
+or just by searching in the text file (of tracing results), we can easily see where the value has been used and how.
+
+Example 
+of \IT{grepable} \tracer results in \IT{cc} mode:
+
+\begin{lstlisting}[style=customasmx86]
+0x150bf66 (_kziaia+0x14), e=       1 [MOV EBX, [EBP+8]] [EBP+8]=0xf59c934 
+0x150bf69 (_kziaia+0x17), e=       1 [MOV EDX, [69AEB08h]] [69AEB08h]=0 
+0x150bf6f (_kziaia+0x1d), e=       1 [FS: MOV EAX, [2Ch]] 
+0x150bf75 (_kziaia+0x23), e=       1 [MOV ECX, [EAX+EDX*4]] [EAX+EDX*4]=0xf1ac360 
+0x150bf78 (_kziaia+0x26), e=       1 [MOV [EBP-4], ECX] ECX=0xf1ac360 
+\end{lstlisting}
+% TODO: good example!
+
+This can be used for network packets as well.
+It is important for the \IT{magic number} to be unique and not to be present in the program's code.
+
+\newcommand{\DOSBOXURL}{\href{http://go.yurichev.com/17222}{blog.yurichev.com}}
+
+\myindex{DosBox}
+\myindex{MS-DOS}
+Aside of 
+the \tracer, DosBox (MS-DOS emulator) in heavydebug mode
+is able to write information about all registers' states for each executed instruction of the program to a plain text file\footnote{See also my 
+blog post about this DosBox feature: \DOSBOXURL{}}, so this technique may be useful for DOS programs as well.
+

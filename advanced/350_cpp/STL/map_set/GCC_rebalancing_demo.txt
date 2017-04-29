@@ -1,14 +1,14 @@
-123, 456 are inserted
+123, 456 has been inserted
 root----123
 	R-------456
 
-11, 12 are inserted
+11, 12 has been inserted
 root----123
 	L-------11
 		R-------12
 	R-------456
 
-100, 1001 are inserted
+100, 1001 has been inserted
 root----123
 	L-------12
 		L-------11
@@ -16,7 +16,7 @@ root----123
 	R-------456
 		R-------1001
 
-667, 1, 4, 7 are inserted
+667, 1, 4, 7 has been inserted
 root----12
 	L-------4
 		L-------1

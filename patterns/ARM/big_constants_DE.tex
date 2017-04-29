@@ -1,0 +1,123 @@
+\subsection{Laden einer Konstante in ein Register}
+\label{ARM_big_constants}
+
+\subsubsection{32-Bit ARM}
+\label{ARM_big_constants_loading}
+Wie wir bereits wissen, haben alle Befehle im ARM mode eine Länge von 4 Byte bzw. 2 Byte im Thumb mode.
+
+Wie können wir nun einen 32-Bit-Wert in ein Register laden, wenn es nicht möglich ist, ihn in einen Befehl
+hineinzukodieren?
+
+Versuchen wir es:
+
+\begin{lstlisting}[style=customc]
+unsigned int f()
+{
+	return 0x12345678;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[caption=GCC 4.6.3 -O3 \ARMMode,style=customasmARM]
+f:
+        ldr     r0, .L2
+        bx      lr
+.L2:
+        .word   305419896 ; 0x12345678
+\end{lstlisting}
+Der Wert \TT{0x12345678} wird im Speicher geparkt und wenn nötig geladen.
+Es ist aber möglich, den zusätzlichen Speicherzugriff loszuwerden.
+
+\begin{lstlisting}[caption=GCC 4.6.3 -O3 -march{=}armv7-a (\ARMMode),style=customasmARM]
+movw    r0, #22136      ; 0x5678
+movt    r0, #4660       ; 0x1234
+bx      lr
+\end{lstlisting}
+Wir sehen, dass der Wert stückweise in das Register geladen wird: zuerst der niedere Teil (mit \INS{MOVW}), dann der
+höhere (mit \INS{MOVT}).
+
+Das bedeutet, dass im ARM mode 2 Befehle nötig sind, um einen 32-Bit-Wert in ein Register zu laden.
+
+Das stellt kein wirkliches Problem dar, denn es gibt in realen Code nicht allzu viele Konstanten (außer 0 und 1).
+
+Hat dies auch zur Folge, dass die Version mit zwei Befehlen langsamer ist als die mit einem?
+
+Eher nicht. Wahrscheinlicher ist, dass moderne ARM Prozessoren in der Lage sind, solche Sequenzen zu erkennen und
+schnell auszuführen. 
+
+Auch \IDA vermag solche Muster im Code zu erkennen und disassembliert die Funktion wie folgt:
+
+\begin{lstlisting}[style=customasmARM]
+MOV    R0, 0x12345678
+BX     LR
+\end{lstlisting}
+
+\subsubsection{ARM64}
+
+\begin{lstlisting}[style=customc]
+uint64_t f()
+{
+	return 0x12345678ABCDEF01;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[caption=GCC 4.9.1 -O3,style=customasmARM]
+mov	x0, 61185   ; 0xef01
+movk	x0, 0xabcd, lsl 16
+movk	x0, 0x5678, lsl 32
+movk	x0, 0x1234, lsl 48
+ret
+\end{lstlisting}
+
+\myindex{ARM!\Instructions!MOVK}
+\TT{MOVK} steht für \q{MOV Keep}, d.h. der Befehl schreibt einen 16-Bit-Wert in das Register und lässt die übrigen Bits
+unverändert.
+\myindex{ARM!Optional operators!LSL}
+Der Suffix \TT{LSL} verschiebt den Wert um 16, 32 und 48 Bits in jedem Schritt nach links. Das Verschieben wird vor dem
+Laden durchgeführt.
+
+Das bedeutet, dass 4 Befehle notwendig sind, um einen 64-Bit-Wert in ein Register zu laden.
+
+\myparagraph{Fließkommazahl in einem Register speichern}
+Es ist möglich mit nur einem Befehl eine Fließkommazahl in einem D-Register zu speichern.
+
+Ein Beispiel:
+
+\begin{lstlisting}[style=customc]
+double a()
+{
+	return 1.5;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[caption=GCC 4.9.1 -O3 + objdump,style=customasmARM]
+0000000000000000 <a>:
+   0:   1e6f1000        fmov    d0, #1.500000000000000000e+000
+   4:   d65f03c0        ret
+\end{lstlisting}
+Die Zahl $1.5$ war tatsächlich in dem 32-Bit-Befehl kodiert. Aber wie ist das möglich?
+\myindex{ARM!\Instructions!FMOV}
+In ARM64 stehen 8 Bits im \TT{FMOV} Befehl für das Kodieren von Fließkommazahlen zur Verfügung.
+Der Algorithmus heißt \TT{VFPExpandImm()} in \ARMSixFourRefURL. 
+
+
+\myindex{minifloat}
+Dieses Vorgehen wird auch \IT{minifloat} genannt\footnote{\href{http://go.yurichev.com/17139}{wikipedia}}.
+
+Wir können verschiedene Werte ausprobieren: der Compiler ist in der Lage $30.0$ und $31.0$ zu kodieren, aber nicht
+$32.0$, da hier 8 Bytes für diese Zahl im IEEE 754 Format reserviert werden müssen.
+
+\begin{lstlisting}[style=customc]
+double a()
+{
+	return 32;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[caption=GCC 4.9.1 -O3,style=customasmARM]
+a:
+	ldr	d0, .LC0
+	ret
+.LC0:
+	.word	0
+	.word	1077936128
+\end{lstlisting}

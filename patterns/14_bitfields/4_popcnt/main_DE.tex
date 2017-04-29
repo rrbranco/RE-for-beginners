@@ -1,0 +1,140 @@
+\subsection{Gesetzte Bits zählen}
+Hier ist ein einfaches Beispiel einer Funktion, die die Anzahl der gesetzten
+Bits in einem Eingabewert zählt.
+
+Diese Operation wird auch \q{population count}\footnote{moderne x86 CPUs
+(die SSE4 unterstützen) haben zu diesem Zweck sogar einen eigenen POPCNT Befehl}
+genannt.
+
+\lstinputlisting[style=customc]{patterns/14_bitfields/4_popcnt/shifts.c}
+In dieser Schleife wird der Wert von $i$ schrittweise von 0 bis 31 erhöht,
+sodass der Ausdruck $1 \ll i$ von 1 bis \TT{0x80000000} zählt.
+In natürlicher Sprache würden wir diese Operation als \IT{verschiebe 1 um n
+Bits nach links} beschreiben.
+Mit anderen Worten: Der Ausdruck $1 \ll i$ erzeugt alle möglichen Bitpositionen
+in einer 32-Bit-Zahl.
+Das freie Bit auf der rechten Seite wird jeweils gelöscht.
+
+\label{2n_numbers_table}
+Hier ist eine Tabelle mit allen Werten von $1 \ll i$ 
+für $i=0 \ldots 31$:
+
+\small
+\begin{center}
+\begin{tabular}{ | l | l | l | l | }
+\hline
+\HeaderColor \CCpp Ausdruck & 
+\HeaderColor Zweierpotenz & 
+\HeaderColor Dezimalzahl & 
+\HeaderColor Hexadezimalzahl \\
+\hline
+$1 \ll 0$ & 1 & 1 & 1 \\
+\hline
+$1 \ll 1$ & $2^{1}$ & 2 & 2 \\
+\hline
+$1 \ll 2$ & $2^{2}$ & 4 & 4 \\
+\hline
+$1 \ll 3$ & $2^{3}$ & 8 & 8 \\
+\hline
+$1 \ll 4$ & $2^{4}$ & 16 & 0x10 \\
+\hline
+$1 \ll 5$ & $2^{5}$ & 32 & 0x20 \\
+\hline
+$1 \ll 6$ & $2^{6}$ & 64 & 0x40 \\
+\hline
+$1 \ll 7$ & $2^{7}$ & 128 & 0x80 \\
+\hline
+$1 \ll 8$ & $2^{8}$ & 256 & 0x100 \\
+\hline
+$1 \ll 9$ & $2^{9}$ & 512 & 0x200 \\
+\hline
+$1 \ll 10$ & $2^{10}$ & 1024 & 0x400 \\
+\hline
+$1 \ll 11$ & $2^{11}$ & 2048 & 0x800 \\
+\hline
+$1 \ll 12$ & $2^{12}$ & 4096 & 0x1000 \\
+\hline
+$1 \ll 13$ & $2^{13}$ & 8192 & 0x2000 \\
+\hline
+$1 \ll 14$ & $2^{14}$ & 16384 & 0x4000 \\
+\hline
+$1 \ll 15$ & $2^{15}$ & 32768 & 0x8000 \\
+\hline
+$1 \ll 16$ & $2^{16}$ & 65536 & 0x10000 \\
+\hline
+$1 \ll 17$ & $2^{17}$ & 131072 & 0x20000 \\
+\hline
+$1 \ll 18$ & $2^{18}$ & 262144 & 0x40000 \\
+\hline
+$1 \ll 19$ & $2^{19}$ & 524288 & 0x80000 \\
+\hline
+$1 \ll 20$ & $2^{20}$ & 1048576 & 0x100000 \\
+\hline
+$1 \ll 21$ & $2^{21}$ & 2097152 & 0x200000 \\
+\hline
+$1 \ll 22$ & $2^{22}$ & 4194304 & 0x400000 \\
+\hline
+$1 \ll 23$ & $2^{23}$ & 8388608 & 0x800000 \\
+\hline
+$1 \ll 24$ & $2^{24}$ & 16777216 & 0x1000000 \\
+\hline
+$1 \ll 25$ & $2^{25}$ & 33554432 & 0x2000000 \\
+\hline
+$1 \ll 26$ & $2^{26}$ & 67108864 & 0x4000000 \\
+\hline
+$1 \ll 27$ & $2^{27}$ & 134217728 & 0x8000000 \\
+\hline
+$1 \ll 28$ & $2^{28}$ & 268435456 & 0x10000000 \\
+\hline
+$1 \ll 29$ & $2^{29}$ & 536870912 & 0x20000000 \\
+\hline
+$1 \ll 30$ & $2^{30}$ & 1073741824 & 0x40000000 \\
+\hline
+$1 \ll 31$ & $2^{31}$ & 2147483648 & 0x80000000 \\
+\hline
+\end{tabular}
+\end{center}
+\normalsize
+Diese Konstanten (Bismasken) tauchen im Code oft auf und ein Reverse Engineer
+muss in der Lage sein, sie schnell und sicher zu erkennen.
+
+% TBT
+Es dazu jedoch nicht notwendig, die Dezimalzahlen (Zweipotenzen) größer
+65535 auswendig zu kennen. Die hexadezimalen Zahlen sind leicht zu merken.
+
+Die Konstanten werden häufig verwendet um Flags einzelnen Bits zuzuordnen. 
+Hier ist zum Beispiel ein Auszug aus \TT{ssl\_private.h} aus dem Quellcode von
+Apache 2.4.6:
+
+\begin{lstlisting}[style=customc]
+/**
+ * Define the SSL options
+ */
+#define SSL_OPT_NONE           (0)
+#define SSL_OPT_RELSET         (1<<0)
+#define SSL_OPT_STDENVVARS     (1<<1)
+#define SSL_OPT_EXPORTCERTDATA (1<<3)
+#define SSL_OPT_FAKEBASICAUTH  (1<<4)
+#define SSL_OPT_STRICTREQUIRE  (1<<5)
+#define SSL_OPT_OPTRENEGOTIATE (1<<6)
+#define SSL_OPT_LEGACYDNFORMAT (1<<7)
+\end{lstlisting}
+
+Zurück zu unserem Beispiel.
+
+Das Makro \TT{IS\_SET} prüft auf Anwesenheit von Bits in $a$.
+\myindex{x86!\Instructions!AND}
+
+Das Makro \TT{IS\_SET} entspricht dabei dem logischen (\IT{AND})
+und gibt 0 zurück, wenn das entsprechende Bit nicht gesetzt ist, oder die
+Bitmaske, wenn das Bit gesetzt ist.
+Der Operator \IT{if()} wird in \CCpp ausgeführt, wenn der boolesche Ausdruck
+nicht null ist (er könnte sogar 123456 sein), weshalb es meistens richtig
+funktioniert.
+
+
+% subsections
+\input{patterns/14_bitfields/4_popcnt/x86_DE}
+\input{patterns/14_bitfields/4_popcnt/x64_DE}
+\input{patterns/14_bitfields/4_popcnt/ARM_DE}
+\input{patterns/14_bitfields/4_popcnt/MIPS_DE}

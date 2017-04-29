@@ -1,0 +1,12 @@
+my_abs:
+; springe, falls $a0<0:
+                bltz    $a0, locret_10
+; §gib Eingabewert ($a0) in $v0 zurück:§
+                move    $v0, $a0
+                jr      $ra
+                or      $at, $zero ; branch delay slot, NOP
+locret_10:
+; negiere Eingabewert und speichere ihn in $v0:
+                jr      $ra
+; dies ist ein Pseudo-Befehl. Er entspricht "subu $v0,$zero,$a0" ($v0=0-$a0)
+                negu    $v0, $a0

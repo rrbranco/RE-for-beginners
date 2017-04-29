@@ -1,0 +1,33 @@
+\subsubsection{GCC: x86-64}
+
+\myindex{x86-64}
+Laat ons ook eens kijken naar GCC in 64-bit Linux:
+
+% TODO translate:
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{patterns/01_helloworld/GCC_x64_EN.s}
+
+Een methode om functieargumenten door te geven in registers wordt ook gebruikt in Linux, *BSD en \MacOSX \SysVABI.
+
+De eerste 6 argumenten worden doorgegeven in de \RDI, \RSI, \RDX, \RCX, \Reg{8}, \Reg{9} registers, en de rest --- via de stack.
+
+De pointer naar de string wordt dus doorgegeven via \EDI (het 32-bit gedeelte van het register).
+Maar waarom gebruikt men niet het 64-bit gedeelte, \RDI?
+
+Het is belangrijk te onthouden dat alle \MOV instructies in 64-bit modus, die iets schrijven in het onderste 32-bit gedeelte van het register, ook het bovenste 32-bit gedeelte leegmaken.
+\INS{MOV EAX, 011223344h} schrijft een waarde correct weg in \RAX, aangezien de bovenste bits zullen worden leeggemaakt.
+
+Als we het gecompileerde object-bestand (.o) openen, kunnen we ook de opcodes zien van alle instructies
+\footnote{Dit moet ook geactiveerd worden in \textbf{Options $\rightarrow$ Disassembly $\rightarrow$ Number of opcode bytes}}:
+
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{patterns/01_helloworld/GCC_x64.lst}
+
+\label{hw_EDI_instead_of_RDI}
+Zoals je kan zien, bezet de instructie die in \EDI schrijft op \TT{0x4004D4} 5 bytes.
+Dezelfde instructie die een 64-bit waarde in \RDI schrijft, bezet 7 bytes.
+Blijkbaar probeert GCC wat plaats te besparen.
+Daarnaast kunnen we met zekerheid zeggen dat het data segment dat de string bevat, niet zal gealloceerd worden op de adressen hoger dan 4\gls{GiB}.
+
+\label{SysVABI_input_EAX}
+We zien ook dat het \EAX register leeggemaakt is voor de \printf functie call.
+Dit wordt gedaan omdat het aantal gebruikte vector registers wordt doorgegeven in \EAX in *NIX systemen op x86-64.
+

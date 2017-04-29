@@ -1,0 +1,43 @@
+\myparagraph{MSVC}
+
+Compile it in MSVC 2010:
+
+\lstinputlisting[caption=MSVC 2010: \ttf{},style=customasmx86]{patterns/12_FPU/1_simple/MSVC_EN.asm}
+
+\FLD takes 8 bytes from stack and loads the number into the \ST{0} register, automatically converting 
+it into the internal 80-bit format (\IT{extended precision}).
+
+\myindex{x86!\Instructions!FDIV}
+
+\FDIV divides the value in \ST{0} by the number stored at address \\
+\GTT{\_\_real@40091eb851eb851f}~---the value 3.14 is encoded there. 
+The assembly syntax doesn't support floating point numbers, so 
+what we see here is the hexadecimal representation of 3.14 in 64-bit IEEE 754 format.
+
+After the execution of \FDIV \ST{0} holds the \gls{quotient}.
+
+\myindex{x86!\Instructions!FDIVP}
+
+By the way, there is also the \FDIVP instruction, which divides \ST{1} by \ST{0}, 
+popping both these values from stack and then pushing the result. 
+If you know the Forth language\FNURLFORTH,
+you can quickly understand that this is a stack machine\FNURLSTACK.
+
+The subsequent \FLD instruction pushes the value of $b$ into the stack.
+
+After that, the quotient is placed in \ST{1}, and \ST{0} has the value of $b$.
+
+\myindex{x86!\Instructions!FMUL}
+
+The next \FMUL instruction does multiplication: $b$ from \ST{0} is multiplied by value at\\
+\GTT{\_\_real@4010666666666666} (the number 4.1 is there) and leaves the result in the \ST{0} register.
+
+\myindex{x86!\Instructions!FADDP}
+
+The last \FADDP instruction adds the two values at top of stack, storing the result in \ST{1} 
+and then popping the value of \ST{0}, thereby leaving the result at the top of the stack, in \ST{0}.
+
+The function must return its result in the \ST{0} register, 
+so there are no any other instructions except the function epilogue after \FADDP.
+
+\input{patterns/12_FPU/1_simple/olly_EN.tex}

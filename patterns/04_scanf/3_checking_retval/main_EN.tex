@@ -1,0 +1,42 @@
+\subsection{scanf()}
+
+As was noted before, it is slightly old-fashioned to use \scanf today. 
+But if we have to, we have to check if \scanf finishes correctly without an error.
+
+\lstinputlisting[style=customc]{patterns/04_scanf/3_checking_retval/ex3.c}
+
+By standard, the \scanf\footnote{scanf, wscanf: \href{http://go.yurichev.com/17255}{MSDN}} function returns the number of fields it has successfully read.
+
+In our case, if everything goes fine and the user enters a number \scanf returns 1, or in case of error (or \ac{EOF}) --- 0.
+
+Let's add some C code to check the \scanf return value and print error message in case of an error.
+
+This works as expected:
+
+\begin{lstlisting}
+C:\...>ex3.exe
+Enter X:
+123
+You entered 123...
+
+C:\...>ex3.exe
+Enter X:
+ouch
+What you entered? Huh?
+\end{lstlisting}
+
+% subsections
+\input{patterns/04_scanf/3_checking_retval/x86}
+\input{patterns/04_scanf/3_checking_retval/x64}
+\input{patterns/04_scanf/3_checking_retval/ARM}
+\input{patterns/04_scanf/3_checking_retval/MIPS}
+
+\subsubsection{\Exercise}
+
+\myindex{x86!\Instructions!Jcc}
+\myindex{ARM!\Instructions!Bcc}
+As we can see, the \INS{JNE}/\INS{JNZ} instruction can be easily replaced by the \INS{JE}/\INS{JZ} and vice versa 
+(or \INS{BNE} by \INS{BEQ} and vice versa).
+But then the basic blocks must also be swapped.
+Try to do this in some of the examples.
+

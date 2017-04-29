@@ -1,0 +1,71 @@
+\subsection{GCC --- ещё кое-что}
+\label{use_parts_of_C_strings}
+
+Тот факт, что \IT{анонимная} Си-строка имеет тип \IT{const} (\myref{string_is_const_char}), 
+и тот факт, что выделенные в сегменте констант Си-строки гарантировано неизменяемые (immutable), 
+ведет к интересному следствию: компилятор может использовать определенную часть строки.
+
+Вот простой пример:
+
+\begin{lstlisting}[style=customc]
+
+#include <stdio.h>
+
+int f1()
+{
+	printf ("world\n");
+}
+
+int f2()
+{
+	printf ("hello world\n");
+}
+
+int main()
+{
+	f1();
+	f2();
+}
+\end{lstlisting}
+
+Среднестатистический компилятор с \CCpp (включая MSVC) выделит место для двух строк, но вот что делает GCC 4.8.1:
+
+\begin{lstlisting}[caption=GCC 4.8.1 + листинг в IDA,style=customasmx86]
+f1              proc near
+
+s               = dword ptr -1Ch
+
+                sub     esp, 1Ch
+                mov     [esp+1Ch+s], offset s ; "world\n"
+                call    _puts
+                add     esp, 1Ch
+                retn
+f1              endp
+
+f2              proc near
+
+s               = dword ptr -1Ch
+
+                sub     esp, 1Ch
+                mov     [esp+1Ch+s], offset aHello ; "hello "
+                call    _puts
+                add     esp, 1Ch
+                retn
+f2              endp
+
+aHello          db 'hello '
+s               db 'world',0xa,0
+\end{lstlisting}
+
+Действительно, когда мы выводим строку \q{hello world}, 
+эти два слова расположены в памяти впритык друг к другу и \puts, вызываясь из функции \GTT{f2()}, вообще не знает,
+что эти строки разделены. Они и не разделены на самом деле, они разделены
+только \q{виртуально}, в нашем листинге.
+
+Когда \puts вызывается из \GTT{f1()}, он использует строку \q{world} плюс нулевой байт. \puts не знает, что там ещё есть какая-то строка перед этой!
+
+Этот трюк часто используется (по крайней мере в GCC) и может сэкономить немного памяти.
+Это близко к \IT{string interning}.
+
+Еще один связанный с этим пример находится здесь: \myref{strstr_example}.
+

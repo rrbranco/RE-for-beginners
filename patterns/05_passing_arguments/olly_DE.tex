@@ -1,0 +1,31 @@
+\subsubsection{MSVC + \olly}
+\myindex{\olly}
+Lasst uns die Darstellung in \olly betrachten
+
+Wenn wir die erste Instruktion tracen in \ttf das auf eines der Argumente
+zugreift (das erste), können wir sehen das \EBP auf den \gls{stack frame} zeigt,
+dieser Frame wird mit dem roten Rechteck markiert dargestellt.
+
+Das erste Element des \gls{stack frame} ist der gespeicherte Wert von \EBP,
+das zweite Element ist \ac{RA}, das dritte Element ist das erste Funktions Argument, dann
+folgt das zweite und dritte Funktions Argument.
+
+Um auf das erste Funktions Argument zu zugreifen, muss man lediglich exakt 8 (2 32-Bit Wörter) zu 
+\EBP addieren.
+
+\olly erkennt diesen Umstand, und Kommentare zu den entsprechenden Stack Elementen hinzugefügt zum Beispiel:
+
+\q{RETURN from} und \q{Arg1 = \dots}, etc.
+
+Beachte: Funktions Argumente sind keine Mitglieder des Funktions Stack Frame, sie sind eher
+Mitglieder des Stack Frame der \gls{caller} Funktion.
+
+Deswegen, hat \olly die \q{Arg} Elemente als Mitglied eines anderen Stackframes identifiziert.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/05_passing_arguments/olly.png}
+\caption{\olly: inside of \ttf{} function}
+\label{fig:passing_arguments_olly}
+\end{figure}
+

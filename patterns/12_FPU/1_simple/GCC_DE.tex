@@ -1,0 +1,20 @@
+\myparagraph{GCC}
+
+GCC 4.4.1 (mit der Option \Othree) erzeugt fast den gleichen Code, nur leicht
+verändert.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.1,style=customasmx86]{patterns/12_FPU/1_simple/GCC_DE.asm} Der Unterschied
+besteht darin, dass zuerst 3.14 auf dem Stack (in \ST{0}) abgelegt wird und danach der Wert in \GTT{arg\_0} durch den Wert in \ST{0}
+geteilt wird.
+
+\myindex{x86!\Instructions!FDIVR}
+\FDIVR steht für \IT{Reverse Divide}~--teilen, wobei Dividend und Divisor
+miteinander vertauscht werden. Da es sich bei der Multiplikation um eine
+kommutative Operation handelt, gibt es keinen vergleichbaren Befehl für die
+Multiplikation. Wir haben es lediglich \FMUL ohne \GTT{-R} Gegenstück zur
+Verfügung.
+
+\myindex{x86!\Instructions!FADDP}
+\FADDP addiert die beiden Werte und holt auch einen Wert vom Stack. 
+Nach der Ausführung steht die Summe in \ST{0}.
+

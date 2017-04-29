@@ -1,0 +1,60 @@
+f:
+; IDA is not aware of variable names, we gave them manually:
+rt              = -0x10
+i               = -0xC
+var_4           = -4
+a               =  0
+
+                addiu   $sp, -0x18
+                sw      $fp, 0x18+var_4($sp)
+                move    $fp, $sp
+                sw      $a0, 0x18+a($fp)
+; initialize rt and i variables to zero:
+                sw      $zero, 0x18+rt($fp)
+                sw      $zero, 0x18+i($fp)
+; jump to loop check instructions:
+                b       loc_68
+                or      $at, $zero ; branch delay slot, NOP
+
+loc_20:
+                li      $v1, 1
+                lw      $v0, 0x18+i($fp)
+                or      $at, $zero ; load delay slot, NOP
+                sllv    $v0, $v1, $v0
+; $v0 = 1<<i
+                move    $v1, $v0
+                lw      $v0, 0x18+a($fp)
+                or      $at, $zero ; load delay slot, NOP
+                and     $v0, $v1, $v0
+; $v0 = a&(1<<i)
+; is a&(1<<i) equals to zero? jump to loc_58 then:
+                beqz    $v0, loc_58
+                or      $at, $zero
+; no jump occurred, that means a&(1<<i)!=0, so increment "rt" then:
+                lw      $v0, 0x18+rt($fp)
+                or      $at, $zero ; load delay slot, NOP
+                addiu   $v0, 1
+                sw      $v0, 0x18+rt($fp)
+
+loc_58:
+; increment i:
+                lw      $v0, 0x18+i($fp)
+                or      $at, $zero ; load delay slot, NOP
+                addiu   $v0, 1
+                sw      $v0, 0x18+i($fp)
+
+loc_68:
+; load i and compare it with 0x20 (32).
+; jump to loc_20 if it is less then 0x20 (32):
+                lw      $v0, 0x18+i($fp)
+                or      $at, $zero ; load delay slot, NOP
+                slti    $v0, 0x20  # ' '
+                bnez    $v0, loc_20
+                or      $at, $zero ; branch delay slot, NOP
+; function epilogue. return rt:
+                lw      $v0, 0x18+rt($fp)
+                move    $sp, $fp   ; load delay slot
+                lw      $fp, 0x18+var_4($sp)
+                addiu   $sp, 0x18  ; load delay slot
+                jr      $ra
+                or      $at, $zero ; branch delay slot, NOP

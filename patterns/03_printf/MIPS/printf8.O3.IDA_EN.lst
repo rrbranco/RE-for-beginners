@@ -1,0 +1,51 @@
+.text:00000000 main:
+.text:00000000
+.text:00000000 var_28          = -0x28
+.text:00000000 var_24          = -0x24
+.text:00000000 var_20          = -0x20
+.text:00000000 var_1C          = -0x1C
+.text:00000000 var_18          = -0x18
+.text:00000000 var_10          = -0x10
+.text:00000000 var_4           = -4
+.text:00000000
+; function prologue:
+.text:00000000                 lui     $gp, (__gnu_local_gp >> 16)
+.text:00000004                 addiu   $sp, -0x38
+.text:00000008                 la      $gp, (__gnu_local_gp & 0xFFFF)
+.text:0000000C                 sw      $ra, 0x38+var_4($sp)
+.text:00000010                 sw      $gp, 0x38+var_10($sp)
+; pass 5th argument in stack:
+.text:00000014                 li      $v0, 4
+.text:00000018                 sw      $v0, 0x38+var_28($sp)
+; pass 6th argument in stack:
+.text:0000001C                 li      $v0, 5
+.text:00000020                 sw      $v0, 0x38+var_24($sp)
+; pass 7th argument in stack:
+.text:00000024                 li      $v0, 6
+.text:00000028                 sw      $v0, 0x38+var_20($sp)
+; pass 8th argument in stack:
+.text:0000002C                 li      $v0, 7
+.text:00000030                 lw      $t9, (printf & 0xFFFF)($gp)
+.text:00000034                 sw      $v0, 0x38+var_1C($sp)
+; prepare 1st argument in $a0: 
+.text:00000038                 lui     $a0, ($LC0 >> 16)  # "a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%"...
+; pass 9th argument in stack:
+.text:0000003C                 li      $v0, 8
+.text:00000040                 sw      $v0, 0x38+var_18($sp)
+; pass 1st argument in $a0:
+.text:00000044                 la      $a0, ($LC0 & 0xFFFF)  # "a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%"...
+; pass 2nd argument in $a1:
+.text:00000048                 li      $a1, 1
+; pass 3rd argument in $a2:
+.text:0000004C                 li      $a2, 2
+; call printf():
+.text:00000050                 jalr    $t9
+; pass 4th argument in $a3 (branch delay slot):
+.text:00000054                 li      $a3, 3
+; function epilogue:
+.text:00000058                 lw      $ra, 0x38+var_4($sp)
+; set return value to 0:
+.text:0000005C                 move    $v0, $zero
+; return
+.text:00000060                 jr      $ra
+.text:00000064                 addiu   $sp, 0x38 ; branch delay slot

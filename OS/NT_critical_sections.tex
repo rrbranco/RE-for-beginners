@@ -1,5 +1,5 @@
-\section{Windows NT: \RU{Критические секции}\EN{Critical section}}
-\index{Windows}
+\subsection{Windows NT: \RU{Критические секции}\EN{Critical section}\DE{Kritischer Abschnitt}}
+\myindex{Windows}
 
 \label{critical_sections}
 
@@ -9,8 +9,9 @@
 \EN{Critical sections in any \ac{OS} are very important in multithreaded environment,
 mostly for giving a guarantee
 that only one thread can access some data in a single moment of time, 
-while blocking other threads and interrupts.}\ESph{}\PTBRph{}\PLph{}\ITAph{}\DEph{} \\
-\\
+while blocking other threads and interrupts.}
+
+\par
 \RU{Вот как объявлена структура}\EN{That is how a} \TT{CRITICAL\_SECTION} 
 \RU{объявлена в линейке OS}\EN{structure is declared in} \gls{Windows NT}\EN{ line OS}:
 
@@ -33,7 +34,7 @@ typedef struct _RTL_CRITICAL_SECTION {
 
 \RU{Вот как работает функция}\EN{That's is how} EnterCriticalSection()\EN{ function works}:
 
-\index{x86!\Instructions!LOCK}
+\myindex{x86!\Instructions!LOCK}
 \begin{lstlisting}[caption=Windows 2008/ntdll.dll/x86 (begin)]
 _RtlEnterCriticalSection@4
 
@@ -69,9 +70,9 @@ loc_7DE922DD:
 ... skipped
 \end{lstlisting}
 
-\index{x86!\Instructions!BTR}
-\index{x86!\Prefixes!LOCK}
-\RU{Самая важная инструкция в этом фрагменте кода\EMDASH{}это}
+\myindex{x86!\Instructions!BTR}
+\myindex{x86!\Prefixes!LOCK}
+\RU{Самая важная инструкция в этом фрагменте кода --- это}
 \EN{The most important instruction in this code fragment is} \TT{BTR} 
 (\RU{с префиксом}\EN{prefixed with} \TT{LOCK}): 
 \RU{нулевой бит сохраняется в флаге CF и очищается в памяти}
@@ -84,9 +85,9 @@ loc_7DE922DD:
 \RU{Если бит в}\EN{If the bit at} \TT{LockCount} \RU{является}\EN{is} 1, 
 \RU{хорошо, сбросить его и вернуться из функции: мы в критической секции}
 \EN{fine, reset it and return from the function: we are in a critical section}.
-\RU{Если нет\EMDASH{}критическая секция уже занята другим тредом, тогда ждем}
-\EN{If not\EMDASH{}the critical section is already occupied by other thread, so wait}. \\
-\RU{Ожидание там сделано через вызов}\EN{The wait is done there using} WaitForSingleObject(). \\
+\RU{Если нет --- критическая секция уже занята другим тредом, тогда ждем}
+\EN{If not---the critical section is already occupied by other thread, so wait}. \\
+\RU{Ожидание там сделано через вызов}\EN{The wait is performed there using} WaitForSingleObject(). \\
 \\
 \RU{А вот как работает функция}\EN{And here is how the} LeaveCriticalSection()\EN{ function works}:
 
@@ -126,12 +127,15 @@ loc_7DE922B2:
 ... skipped
 \end{lstlisting}
 
-\index{x86!\Instructions!XADD}
+\myindex{x86!\Instructions!XADD}
 \TT{XADD} \RU{это \q{обменять и прибавить}}\EN{is \q{exchange and add}}.
-\RU{В данном случае, это значит прибавить 1 к значению в \TT{LockCount}, сохранить результат
-в регистре \TT{EBX}, и в то же время 1 записывается в \TT{LockCount}}
-\EN{In this case, it adds 1 to \TT{LockCount} and stores the result in the \TT{EBX} register, 
-and at the same time 1 goes to \TT{LockCount}}.
+\RU{В данном случае, это значит прибавить 1 к значению в \TT{LockCount}, при этом сохранить изначальное значение \TT{LockCount}
+в регистре \TT{EBX}.
+Впрочем, значение в \TT{EBX} позже инкрементируется при помощи последующей инструкции \INS{INC EBX},
+и оно также будет равно обновленному значению \TT{LockCount}.}
+\EN{In this case, it adds 1 to \TT{LockCount}, meanwhile saves initial value of \TT{LockCount} in the \TT{EBX} register.
+However, value in \TT{EBX} is to incremented with a help of subsequent \INS{INC EBX}, and it also will be equal to
+the updated value of \TT{LockCount}.}
 \RU{Эта операция также атомарная, потому что также имеет префикс \TT{LOCK}, что означает, что другие CPU
 или ядра CPU в системе не будут иметь доступа к этой ячейке памяти}
 \EN{This operation is atomic since it is prefixed by \TT{LOCK} as well,
@@ -143,7 +147,7 @@ meaning that all other CPUs or CPU cores in system are blocked from accessing th
 непредсказуемым результатам.}
 \EN{without it two threads, each of which works on separate CPU or CPU core can try to
 enter a critical section and to modify the value in memory,
-which will result in non-deterministic behaviour.}
+which will result in non-deterministic behavior.}
 
 % TODO linux
 

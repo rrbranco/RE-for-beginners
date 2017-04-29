@@ -1,0 +1,3 @@
+﻿TEST REG, 40h
+JNZ is_set
+; бит не установлен

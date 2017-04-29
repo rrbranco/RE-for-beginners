@@ -1,0 +1,41 @@
+...
+
+0x45a6b5 e=   1 [FS: MOV [0], EAX] EAX=0x218fb08
+0x45a6bb e=   1 [MOV [EBP-254h], ECX] ECX=0x218fbd8
+0x45a6c1 e=   1 [MOV EAX, [EBP-254h]] [EBP-254h]=0x218fbd8
+0x45a6c7 e=   1 [CMP [EAX+14h], 0] [EAX+14h]=0x102
+0x45a6cb e=   1 [JZ 45A9F2h] ZF=false
+0x45a6d1 e=   1 [MOV [EBP-0Dh], 1] 
+0x45a6d5 e=   1 [XOR ECX, ECX] ECX=0x218fbd8
+0x45a6d7 e=   1 [MOV [EBP-14h], CX] CX=0
+0x45a6db e=   1 [MOV [EBP-18h], 0] 
+0x45a6e2 e=   1 [JMP 45A6EDh] 
+0x45a6e4 e= 258 [MOV EDX, [EBP-18h]] [EBP-18h]=0..5 (248 items skipped) 0xfd..0x101
+0x45a6e7 e= 258 [ADD EDX, 1] EDX=0..5 (248 items skipped) 0xfd..0x101
+0x45a6ea e= 258 [MOV [EBP-18h], EDX] EDX=1..6 (248 items skipped) 0xfe..0x102
+0x45a6ed e= 259 [MOV EAX, [EBP-254h]] [EBP-254h]=0x218fbd8
+0x45a6f3 e= 259 [MOV ECX, [EBP-18h]] [EBP-18h]=0..5 (249 items skipped) 0xfe..0x102
+0x45a6f6 e= 259 [CMP ECX, [EAX+14h]] ECX=0..5 (249 items skipped) 0xfe..0x102 [EAX+14h]=0x102
+0x45a6f9 e= 259 [JNB 45A727h] CF=false,true
+0x45a6fb e= 258 [MOV EDX, [EBP-254h]] [EBP-254h]=0x218fbd8
+0x45a701 e= 258 [MOV EAX, [EDX+10h]] [EDX+10h]=0x21ee4c8
+0x45a704 e= 258 [MOV ECX, [EBP-18h]] [EBP-18h]=0..5 (248 items skipped) 0xfd..0x101
+0x45a707 e= 258 [ADD ECX, 1] ECX=0..5 (248 items skipped) 0xfd..0x101
+0x45a70a e= 258 [IMUL ECX, ECX, 1Fh] ECX=1..6 (248 items skipped) 0xfe..0x102
+0x45a70d e= 258 [MOV EDX, [EBP-18h]] [EBP-18h]=0..5 (248 items skipped) 0xfd..0x101
+0x45a710 e= 258 [MOVZX EAX, [EAX+EDX]] [EAX+EDX]=1..6 (156 items skipped) 0xf3, 0xf8, 0xf9, 0xfc, 0xfd
+0x45a714 e= 258 [XOR EAX, ECX] EAX=1..6 (156 items skipped) 0xf3, 0xf8, 0xf9, 0xfc, 0xfd ECX=0x1f, 0x3e, 0x5d, 0x7c, 0x9b (248 items skipped) 0x1ec2, 0x1ee1, 0x1f00, 0x1f1f, 0x1f3e
+0x45a716 e= 258 [MOV ECX, [EBP-254h]] [EBP-254h]=0x218fbd8
+0x45a71c e= 258 [MOV EDX, [ECX+10h]] [ECX+10h]=0x21ee4c8
+0x45a71f e= 258 [MOV ECX, [EBP-18h]] [EBP-18h]=0..5 (248 items skipped) 0xfd..0x101
+0x45a722 e= 258 [MOV [EDX+ECX], AL] AL=0..5 (77 items skipped) 0xe2, 0xee, 0xef, 0xf7, 0xfc
+0x45a725 e= 258 [JMP 45A6E4h] 
+0x45a727 e=   1 [PUSH 5] 
+0x45a729 e=   1 [MOV ECX, [EBP-254h]] [EBP-254h]=0x218fbd8
+0x45a72f e=   1 [CALL 45B500h] 
+0x45a734 e=   1 [MOV ECX, EAX] EAX=0x218fbd8
+0x45a736 e=   1 [CALL 45B710h] 
+0x45a73b e=   1 [CMP EAX, 5] EAX=5
+
+...
+

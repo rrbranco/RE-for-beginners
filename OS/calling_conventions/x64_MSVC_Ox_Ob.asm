@@ -9,7 +9,7 @@ f$ = 120
 g$ = 128
 f1	PROC
 $LN3:
-	sub	rsp, 72					; 00000048H
+	sub	rsp, 72
 
 	mov	eax, DWORD PTR g$[rsp]
 	mov	DWORD PTR [rsp+56], eax
@@ -24,12 +24,12 @@ $LN3:
 	lea	rcx, OFFSET FLAT:$SG2777
 	call	printf
 
-	add	rsp, 72					; 00000048H
+	add	rsp, 72
 	ret	0
 f1	ENDP
 
 main	PROC
-	sub	rsp, 72					; 00000048H
+	sub	rsp, 72
 
 	mov	edx, 2
 	mov	DWORD PTR [rsp+48], 7
@@ -41,6 +41,6 @@ main	PROC
 	call	f1
 
 	xor	eax, eax
-	add	rsp, 72					; 00000048H
+	add	rsp, 72
 	ret	0
 main	ENDP

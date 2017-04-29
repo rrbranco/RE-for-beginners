@@ -1,0 +1,76 @@
+\subsubsection{\OptimizingXcodeIV (\ARMMode)}
+
+Xcode 4.6.3 ohne Optimierung produziert eine Menge redundanten Code, so dass im Folgenden die
+optimierte Ausgabe gelistet ist bei der die Anzahl der Anweisungen so klein wie möglich ist.
+Der Compiler-Schalter ist \Othree.
+
+\begin{lstlisting}[caption=\OptimizingXcodeIV (\ARMMode),style=customasmARM]
+__text:000028C4             _hello_world
+__text:000028C4 80 40 2D E9   STMFD           SP!, {R7,LR}
+__text:000028C8 86 06 01 E3   MOV             R0, #0x1686
+__text:000028CC 0D 70 A0 E1   MOV             R7, SP
+__text:000028D0 00 00 40 E3   MOVT            R0, #0
+__text:000028D4 00 00 8F E0   ADD             R0, PC, R0
+__text:000028D8 C3 05 00 EB   BL              _puts
+__text:000028DC 00 00 A0 E3   MOV             R0, #0
+__text:000028E0 80 80 BD E8   LDMFD           SP!, {R7,PC}
+
+__cstring:00003F62 48 65 6C 6C+aHelloWorld_0  DCB "Hello world!",0
+\end{lstlisting}
+
+Die Anweisungen \TT{STMFD} und \TT{LDMFD} sind bereits bekannt.
+
+\myindex{ARM!\Instructions!MOV}
+
+Die \MOV-Anweisung schreibt lediglich die Nummer \TT{0x1686} in das Register \Reg{0}.
+Dies ist der Offset der auf die Zeichenkette \q{Hello world!} zeigt.
+
+Das Register \TT{R7} (spezifiziert in \IOSABI) ist ein Frame Pointer. Mehr darüber folgt später.
+
+\myindex{ARM!\Instructions!MOVT}
+Die \TT{MOVT R0, \#0} (MOVe Top)-Anweisung schreibt 0 in die höherwertigen 16 Bit des Registers.
+Das Problem ist hier, dass die generische \MOV-Anweisung im ARM-Mode nur die niederwertigen 16 Bit
+des Registers beschreibt.
+
+Dran denken: alle Opcodes im ARM-Mode sind in der Größe auf 32 Bit begrenzt. Natürlich gilt diese
+Begrenzung nicht für das Verschieben von Daten zwischen Registern.
+Aus diesem Grund existiert die zusätzliche Anweisung  \TT{MOVT} um in die höherwertigen Bits
+(von 16 bis einschließlich 31) zu beschreiben.
+Die Benutzung ist in diesem Fall redundant, weil die Anweisung \TT{MOV R0, \#0x1686} darüpber
+den höherwertigen Teil des Registers zurückgesetzt hat.
+Dies ist vermutlich ein Mangel des Compilers.
+
+% TODO:
+% I think, more specifically, the string is not put in the text section,
+% ie. the compiler is actually not using position-independent code,
+% as mentioned in the next paragraph.
+% MOVT is used because the assembly code is generated before the relocation,
+% so the location of the string is not yet known,
+% and the high bits may still be needed.
+
+\myindex{ARM!\Instructions!ADD}
+Die Anweisung \TT{ADD R0, PC, R0} addiert den Wert im \ac{PC} zum Wert im Register \Reg{0}
+um die absolute Adresse der \q{Hello world!}-Zeichenkette zu berechnen.
+Wie bereits bekannt ist dies \q{\PICcode}, so dass diese Korrektur hier unbedingt notwendig ist.
+
+Die \INS{BL}-Anweisung ruft \puts anstatt \printf auf.
+
+\label{puts}
+\myindex{\CStandardLibrary!puts()}
+\myindex{puts() anstatt printf()}
+
+GCC ersetzt den ersten \printf-Aufruf mit \puts. In der Tat ist \printf mit nur einem
+Argument identisch mit \puts.
+
+Die beiden Funktionen produzieren lediglich das gleiche Ergebnis, weil printf keine
+Formatkennzeichner, beginnend mit \IT{\%}, enhält.
+Sollte dies jedoch der Fall sein, wäre die Auswirkung der beiden Funktionen
+unterschiedlich\footnote{Des weiteren benötigt \puts kein '\textbackslash{}n'
+für den Zeilenumbruch am Ende der Zeichenkette, weswegen wir dies hier nicht sehen.}.
+
+Warum hat der Compiler diese Ersetzung durchgeführt? Vermutlich hat dies Vorteile bei
+der Geschwindigkeit, weil \puts schneller ist
+\footnote{\href{http://go.yurichev.com/17063}{ciselant.de/projects/gcc\_printf/gcc\_printf.html}}
+und lediglich die Zeichen zu \gls{stdout} übergibt, anstatt jedes Zeichen mit \IT{\%} zu vergleichen.
+
+Als nächstes ist die bekannte Anweisung \TT{MOV R0, \#0} zu sehen um das Register \Reg{0} auf 0 zu setzen.

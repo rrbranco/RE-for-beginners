@@ -1,0 +1,105 @@
+\chapter{Finding important/interesting stuff in the code}
+
+Minimalism it is not a prominent feature of modern software.
+
+\myindex{\Cpp!STL}
+
+But not because the programmers are writing a lot, but because a lot of libraries are commonly linked statically
+to executable files.
+If all external libraries were shifted into an external DLL files, the world would be different.
+(Another reason for C++ are the \ac{STL} and other template libraries.)
+
+\newcommand{\FOOTNOTEBOOST}{\footnote{\url{http://go.yurichev.com/17036}}}
+\newcommand{\FOOTNOTELIBPNG}{\footnote{\url{http://go.yurichev.com/17037}}}
+
+Thus, it is very important to determine the origin of a function, if it is from standard library or 
+well-known library (like Boost\FOOTNOTEBOOST, libpng\FOOTNOTELIBPNG),
+or if it is related to what we are trying to find in the code.
+
+It is just absurd to rewrite all code in \CCpp to find what we're looking for.
+
+One of the primary tasks of a reverse engineer is to find quickly the code he/she needs.
+
+\myindex{\GrepUsage}
+
+The \IDA disassembler allow us to search among text strings, byte sequences and constants.
+It is even possible to export the code to .lst or .asm text files and then use \TT{grep}, \TT{awk}, etc.
+
+When you try to understand what some code is doing, this easily could be some open-source library like libpng.
+So when you see some constants or text strings which look familiar, it is always worth to \IT{google} them.
+And if you find the opensource project where they are used, 
+then it's enough just to compare the functions.
+It may solve some part of the problem.
+
+For example, if a program uses XML files, the first step may be determining which
+XML library is used for processing, since the standard (or well-known) libraries are usually used
+instead of self-made one.
+
+\myindex{SAP}
+\myindex{Windows!PDB}
+
+For example, the author of these lines once tried to understand how the compression/decompression of network packets works in SAP 6.0. 
+It is a huge software, but a detailed .\gls{PDB} with debugging information is present, 
+and that is convenient.
+He finally came to the idea that one of the functions, that was called \IT{CsDecomprLZC}, was doing the decompression of network packets.
+Immediately he tried to google its name and he quickly found the function was used in MaxDB
+(it is an open-source SAP project) \footnote{More about it in relevant section~(\myref{sec:SAPGUI})}.
+
+\url{http://www.google.com/search?q=CsDecomprLZC}
+
+Astoundingly, MaxDB and SAP 6.0 software shared likewise code for the compression/decompression of network packets.
+
+\input{digging_into_code/identification/exec_EN}
+
+% binary files might be also here
+
+\section{Communication with outer world (function level)}
+It's often advisable to track function arguments and return values in debugger or \ac{DBI}.
+For example, the author once tried to understand meaning of some obscure function, which happens to be incorrectly
+implemented bubble sort.
+(It worked correctly, but slower.)
+Meanwhile, watching inputs and outputs of this function helps instantly to understand what it does.%
+
+% sections:
+\input{digging_into_code/communication_win32_EN}
+\input{digging_into_code/strings_EN}
+\input{digging_into_code/assert_EN}
+\input{digging_into_code/constants_EN}
+\input{digging_into_code/instructions_EN}
+\input{digging_into_code/suspicious_code_EN}
+\input{digging_into_code/magic_numbers_tracing_EN}
+\input{digging_into_code/loops_EN}
+
+\section{Other things}
+
+\subsection{General idea}
+
+A reverse engineer should try to be in programmer's shoes as often as possible. 
+To take his/her viewpoint and ask himself, how would one solve some task the specific case.
+
+\subsection{Order of functions in binary code}
+
+All functions located in a single .c or .cpp-file are compiled into corresponding object (.o) file.
+Later, linker puts all object files it needs together, not changing order or functions in them.
+As a consequence, if you see two or more consecutive functions, it means, that they were placed together
+in a single source code file (unless you're on border of two object files, of course.)
+This means these functions have something in common, that they are from the same \ac{API} level, from same library, etc.
+
+\subsection{Tiny functions}
+
+Tiny functions like empty functions (\myref{empty_func})
+or function which returns just ``true'' (1) or ``false'' (0) (\myref{ret_val_func}) are very common,
+and almost all decent compiler tends put only one such function into resulting executable code even if there was several
+similar functions in source code.
+So, whenever you see a tiny function consisting just of \TT{mov eax, 1 / ret}
+which is referenced (and can be called) from many places,
+which are seems unconnected to each other, this may be a result of such optimization.%
+
+\subsection{\Cpp}
+
+\ac{RTTI}~(\myref{RTTI})-data may be also useful for \Cpp class identification.
+
+% sections
+\input{digging_into_code/binary/main_EN}
+\input{digging_into_code/snapshots_comparing_EN}
+

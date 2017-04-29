@@ -1,0 +1,14 @@
+\subsection{Eingabewerte vertauschen}
+
+Dies erledigt die Aufgabe für uns:
+
+\lstinputlisting[style=customc]{patterns/061_pointers/swap/5.c}
+Wie wir erkennen, werden mit \INS{MOVZX} Bytes in die niederen 8 Bit von \IT{ECX} und \IT{EBX} geladen (sodass die
+höherwertigen Teile dieser Register gelöscht werden) und danach werden die Bytes in umgekehrter Reihenfolge
+zurückgeschrieben.
+
+\lstinputlisting[style=customasmx86,caption=Optimizing GCC 5.4]{patterns/061_pointers/swap/5_GCC_O3_x86.s}
+Die Adressen der beiden Bytes, die von Argumenten und Ausführung von der Funktion stammen, befinden sich in \TT{EDX} und
+\TT{EAX}. 
+
+Wenn wir Pointer verwenden: möglicherweise gibt es keinen besseren Wert diese Aufgabe ohne zu lösen.

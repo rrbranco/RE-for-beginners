@@ -1,0 +1,106 @@
+\clearpage
+\mysubparagraph{\olly}
+Da dieses Beispiel komliziert ist, untersuchen wir es mit \olly.
+
+\olly kann solche switch() Konstruktionen erkennen und einige nützliche Kommentare hinzufügen.
+\EAX ist zu Beginn auf 2 gesetzt, das entspricht dem Eingabewert der Funktion:
+
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly1.png}
+\caption{\olly: \EAX 
+enthält jetzt das erste (und einzige) Functionsargument}
+\label{fig:switch_few_olly1}
+\end{figure}
+
+\clearpage
+0 wird in vor der 2 in \EAX abgezogen. Natürlich enthält \EAX danach immernoch den Wert 2, aber das \ZF Flag ist jetzt
+0, da das Ergebnis der letzten Berechnung nicht 0 ergeben hat.
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly2.png}
+\caption{\olly: \SUB wurde ausgeführt}
+\label{fig:switch_few_olly2}
+\end{figure}
+
+\clearpage
+\DEC wird ausgeführt und \EAX enthält nun 1.
+Da 1 ein von null verschiedener Wert ist, ist das \ZF Flag immer noch 0:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly3.png}
+\caption{\olly: erstes \DEC wurde ausgeführt}
+\label{fig:switch_few_olly3}
+\end{figure}
+
+\clearpage
+Das nächste \DEC wird ausgeführt.
+\EAX enthält jetzt 0 und das \ZF Flag wird gesetzt, da eine Berechnung 0 ergeben hat.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly4.png}
+\caption{\olly: zweites \DEC wurde ausgeführt}
+\label{fig:switch_few_olly4}
+\end{figure}
+\olly zeigt an, dass dieser Sprung jetzt getätigt wird.
+
+\clearpage
+Ein Pointer auf den String \q{two} wird jetzt auf den Stack geschrieben:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly5.png}
+\caption{\olly: 
+Pointer auf den String wird an die Stelle des ersten Arguments geschrieben}
+\label{fig:switch_few_olly5}
+\end{figure}
+
+% TODO: homogenize numbers
+% now they are inconsistent: sometimes plain text, sometimes in math mode
+% some kind of \expr{} both for numbers and expressions? --DY
+Man beachte: das aktuelle Argument der Funktion ist 2 und diese 2 befindet sich im Stack nun an der Adresse
+\TT{0x001EF850}.
+
+\clearpage
+\MOV schreibt den Pointer auf den String an die Adresse \TT{0x001EF850} (siehe Stackfenster).
+Dann wird der Sprung ausgeführt. Dies ist der erste Befehl der Funktion \printf in MSVCR100.DLL. (Dieses Beispiel wurde
+mit der Option /MD kompiliert.)
+ 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly6.png}
+\caption{\olly: erster Befehl von \printf in MSVCR100.DLL}
+\label{fig:switch_few_olly6}
+\end{figure}
+
+Die Funktion \printf behandelt den String an der Adresse \TT{0x00FF3010} als (einziges) Argument und gibt ihn aus.
+
+\clearpage
+Dies ist der letzte Befehl von \printf:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly7.png}
+\caption{\olly: letzter Befehl von \printf in MSVCR100.DLL}
+\label{fig:switch_few_olly7}
+\end{figure}
+
+Der String \q{two} wurde gerade auf der Konsole ausgegeben.
+
+\clearpage
+Wir drücken nun F7 oder F8 (\stepover) und kehren\dots nicht zu \ttf , sondern zu \main zurück:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly8.png}
+\caption{\olly: zurück zu \main}
+\label{fig:switch_few_olly8}
+\end{figure}
+Dieser Sprung wird direkt von \printf zu \main durchgeführt, da \ac{RA} im Stack nicht auf eine Stelle in \ttf, sondern
+auf \main zeigt.
+Der Befehl \CALL \TT{0x00FF1000} war der eigentliche Befehl, der \ttf aufgerufen hat.
+

@@ -1,0 +1,130 @@
+\subsection{Setzen und Löschen einzelner Bits: \ac{FPU} Beispiele}
+
+\myindex{IEEE 754}
+In der folgenden Form werden die Bits in einem \Tfloat gemäß IEEE 754 Format
+abgelegt:
+
+\input{float_IEEE754.tex}
+Das Vorzeichen der Zahl ist im \ac{MSB} kodiert.
+Wir fragen uns, ob es möglich ist, das Vorzeichen einer Fließkommazahl ohne FPU
+Befehle zu ändern.
+
+\lstinputlisting[style=customc]{patterns/14_bitfields/35_set_reset_FPU/abs.c}
+Wir brauchen dieser Trickserei in \CCpp um von oder in \Tfloat Werte ohne
+tatsächliche Konvertierung zu kopieren.
+Hier gibt es also drei Funktionen: my\_abs() resettet \ac{MSB}; \TT{set\_sign()}
+setzt das \ac{MSB} und negate() kippt es.
+
+\XOR kann verwendet werden, um ein Bit zu kippen:\myref{XOR_property}.
+
+\subsubsection{x86}
+
+Der Code ist einfach:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012,style=customasmx86]{patterns/14_bitfields/35_set_reset_FPU/abs_MSVC2012_Ox.asm}
+Ein Eingabewert von Typ \Tfloat wird vom Stack gelesen, aber wie ein Integerwert
+behandelt.
+
+\AND und \OR resetten und setzen das gewünschte Bit und \XOR kippt es.
+Schließlich wird der modifizierte Wert nach \TT{ST0} geladen, das
+Fließkommazahlen über dieses Register zurückgegeben werden.
+
+Betrachten wir den optimierenden MSVC 2012 für x64:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{patterns/14_bitfields/35_set_reset_FPU/abs_MSVC2012_x64_Ox.asm}
+
+\myindex{x86!\Instructions!BTR}
+\myindex{x86!\Instructions!BTS}
+\myindex{x86!\Instructions!BTC}
+Der Eingabewert wird nach \TT{XMM0} übergeben und dann auf den lokalen Stack
+kopiert. Wir finden hier einige für uns neue Befehle: \BTR, \BTS und \BTC.
+
+Diese Befehle werden zum Resetten (\BTR), Setzen (\BTS) und Invertieren (oder
+Komplementieren: \BTC) einzelner Bits verwendet.
+Das 31. Bit von 0 gezählt ist das \ac{MSB}.
+
+Schließlich wird das Ergebnis nach \TT{XMM0} kopiert, da Fließkommazahlen in
+einer Win64 Umgebung über das Register \TT{XMM0} zurückgegeben werden.
+
+\subsubsection{MIPS}
+
+GCC 4.4.5 für MIPS erzeugt im Großen und Ganzen den gleichen Code:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA),style=customasmMIPS]{patterns/14_bitfields/35_set_reset_FPU/MIPS_O3_IDA_DE.lst}
+
+\myindex{MIPS!\Instructions!LUI}
+Ein einzelner \LUI Befehl wird verwendet, um 0x80000000 in ein Register zu
+laden, den \LUI löscht die niederen 16 Bits und da diese ohnehin Nullen in der
+Konstanten entsprechen genügt hier ein \LUI ohne nachfolgendes \ORI.
+
+\subsubsection{ARM}
+
+\myparagraph{\OptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI
+(\ARMMode),style=customasmARM]{patterns/14_bitfields/35_set_reset_FPU/abs_Keil_ARM_O3_DE.s}
+
+So weit, so gut.
+\myindex{ARM!\Instructions!BIC}
+\myindex{ARM!\Instructions!EOR}
+ARM verfügt über den \BIC Befehl, der ausdrücklich spezifizierte Bits löscht.
+\EOR ist in ARM der Name des Befehls für \XOR (\q{exklusives OR}).
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmx86]{patterns/14_bitfields/35_set_reset_FPU/abs_Keil_thumb_O3.s}
+Thumb mode im ARM verwendet 16-Bit-Befehle und da in diesen nicht viele Daten
+kodiert werden können, wird hier ein \INS{MOVS}/\INS{LSLS} Befehlspaar benötigt,
+um die Konstante 0x80000000 zu konstruieren. 
+Das Befehlspaar funktioniert wie folgt: $1<<31 = 0x80000000$.
+
+\myindex{ARM!\Instructions!LSLS}
+\myindex{ARM!\Instructions!LSRS}
+Der Code von \TT{my\_abs} ist seltsam und entspricht tatsächlich dem folgenden
+Ausdruck: $(i<<1)>>1$. Dieser Ausdruck scheint zunächst bedeutungslos. 
+Wenn aber $input<<1$ ausgeführt wird, befinden sich alle Bits an ihren korrekten
+Plätzen, nur dass das \ac{MSB} null ist, da alle neuen Bits aus, die durch den
+Schiebebefehl eingefügt werden, stets Nullen sind.
+Auf diese Weise löscht das Befehlspaar \LSLS/\LSRS das \ac{MSB}.
+
+\myparagraph{\Optimizing GCC 4.6.3 (Raspberry Pi, \ARMMode)}
+
+\lstinputlisting[caption=\Optimizing GCC 4.6.3 for Raspberry Pi
+(\ARMMode),style=customasmARM]{patterns/14_bitfields/35_set_reset_FPU/raspberry_GCC_O3_ARM_mode_DE.lst}
+Lassen wir den Raspberry Pi Linux in QEMU laufen und emulieren eine ARM FPU,
+dann werden hier S-Register anstelle der R-Register für den Umgang mit
+Fließkommazahlen verwendet.
+
+\myindex{ARM!\Instructions!FMRS}
+Der Befehl \FMRS kopiert Daten von \ac{GPR} zur FPU und zurück
+\TT{my\_abs()} und \TT{set\_sign()} sehen wie erwartet aus, aber was ist mit
+\TT{negate()}? Warum wird hier \ADD anstelle von \XOR verwendet?
+
+\myindex{ARM!\Instructions!XOR}
+\myindex{ARM!\Instructions!ADD}
+Es ist auf den ersten Blick schwer zu glauben, aber der Befehl \INS{ADD
+register, 0x80000000} entspricht\\
+\INS{XOR register, 0x80000000}.
+Erinnern wir uns an das Ziel des Befehls: Das Ziel ist es, das \ac{MSB} zu
+invertieren, also kümmern wir uns zunächst nicht um den \XOR Befehl.
+Aus der Schulmathematik wissen wir, dass die Addition von Werten wie z.B. 1000
+die letzten drei Stellen einer Zahl nicht verändert.
+Zum Beispiel gilt: $1234567 + 10000 = 1244567$ (die letzten vier Stellen können
+sich nicht verändern).
+
+Hier arbeiten wir mit Binärzahlen und \\
+0x80000000 ist 0b100000000000000000000000000000000, d.h. hier sind nur das
+höchste Bit gesetzt. 
+
+Eine Addition von 0x800000000 zu einem anderen Werte kann also nie die niederen
+31 Bit verändern, sondern nur das \ac{MSB}.
+Addieren wir 1 zu 0, erhalten wir 1.
+
+Addieren wir 1 zu 1, erhalten wir 0b10 in binär, aber das 32. Bit (von 0
+gezählt) wird fallengelassen, da unsere Register eine Breite von 32 Bit haben,
+sodass das Ergebnis 0 ist.
+Deshalb kann in diesem Fall \XOR durch \ADD ersetzt werden.
+
+Es ist schwer nachzuvollziehen, warum GCC diese Ersetzung vorgenommen hat, aber
+sie funktioniert tadellos.

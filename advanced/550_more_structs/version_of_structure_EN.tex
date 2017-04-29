@@ -1,0 +1,125 @@
+\subsection{Version of C structure}
+
+Many Windows programmers have seen this is MSDN:
+
+\begin{lstlisting}
+SizeOfStruct
+    The size of the structure, in bytes. This member must be set to sizeof(SYMBOL_INFO).
+\end{lstlisting}
+
+( \url{https://msdn.microsoft.com/en-us/library/windows/desktop/ms680686(v=vs.85).aspx} )
+
+Some structures like \IT{SYMBOL\_INFO} has started with this field indeed. Why?
+This is some kind of structure version.
+
+Imagine you have a function which draws circle.
+It takes a single argument---a pointer to a structure with only two fields: X and Y.
+And then color displays flooded a market, sometimes in 1980s. And you want to add \IT{color} argument to the function.
+But, let's say, you cannot add another argument to it (a lot of software use your \ac{API} and cannot be recompiled).
+And if the old piece of software uses your \ac{API} with color display,
+let your function draw a circle in (default) black and white colors.
+
+Another day you add another feature: circle now can be filled, and brush type can be set.
+
+Here is one solution to the problem:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+struct ver1
+{
+	size_t SizeOfStruct;
+	int coord_X;
+	int coord_Y;
+};
+
+struct ver2
+{
+	size_t SizeOfStruct;
+	int coord_X;
+	int coord_Y;
+	int color;
+};
+
+struct ver3
+{
+	size_t SizeOfStruct;
+	int coord_X;
+	int coord_Y;
+	int color;
+	int fill_brush_type; // 0 - do not fill circle
+};
+
+void draw_circle(struct ver3 *s) // latest struct version is used here
+{
+	// we presume SizeOfStruct, coord_X and coord_Y fields are always present
+	printf ("We are going to draw a circle at %d:%d\n", s->coord_X, s->coord_Y);
+
+	if (s->SizeOfStruct>=sizeof(int)*4)
+	{
+		// this is at least ver2, color field is present
+		printf ("We are going to set color %d\n", s->color);
+	}
+
+	if (s->SizeOfStruct>=sizeof(int)*5)
+	{
+		// this is at least ver3, fill_brush_type field is present
+		printf ("We are going to fill it using brush type %d\n", s->fill_brush_type);
+	}
+};
+
+// early software version
+void call_as_ver1()
+{
+	struct ver1 s;
+	s.SizeOfStruct=sizeof(s);
+	s.coord_X=123;
+	s.coord_Y=456;
+	printf ("** %s()\n", __FUNCTION__);
+	draw_circle(&s);
+};
+
+// next software version
+void call_as_ver2()
+{
+	struct ver2 s;
+	s.SizeOfStruct=sizeof(s);
+	s.coord_X=123;
+	s.coord_Y=456;
+	s.color=1;
+	printf ("** %s()\n", __FUNCTION__);
+	draw_circle(&s);
+};
+
+// latest, most advanced version
+void call_as_ver3()
+{
+	struct ver3 s;
+	s.SizeOfStruct=sizeof(s);
+	s.coord_X=123;
+	s.coord_Y=456;
+	s.color=1;
+	s.fill_brush_type=3;
+	printf ("** %s()\n", __FUNCTION__);
+	draw_circle(&s);
+};
+
+int main()
+{
+	call_as_ver1();
+	call_as_ver2();
+	call_as_ver3();
+};
+\end{lstlisting}
+
+In other words, \IT{SizeOfStruct} field takes a role of \IT{version of structure} field.
+It could be enumerate type (1, 2, 3, etc.), but to set \IT{SizeOfStruct} field to \IT{sizeof(struct...)}
+is less prone to mistakes/bugs.
+
+In C++, this problem is solved using \IT{inheritance} (\myref{cpp_inheritance}).
+You just extend your base class (let's call it \IT{Circle}),
+and then you will have \IT{ColoredCircle} and then \IT{FilledColoredCircle}, and so on.
+A current \IT{version} of an object (or, more precisely, current \IT{type}) will be determined using C++ \ac{RTTI}.
+
+So when you see \IT{SizeOfStruct} somewhere in \ac{MSDN}---perhaps this structure was extended at least once in past.
+

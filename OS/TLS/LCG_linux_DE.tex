@@ -1,0 +1,20 @@
+\subsubsection{Linux}
+
+Nachfolgend ein Beispiel wie eine thread-lokale, globale Variable in GCC deklariert wird:
+
+\begin{lstlisting}
+__thread uint32_t rand_state=1234;
+\end{lstlisting}
+
+Dies is ein Standard-\CCpp-Modifizierer sondern eine GCC-spezifische Erweiterung\footnote{\url{http://go.yurichev.com/17062}}.
+
+\myindex{x86!\Registers!GS}
+
+Der \TT{GS:}-Selektor wird ebenso genutzt um auf den \ac{TLS}-Bereich zuzugreifen,
+jedoch in einer etwas anderen Art:
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1 x86,style=customasmx86]{OS/TLS/linux/rand.lst}
+
+% FIXME (to be checked) Uninitialized data is allocated in \TT{.tbss} section, initialized --- in \TT{.tdata} section.
+
+Mehr darüber in \DrepperTLS.

@@ -1,0 +1,43 @@
+\section{Thread Local Storage}
+\label{TLS}
+\myindex{TLS}
+
+TLS is a data area, specific to each thread. Every thread can store what it needs there.
+One well-known example is the C standard global variable \IT{errno}. 
+
+Multiple threads may simultaneously call functions
+which return an error code in \IT{errno}, so a global variable will not work correctly here for multi-threaded programs,
+so \IT{errno} must be stored in the \ac{TLS}. \\
+\\
+\myindex{\Cpp!C++11}
+In the C++11 standard, a new \IT{thread\_local} modifier was added, showing that each thread has its own version of the variable,
+it can be initialized, and it is located in the \ac{TLS}
+\footnote{\myindex{C11} C11 also has thread support, optional though}:
+
+\begin{lstlisting}[caption=C++11,style=customc]
+#include <iostream>
+#include <thread>
+
+thread_local int tmp=3;
+
+int main()
+{
+	std::cout << tmp << std::endl;
+};
+\end{lstlisting}
+
+Compiled in MinGW GCC 4.8.1, but not in MSVC 2012.
+
+If we talk about PE files, in the resulting executable file, the \IT{tmp} 
+variable is to be allocated in the section devoted to the \ac{TLS}.
+
+\subsection{Linear congruential generator revisited}
+\label{LCG_TLS}
+
+The pseudorandom number generator we considered earlier \myref{LCG_simple} has a flaw:
+it's not thread-safe, because it has an internal state variable which can be read and/or modified in different threads simultaneously.
+
+% subsections
+\input{OS/TLS/LCG_win32_EN}
+\input{OS/TLS/LCG_linux_EN}
+

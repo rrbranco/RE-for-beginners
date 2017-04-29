@@ -1,0 +1,35 @@
+\section{CRC32 calculation example}
+\myindex{CRC32}
+\label{sec:CRC32}
+
+\newcommand{\URLCRCSRC}{\url{http://go.yurichev.com/17327}}
+
+This is a very popular table-based CRC32 hash calculation 
+technique\footnote{The source code has been taken from here: \URLCRCSRC}.
+
+\lstinputlisting[style=customc]{\CURPATH/CRC.c}
+
+\myindex{\CLanguageElements!for}
+
+We are interested in the \TT{crc()} function only.
+By the way, pay attention to the two loop initializers in the \TT{for()} statement: \TT{hash=len, i=0}.
+The \CCpp standard allows this, of course.
+The emitted code will contain two operations in the loop initialization part
+instead of one.
+
+Let's compile it in MSVC with optimization (\Ox).
+For the sake of brevity, only the \TT{crc()} function is listed here, with my comments.
+
+\lstinputlisting[style=customasmx86]{\CURPATH/CRC_2_EN.asm}
+
+Let's try the same in GCC 4.4.1 with \Othree option:
+
+\lstinputlisting[style=customasmx86]{\CURPATH/CRC_gcc_O3_EN.asm}
+
+\myindex{x86!\Instructions!NOP}
+\myindex{x86!\Instructions!LEA}
+
+GCC has aligned the loop start on a 8-byte boundary by adding \NOP and \TT{lea esi, [esi+0]}
+(that is an \IT{idle operation} too).
+Read more about it in npad section~(\myref{sec:npad}).
+

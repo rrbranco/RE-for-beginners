@@ -1,0 +1,50 @@
+% TODO proof-reading
+\subsubsection{The only argument of the \main function is an array too}
+
+We'll be using the only argument of the \main function, which is an array of strings:
+
+
+\begin{lstlisting}[style=customjava]
+public class UseArgument
+{
+	public static void main(String[] args)
+	{
+		System.out.print("Hi, ");
+		System.out.print(args[1]);
+		System.out.println(". How are you?");
+	}
+}
+\end{lstlisting}
+
+The zeroth argument is the program's name (like in \CCpp, etc.), 
+so the 1st argument supplied by the user is 1st.
+
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=3, locals=1, args_size=1
+         0: getstatic     #2      // Field java/lang/System.out:Ljava/io/PrintStream;
+         3: ldc           #3      // String Hi, 
+         5: invokevirtual #4      // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+         8: getstatic     #2      // Field java/lang/System.out:Ljava/io/PrintStream;
+        11: aload_0       
+        12: iconst_1      
+        13: aaload        
+        14: invokevirtual #4      // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+        17: getstatic     #2      // Field java/lang/System.out:Ljava/io/PrintStream;
+        20: ldc           #5      // String . How are you?
+        22: invokevirtual #6      // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+        25: return        
+\end{lstlisting}
+
+\TT{aload\_0} at 11 loads a \IT{reference} of the zeroth \ac{LVA} slot 
+(1st and only \main argument).
+
+\TT{iconst\_1} and \TT{aaload} at 12 and 13 take a \IT{reference} to the first (counting at 0) 
+element of array.
+
+The \IT{reference} to the string object is at \ac{TOS} at offset 14, and it is 
+taken from there by \TT{println} method.
+

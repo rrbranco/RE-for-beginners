@@ -1,0 +1,171 @@
+\subsection{MIPS}
+
+\subsubsection{Un mot à propos du \q{pointeur global}}
+\label{MIPS_GP}
+
+\myindex{MIPS!\GlobalPointer}
+
+Un concept MIPS important est le \q{pointeur global}.
+Comme nous le savons déjà, chaque instruction MIPS a une taille de 32bits, donc
+il est impossible d'avoir une adresse 32-bit dans une instruction: il faut pour
+cela utiliser une paire.
+(comme le fait GCC dans notre exemple pour le chargement de l'adresse de la chaîne
+de texte).
+Il est possible, toutefois, de charger des données depuis une adresse dans l'interval
+$register-32768...register+32767$ en utilisant une seule instruction (car un offset
+signé de 16 bits peut être encodé dans une seule instruction).
+Nous pouvons alors allouer un registre dans ce but et dédier un block de 64KiB
+pour les données les plus utilisées.
+Ce registre dédié est appelé un \q{pointeur global} et il pointe au milieu du
+block de 64 KiB.
+Ce block contient en général les variables globales et les adresses des fonctions
+importées, comme \printf, car les développeurs de GCC ont décidé qu'obtenir
+l'adresse d'une fonction devait se faire en une instruction au lieu de deux.
+Dans un fichier ELF ce block de 64KiB se trouve en partie dans une section .sbss
+(\q{small \ac{BSS}}) pour les données non initialisées et .sdata (\q{small data})
+pour celles initialisées.
+Cela implique que le programmeur peut choisir quelle donnée il/elle souhaite rendre
+accesible rapidement et doit les stocker dans .sdata/.sbss.
+Certains programmeurs old-school peuvent se souvenir du modèle de mémoire MS-DOS
+\myref{8086_memory_model} ou des gestionnaires de mémoire MS-DOS comme XMS/EMS
+où toute la mémoire était divisée en bloc de 64KiB.
+
+\myindex{PowerPC}
+
+Ce concept n'est pas restreint à MIPS. Au moins les PowerPC utilisent aussi cette
+technique.
+
+\subsubsection{GCC \Optimizing}
+
+Considérons l'exemple suivant, qui illustre le concept de \q{pointeur global}.
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (\assemblyOutput),numbers=left,style=customasmMIPS]{patterns/01_helloworld/MIPS/hw_O3_FR.s}
+
+Comme on le voit, le registre \$GP est défini dans le prologue de la fonction
+pour pointer au milieu de ce block.
+Le registre \ac{RA} est sauvé sur la pile locale.
+\puts est utilisé ici au lieu de \printf.
+\myindex{MIPS!\Instructions!LW}
+L'adresse de la fonction \puts est chargée dans \$25 en utilisant l'instruction \INS{LW} (\q{Load Word}).
+\myindex{MIPS!\Instructions!LUI}
+\myindex{MIPS!\Instructions!ADDIU}
+Ensuite l'adresse de la chaîne de texte est chargée dans \$4 avec la paire
+d'instructions \INS{LUI} ((\q{Load Upper Immediate}) et \INS{ADDIU}
+(\q{Add Immediate Unsigned Word}).
+\INS{LUI} défini les 16 bits de poids fort du registre (d'où le mot \q{upper}
+dans le nom de l'instruction) et \INS{ADDIU} ajoute les 16 bits de poids faible
+de l'adresse.
+
+\INS{ADDIU} suit \INS{JALR} (vous n'avez pas déjà oublié le \IT{slot de
+retard de branchement} ?).
+Le registre \$4 est aussi appelé \$A0, qui est utilisé pour passer le premier
+argument d'une fonction \footnote{La table des registres MIPS est disponible en
+appendice \myref{MIPS_registers_ref}}.
+
+\myindex{MIPS!\Instructions!JALR}
+
+\INS{JALR} (\q{Jump and Link Register}) saute à l'adresse stockée dans le registre
+\$25 (adresse de \puts) en sauvant l'adresse de la prochaine instruction (LW)
+dans \ac{RA}.
+C'est très similaire à ARM.
+Oh, encore une chose importante, l'adresse sauvée dans \ac{RA} n'est pas
+l'adresse de l'instruction suivante (car c'est celle du \IT{slot de délai} et
+elle est exécutée avant l'instruction de saut), mais l'adresse de l'instruction
+après la suivante (après le \IT{slot de délai}).
+Par conséquent, $PC + 8$ est écrit dans \ac{RA} pendant l'exécution de \TT{JALR},
+dans notre cas, c'est l'adresse de l'instruction \INS{LW} après \INS{ADDIU}.
+
+\INS{LW} (\q{Load Word}) à la ligne 20 restaure \ac{RA} depuis la pile locale
+(cette instruction fait partie de l'épilogue de la fonction).
+
+\myindex{MIPS!\Pseudoinstructions!MOVE}
+
+\INS{MOVE} à la ligne 22 copie la valeur du registre \$0 (\$ZERO) dans \$2 (\$V0).
+\label{MIPS_zero_register}
+
+MIPS a un registre \IT{constant}, qui contient toujours zéro.
+Apparemment, les développeurs de MIPS avaient à l'esprit que zéro est la constante
+la plus utilisée en programmation, utilisons donc le registre \$0 à chaque fois
+que zéro est requis.
+
+Un autre fait intéressant est qu'il manque en MIPS une instruction qui transfère
+des données entre des registres.
+En fait,  \TT{MOVE DST, SRC} est \TT{ADD DST, SRC, \$ZERO} ($DST=SRC+0$), qui
+fait la même chose.
+Apparemment, les développeurs de MIPS voulaient une table des opcodes compacte.
+Cela ne siginifie pas qu'il y a une addition à chaque instruction \INS{MOVE}.
+Très probablement, le \ac{CPU} optimise ces pseudo instructions et l'\ac{ALU} n'est
+jamais utilisé.
+
+\myindex{MIPS!\Instructions!J}
+
+\INS{J} à la ligne 24 saute à l'adresse dans \ac{RA}, qui effectue effectivement
+un retour de la fonction.
+\INS{ADDIU} après \INS{J} est en fait exécutée avant \INS{J} (vous vous rappeler
+du \IT{slot de délai de branchement}?) et fait partie de l'épilogue de la fonction.
+Voici un listing généré par \IDA. Chaque registre a son propre pseudo nom:
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (\IDA),numbers=left,style=customasmMIPS]{patterns/01_helloworld/MIPS/hw_O3_IDA_FR.lst}
+
+L'instruction à la ligne 15 sauve la valeur de GP sur la pile locale, et cette
+instruction manque mystérieusement dans le listing de sortie de GCC, peut-être
+une erreur de GCC
+\footnote{Apparamment, les fonctions générant les listings ne sont pas si critique
+pour les utilisateurs de GCC, donc des erreurs peuvent toujours subsister.}.
+La valeur de GP doit effectivement être sauvée, car chaque fonction utilise sa
+propre fenêtre de 64KiB.
+Le registre contenant l'adresse de \puts est appelé \$T9, car les registres
+préfixés avec T- sont appelés \q{temporaires} et leur contenu ne doit pas être
+préservé. 
+
+\subsubsection{GCC \NonOptimizing}
+
+GCC \NonOptimizing est plus verbeux.
+
+\lstinputlisting[caption=GCC 4.4.5 \NonOptimizing (\assemblyOutput),numbers=left,style=customasmMIPS]{patterns/01_helloworld/MIPS/hw_O0_FR.s}
+
+Nous voyons ici que le registre FP est utilisé comme un pointeur sur la pile.
+Nous voyons aussi 3 \ac{NOP}s.
+Le second et le troisième suivent une instruction de branchement.
+Peut-être que le compilateur GCC ajoute toujours des \ac{NOP}s (à cause du
+\IT{slot de retard de branchement}) après les instructions de branchement, et
+alors, si l'optimisation est demandée, peut-être qu'il les élimine.
+Donc, dans ce cas, ils sont laissés en place.
+
+Voici le listing \IDA:
+
+\lstinputlisting[caption=GCC 4.4.5 \NonOptimizing (\IDA),numbers=left,style=customasmMIPS]{patterns/01_helloworld/MIPS/hw_O0_IDA_FR.lst}
+
+\myindex{MIPS!\Pseudoinstructions!LA}
+
+Intéressant, \IDA a reconnu les intructions \INS{LUI}/\INS{ADDIU} et les a concaténées
+en une pseudo instruction \INS{LA} (\q{Load Address}) à la ligne 15.
+Nous pouvons voir que cette pseudo instruction a une taille de 8 octets!
+C'est une pseudo intruction (ou \IT{macro}) car ce n'est pas une instruction MIPS
+réelle, mais plutôt un nom pratique pour une paire d'instructions.
+
+\myindex{MIPS!\Pseudoinstructions!NOP}
+\myindex{MIPS!\Instructions!OR}
+
+Une autre chose est qu'\IDA ne reconnait pas les instructions \ac{NOP}, donc ici
+elles se trouvent aux lignes 22, 26 et 41.
+C'est \TT{OR \$AT, \$ZERO}.
+Essentiellement, cette instruction applique l'opération OR au contenu du registre
+\$AT avec zéro, ce qui, bien sûr, est une instruction sans effet.
+MIPS, comme beaucoup d'autres \ac{ISA}s, n'a pas une instruction \ac{NOP}.
+
+\subsubsection{Rôle de la pile dans cet exemple}
+
+L'adresse de la chaîne de texte est passée dans le registre.
+Pourquoi définir une pile locale quand même?
+La raison de cela est que la valeur des registres \ac{RA} et GP doit être sauvée
+quelque part (car \printf est appelée), et que la pile locale est utilisée pour cela.
+Si cela avait été une \glslink{leaf function}{fonction leaf}, il aurait été
+possible de se passer du prologue et de l'épilogue de la fonction, par
+exemple: \myref{MIPS_leaf_function_ex1}.
+
+\subsubsection{GCC \Optimizing: chargeons-le dans GDB}
+
+\myindex{GDB}
+\lstinputlisting[caption=extrait d'une session GDB]{patterns/01_helloworld/MIPS/O3_GDB.txt}
+

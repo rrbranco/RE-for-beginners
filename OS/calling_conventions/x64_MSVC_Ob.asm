@@ -1,7 +1,7 @@
 $SG2937	DB	'%d %d %d %d %d %d %d', 0aH, 00H
 
 main	PROC
-	sub	rsp, 72					; 00000048H
+	sub	rsp, 72
 
 	mov	DWORD PTR [rsp+48], 7
 	mov	DWORD PTR [rsp+40], 6
@@ -13,7 +13,7 @@ main	PROC
 	call	f1
 
 	xor	eax, eax
-	add	rsp, 72					; 00000048H
+	add	rsp, 72
 	ret	0
 main	ENDP
 
@@ -30,7 +30,7 @@ $LN3:
 	mov	DWORD PTR [rsp+24], r8d
 	mov	DWORD PTR [rsp+16], edx
 	mov	DWORD PTR [rsp+8], ecx
-	sub	rsp, 72					; 00000048H
+	sub	rsp, 72
 
 	mov	eax, DWORD PTR g$[rsp]
 	mov	DWORD PTR [rsp+56], eax
@@ -46,6 +46,6 @@ $LN3:
 	lea	rcx, OFFSET FLAT:$SG2937
 	call	printf
 
-	add	rsp, 72					; 00000048H
+	add	rsp, 72
 	ret	0
 f1	ENDP

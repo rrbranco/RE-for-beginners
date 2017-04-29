@@ -1,0 +1,19 @@
+\subsubsection{MIPS}
+\label{MIPS_structure_big_endian}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),numbers=left,style=customasmMIPS]{patterns/15_structs/4_packing/MIPS_O3_IDA.lst}
+Die Felder des structs landen in den Registern \$A0..\$A3 und werden dann für \printf nach \$A1..\$A3 verschoben,
+während das vierte Feld (aus \$A3) mit \INS{SW} über den lokalen Stack übergeben wird.
+
+Wir fragen uns aber, warum es hier zwei SRA (\q{Shift Word Right Arithmetic}) Befehle für die beiden \Tchar Felder gibt.
+
+MIPS ist eine Big-Endian-Architektur\myref{sec:endianness} und das Debian Linux, mit dem wir arbeiten, ist ebenfalls Big
+Endian.
+
+Wenn nun Byte Variablen in 32-Bit-Feldern im struct gespeichert werden, besetzen sie die hohen Bits 24..31.
+
+Wenn ein Variable vom Typ \Tchar zu einem 32-Bit-Wert erweitert werden muss, muss sie um 24 Bits nach rechts verschoben
+werden.
+
+\Tchar ist ein vorzeichenbehafteter Typ, sodass hier eine arithmetische Verschiebung anstelle einer logischen erfolgen
+muss.

@@ -1,0 +1,100 @@
+\section{Conversion de température}
+
+Un autre exemple très populaire dans
+les livres de programmation est un petit programme qui convertit une température de Fahrenheit vers Celsius ou inversemment.
+
+\[
+	C=\frac{5 \cdot (F-32)}{9}
+\]
+
+Nous pouvons aussi ajouter une gestion des erreurs simples:
+1) nous devons vérifier si l'utilisateur a entré un nombre correct;
+2) nous devons tester si la température en Celsius n'est pas en dessous de $-273$ 
+(qui est en dessous du zéro absolu, comme vu pendant les cours de physique à l'école)
+
+\myindex{\CStandardLibrary!exit()}
+La fonction \TT{exit()} termine 
+le programme instantanément, sans retourner à la fonction \gls{caller}.
+
+\subsection{Valeurs entières}
+
+\lstinputlisting[style=customc]{\CURPATH/i.c}
+
+\subsubsection{MSVC 2012 x86 \Optimizing}
+
+\lstinputlisting[caption=MSVC 2012 x86 \Optimizing,style=customasmx86]{\CURPATH/i_MSVC_2012_Ox_x86_EN.asm}
+
+Ce que l'on peut en dire:
+
+\begin{itemize}
+\item L'adresse de \printf est d'abord chargée dans le
+registre \ESI, donc les futurs
+appels à \printf seront faits juste par l'instruction \TT{CALL ESI}.
+C'est une technique très populaire
+des compilateurs, possible si plusieurs appels consécutifs vers la même fonction sont présents
+dans le code, et/ou s'il y a un registre disponible qui peut être utilisé pour ça.
+
+\item Nous voyons l'instruction \TT{ADD EAX, -32} 
+à l'endroit où 32 doit être soustrait de la valeur.
+$EAX=EAX+(-32)$ est équivalent à $EAX=EAX-32$ 
+et curieusement, le compilateur a décidé d'utiliser \TT{ADD} au lieu de \TT{SUB}.
+Peut-être que ca vaut la peine, difficile d'en être sûr.
+
+\myindex{x86!\Instructions!LEA}
+\item L'instruction \LEA est utilisée quand 
+la valeur est multipliée par 5: \TT{lea ecx, DWORD PTR [eax+eax*4]}.
+Oui, $i+i*4$ équivaut à $i*5$ et \LEA 
+marche plus rapidement que \TT{IMUL}.\\
+D'ailleurs, la paire d'instructions \TT{SHL EAX, 2 / ADD EAX, EAX} peut aussi être utilisée ici---
+certains compilateur le font.
+
+\item La division par l'astuce de la multiplication (\myref{sec:divisionbymult}) 
+est aussi utilisée ici.
+
+\item \main retourne 0 si nous n'avons pas \TT{return 0} 
+à la fin.
+Le standard C99 nous dit \InSqBrackets{\CNineNineStd 5.1.2.2.3} que \main 
+va retourner 0 dans le cas où 
+la déclaration \TT{return} est manquante.
+Cette règle ne fonctionne uniquement que pour la fonction \main.
+
+Cependant, MSVC ne supporte pas officiellement C99, mais peut-être qu'il le supporte partiellement ?
+\end{itemize}
+
+\subsubsection{MSVC 2012 x64 \Optimizing}
+
+Le code est quasiment le même, mais nous pouvons trouver les instructions \TT{INT 3} après chaque appel à \TT{exit()}.
+
+\begin{lstlisting}[style=customasmx86]
+	xor	ecx, ecx
+	call	QWORD PTR __imp_exit
+	int	3
+\end{lstlisting}
+
+\TT{INT 3} est un point d'arrêt du debugger.
+
+C'est connu que \TT{exit()} est l'une des fonctions qui ne retourne jamais
+\footnote{une autre populaire est \TT{longjmp()}},
+donc si elle le fait, quelque chose de vraiment étrange est arrivé et il est temps de lancer le debugger.
+
+\subsection{Floating-point values}
+
+\lstinputlisting[style=customc]{\CURPATH/f.c}
+
+MSVC 2010 x86 utilise des instructions \ac{FPU}\dots
+
+\lstinputlisting[caption=MSVC 2010 x86 \Optimizing,style=customasmx86]{\CURPATH/f_MSVC_2010_x86_Ox_EN.asm}
+
+\dots mais MSVC 2012 utilise à la place des instructions \ac{SIMD}:
+
+\lstinputlisting[caption=MSVC 2010 x86 \Optimizing,style=customasmx86]{\CURPATH/f_MSVC_2012_x86_Ox_EN.asm}
+
+Bien sûr, les instructions \ac{SIMD} sont disponibles dans le mode x86,
+incluants celles qui fonctionnent avec les nombres à virgule flottante.
+
+C'est quelque part plus simple de les utiliser pour les calculs, donc le nouveau compilateur Microsoft les utilise.
+
+Nous pouvons aussi voir que la valeur $-273$
+est chargée dans le registre \XMM{0} trop tôt.
+Et c'est OK, parce que le compilateur peut mettre des instructions dans un ordre
+différent de celui du code source.

@@ -1,0 +1,102 @@
+\section{Поиск нужных инструкций}
+
+Если программа использует инструкции сопроцессора, и их не очень много, 
+то можно попробовать вручную проверить отладчиком какую-то из них.
+
+\par К примеру, нас может заинтересовать, при помощи чего Microsoft Excel считает 
+результаты формул, введенных пользователем. Например, операция деления.
+
+\myindex{\GrepUsage}
+\myindex{x86!\Instructions!FDIV}
+Если загрузить excel.exe (из Office 2010) версии 14.0.4756.1000 в \IDA, затем сделать полный листинг 
+и найти все инструкции \FDIV (но кроме тех, которые в качестве второго операнда используют константы --- они, 
+очевидно, не подходят нам):
+
+\begin{lstlisting}
+cat EXCEL.lst | grep fdiv | grep -v dbl_ > EXCEL.fdiv
+\end{lstlisting}
+
+\dots то окажется, что их всего 144.
+
+\par Мы можем вводить в Excel строку вроде \TT{=(1/3)} и проверить все эти инструкции.
+
+\myindex{tracer}
+\par Проверяя каждую инструкцию в отладчике или \tracer 
+(проверять эти инструкции можно по 4 за раз), 
+окажется, что нам везет и срабатывает всего лишь 14-я по счету:
+
+\begin{lstlisting}[style=customasmx86]
+.text:3011E919 DC 33          fdiv    qword ptr [ebx]
+\end{lstlisting}
+
+\begin{lstlisting}
+PID=13944|TID=28744|(0) 0x2f64e919 (Excel.exe!BASE+0x11e919)
+EAX=0x02088006 EBX=0x02088018 ECX=0x00000001 EDX=0x00000001
+ESI=0x02088000 EDI=0x00544804 EBP=0x0274FA3C ESP=0x0274F9F8
+EIP=0x2F64E919
+FLAGS=PF IF
+FPU ControlWord=IC RC=NEAR PC=64bits PM UM OM ZM DM IM 
+FPU StatusWord=
+FPU ST(0): 1.000000
+\end{lstlisting}
+
+В \ST{0} содержится первый аргумент (1), второй содержится в \TT{[EBX]}.\\
+\\
+\myindex{x86!\Instructions!FDIV}
+Следующая за \FDIV инструкция (\TT{FSTP}) записывает результат в память: \\
+
+\begin{lstlisting}[style=customasmx86]
+.text:3011E91B DD 1E          fstp    qword ptr [esi]
+\end{lstlisting}
+
+Если поставить breakpoint на ней, то мы можем видеть результат:
+
+\begin{lstlisting}
+PID=32852|TID=36488|(0) 0x2f40e91b (Excel.exe!BASE+0x11e91b)
+EAX=0x00598006 EBX=0x00598018 ECX=0x00000001 EDX=0x00000001
+ESI=0x00598000 EDI=0x00294804 EBP=0x026CF93C ESP=0x026CF8F8
+EIP=0x2F40E91B
+FLAGS=PF IF
+FPU ControlWord=IC RC=NEAR PC=64bits PM UM OM ZM DM IM 
+FPU StatusWord=C1 P 
+FPU ST(0): 0.333333
+\end{lstlisting}
+
+А также, в рамках пранка\footnote{practical joke}, модифицировать его на лету:
+
+\begin{lstlisting}
+tracer -l:excel.exe bpx=excel.exe!BASE+0x11E91B,set(st0,666)
+\end{lstlisting}
+
+\begin{lstlisting}
+PID=36540|TID=24056|(0) 0x2f40e91b (Excel.exe!BASE+0x11e91b)
+EAX=0x00680006 EBX=0x00680018 ECX=0x00000001 EDX=0x00000001
+ESI=0x00680000 EDI=0x00395404 EBP=0x0290FD9C ESP=0x0290FD58
+EIP=0x2F40E91B
+FLAGS=PF IF
+FPU ControlWord=IC RC=NEAR PC=64bits PM UM OM ZM DM IM 
+FPU StatusWord=C1 P 
+FPU ST(0): 0.333333
+Set ST0 register to 666.000000
+\end{lstlisting}
+
+Excel показывает в этой ячейке 666, что окончательно убеждает нас в том, что мы нашли нужное место.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.6\textwidth]{digging_into_code/Excel_prank.png}
+\caption{Пранк сработал}
+\end{figure}
+
+Если попробовать ту же версию Excel, только x64, то окажется что там инструкций \FDIV всего 12, 
+причем нужная нам --- третья по счету.
+
+\begin{lstlisting}
+tracer.exe -l:excel.exe bpx=excel.exe!BASE+0x1B7FCC,set(st0,666)
+\end{lstlisting}
+
+\myindex{x86!\Instructions!DIVSD}
+Видимо, все дело в том, что много операций деления переменных типов \Tfloat и \Tdouble 
+компилятор заменил на SSE-инструкции вроде \TT{DIVSD}, 
+коих здесь теперь действительно много (\TT{DIVSD} присутствует в количестве 268 инструкций).
+

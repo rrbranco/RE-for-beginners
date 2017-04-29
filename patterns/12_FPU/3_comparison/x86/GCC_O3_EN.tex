@@ -1,0 +1,24 @@
+\myparagraph{\Optimizing GCC 4.4.1}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.1,style=customasmx86]{patterns/12_FPU/3_comparison/x86/GCC_O3_EN.asm}
+
+\myindex{x86!\Instructions!JA}
+
+It is almost the same except that \JA is used after \SAHF. 
+Actually, conditional jump instructions that check \q{larger}, \q{lesser} or \q{equal} for unsigned number comparison 
+(these are \JA, \JAE, \JB, \JBE, \JE/\JZ, \JNA, \JNAE, \JNB, \JNBE, \JNE/\JNZ) check only flags \CF and \ZF.\\
+\\
+Let's recall where bits \CThreeBits are located in the \GTT{AH} register after the execution of \INS{FSTSW}/\FNSTSW:
+
+\input{C3_in_AH}
+
+Let's also recall, how the bits from \GTT{AH} are stored into the CPU flags the execution of \SAHF:
+
+\input{SAHF_LAHF}
+
+After the comparison, the \Cthree and \Czero bits are moved into \ZF and \CF, so the conditional jumps are able work after. \JA is triggering if both \CF are \ZF zero.
+
+Thereby, the conditional jumps instructions listed here can be used after a \FNSTSW/\SAHF instruction pair.
+
+Apparently, the FPU \CThreeBits status bits were placed there intentionally, to easily map them to base CPU flags without additional permutations?
+

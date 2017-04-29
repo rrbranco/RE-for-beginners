@@ -1,0 +1,18 @@
+my_strlen:
+; переменная "eos" всегда будет находиться в $v1:
+                move    $v1, $a0
+
+loc_4:
+; загрузить байт по адресу в "eos" в $a1:
+                lb      $a1, 0($v1)
+                or      $at, $zero ; load delay slot, NOP
+; если загруженный байт не ноль, перейти на loc_4:
+                bnez    $a1, loc_4
+; в любом случае, инкрементируем "eos":
+                addiu   $v1, 1 ; branch delay slot
+; цикл закончен. инвертируем переменную "str":
+                nor     $v0, $zero, $a0
+; $v0=-str-1
+                jr      $ra
+; возвращаемое значение = $v1 + $v0 = eos + ( -str-1 ) = eos - str - 1
+                addu    $v0, $v1, $v0 ; branch delay slot

@@ -1,0 +1,7 @@
+stepping=7
+model=10
+family_id=6
+processor_type=0
+extended_model_id=2
+extended_family_id=0
+

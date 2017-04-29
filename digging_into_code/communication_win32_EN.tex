@@ -1,0 +1,129 @@
+\section{Communication with the outer world (win32)}
+
+Sometimes it's enough to observe some function's inputs and outputs in order to understand what it does.
+That way you can save time.
+
+Files and registry access: 
+for the very basic analysis, Process Monitor\footnote{\url{http://go.yurichev.com/17301}}
+utility from SysInternals can help.
+
+For the basic analysis of network accesses, Wireshark\footnote{\url{http://go.yurichev.com/17303}} can be useful.
+
+But then you will have to to look inside anyway. \\
+\\
+The first thing to look for is which functions from the \ac{OS}'s \ac{API}s and standard libraries are used.
+
+If the program is divided into a main executable file and a group of DLL files, sometimes the names of the functions in these DLLs can help.
+
+If we are interested in exactly what can lead to a call to \TT{MessageBox()} with specific text, 
+we can try to find this text in the data segment, find the references to it and find the points
+from which the control may be passed to the \TT{MessageBox()} call we're interested in.
+
+\myindex{\CStandardLibrary!rand()}
+If we are talking about a video game and we're interested in which events are more or less random in it,
+we may try to find the \rand function or its replacements (like the Mersenne twister algorithm) and find the places
+from which those functions are called, and more importantly, how are the results used.
+% BUG in varioref: http://tex.stackexchange.com/questions/104261/varioref-vref-or-vpageref-at-page-boundary-may-loop
+One example: \ref{chap:color_lines}. 
+
+But if it is not a game, and \rand is still used, it is also interesting to know why.
+There are cases of unexpected \rand usage in data compression algorithms (for encryption imitation):
+\href{http://go.yurichev.com/17221}{blog.yurichev.com}.
+
+\subsection{Often used functions in the Windows API}
+
+These functions may be among the imported.
+It is worth to note that not every function might be used in the code that was written by the programmer.
+A lot of functions might be called from library functions and \ac{CRT} code.
+
+Some functions may have the \GTT{-A} suffix for the ASCII version and \GTT{-W} for the Unicode version.
+
+\begin{itemize}
+
+\item
+Registry access (advapi32.dll): 
+RegEnumKeyEx, RegEnumValue, RegGetValue, RegOpenKeyEx, RegQueryValueEx.
+
+\item
+Access to text .ini-files (kernel32.dll): 
+GetPrivateProfileString.
+
+\item
+Dialog boxes (user32.dll): 
+MessageBox, MessageBoxEx, CreateDialog, SetDlgItemText, GetDlgItemText.
+
+\item
+Resources access (\myref{PEresources}): (user32.dll): LoadMenu.
+
+\item
+TCP/IP networking (ws2\_32.dll):
+WSARecv, WSASend.
+
+\item
+File access (kernel32.dll):
+CreateFile, ReadFile, ReadFileEx, WriteFile, WriteFileEx.
+
+\item
+High-level access to the Internet (wininet.dll): WinHttpOpen.
+
+\item
+Checking the digital signature of an executable file (wintrust.dll):
+WinVerifyTrust.
+
+\item
+The standard MSVC library (if it's linked dynamically) (msvcr*.dll):
+assert, itoa, ltoa, open, printf, read, strcmp, atol, atoi, fopen, fread, fwrite, memcmp, rand,
+strlen, strstr, strchr.
+
+\end{itemize}
+
+\subsection{Extending trial period}
+
+Registry access functions are frequent targets for those who try to crack trial period of some software, which may save
+installation date/time into registry.
+
+Another popular target are GetLocalTime() and GetSystemTime() functions:
+a trial software, at each startup, must check current date/time somehow anyway.
+
+\subsection{Removing nag dialog box}
+
+A popular way to find out what causing popping nag dialog box is intercepting MessageBox(), 
+CreateDialog() and CreateWindow() functions.
+
+\subsection{tracer: Intercepting all functions in specific module}
+\myindex{tracer}
+
+\myindex{x86!\Instructions!INT3}
+There are INT3 breakpoints in the \tracer, that are triggered only once, however, they can be set for all functions
+in a specific DLL.
+
+\begin{lstlisting}
+--one-time-INT3-bp:somedll.dll!.*
+\end{lstlisting}
+
+Or, let's set INT3 breakpoints on all functions with the \TT{xml} prefix in their name:
+
+\begin{lstlisting}
+--one-time-INT3-bp:somedll.dll!xml.*
+\end{lstlisting}
+
+On the other side of the coin, such breakpoints are triggered only once.
+Tracer will show the call of a function, if it happens, but only once.
+Another drawback---it is impossible to see the function's arguments.
+
+Nevertheless, this feature is very useful when you know that the program uses a DLL,
+but you do not know which functions are actually used.
+And there are a lot of functions. 
+
+\par
+\myindex{Cygwin}
+For example, let's see, what does the uptime utility from cygwin use:
+
+\begin{lstlisting}
+tracer -l:uptime.exe --one-time-INT3-bp:cygwin1.dll!.*
+\end{lstlisting}
+
+Thus we may see all that cygwin1.dll library functions that were called at least once, and where from:
+
+\lstinputlisting{digging_into_code/uptime_cygwin.txt}
+

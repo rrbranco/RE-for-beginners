@@ -1,0 +1,15 @@
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA),style=customasmMIPS]{patterns/14_bitfields/2_set_reset/MIPS_O3_IDA_DE.lst}
+
+\myindex{MIPS!\Instructions!ORI}
+
+\INS{ORI} ist natürlich ein \INS{OR} Befehl. Das \q{I} im Befehlsnamen bedeutet,
+dass der Wert in den Maschinencode eingebettet wird.
+
+\myindex{MIPS!\Instructions!AND}
+Danach finden wir \AND. Hier kann nich t\INS{ANDI} verwendet werden, da es nicht
+möglich ist, die Zahl 0xFFFFFDFF in einen einzigen Befehl einzubetten, sodass
+der Compiler zunächst 0xFFFFFDFF in das Register \$V0 lädt und dann ein \AND
+erzeugt, das alle seine Eingabewerte aus den Registern entnimmt.

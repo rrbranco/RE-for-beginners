@@ -1,0 +1,45 @@
+\clearpage
+\subsubsection{MSVC: x86 + \olly}
+\myindex{\olly}
+
+Les choses sont encore plus simple ici:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/2_global/ex2_olly_1.png}
+\caption{\olly: après l'exécution de \scanf}
+\label{fig:scanf_ex2_olly_1}
+\end{figure}
+
+La variable se trouve dans le segment de données.
+Après que l'instruction \PUSH (pousser l'adresse de $x$) ait été exécutée,
+l'adresse apparaît dans la fenêtre de la pile. Cliquer droit sur cette ligne
+et choisir \q{Follow in dump}. % TODO olly French ?
+La variable va apparaître dans la fenêtre de la mémoire sur la gauche.
+Après que nous ayons entré 123 dans la console, \TT{0x7B} apparaît dans la fenêtre
+de la mémoire (voir les régions surlignées dans la copie d'écran).
+
+Mais pourquoi est-ce que le premier octet est \TT{7B}?
+Logiquement, Il devrait y avoir \TT{00 00 00 7B} ici.
+La cause de ceci est référé comme \gls{endianness}, et x86 utilise \IT{little-endian}.
+Cela implique que l'octet le plus faible poids est écrit en premier, et le plus fort
+en dernier.
+Voir à ce propos: \myref{sec:endianness}.
+Revenons à l'exemple, la valeur 32-bit est chargée depuis son adresse mémoire
+dans \EAX et passée à \printf.
+
+L'adresse mémoire de $x$ est \TT{0x00C53394}.
+
+\clearpage
+Dans \olly nous pouvons examiner l'espace mémoire du processus  (Alt-M) et nous
+pouvons voir que cette adresse se trouve dans le PE-segment \TT{.data} de notre
+programme:
+
+\label{olly_memory_map_example}
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/2_global/ex2_olly_2.png}
+\caption{\olly: espace mémoire du processus}
+\label{fig:scanf_ex2_olly_2}
+\end{figure}
+

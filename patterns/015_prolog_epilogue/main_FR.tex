@@ -1,0 +1,38 @@
+\section{Fonction prologue et épilogue}
+\label{sec:prologepilog}
+\myindex{Function epilogue}
+\myindex{Function prologue}
+
+Un prologue de fonction est une séquence particulière d'instructions située au début d'une fonction. Il ressemble souvent à ce morceau de code:
+
+\begin{lstlisting}[style=customasmx86]
+    push    ebp
+    mov     ebp, esp
+    sub     esp, X
+\end{lstlisting}
+
+Ce que ces instructions font: sauvent la valeur du registre \EBP dans la pile (push ebp), sauvent la valeur actuelle du registre \ESP dans le
+ registre \EBP (mov ebp, esp) et enfin allouent de la mémoire dans la pile pour les variables locales de la fonction (sub esp, X).
+
+La valeur du registre \EBP reste la même durant la période où la fonction s'exécute et est utilisée pour accéder aux variables locales et aux arguments de la fonction.
+
+Le registre \ESP peut aussi être utilisé pour accéder aux variables locales et aux arguments de la fonction, cependant cette approche n'est
+ pas pratique car sa valeur est susceptible de changer au cours de l'exécution de cette fonction.
+
+L'épilogue de fonction libère la mémoire allouée dans la pile (mov esp, ebp), restaure l'ancienne valeur de \EBP précédement sauvegardée dans la pile (pop ebp) puis rend l'exécution au \gls{caller} (ret 0).
+
+\begin{lstlisting}[style=customasmx86]
+    mov    esp, ebp
+    pop    ebp
+    ret    0
+\end{lstlisting}
+
+% what about calling convention?
+Les prologues et épilogues de fonction sont généralement détectés par les désassembleurs pour déterminer où une fonction commence et où elle se termine.
+
+\subsection{\Recursion}
+
+\myindex{\Recursion}
+Les prologues et épilogues de fonction peuvent affecter négativement les performances de récursion.
+
+Plus d'information sur la récursivité dans ce livre: \myref{Recursion_and_tail_call}.

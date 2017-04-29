@@ -1,0 +1,97 @@
+% !TEX program = XeLaTeX
+% !TEX encoding = UTF-8
+\documentclass[UTF8,nofonts]{ctexart}
+\setCJKmainfont[BoldFont=STHeiti,ItalicFont=STKaiti]{STSong}
+\setCJKsansfont[BoldFont=STHeiti]{STXihei}
+\setCJKmonofont{STFangsong}
+
+\begin{document}
+
+%daveti: translated on Dec 28, 2016
+%NOTE: above is needed for MacTex.
+
+\section*{前言 Preface}
+
+术语\q{\gls{逆向工程 reverse engineering}}有好多种流行的说法:
+1) 软件逆向工程: 研究编译器产生的程序;
+2) 3D结构扫描和随后的用来复制该结构的数字模型重建;
+3) Recreating \ac{DBMS} structure.
+This book is about the first meaning.
+
+\subsection*{深入讨论的话题 Topics discussed in-depth}
+
+x86/x64, ARM/ARM64, MIPS, Java/JVM.
+
+\subsection*{概述的话题 Topics touched upon}
+
+\oracle (\myref{oracle}),
+Itanium (\myref{itanium}),
+copy-protection dongles (\myref{dongles}), 
+LD\_PRELOAD (\myref{ld_preload}),
+stack overflow,
+\ac{ELF},
+win32 PE file format (\myref{win32_pe}),
+x86-64 (\myref{x86-64}),
+critical sections (\myref{critical_sections}),
+syscalls (\myref{syscalls}), 
+\ac{TLS},
+position-independent code (\ac{PIC}) (\myref{sec:PIC}), 
+profile-guided optimization (\myref{PGO}),
+C++ STL (\myref{cpp_STL}),
+OpenMP (\myref{openmp}),
+SEH (\myref{sec:SEH}).
+
+\subsection*{前提条件 Prerequisites}
+
+基本的C \ac{语言 PL}知识.
+推荐阅读: \myref{CCppBooks}.
+
+\subsection*{练习和项目 Exercises and tasks}
+
+\dots 
+都已经转移到了一个单独的网站: \url{http://challenges.re}.
+
+\subsection*{关于作者 About the author}
+\begin{tabularx}{\textwidth}{ l X }
+
+\raisebox{-\totalheight}{
+\includegraphics[scale=0.60]{Dennis_Yurichev.jpg}
+}
+
+&
+Dennis Yurichev是一个经验丰富的逆向工程师和程序员.
+可以通过邮件联系他: \textbf{\EMAIL{}}.
+
+% FIXME: no link. \tablefootnote doesn't work
+\end{tabularx}
+
+% subsections:
+\input{praise}
+\input{thanks}
+\input{FAQ_CN}
+
+\subsection*{关于韩语翻译 About the Korean translation}
+
+2015一月，南韩的Acorn出版社 (\href{http://www.acornpub.co.kr}{www.acornpub.co.kr}) 做了大量的翻译工作并且最终把这本书（2014年8月的版本）韩语版出版。
+
+现在可以从这里买到\href{http://go.yurichev.com/17343}{出版社网站}.
+
+\iffalse
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.3]{acorn_cover.jpg}
+\end{figure}
+\fi
+
+译者是Byungho Min (\href{http://go.yurichev.com/17344}{twitter/tais9}).
+封面依然由我的艺术家哥们Andy Nechaevsky设计:
+\href{http://go.yurichev.com/17023}{facebook/andydinka}.
+他们共同持有韩语翻译版的版权。
+
+所以，如果你想有一本\IT{真正的 real}韩语版本书而且顺便支持我的工作，请购买该书。
+
+\end{document}
+
+%\subsection*{About the Persian/Farsi translation}
+%TBT
+

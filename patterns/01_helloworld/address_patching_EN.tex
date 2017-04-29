@@ -1,0 +1,69 @@
+\subsubsection{Address patching (Win64)}
+
+When our example compiled in MSVC2013 using \TT{\textbackslash{}MD} switch
+(meaning smaller executable due to \TT{MSVCR*.DLL} file linkage), the \main function came first and can be easily found:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/01_helloworld/hiew_incr1.png}
+\caption{Hiew}
+\label{}
+\end{figure}
+
+As an experiment, we can \gls{increment} address of the pointer by 1:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/01_helloworld/hiew_incr2.png}
+\caption{Hiew}
+\label{}
+\end{figure}
+
+Hiew shows \q{ello, world} string.
+And when we run patched executable, this very string is printed.
+
+\subsubsection{Pick another string from binary image (Linux x64)}
+
+The binary file I've got when I compile our example using GCC 5.4.0 on Linux x64 box has many other text strings:
+they are mostly imported function names and library names.
+
+I run objdump to get contents of all sections of the compiled file:
+
+\begin{lstlisting}[basicstyle=\ttfamily, mathescape]
+$\$$ objdump -s a.out
+
+a.out:     file format elf64-x86-64
+
+Contents of section .interp:
+ 400238 2f6c6962 36342f6c 642d6c69 6e75782d  /lib64/ld-linux-
+ 400248 7838362d 36342e73 6f2e3200           x86-64.so.2.
+Contents of section .note.ABI-tag:
+ 400254 04000000 10000000 01000000 474e5500  ............GNU.
+ 400264 00000000 02000000 06000000 20000000  ............ ...
+Contents of section .note.gnu.build-id:
+ 400274 04000000 14000000 03000000 474e5500  ............GNU.
+ 400284 fe461178 5bb710b4 bbf2aca8 5ec1ec10  .F.x[.......^...
+ 400294 cf3f7ae4                             .?z.
+
+...
+\end{lstlisting}
+
+It's not a problem to pass address of the text string \q{/lib64/ld-linux-x86-64.so.2} to \TT{printf()} call:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+    printf(0x400238);
+    return 0;
+}
+\end{lstlisting}
+
+Hard to believe, this code prints mentioned string.
+
+Change the address to \TT{0x400260}, and the \q{GNU} string will be printed.
+The address is true for my specific GCC version, GNU toolset, etc.
+On your system, executable may be slightly different, and all addresses will also be different.
+Also, adding/removing code to/from this source code will probably shift all addresses back and forth.
+

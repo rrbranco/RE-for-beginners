@@ -1,0 +1,14 @@
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/12_FPU/2_passing_floats/MIPS_O3_IDA_RU.lst}
+
+И снова мы здесь видим, как \INS{LUI} загружает 32-битную часть числа типа \Tdouble в \$V0.
+И снова трудно понять почему.
+
+\myindex{MIPS!\Instructions!MFC1}
+Новая для нас инструкция это \INS{MFC1} (\q{Move From Coprocessor 1}) (копировать из первого сопроцессора).
+FPU это сопроцессор под номером 1, вот откуда \q{1} в имени инструкции.
+Эта инструкция переносит значения из регистров сопроцессора в регистры основного CPU (\ac{GPR}).
+Так что результат исполнения \TT{pow()} в итоге копируется в регистры \$A3 и \$A2
+и из этой пары регистров \printf берет его как 64-битное значение типа \Tdouble.
+

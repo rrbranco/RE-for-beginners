@@ -1,0 +1,29 @@
+\subsubsection{ARM}
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/04_scanf/1_simple/ARM_IDA.lst}
+
+\myindex{\CLanguageElements!\Pointers}
+
+Affinche' \scanf possa leggere l'input, necessita di un parametro ---puntatore ad un \Tint.
+\Tint e' 32-bit, quindi servono 4 byte per memorizzarlo da qualche parte in memoria, e entra perfettamente in un registro a 32-bit.
+\myindex{IDA!var\_?}
+Uno spazio per la variabile locale \GTT{x} e' allocato nello stack e \IDA
+lo ha chiamato \IT{var\_8}. Non e' comunque necessario allocarlo in questo modo poiche' \ac{SP} (\gls{stack pointer}) punta gia' a quella posizione e puo' essere usato direttamente.
+
+Successivamente il valore di \ac{SP} e' copiato nel registro \Reg{1} e sono passati, insieme alla format-string, a \scanf.
+\myindex{ARM!\Instructions!LDR}
+Questo valore, con l'aiuto dell'istruzione \INS{LDR} , viene poi spostato dallo stakc al registro \Reg{1} per essere passato a \printf.
+
+\myparagraph{ARM64}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1 ARM64,numbers=left,style=customasmARM]{patterns/04_scanf/1_simple/ARM64_GCC491_O0_EN.s}
+
+Ci sono 32 byte allocati per lo stack frame, che e' piu' grande del necessario. Forse a causa di meccanismi di allineamento della memoria?
+La parte piu' interessante e' quella in cui trova spazio per la variabile $x$ nello stack frame (riga 22).
+Perche' 28? Il compilatore ha in qualche modo deciso di piazzare questa variabile alla fine dello stack frame anziche' all'inizio.
+L'indirizzo e' passato a \scanf, che memorizzera' il valore immesso dall'utente nella memoria a quell'indirizzo.
+Si tratta di un valore a 32-bit di tipo \Tint.
+Il valore e' recuperato successivamente a riga 27 e passato a \printf.
+

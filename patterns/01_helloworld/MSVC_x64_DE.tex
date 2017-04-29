@@ -1,0 +1,26 @@
+\subsubsection{MSVC: x86-64}
+
+\myindex{x86-64}
+Hier das gleiche Beispiel mit der 64-Bit-Variante von MSVC kompiliert:
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/01_helloworld/MSVC_x64.asm}
+
+\myindex{fastcall}
+
+In x86-64 wurden alle Regeister auf 64-Bit erweitert und die Registernamen mit einem \TT{R-}Prefix versehen.
+Um den Stack weniger oft zu nutzen (also um auf externen Speicher / Cache selterner zuzugreifen), existiert
+ein verbreiteter Weg um Funktionsargumente per Register (\IT{fastcall}) \myref{fastcall} zu übergeben.
+Das heißt ein Teil der Funktionsargumente wird in Registern übergeben, der Rest---über den Stack.
+In Win64 werden vier Funktionsargumente in den Registern \RCX, \RDX, \Reg{8} und \Reg{9} übergeben.
+Das ist was hier sichtbar ist: der Zeiger zu der Zeichenkette für \printf ist jetzt nicht im Stack übergeben sondern im \RCX-Register.
+Die Zeiger sind nun 64-Bit breit, also werden sie in den 64-Bit-Registern übergeben (die jetz den \TT{R-}Prefix haben).
+Aus Gründen der Rückwärtskompatibilität ist es aber immer noch möglich mit dem \TT{E-}Prefix auf 32-Bit-Teile zuzugrifen.
+Nachfolgend, der Aufbau der \RAX/\EAX/\AX/\AL-Register in x86-64:
+
+\RegTableOne{RAX}{EAX}{AX}{AH}{AL}
+
+Die \main-Funktion gibt einen Wert vom Typ \Tint{} zurück, der in \CCpp aus Gründen der Kompatibilität und
+Portabilität immernoch 32 Bit breit ist. Daher wird am Ende der Funktion das \EAX-Register auf Null gesetzt
+(das heißt der 32-Bit-Part des Registers) anstatt \RAX{}.
+Auf dem lokalen Stack sind zusätzliche 40 Byte reserviert.
+Dieser Bereich wird \q{shadow space} genannt und wird in Abschnitt \myref{shadow_space} noch genauer betrachtet.

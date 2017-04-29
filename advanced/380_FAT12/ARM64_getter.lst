@@ -1,0 +1,52 @@
+<get_from_array>:
+; W0 = idx
+   0:           lsr     w2, w0, #1
+; W2 = W0>>1 = idx>>1
+   4:           lsl     w1, w2, #2
+; W1 = W2<<2 = (W0>>1)<<2 = (idx&(~1))<<1
+   8:           sub     w1, w1, w2
+; W1 = W1-W2 = (idx&(~1))<<1 - idx>>1 = idx*1.5
+; now test lowest bit of idx and jump if it is present.
+; (ARM64 has single instruction for these operations: TBNZ (Test and Branch Not Zero)).
+   c:           tbnz    w0, #0, 30 <get_from_array+0x30>
+
+; idx is even, go on:
+  10:           adrp    x2, page of array
+  14:           add     w3, w1, #0x1
+; W3 = W1+1 = idx*1.5 + 1, i.e., offset of middle byte
+  18:           add     x2, x2, offset of array within page
+; load left byte at X2+W1 = array + idx*1.5 with sign-extension ("sxtw")
+  1c:           ldrb    w0, [x2,w1,sxtw]
+; load middle byte at X2+W3 = array + idx*1.5 + 1 with sign-extension ("sxtw")
+  20:           ldrb    w1, [x2,w3,sxtw]
+; W0 = left byte
+; W1 = middle byte
+  24:           lsl     w0, w0, #4
+; W0 = W0<<4 = left_byte << 4
+; merge parts:
+  28:           orr     w0, w0, w1, lsr #4
+; W0 = W0 | W1>>4 = left_byte << 4 | middle_byte >> 4
+; value in W0 is returned
+  2c:           ret
+
+; idx is odd, go on:
+  30:           adrp    x2, page of array
+  34:           add     w0, w1, #0x1
+; W0 = W1+1 = idx*1.5+1, i.e., offset of middle byte
+  38:           add     x2, x2, address of array within page
+  3c:           add     w1, w1, #0x2
+; W1 = W1+2 = idx*1.5+2, i.e., offset of right byte
+; load middle byte at X2+W0 = array+idx*1.5+1 with sign-extension ("sxtw")
+  40:           ldrb    w0, [x2,w0,sxtw]
+; load right byte at X2+W1 = array+idx*1.5+2 with sign-extension ("sxtw")
+  44:           ldrb    w1, [x2,w1,sxtw]
+; W0 = middle byte
+; W1 = right byte
+  48:           ubfiz   w0, w0, #8, #4
+; W0 = middle_byte<<8
+; now merge parts:
+  4c:           orr     w0, w0, w1
+; W0 = W0 | W1 = middle_byte<<8 | right_byte
+; value in W0 is returned
+  50:           ret
+

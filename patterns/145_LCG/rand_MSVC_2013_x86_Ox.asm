@@ -12,9 +12,9 @@ _srand	ENDP
 _TEXT	SEGMENT
 _rand	PROC
 	imul	eax, DWORD PTR _rand_state, 1664525
-	add	eax, 1013904223		; 3c6ef35fH
+	add	eax, 1013904223	; 3c6ef35fH
 	mov	DWORD PTR _rand_state, eax
-	and	eax, 32767		; 00007fffH
+	and	eax, 32767	; 00007fffH
 	ret	0
 _rand	ENDP
 

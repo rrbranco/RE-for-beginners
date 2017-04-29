@@ -1,0 +1,137 @@
+﻿\subsection{Vectorization}
+
+\newcommand{\URLVEC}{\href{http://go.yurichev.com/17080}{Wikipedia: vectorization}}
+
+Vectorization\footnote{\URLVEC} is when, for example, you have a loop taking couple of arrays for input and producing one array.
+The loop body takes values from the input arrays, does something and puts the result into the output array.
+%It is important that there is only a single operation applied to each element.
+Vectorization is to process several elements simultaneously.
+
+Vectorization is not very fresh technology: the author of this textbook saw it at least on the Cray Y-MP 
+supercomputer line from 1988 when he played with its \q{lite} version Cray Y-MP EL
+\footnote{Remotely. It is installed in the museum of supercomputers: \url{http://go.yurichev.com/17081}}.
+
+% FIXME! add assembly listing!
+For example:
+
+\begin{lstlisting}[style=customc]
+for (i = 0; i < 1024; i++)
+{
+    C[i] = A[i]*B[i];
+}
+\end{lstlisting}
+
+This fragment of code takes elements from A and B, multiplies them and saves the result into C.
+
+\myindex{x86!\Instructions!PLMULLD}
+\myindex{x86!\Instructions!PLMULHW}
+\newcommand{\PMULLD}{\IT{PMULLD} (\IT{Multiply Packed Signed Dword Integers and Store Low Result})}
+\newcommand{\PMULHW}{\TT{PMULHW} (\IT{Multiply Packed Signed Integers and Store High Result})}
+
+If each array element we have is 32-bit \Tint, then it is possible to load 4 elements from A into a 128-bit 
+XMM-register, from B to another XMM-registers, and by executing \PMULLD{} and \PMULHW{}, 
+it is possible to get 4 64-bit \glspl{product} at once.
+
+Thus, loop body execution count is $1024/4$ instead of 1024, that is 4 times less and, of course, faster.
+
+\newcommand{\URLINTELVEC}{\href{http://go.yurichev.com/17082}{Excerpt: Effective Automatic Vectorization}}
+
+\subsubsection{Addition example}
+
+\myindex{Intel C++}
+
+Some compilers can do vectorization automatically in simple cases, 
+e.g., Intel C++\footnote{More about Intel C++ automatic vectorization: \URLINTELVEC}.
+
+Here is tiny function:
+
+\begin{lstlisting}[style=customc]
+int f (int sz, int *ar1, int *ar2, int *ar3)
+{
+	for (int i=0; i<sz; i++)
+		ar3[i]=ar1[i]+ar2[i];
+
+	return 0;
+};
+\end{lstlisting}
+
+\myparagraph{Intel C++}
+
+Let's compile it with Intel C++ 11.1.051 win32:
+
+\begin{verbatim}
+icl intel.cpp /QaxSSE2 /Faintel.asm /Ox
+\end{verbatim}
+
+We got (in \IDA):
+
+\lstinputlisting[style=customasmx86]{patterns/19_SIMD/18_1_EN.asm}
+
+The SSE2-related instructions are:
+\myindex{x86!\Instructions!MOVDQA}
+\myindex{x86!\Instructions!MOVDQU}
+\myindex{x86!\Instructions!PADDD}
+\begin{itemize}
+\item
+\MOVDQU (\IT{Move Unaligned Double Quadword})---just loads 16 bytes from memory into a XMM-register.
+
+\item
+\PADDD (\IT{Add Packed Integers})---adds 4 pairs of 32-bit numbers and leaves the result in the first operand.
+By the way, no exception is raised in case of overflow and no flags are to be set, 
+just the low 32 bits of the result are to be stored.
+If one of \PADDD's operands is the address of a value in memory,
+then the address must be aligned on a 16-byte boundary. 
+If it is not aligned, an exception will be triggered
+\footnote{More about data alignment: \URLWPDA}.
+
+\item
+\MOVDQA (\IT{Move Aligned Double Quadword})
+is the same as \MOVDQU, but requires the address of the value in memory to be aligned on a 16-bit boundary.
+If it is not aligned, exception will be raised.
+\MOVDQA works faster than \MOVDQU, but requires aforesaid.
+
+\end{itemize}
+
+So, these SSE2-instructions are to be executed only in case there are more than 4 pairs to work on
+and the pointer \TT{ar3} is aligned on a 16-byte boundary.
+
+Also, if \TT{ar2} is aligned on a 16-byte boundary as well, 
+this fragment of code is to be executed:
+
+\begin{lstlisting}[style=customasmx86]
+movdqu  xmm0, xmmword ptr [ebx+edi*4] ; ar1+i*4
+paddd   xmm0, xmmword ptr [esi+edi*4] ; ar2+i*4
+movdqa  xmmword ptr [eax+edi*4], xmm0 ; ar3+i*4
+\end{lstlisting}
+
+Otherwise, the value from \TT{ar2} is to be loaded into \XMM{0} using \MOVDQU,
+which does not require aligned pointer, but may work slower:
+
+\lstinputlisting[style=customasmx86]{patterns/19_SIMD/18_1_excerpt_EN.asm}
+
+In all other cases, non-SSE2 code is to be executed.
+
+\myparagraph{GCC}
+
+\newcommand{\URLGCCVEC}{\url{http://go.yurichev.com/17083}}
+
+GCC may also vectorize in simple cases\footnote{More about GCC vectorization support: \URLGCCVEC},
+if the \Othree option is used and SSE2 support is turned on: \TT{-msse2}.
+
+What we get (GCC 4.4.1):
+
+\lstinputlisting[style=customasmx86]{patterns/19_SIMD/18_2_gcc_O3.asm}
+
+Almost the same, however, not as meticulously as Intel C++.
+
+\subsubsection{Memory copy example}
+\label{vec_memcpy}
+
+Let's revisit the simple memcpy() example
+(\myref{loop_memcpy}):
+
+\lstinputlisting[style=customc]{memcpy.c}
+
+And that's what optimizations GCC 4.9.1 did:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 x64,style=customasmx86]{patterns/19_SIMD/memcpy_GCC49_x64_O3_EN.s}

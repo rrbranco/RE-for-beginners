@@ -1,0 +1,33 @@
+\subsubsection{ARM}
+
+\myparagraph{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/04_scanf/3_checking_retval/ex3_ARM_Keil_thumb_O3.asm}
+
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!BEQ}
+
+Les nouvelles instructions sont \CMP et \ac{BEQ}.
+
+\CMP est similaire à l'instruction x86 du même nom, elle soustrait l'un des arguments
+à l'autre et met à jour les flags si nécessaire.
+
+\myindex{ARM!\Registers!Z}
+\myindex{x86!\Instructions!JZ}
+\ac{BEQ} saute à une autre adresse si les opérandes étaient égales l'une à l'autre,
+ou, si le résultat du dernier calcul était 0, ou si le flag Z est à 1.
+Elle se comporte comme \JZ en x86.
+
+Tout le reste est simple: le flux d'exécution se sépare en deux branches, puis les
+branches convergent vers le point où 0 est écrit dans le registre \Reg{0} comme
+valeur de retour de la fonction, et cette dernière se termine.
+
+\myparagraph{ARM64}
+
+\lstinputlisting[caption=GCC 4.9.1 ARM64 \NonOptimizing,numbers=left,style=customasmARM]{patterns/04_scanf/3_checking_retval/ARM64_GCC491_O0_FR.s}
+
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!Bcc}
+Dans ce cas, le flux de code se sépare avec l'utilisation de la paire d'instructions
+\INS{CMP}/\INS{BNE} (Branch if Not Equal) (branchement si non égal).
+

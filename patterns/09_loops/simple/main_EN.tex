@@ -1,0 +1,27 @@
+\subsection{Simple example}
+
+% subsections
+\input{patterns/09_loops/simple/x86}
+\input{patterns/09_loops/simple/ARM/main}
+\input{patterns/09_loops/simple/MIPS}
+
+\subsubsection{One more thing}
+
+In the generated code we can see: 
+after initializing $i$, the body of the loop is not to be executed,
+as the condition for $i$ is checked first, and only after that loop body can be executed.
+And that is correct. 
+
+Because, if the loop condition is
+not met at the beginning, the body of the loop must not be executed.
+This is possible in the following case:
+
+\lstinputlisting[style=customc]{patterns/09_loops/simple/loops_3_EN.c}
+
+If \IT{total\_entries\_to\_process} is 0, the body of the loop must not be executed at all.
+
+This is why the condition checked before the execution.
+
+However, an optimizing compiler may swap the condition check and loop body,
+if it sure that the situation described here is
+not possible (like in the case of our very simple example and using compilers like Keil, Xcode (LLVM), MSVC in optimization mode).

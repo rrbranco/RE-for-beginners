@@ -1,0 +1,25 @@
+my_atoi PROC
+; R1 will contain pointer to character
+        MOV      r1,r0
+; R0 will contain "rt" variable
+        MOV      r0,#0
+        B        |L0.28|
+|L0.12|
+        ADD      r0,r0,r0,LSL #2
+; R0=R0+R0<<2=rt*5
+        ADD      r0,r2,r0,LSL #1
+; R0=input character + rt*5<<1 = input character + rt*10
+; correct whole thing by subtracting '0' from rt:
+        SUB      r0,r0,#0x30
+; shift pointer to the next character:
+        ADD      r1,r1,#1
+|L0.28|
+; load input character to R2
+        LDRB     r2,[r1,#0]
+; is it null byte? if no, jump to loop body.
+        CMP      r2,#0
+        BNE      |L0.12|
+; exit if null byte.
+; "rt" variable is still in R0 register, ready to be used in caller function
+        BX       lr
+        ENDP

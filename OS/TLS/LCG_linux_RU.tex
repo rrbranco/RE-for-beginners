@@ -1,0 +1,21 @@
+\subsubsection{Linux}
+
+Вот как глобальная переменная локальная для потока определяется в GCC:
+
+\begin{lstlisting}
+__thread uint32_t rand_state=1234;
+\end{lstlisting}
+
+Этот модификатор не стандартный для \CCpp, он присутствует только в GCC
+
+\footnote{\url{http://go.yurichev.com/17062}}.
+
+\myindex{x86!\Registers!GS}
+Селектор \TT{GS:} также используется для доступа к \ac{TLS}, но немного иначе:
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1 x86,style=customasmx86]{OS/TLS/linux/rand.lst}
+
+% FIXME (to be checked) Uninitialized data is allocated in \TT{.tbss} section, initialized --- in \TT{.tdata} section.
+
+Еще об этом: \DrepperTLS.
+

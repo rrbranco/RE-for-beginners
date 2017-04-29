@@ -1,0 +1,63 @@
+﻿\newcommand{\HashFuncChapterName}{Hash functions}
+\section{\HashFuncChapterName}
+\label{hash_func}
+
+\myindex{\HashFuncChapterName}
+\myindex{CRC32}
+A very simple example is CRC32, an algorithm that provides \q{stronger} checksum for integrity checking purposes.
+It is impossible to restore the original text from the hash value, it has much less information:
+But CRC32 is not cryptographically secure: it is known how to alter a text in a way that the resulting
+CRC32 hash value will be the one we need.
+Cryptographic hash functions are protected from this. \\
+\\
+\myindex{MD5}
+\myindex{SHA1}
+MD5, SHA1, etc. are such functions and they are widely used to hash user passwords in order to store them in a database.
+Indeed: an Internet forum database may not contain user passwords 
+(a stolen database can compromise all users' passwords) but only hashes 
+(so a cracker can't reveal the passwords).
+Besides, an Internet forum engine does not need to know your password exactly, it needs only to check if its hash
+is the same as the one in the database, and give you access if they match.
+One of the simplest password cracking methods is just to try hashing all possible passwords in order
+to see which matches the resulting value that we need.
+Other methods are much more complex.
+% TODO1 add about Rainbow tables
+
+\subsection{How do one-way functions work?}
+
+A one-way function is a function which is able to transform one value into another,
+while it is impossible (or very hard) to reverse it.
+Some people have difficulties while understanding how this is possible at all.
+Here is a simple demonstration.
+
+We have a vector of 10 numbers in range 0..9, each is present only once, for example:
+
+\begin{lstlisting}
+4 6 0 1 3 5 7 8 9 2
+\end{lstlisting}
+
+The algorithm for the simplest possible one-way function is:
+
+\begin{itemize}
+\item take the number at zeroth position (4 in our case);
+\item take the number at first position (6 in our case);
+\item swap numbers at positions of 4 and 6.
+\end{itemize}
+
+Let's mark the numbers at positions 4 and 6:
+
+\begin{lstlisting}
+4 6 0 1 3 5 7 8 9 2
+        ^   ^
+\end{lstlisting}
+
+Let's swap them and we get this result:
+
+\begin{lstlisting}
+4 6 0 1 7 5 3 8 9 2
+\end{lstlisting}
+
+While looking at the result, and even if we know the algorithm, we can't know unambiguously the initial
+state, because the first two numbers could be 0 and/or 1, and then they could participate in the swapping procedure.
+
+This is an utterly simplified example for demonstration. Real one-way functions are much more complex.

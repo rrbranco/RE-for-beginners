@@ -1,0 +1,72 @@
+\subsection{When there are several \IT{case} statements in one block}
+
+Here is a very widespread construction: several \IT{case} statements for a single block:
+
+\lstinputlisting[style=customc]{patterns/08_switch/3_several_cases/several_cases.c}
+
+It's too wasteful to generate a block for each possible case,
+so what is usually done is to generate each block plus some kind of dispatcher.
+
+\subsubsection{MSVC}
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,numbers=left,style=customasmx86]{patterns/08_switch/3_several_cases/several_cases_MSVC_2010_Ox_EN.asm}
+
+We see two tables here: the first table (\TT{\$LN10@f}) is an index table, and the second one (\TT{\$LN11@f}) is an array of pointers to blocks.
+
+First, the input value is used as an index in the index table (line 13). 
+
+Here is a short legend for the values in the table: 
+0 is the first \IT{case} block (for values 1, 2, 7, 10),
+1 is the second one (for values 3, 4, 5),
+2 is the third one (for values 8, 9, 21),
+3 is the fourth one (for value 22),
+4 is for the default block.
+
+There we get an index for the second table of code pointers and we jump to it (line 14).
+
+What is also worth noting is that there is no case for input value 0.
+
+That's why we see the \DEC instruction at line 10, and the table starts at $a=1$, 
+because there is no need to allocate a table element for $a=0$.
+
+This is a very widespread pattern.
+
+So why is this economical?
+Why isn't it possible to make it as before
+(\myref{switch_lot_GCC}), just with one table consisting of block pointers?
+The reason is that the elements in index table are 8-bit, hence it's all more compact.
+
+\subsubsection{GCC}
+
+GCC does the job in the way we already discussed (\myref{switch_lot_GCC}), using just one table of pointers.
+
+\subsubsection{ARM64: \Optimizing GCC 4.9.1}
+
+There is no code to be triggered if the input value is 0, so GCC tries to make the jump table more compact
+and so it starts at 1 as an input value.
+
+GCC 4.9.1 for ARM64 uses an even cleverer trick.
+It's able to encode all offsets as 8-bit bytes.
+
+Let's recall that all ARM64 instructions have a size of 4 bytes.
+
+GCC is uses the fact that all offsets in my tiny example are in close proximity to each other.
+So the jump table consisting of single bytes.
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 ARM64,style=customasmARM]{patterns/08_switch/3_several_cases/ARM64_GCC491_O3_EN.s}
+
+Let's compile this example to object file and open it in \IDA. Here is the jump table:
+
+\lstinputlisting[caption=jumptable in IDA,style=customasmARM]{patterns/08_switch/3_several_cases/ARM64_GCC491_O3_IDA.lst}
+
+So in case of 1, 9 is to be multiplied by 4 and added to the address of \TT{Lrtx4} label.
+
+In case of 22, 0 is to be multiplied by 4, resulting in 0. 
+
+Right after the \TT{Lrtx4} label is the \TT{L7} label, where you can find the code that prints \q{22}.
+
+There is no jump table in the code segment, it's allocated in a separate .rodata section 
+(there is no special necessity to place it in the code section).
+
+There are also negative bytes (0xF7), they are used for jumping back to the code that prints the \q{default} string (at \TT{.L2}).
+

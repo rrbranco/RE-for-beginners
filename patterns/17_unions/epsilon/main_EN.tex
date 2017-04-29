@@ -1,0 +1,60 @@
+﻿\subsection{Calculating machine epsilon}
+
+The machine epsilon is the smallest possible value the \ac{FPU} can work with.
+The more bits allocated for floating point number, the smaller the machine epsilon.
+It is $2^{-23} = 1.19e-07$ for \Tfloat and $2^{-52} = 2.22e-16$ for \Tdouble.
+See also: \href{http://link.yurichev.com/17367}{Wikipedia article}.%
+% TODO recheck values
+
+It's interesting, how easy it's to calculate the machine epsilon:
+
+\lstinputlisting[style=customc]{patterns/17_unions/epsilon/float.c}
+
+What we do here is just treat the fraction part of the IEEE 754 number as integer and add 1 to it.
+The resulting floating number is equal to $starting\_value+machine\_epsilon$, so we just have to subtract
+the starting value (using floating point arithmetic) to measure, what difference one bit reflects
+in the single precision (\Tfloat).
+The \IT{union} serves here as a way to access IEEE 754 number as a regular integer.
+Adding 1 to it in fact adds 1 to the \IT{fraction} part of the number, however, needless to say,
+overflow is possible, which will add another 1 to the exponent part.
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{patterns/17_unions/epsilon/float_MSVC_2010_Ox_EN.asm}
+
+The second \INS{FST} instruction is redundant: there is no necessity to store the input value in the same
+place (the compiler decided to allocate the $v$ variable at the same point in the local stack as the input 
+argument).
+Then it is incremented with \INS{INC}, as it is a normal integer variable.
+Then it is loaded into the FPU as a 32-bit IEEE 754 number, \INS{FSUBR} does the rest of job and the resulting
+value is stored in \TT{ST0}.
+The last \INS{FSTP}/\INS{FLD} instruction pair is redundant, but the compiler didn't optimize it out.
+
+\subsubsection{ARM64}
+
+Let's extend our example to 64-bit:
+
+\lstinputlisting[label=machine_epsilon_double_c,style=customc]{patterns/17_unions/epsilon/double.c}
+
+ARM64 has no instruction that can add a number to a FPU D-register, 
+so the input value (that came in \TT{D0}) is first copied into \ac{GPR},
+incremented, copied to FPU register \TT{D1}, and then subtraction occurs.
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 ARM64,style=customasmARM]{patterns/17_unions/epsilon/double_GCC49_ARM64_O3_EN.s}
+
+See also this example compiled for x64 with SIMD instructions: \myref{machine_epsilon_x64_and_SIMD}.
+
+\subsubsection{MIPS}
+
+\myindex{MIPS!\Instructions!MTC1}
+
+The new instruction here is \INS{MTC1} (\q{Move To Coprocessor 1}), it just transfers data from \ac{GPR} to the FPU's registers.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/17_unions/epsilon/MIPS_O3_IDA.lst}
+
+\subsubsection{\Conclusion}
+
+It's hard to say whether someone may need this trickery in real-world code, 
+but as was mentioned many times in this book, this example serves well 
+for explaining the IEEE 754 format and \IT{union}s in \CCpp.
+

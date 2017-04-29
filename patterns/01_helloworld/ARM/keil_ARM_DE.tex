@@ -1,0 +1,116 @@
+\subsubsection{\NonOptimizingKeilVI (\ARMMode)}
+
+Beginnen wir mit dem Kompilieren des Beispiels mit Keil:
+
+\begin{lstlisting}
+armcc.exe --arm --c90 -O0 1.c 
+\end{lstlisting}
+
+\myindex{\IntelSyntax}
+Der \IT{armcc}-Compiler erstellt Assembler-Quelltext im Intel-Syntax, hat aber High-Level-Makros
+bezüglich der ARM-Prozessoren\footnote{d.h. der ARM-Mode hat keine \PUSH/\POP-Anweisungen}.
+Es ist hier wichtig die \q{richtigen} Anweisungen zu sehen, deswegen ist hier das Ergebnis mit
+\IDA kompiliert.
+
+\begin{lstlisting}[caption=\NonOptimizingKeilVI (\ARMMode) \IDA,style=customasmARM]
+.text:00000000             main
+.text:00000000 10 40 2D E9    STMFD   SP!, {R4,LR}
+.text:00000004 1E 0E 8F E2    ADR     R0, aHelloWorld ; "hello, world"
+.text:00000008 15 19 00 EB    BL      __2printf
+.text:0000000C 00 00 A0 E3    MOV     R0, #0
+.text:00000010 10 80 BD E8    LDMFD   SP!, {R4,PC}
+
+.text:000001EC 68 65 6C 6C+aHelloWorld  DCB "hello, world",0    ; DATA XREF: main+4
+\end{lstlisting}
+
+Im ersten Beispiel ist zu erkennen, dass jede Anweisung 4 Byte groß ist.
+Tatsächlich wurde der Code für den ARM- und nicht den Thumb-Mode erstellt.
+
+\myindex{ARM!\Instructions!STMFD}
+\myindex{ARM!\Instructions!POP}
+Die erste Anweisung, \INS{STMFD SP!, \{R4,LR\}}\footnote{\ac{STMFD}}, arbeitet wie eine x86-\PUSH-Anweisung
+um die Werte der beiden Register (\Reg{4} and \ac{LR}) auf den Stack zu legen.
+
+Die Ausgabe des \IT{armcc}-Compilers, zeigt, aus Gründen der Einfachheit, die \INS{PUSH \{r4,lr\}}-Anweisung.
+Dies ist nicht vollständig präzise. Die \PUSH-Anweisung ist nur im Thumb-Mode verfügbar.
+Um die Dinge nicht zu verwirrend zu machen, wird der Code in \IDA kompiliert.
+
+Die Anweisung dekrementiert zunächst den \ac{SP}, so dass er auf den Bereich im Stack zeigt, der
+für neue Einträge frei ist. Anschließend werden die Werte der Register \Reg{4} und \ac{LR} an der Adresse
+gespeichert auf den der (modifizierte) \ac{SP} zeigt.
+
+Diese Anweisungen (wie \PUSH im Thumb-Mode) ist in der Lage mehrere Register-Werte auf einmal zu speichern,
+was sehr nützlich sein kann. Übrigens: in x86 gibt es dazu kein Äquivalent.
+Außerdem ist erwähnenswert, dass die \TT{STMFD}-Anweisung eine Generalisierung der \PUSH-Anweisung
+(ohne deren Eigenschaften) ist, weil sie auf jedes Register angewandt werden kann und nicht nur auf \ac{SP}.
+Mit anderen Worten kann \TT{STMFD} genutzt werden um eine Reihen von Registern an einer angegebenen
+Speicher-Adresse zu sichern.
+
+\myindex{\PICcode}
+\myindex{ARM!\Instructions!ADR}
+Die \INS{ADR R0, aHelloWorld}-Anweisung addiert oder subtrahiert den Wert im \ac{PC}-Register zum Offset
+an dem die \TT{hello, world}-Zeichenkette ist.
+Man kann sich nun fragen, wie das \TT{PC}-Register hier genutzt wird.
+Dies wird \q{\PICcode}\footnote{mehr darüber in der entsprechenden Sektion~(\myref{sec:PIC})} genannt.
+
+Code dieser Art kann an nicht-festen Adressen im Speicher ausgeführt werden.
+Mit anderen Worten: dies ist \ac{PC}-relative Adressierung.
+Die \INS{ADR}-Anweisung berücksichtigt den Unterschied zwischen der Adresse dieser Anweisung und der Adresse
+an dem die Zeichenkette gespeichert ist.
+Der Unterschied (Offset) ist immer gleich, egal an welcher Adresse der Code vom \ac{OS} geladen wurden.
+Dementsprechend ist alles was gemacht werden muss, die Adresse der aktuellen Anweisung (vom \ac{PC})
+zu addieren um die absolute Speicheradresse der Zeichenkette zu bekommen.
+
+\myindex{ARM!\Registers!Link Register}
+\myindex{ARM!\Instructions!BL}
+\INS{BL \_\_2printf}\footnote{Branch with Link}-Anweisung ruft die \printf-Funktion auf. 
+Die Anweisung funktioniert wie folgt:
+
+\begin{itemize}
+\item Speichere die Adresse hinter der \INS{BL}-Anweisung (\TT{0xC}) in \ac{LR};
+\item anschließend wird übergebe die Kontrolle an \printf indem dessen Adresse ins \ac{PC}-Register geschrieben wird.
+\end{itemize}
+
+Wenn \printf die Ausführung beendet, müssen Informationen vorliegen, wo die Ausführung weitergehen soll.
+Das ist der Grund warum jede Funktion die Kontrolle an die Adresse, gespeichert im \ac{LR}-Register übergibt.
+
+Dies ist ein Unterschied zwischen einem \q{reinem} \ac{RISC}-Prozessor wie ARM und \ac{CISC}-Prozessoren wie x86,
+bei denen die Rücksprungadresse in der Regel auf dem Stack gespeichert wird.
+Mehr dazu ist im nächsten Abschnitt zu lesen~(\myref{sec:stack}).
+
+Übrigens eine absolute 32-Bit-Adresse oder -Offset kann nicht in einer 32-Bit-\TT{BL}-Anweisung kodiert werden,
+weil diese nur für 24 Bit Platz bietet. Wie bereits erwähnt haben alle ARM-Mode-Anweisungen eine Größe
+von 4 Byte (32 Bit). Aus diesem Grund können diese nur an 4-Byte-Grenzen des Speichers platziert werden.
+Dies heißt auch, das die letzten zwei Bit der Anweisungsadresse (die immer Null sind) entfallen können.
+Zusammenfassend, stehen 26 Bit für die Offset-Kodierung zur Verfügung. Dies ist genug für
+$current\_PC \pm{} \approx{}32M$.
+
+\myindex{ARM!\Instructions!MOV}
+Als nächstes schreibt die Anweisung \INS{MOV R0, \#0}\footnote{das heißt MOVe} lediglich 0 in
+das \Reg{0}-Register weil der Rückgabewert hier gespeichert wird und die gezeigte C-Funktion 0
+als Argument für die return-Anweisung hat.
+
+\myindex{ARM!\Registers!Link Register}
+\myindex{ARM!\Instructions!LDMFD}
+\myindex{ARM!\Instructions!POP}
+Die letzte Anweisung \INS{LDMFD SP!, {R4,PC}}\footnote{\ac{LDMFD} ist eine inverse Anweisung von \ac{STMFD}}
+lädt die Werte nacheinander vom Stack (oder eine andere Speicheradresse) um sie in die Register \Reg{4} und \ac{PC}
+zu sichern. Außerdem wird der Stack Pointer \ac{SP} inkrementiert. Hier arbeitet der Befehl wie \POP.
+
+Die erste Anweisung \TT{STMFD} sichert das Register-Paar \Reg{4} und \ac{LR} auf dem Stack, jedoch werden \Reg{4} und \ac{PC}
+während der Ausführung von \TT{LDMFD} \IT{wiederhergestellt}.
+
+Wie bereits bekannt, wird die Adresse die nach der Ausführung einer Funktion angesprungen wird in dem \ac{LR}-Register gesichert.
+Die allererste Anweisung sichert diese Wert auf dem Stack weil das gleiche Register von der \main-Funktion genutzt wird,
+wenn \printf aufgerufen wird.
+Am Ende der Funktion kann dieser Wert direkt in das \ac{PC}-Register geschrieben werden und so die Ausführung an der
+Stelle fortgesetzt werden an der die Funktion aufgerufen wurde.
+
+Da \main in der Regel die erste Funktion in \CCpp ist, wird die Kontrolle an das \ac{OS} oder einen Punkt in der
+\ac{CRT} übergeben.
+
+All dies erlaubt das Auslassen der \INS{BX LR}-Anweisung am Ende der Funktion.
+
+\myindex{ARM!DCB}
+\TT{DCB} ist eine Assemblerdirektive die ein Array von Bytes oder ASCII anlegt, ähnlich der DB-Direktive
+in der x86-Assembler-Sprache.

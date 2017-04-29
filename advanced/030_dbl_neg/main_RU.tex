@@ -1,0 +1,60 @@
+\section{Двойное отрицание}
+
+Популярный способ\footnote{Хотя и спорный, потому что приводит к трудночитаемому коду} сконвертировать ненулевое значение
+в 1 (или булево \IT{true}) и 0 в 0 (или булево \IT{false}) это \IT{!!statement}:
+
+\begin{lstlisting}[style=customc]
+int convert_to_bool(int a)
+{
+	return !!a;
+};
+\end{lstlisting}
+
+Оптимизирующий GCC 5.4 x86:
+
+\begin{lstlisting}[style=customasmx86]
+convert_to_bool:
+        mov     edx, DWORD PTR [esp+4]
+        xor     eax, eax
+        test    edx, edx
+        setne   al
+        ret
+\end{lstlisting}
+
+\INS{XOR} всегда очищает возвращаемое значение в \EAX, даже если \INS{SETNE} не сработает.
+Т.е., \INS{XOR} устанавливает возвращаемое значение (по умолчанию) в 0.
+
+\myindex{x86!\Instructions!SET}
+Если входное значение не равно нулю (суффикс \TT{-NE} в инструкции \INS{SET}),
+тогда 1 заносится в \AL, иначе \AL не модифицируется.
+
+Почему \INS{SETNE} работает с младшей 8-битной частью регистра \EAX{}?
+Потому что значение имеет только последний бит (0 или 1), а остальные биты были уже сброшены при помощи \INS{XOR}.
+
+Следовательно, этот код на \CCpp может быть переписан так:
+
+\begin{lstlisting}[style=customc]
+int convert_to_bool(int a)
+{
+	if (a!=0)
+		return 1;
+	else
+		return 0;
+};
+\end{lstlisting}
+
+\dots или даже:
+
+\begin{lstlisting}[style=customc]
+int convert_to_bool(int a)
+{
+	if (a)
+		return 1;
+	else
+		return 0;
+};
+\end{lstlisting}
+
+Компиляторы, компилирующие для \ac{CPU} у которых нет инструкции близкой в
+\INS{SET}, в этом случае, генерируют инструкции условного перехода, итд.
+

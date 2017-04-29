@@ -1,0 +1,76 @@
+\section{Fonction vide}
+\label{empty_func}
+
+La fonction la plus simple possible est sans doute celle qui ne fait rien:
+
+\lstinputlisting[caption=Code \CCpp]{patterns/00_empty/1.c}
+
+Compilons le!
+
+\subsection{x86}
+
+Voici ce que les compilateurs GCC et MSVC avec l'option d'optimisation produisent sur une plateforme x86:
+
+\lstinputlisting[caption=GCC/MSVC \Optimizing (\assemblyOutput)]{patterns/00_empty/1.s}
+
+\myindex{x86!\Instructions!RET}
+Il y a juste une instruction: \RET, qui retourne l'exécution vers le \gls{caller}. % TODO : translate caller ?
+
+\subsection{ARM}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) ASM Output]{patterns/00_empty/1_Keil_ARM_O3.s}
+
+L'adresse de retour n'est pas enregistrée sur la pile locale dans le \ac{ISA} ARM, mais plutôt dans le "link register", % TODO : translate ? 
+donc l'instruction \INS{BX LR} force l'exécution à sauter à cette adresse---retournant effectivement l'exécution vers le \gls{caller}.
+
+\subsection{MIPS}
+
+Il y a deux conventions de nommage dans le monde de MIPS pour nommer les registres:
+par nombre (de \$0 à \$31) ou pas un pseudo nom (\$V0, \$A0, etc.).
+
+La sortie de l'assemblage GCC ci-dessous liste les registres par nombre:
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (\assemblyOutput)]{patterns/00_empty/MIPS.s}
+
+\dots tandis que \IDA le fait---avec les pseudo noms:
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (IDA),style=customasmMIPS]{patterns/00_empty/MIPS_IDA.lst}
+
+\myindex{MIPS!\Instructions!J}
+La première instruction est l'instruction de saut(J ou JR) qui retourne le flux d'exécution vers le \gls{caller},
+sautant vers l'adresse dans le registre \$31 (ou \$RA).
+
+Ce registre est similaire à \ac{LR} en ARM.
+
+La seconde instruction est \ac{NOP}, qui ne fait rien.
+Nous pouvons l'ignorer pour l'instant.
+
+\subsubsection{Un note à propos des Instructions MIPS/noms de registre}
+
+Les registres et les noms des instructions dans le monde de MIPS sont traditionnellement écrits en minuscules.
+Cependant, dans un souci d'homogénéité, nous allons continuer d'utiliser les lettres majuscules,
+étant donné que c'est la convention suivie par tous les autres \ac{ISA}s présentés dans ce livre.
+
+\subsection{Fonctions vides en pratique}
+
+Bien que les fonctions vides soient inutiles, elles sont assez présentes dans le code bas niveau.
+
+Tout d'abord, les fonctions de debogage sont assez populaires, comme celle-ci:
+
+\lstinputlisting[caption=Code \CCpp]{patterns/00_empty/dbg_print.c}
+
+Dans une compilation en non-debug (e.g., ``release''), \TT{\_DEBUG} n'est pas défini,
+donc la fonction \TT{dbg\_print()}, bien qu'elle soit appelée pendant l'exécution,
+sera vide.
+
+Un autre moyen de protection logicielle est de faire plusieurs compilations: une pour les clients, une pour démonstration.
+La compilation de démonstration peut manquer de certaines fonctions importantes, comme ici:
+
+\lstinputlisting[caption=Code \CCpp]{patterns/00_empty/demo.c}
+
+La fonction \TT{save\_file()} peut être appelée lorsque l'utilisateur clique sur le menu \TT{Fichier->Enregistrer}.
+La version de démo peut être livrée avec cet item du menu désactivé, mais même si un logiciel cracker pourra l'activer,
+la fonction vide avec aucun code utile sera appelée.
+
+IDA repère de telles fonctions avec des noms comme \TT{nullsub\_00}, \TT{nullsub\_01}, etc.
+

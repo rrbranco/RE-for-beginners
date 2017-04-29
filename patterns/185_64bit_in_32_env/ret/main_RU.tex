@@ -1,0 +1,24 @@
+﻿\subsection{Возврат 64-битного значения}
+
+\lstinputlisting[style=customc]{patterns/185_64bit_in_32_env/ret/0.c}
+
+\subsubsection{x86}
+
+64-битные значения в 32-битной среде возвращаются из функций в паре регистров \EDX{}:\EAX{}.
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{patterns/185_64bit_in_32_env/ret/0_MSVC_2010_Ox.asm}
+
+\subsubsection{ARM}
+
+64-битное значение возвращается в паре регистров \Reg{0}-\Reg{1} --- (\Reg{1} это старшая часть и \Reg{0} --- младшая часть):
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/185_64bit_in_32_env/ret/Keil_ARM_O3.s}
+
+\subsubsection{MIPS}
+
+64-битное значение возвращается в паре регистров \TT{V0}-\TT{V1} (\$2-\$3) --- (\TT{V0} (\$2) это старшая часть и \TT{V1} (\$3) --- младшая часть):
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (assembly listing),style=customasmMIPS]{patterns/185_64bit_in_32_env/ret/0_MIPS.s}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/185_64bit_in_32_env/ret/0_MIPS_IDA.lst}
+

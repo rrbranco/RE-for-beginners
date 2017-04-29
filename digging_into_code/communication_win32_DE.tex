@@ -1,0 +1,138 @@
+\section{Kommunikation mit der Außen Welt (Win32)}
+
+Manchmal reicht es die Ein- und Ausgaben einer Funktion zu beobachten um zu verstehen was sie tut.
+Auf diese Weise kann man Zeit Sparren.
+
+Datei und Regestry Zugriff:
+F\"ur einfache Analysen kann das Tool Prozess Monitor\footnote{\url{http://go.yurichev.com/17301}}
+von SysInternals hilfreich sein.
+
+Bei einfachen Netzwerk Zugriffen ist Wireshark\footnote{\url{http://go.yurichev.com/17303}} zum analysieren ganz n\"utzlich.
+
+Trotzdem muss man einen Blick in die Netzwerkpakte werfen.
+\\
+Das erste wonach man schauen kann ist welche Funktionen die \ac{OS} \ac{API}s benutzen und was f\"ur Standard libraries
+benutzt werden. 
+
+Wenn das Programm unterteilt ist in eine Main executable und mehrere DLL Dateien, k\"onnen manchmal die Namen der Funktionen innerhalb
+der DLLs Helfen. 
+
+Wenn wir daran interessiert sind was genau zum Aufruf von \TT{MessageBox()} mit einem spezifischen Text f\"uhrt,
+k\"onnen wir versuchen diesen Text innerhalb des Data Segments zu finden, die Referenzen auf den Text und die 
+Punkte von denen aus die Kontrolle an den \TT{MessageBox()} Aufruf an dem wir interessiert sind. %<--- Das muss verständlicher geschrieben werden.
+
+\myindex{\CStandardLibrary!rand()}
+Wenn wir \"uber Video Spiele sprechen sind wir daran interessiert welche \rand aufrufe mehr oder weniger zuf\"allig darin vorkommen,
+vielleicht versuchen wir die \rand Funktion oder Ersatz Funktionen zu finden ( wie z.B der Mersenne Twister Algorithmus) 
+und wir versuchen die Orte zu finden von welchen aus diese Funktionen aufgerufen werden, und noch wichtiger was f\"ur
+Ergebnisse verwertet werden. 
+% BUG in varioref: http://tex.stackexchange.com/questions/104261/varioref-vref-or-vpageref-at-page-boundary-may-loop
+Ein Beispiel: \ref{chap:color_lines}.
+
+Aber wenn es sich nicht um ein Spiel handelt und \rand wird trotzdem benutzt, ist es interessant zu wissen warum.
+Es gibt F\"alle bei denen unerwartet \rand in Daten Kompressions Algorithmen benutzt wird (f\"ur die Imitation von Verschl\"usslung):
+\href{http://go.yurichev.com/17221}{blog.yurichev.com}.
+
+\subsection{Oft benutzte Funktionen in der Windows API}
+
+Diese Funktionen sind vielleicht unter den importierten.
+Es ist Sinnvoll an dieser Stelle zu erw\"ahnen das nicht unbedingt jede Funktion benutzt wird aus 
+dem Code den der Programmierer geschrieben hat.
+
+Manche Funktionen haben eventuell das \GTT{-A} Suffix f\"ur die ASCII Version und das \GTT{-W} f\"ur die Unicode Version.
+
+
+\begin{itemize}
+
+\item
+Registry zugriff (advapi32.dll): 
+RegEnumKeyEx, RegEnumValue, RegGetValue, RegOpenKeyEx, RegQueryValueEx.
+
+\item
+Zugriff auf text .ini-files (kernel32.dll): 
+GetPrivateProfileString.
+
+\item
+Dialog boxes (user32.dll): 
+MessageBox, MessageBoxEx, CreateDialog, SetDlgItemText, GetDlgItemText.
+
+\item
+Resourcen zugriff (\myref{PEresources}): (user32.dll): LoadMenu.
+
+\item
+TCP/IP networking (ws2\_32.dll):
+WSARecv, WSASend.
+
+\item
+Datei Zugriff (kernel32.dll):
+CreateFile, ReadFile, ReadFileEx, WriteFile, WriteFileEx.
+
+\item
+High-level Zugriff auf das Internet (wininet.dll): WinHttpOpen.
+
+\item
+Die digitale Signatur einer ausf\"uhrbaren Datei pr\"ufen (wintrust.dll):
+
+WinVerifyTrust.
+
+\item
+Die Standard MSVC library ( wenn sie dynamisch gelinked wurde) 
+
+assert, itoa, ltoa, open, printf, read, strcmp, atol, atoi, fopen, fread, fwrite, memcmp, rand,
+strlen, strstr, strchr.
+
+\end{itemize}
+
+\subsection{Verl\"angerung der Testphase}
+
+Registry Zugriffs Funktionen sind h\"aufig ziele f\"ur Leute die versuchen die Testphase einer Software zu cracken, die 
+eventuell die Installations Zeit und Datum in der Regestry zu speichert. 
+
+Ein weiteres beliebtes Ziel sind die GetLocalTime() und GetSystemTime() Funktionen:
+eine Test Software, muss bei jedem Start die aktuelle Zeit und Datum \"uberpr\"ufen.
+
+\subsection{Entfernen nerviger Dialog Boxen}
+
+Ein verbreiteter Weg raus zu finden was eine dieser nervigen Dialog boxen macht, ist den 
+Aufruf von MessageBox(), CreateDialog() und CreateWindow() Funktionen abzufangen.
+
+
+\subsection{tracer: Alle Funktionen innerhalb eines bestimmten Modules abfangen}
+
+\myindex{tracer}
+
+\myindex{x86!\Instructions!INT3}
+Es gibt INT3 breakpoints in \tracer, die nur einmal ausgel\"ost werden. Jedoch k\"onnen diese breakpoints f\"ur alle 
+Funktionen in einer bestimmten DLL gesetzt werden.
+
+\begin{lstlisting}
+--one-time-INT3-bp:somedll.dll!.*
+\end{lstlisting}
+
+Oder, lasst uns einfach mal INT3 breakpoints f\"ur alle Funktionen setzen, die das \TT{xml} Pr\"afix in ihrem Namen haben:
+
+\begin{lstlisting}
+--one-time-INT3-bp:somedll.dll!xml.*
+\end{lstlisting}
+
+Die andere Seite der Medaille ist, solche breakpoints werden nur einmal ausgel\"ost.
+Tracer zeigt den Aufruf der Funktion, wenn er passiert, aber auch nur einmal. 
+Ein weiterer Nachteil ist---es ist unm\"oglich die Argumente der Funktion zu betrachten.
+
+Dennoch, dieses Feature ist sehr n\"utzlich wenn man weiß das das Programm eine DLL benutzt,
+aber man nicht weiß welche Funktionen aufgerufen werden. Und es gibt eine ganze Menge an 
+Funktionen.
+
+
+\par
+\myindex{Cygwin}
+Zum Beispiel, schauen wir uns einmal an was das uptime Kommando aus cygwin benutzt:
+
+\begin{lstlisting}
+tracer -l:uptime.exe --one-time-INT3-bp:cygwin1.dll!.*
+\end{lstlisting}
+
+Dadurch sehen wir alle cygwin1.dll library Funktionen die zumindest einmal aufgerufen wurden, und von welcher
+Stelle: 
+\lstinputlisting{digging_into_code/uptime_cygwin.txt}
+

@@ -1,0 +1,149 @@
+\subsubsection{x86}
+\myindex{Windows!Win32}
+
+Например в Win32 API:
+
+\begin{lstlisting}[style=customc]
+	HANDLE fh;
+
+	fh=CreateFile ("file", GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+\end{lstlisting}
+
+Получаем (MSVC 2010):
+
+\begin{lstlisting}[caption=MSVC 2010,style=customasmx86]
+	push	0
+	push	128		; 00000080H
+	push	4
+	push	0
+	push	1
+	push	-1073741824	; c0000000H
+	push	OFFSET $SG78813
+	call	DWORD PTR __imp__CreateFileA@28
+	mov	DWORD PTR _fh$[ebp], eax
+\end{lstlisting}
+
+Заглянем в файл WinNT.h:
+
+\begin{lstlisting}[caption=WinNT.h,style=customc]
+#define GENERIC_READ                     (0x80000000L)
+#define GENERIC_WRITE                    (0x40000000L)
+#define GENERIC_EXECUTE                  (0x20000000L)
+#define GENERIC_ALL                      (0x10000000L)
+\end{lstlisting}
+
+Всё ясно,
+GENERIC\_READ | GENERIC\_WRITE = 0x80000000 | 0x40000000 = 0xC0000000,
+и это значение используется как второй аргумент для функции
+\TT{CreateFile()}
+\footnote{\href{http://go.yurichev.com/17065}{msdn.microsoft.com/en-us/library/aa363858(VS.85).aspx}}.
+
+Как \TT{CreateFile()} будет проверять флаги?
+\myindex{Windows!KERNEL32.DLL}
+Заглянем в KERNEL32.DLL от Windows XP SP3 x86 и найдем в функции \TT{CreateFileW()} в том числе и 
+такой фрагмент кода:
+
+\begin{lstlisting}[caption=KERNEL32.DLL (Windows XP SP3 x86),style=customasmx86]
+.text:7C83D429      test    byte ptr [ebp+dwDesiredAccess+3], 40h
+.text:7C83D42D      mov     [ebp+var_8], 1
+.text:7C83D434      jz      short loc_7C83D417
+.text:7C83D436      jmp     loc_7C810817
+\end{lstlisting}
+
+\myindex{x86!\Instructions!TEST}
+Здесь мы видим инструкцию \TEST. Впрочем, она берет не весь второй аргумент функции,\\
+а только его самый старший байт (\TT{ebp+dwDesiredAccess+3}) и проверяет его на флаг \TT{0x40}
+(имеется ввиду флаг \TT{GENERIC\_WRITE}).
+
+\myindex{x86!\Instructions!AND}
+\TEST это то же что и \AND, только без сохранения результата 
+(вспомните что \CMP это то же что и \SUB, только без сохранения результатов~(\myref{CMPandSUB})).
+
+Логика данного фрагмента кода примерно такая:
+
+\begin{lstlisting}[style=customc]
+if ((dwDesiredAccess&0x40000000) == 0) goto loc_7C83D417
+\end{lstlisting}
+
+\myindex{x86!\Instructions!AND}
+\myindex{x86!\Registers!ZF}
+Если после операции \AND останется этот бит, то флаг \ZF не будет поднят и условный переход 
+\JZ не сработает. 
+Переход возможен, только если в переменной \TT{dwDesiredAccess} отсутствует бит \TT{0x40000000}~--- 
+тогда результат \AND будет 0, флаг \ZF будет поднят и переход сработает.
+
+Попробуем GCC 4.4.1 и Linux:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <fcntl.h>
+
+void main()
+{
+	int handle;
+
+	handle=open ("file", O_RDWR | O_CREAT);
+};
+\end{lstlisting}
+
+Получим:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/14_bitfields/1_check/check.asm}
+
+\myindex{Linux!libc.so.6}
+\myindex{syscall}
+Заглянем в реализацию функции \TT{open()} в библиотеке \TT{libc.so.6}, но обнаружим что там 
+только системный вызов:
+
+\begin{lstlisting}[caption=open() (libc.so.6),style=customasmx86]
+.text:000BE69B      mov     edx, [esp+4+mode] ; mode
+.text:000BE69F      mov     ecx, [esp+4+flags] ; flags
+.text:000BE6A3      mov     ebx, [esp+4+filename] ; filename
+.text:000BE6A7      mov     eax, 5
+.text:000BE6AC      int     80h             ; LINUX - sys_open
+\end{lstlisting}
+
+Значит, битовые поля флагов \TT{open()} проверяются где-то в ядре Linux.
+
+Разумеется, и стандартные библиотеки Linux и ядро Linux можно получить в виде исходников, 
+но нам интересно попробовать разобраться без них.
+
+При системном вызове \TT{sys\_open} управление в конечном итоге передается в \TT{do\_sys\_open} в ядре Linux 2.6. 
+Оттуда~--- в \TT{do\_filp\_open()} (эта функция находится в исходниках ядра в файле \TT{fs/namei.c}).
+
+\newcommand{\URLREGPARM}{\href{http://go.yurichev.com/17040}{ohse.de/uwe/articles/gcc-attributes.html\#func-regparm}}
+
+\myindex{fastcall}
+\label{regparm}
+N.B. Помимо передачи параметров функции через стек, существует также возможность передавать 
+некоторые из них через регистры. Такое соглашение о вызове называется fastcall~(\myref{fastcall}).
+Оно работает немного быстрее, так как для чтения аргументов процессору не нужно обращаться к стеку, лежащему в памяти. 
+В GCC есть опция \IT{regparm}\footnote{\URLREGPARM}, 
+и с её помощью можно задать, сколько аргументов можно передать через регистры.
+
+\newcommand{\URLKERNELNEWB}{\href{http://go.yurichev.com/17066}{kernelnewbies.org/Linux\_2\_6\_20\#head-042c62f290834eb1fe0a1942bbf5bb9a4accbc8f}}
+\newcommand{\CALLINGHFILE}{arch/x86/include/asm/calling.h}
+
+Ядро Linux 2.6 собирается с опцией \TT{-mregparm=3}\footnote{\URLKERNELNEWB}
+\footnote{См. также файл \TT{\CALLINGHFILE} в исходниках ядра}.
+
+Для нас это означает, что первые три аргумента функции будут передаваться через регистры \EAX, \EDX и \ECX, 
+а остальные через стек. Разумеется, если аргументов у функции меньше трех, то будет задействована 
+только часть этих регистров.
+
+Итак, качаем ядро 2.6.31, собираем его в Ubuntu, открываем в \IDA, 
+находим функцию \TT{do\_filp\_open()}. В начале мы увидим что-то такое (комментарии мои):
+
+\lstinputlisting[caption=do\_filp\_open() (linux kernel 2.6.31),style=customasmx86]{patterns/14_bitfields/1_check/check2_RU.asm}
+
+GCC сохраняет значения первых трех аргументов в локальном стеке. Иначе, если эти три регистра 
+не трогать вообще, то функции компилятора, распределяющей переменные по регистрам (так называемый 
+\gls{register allocator}), будет очень тесно.
+
+Далее находим примерно такой фрагмент кода:
+
+\lstinputlisting[caption=do\_filp\_open() (linux kernel 2.6.31),style=customasmx86]{patterns/14_bitfields/1_check/check3.asm}
+
+\TT{0x40}~--- это значение макроса \TT{O\_CREAT}. 
+\TT{open\_flag} проверяется на наличие бита \TT{0x40} и если бит равен 1, то выполняется следующие 
+за \JNZ инструкции.

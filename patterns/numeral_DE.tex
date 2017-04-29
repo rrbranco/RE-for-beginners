@@ -1,0 +1,176 @@
+% TODO to be resynced with EN version
+\subsection{Zahlensysteme}
+
+Menschen sind an das Dezimal-System gewöhnt, möglicherweise weil sie zehn Finger haben.
+Trotzdem hat die Zahl 10 keine besondere Bedeutung in der Wissenschaft und Mathematik.
+Das natürliche Zahlensystem in der Digitaltechnik ist binär: 0 für die Abwesenheit und 1 für die Anwesenheit von
+Strom in einer Leitung. Die binäre 10 ist 2 im Dezimalsystem; Die binäre 100 ist 4 im Dezimalsystem und so weiter.
+
+Wenn ein Zahlensystem 10 Ziffern hat, spricht man von \IT{Basis} von 10.
+Binäre Zahlensysteme haben die \IT{Basis} von 2.
+
+Wichtige Dinge zum Merken:
+\begin{enumerate}
+\item \IT{Nummer} ist eine Nummer, während \IT{Ziffer} in der Regel eine einzelne Zahl ist;
+\item Eine Zahl ändert sich nicht beim Konvertieren in ein anderes Zahlensystem: nur die Darstellung ist anders.
+\end{enumerate}
+
+Wie konvertiert man eine Zahl von einer Basis in eine andere?
+
+Fast überall wird das Stellenwertsystem genutzt. Dies bedeutet, dass eine einzelne Ziffer je nach Position in der Zahl ein bestimmtes Gewicht hat.
+Wenn 2 an der rechten Position steht, ist es eine 2.
+Wenn sie jedoch eine Position weiter links steht, ist die Zahl eine 20.
+
+Wofür steht $1234$?
+
+$10^3 \cdot 1 + 10^2 \cdot 2 + 10^1 \cdot 3 + 1 \cdot 4$ = 1234 oder 
+$1000 \cdot 1 + 100 \cdot 2 + 10 \cdot 3 + 4 = 1234$
+
+Das Gleiche gilt für binäre Zahlen, nur zur Basis 2 statt 10.
+Wofür steht 0b101011?
+
+$2^5 \cdot 1 + 2^4 \cdot 0 + 2^3 \cdot 1 + 2^2 \cdot 0 + 2^1 \cdot 1 + 2^0 \cdot 1 = 43$ oder
+$32 \cdot 1 + 16 \cdot 0 + 8 \cdot 1 + 4 \cdot 0 + 2 \cdot 1 + 1 = 43$
+
+Stellenwertsysteme können den Additionssystemen wie den römischen Ziffern gegenübergestellt werden
+\footnote{Zur Entwickling der Zahlensysteme, siehe \InSqBrackets{\TAOCPvolII{}, 195--213.}}.
+Möglicherweise hat die Menschheit zu Stellenwertsystemen gewechselt, weil diese für einfache Operationen (Addition, Multiplikation, usw.)
+per Hand oder auf Papier einfacher zu verwenden sind.
+
+Tatsächlich können binäre Zahlen genauso addiert, subtrahiert und so weiter werden wie man es in der Schule gelernt hat,
+es stehen allerdings nur zwei Ziffern zur Verfügung.
+
+Binärzahlen sind sperrig, wenn sie im Quellcode oder Speicherauszügen auftreten. Hier bietet sich die Verwendung des Hexadezimalsystems an.
+Die Basis besteht hier aus den Ziffen 0..9 und den sechs lateinischen Buchstaben A..F.
+Jede hexadezimale Ziffer besteht aus vier Bits oder vier binären Ziffern, was die Konvertierung zwischen Hexadezimal und Binär,
+selbst im Kopf, sehr einfach macht.
+
+\begin{center}
+\begin{longtable}{ | l | l | l | }
+\hline
+\HeaderColor Hexadezimal & \HeaderColor Binär & \HeaderColor Dezimal \\
+\hline
+0	&0000	&0 \\
+1	&0001	&1 \\
+2	&0010	&2 \\
+3	&0011	&3 \\
+4	&0100	&4 \\
+5	&0101	&5 \\
+6	&0110	&6 \\
+7	&0111	&7 \\
+8	&1000	&8 \\
+9	&1001	&9 \\
+A	&1010	&10 \\
+B	&1011	&11 \\
+C	&1100	&12 \\
+D	&1101	&13 \\
+E	&1110	&14 \\
+F	&1111	&15 \\
+\hline
+\end{longtable}
+\end{center}
+
+Woran sieht man welche Basis gerade verwendet wird?
+
+Dezimalzahlen werden für gewöhnlich ohne Zusatz geschrieben, zum Beispiel 1234. Einige Assembler betonen die Basis 10
+jedoch mit dem Zusatz "d": 1234d.
+
+Binärzahlen sind manchmal mit dem Präfix "0b" gekennzeichnet: 0b100110111 (\ac{GCC} hat eine Nicht-standardisierte
+Erweiterung hierfür\footnote{\url{https://gcc.gnu.org/onlinedocs/gcc/Binary-constants.html}}).
+Ein weiterer Weg ist der "b" Suffix, zum Beispiel: 100110111b.
+In diesem Buch wird versucht durchgängig die "0b"-Präfix-Variante zu benutzen.
+
+Hexadezimalzahlen werden in \CCpp und anderen Hochsprachen mit dem "0x"-Präfix versehen: 0x1234ABCD,
+oder sie haben einen "h"-Suffix: 1234ABCDh - dies ist eine weit verbreitete Variante in Assembler und Debuggern.
+Wenn die Zahl mit A..F startet, muss eine 0 davor geschrieben werden: 0ABCDEFh.
+% TBT
+In diesem Buch wird versucht durchgängig die "0x"-Präfix-Variante zu benutzen.
+
+Ist es ratsam das Konvertieren von Zahlen im Kopf zu Üben? Die Tabelle der einstelligen Hexadezimalziffern kann
+leicht auswendig gelernt werden. Für größere Zahlen lohnt sich der Aufwand vielleicht nicht wirklich.
+
+\subsubsection{Oktalsystem}
+Dies ist ein weiteres Zahlensystem, welches in der Computerprogrammierung sehr verbreitet ist: die 8 Ziffern (0..7)
+sind jeweils drei Bits zugeordnet. Dies macht das Konvertieren in andere Zahlensysteme sehr einfach.
+Das Oktalsystem wurde fast überall ersetzt, dennoch gibt es, überraschenderweise, ein *NIX-Tool, welches häufig genutzt wird
+und eine Oktalzahl als Aufrufparameter hat:\TT{chmod}.
+\myindex{UNIX!chmod}
+
+Wie viele *NIX-Nutzer wissen, ist der Aufrufparameter von \TT{chmod} eine Zahl mit drei Ziffern.
+Die erste beschreibt die Rechte des Besitzers einer Datei, die zweite der Gruppe zu der die Datei gehört
+und die dritte ist für alle anderen.
+Jede Ziffer kann in ihrer binären Form repräsentiert werden:
+
+\begin{center}
+\begin{longtable}{ | l | l | l | }
+\hline
+\HeaderColor Dezimal & \HeaderColor Binär & \HeaderColor Bedeutung \\
+\hline
+7	&111	&\textbf{rwx} \\
+6	&110	&\textbf{rw-} \\
+5	&101	&\textbf{r-x} \\
+4	&100	&\textbf{r-{}-} \\
+3	&011	&\textbf{-wx} \\
+2	&010	&\textbf{-w-} \\
+1	&001	&\textbf{-{}-x} \\
+0	&000	&\textbf{-{}-{}-} \\
+\hline
+\end{longtable}
+\end{center}
+
+Jedes Bit wird also abgebildet auf die Flags: lesen/schreiben/ausführen.
+
+Der Grund warum hier das \TT{chmod}-Kommando erwähnt wird, ist weil der Aufrufparameter auch in Oktalform angegeben werden kann.
+Zum Beispiel die 644: wenn \TT{chmod 644 file} ausgeführt wird, werden Lese/Schreib-Rechte für den Besitzer, Lese-Rechte für
+die Gruppe und ebenfalls Lese-Rechte für alle anderen gesetzt.
+
+Die Oktalzahl 644 ist in binärer Form \TT{110100100}, oder (in Dreierbitgruppen) \TT{110 100 100}.
+
+Man erkennt nun sehr schön, dass jedes dieser Dreiergruppen die Rechte für Besitzer/Gruppe/Andere beschreibt:
+zuerst  \TT{rw-}, dann \TT{r--} und zuletzt nochmals \TT{r--}.
+
+Das Oktalsystem war sehr populär auf alten Computerarchitekturen wie PDP-8, weil ein Word hier 12, 24 oder 36 Bit breit sein konnte,
+und diese Zahlen alle durch drei teilbar sind. Daher war die Verwendung des Oktalsystems am Natürlichsten.
+Heutzutage sind die Word- und Adressbreiten der Computer 16, 32 oder 64 Bit, und damit durch vier teilbar. Dementsprechend ist die
+Verwendung des Hexadezimalsystems natürlicher und intuitiver.
+
+Das Oktalsystem wird von allen standardkonformen \CCpp-Compilern unterstützt.
+Dies kann gelegentlich zu Verwirrung führen, weil Oktalzahlen mit einer vorangestellten Null gekennzeichnet werden,
+also zum Beispiel 0377, was 255 in der Dezimalschreibweise entspricht.
+Ein versehentlicher Schreibfehler wie "09" statt "9" wird der Compiler erkennen, weil die 9 keine Ziffer des Oktalsystems ist.
+GCC meldet einen Fehler wie:\\
+\TT{error: invalid digit "9" in octal constant}.
+
+\subsubsection{Teilbarkeit}
+
+Wenn Sie eine Dezimalzahl wie 120 sehen, ist schnell ersichtlich, dass diese durch 10 teilbar ist, weil die letzte Ziffer eine Null ist.
+Genauso ist 123400 durch 100 teilbar, weil die letzten zwei Ziffern Nullen sind.
+
+Auf die gleiche Weise ist die Hexadezimalzahl 0x1230 durch 0x10 (oder 16) und 0x123000 durch 0x1000 (oder 4096) teilbar.
+
+Die Binärzahl 0b1000101000 ist durch 0b1000 (8) teilbar und so weiter.
+Diese Eigenschaft kann häufig dazu genutzt werden um schnell herauszufinden ob ein Speicherinhalt zu einer bestimmten Grenze
+aufgefüllt ist. Beispielsweise starten Sektionen in \ac{PE}-Dateien fast immer an Adressen die in hexadezimaler Schreibweise
+mit drei Nullen enden: 0x41000, 0x10001000, usw.
+Der Grund dafür ist, dass fast alle diese Sektionen an Grenzen ausgerichtet sind, die Vielfache von 0x1000 (4096) Byte sind.
+
+\subsubsection{Langzahlarithmetik und Basis}
+\index{RSA}
+Langzahlarithmetik nutzt sehr große Zahlen die in mehreren Bytes gespeichert sein können. Der öffentliche und private
+Schlüssel im RSA-Algorithmus beispielsweise benötigt 4096 Bit und mehr.
+\DEph{}
+% TODO translate this part so that it is understandable for beginners
+%In \InSqBrackets{\TAOCPvolII, 265} we can find the following idea: when you store multi-precision number in several bytes,
+%the whole number can be represented as having a radix of $2^8=256$, and each digit goes to corresponding byte.
+%Likewise, if you store multi-precision number in several 32-bit integer values, each digit goes to each 32-bit slot,
+%and you may think about this number as stored in radix of $2^{32}$.
+
+\subsubsection{Aussprache}
+Nummer mit nicht-dezimaler Basis werden in der Regel ziffernweise gelesen ``eins-null-null-eins-eins-...''.
+Wörter wie ``zehn'', ``tausend'', und so weiter werden meist nicht so genannte, um Verwechslungen mit dem
+Dezimalsystem zu vermeiden.
+
+\subsubsection{Fließkommazahlen}
+Um Fließkommazahlen von Integer unterscheiden zu können, wird ihnen oft eine ``.0'' angehängt,
+zum Beispiel $0.0$, $123.0$, und so weiter.
+

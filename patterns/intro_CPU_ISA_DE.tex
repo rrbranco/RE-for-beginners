@@ -1,0 +1,71 @@
+\subsection{Eine kurze Einführung in die CPU}
+
+Die \ac{CPU} ist die Komponente, die den Maschinencode ausführt aus dem ein Programm besteht.
+
+\textbf{Ein kurzes Glossar:}
+
+\begin{description}
+\item[Befehl]: Ein einfaches \ac{CPU}-Kommando.
+Die einfachsten Beispiele hierfür sind: Verschieben von Daten zwischen Registern, Arbeiten mit Speicher,
+einfache arithmetische Operationen.
+In der Regel hat jede \ac{CPU} ihre eigene Befehlssatz-Architektur (\ac{ISA}).
+
+\item[Maschinencode]: Code den die \ac{CPU} direkt verarbeitet. 
+Jeder Befehl ist in der Regel durch ein paar Byte kodiert.
+\item[Assembler-Sprache]: Mnemonics und einige Makro-ähnliche Erweiterungen um das Leben der Programmierer zu erleichtern.
+\item[CPU-Register]: Jede \ac{CPU} hat eine feste Anzahl von Mehrzweck-Registern (\ac{GPR}).
+$\approx 8$ bei x86, $\approx 16$ bei x86-64, $\approx 16$ bei ARM.
+Die einfachste Möglichkeit um Register zu verstehen, ist sie als typlose, temporäre Variable zu betrachten.
+Stellen Sie sich vor Sie würden mit einer Hochsprache arbeiten und könnten nur acht 32-Bit (oder 64-Bit) Variablen
+nutzen. Dennoch ist damit eine Menge möglich!
+\end{description}
+
+% TODO1 add about linker: "компоновщик" и "редактор связей" в русскоязычной лит-ре
+
+% A note on the experiments in this area (like the LISP machines http://en.wikipedia.org/wiki/Lisp_machine
+% might be useful
+Man kann sich jetzt fragen, warum die Unterscheidung zwischen Maschinencode und einer Hochsprache notwendig ist.
+Die Antwort liegt einfach in der Tatsache, dass Menschen und \ac{CPU}s nicht gleich sind---%
+Es ist sehr viel einfacher für Menschen eine Programmiersprache wie \CCpp, Java, Python, usw. zu lesen. Für eine \ac{CPU} jedoch
+ist es einfacher eine geringere Abstraktion zu verarbeiten.
+
+Vielleicht wäre es möglich eine \ac{CPU} zu entwickeln die direkt eine Hochsprache ausführen kann,
+diese wäre aber sehr viel komplexer als es heute der Fall ist.
+In ähnlicher Weise ist es für Menschen äußerst unkomfortabel in einer Assembler-Sprache zu programmieren.
+Diese ist sehr hardwarenah und kaum zu realisieren ohne schwer zu findende Fehler zu machen.
+Das Programm, welches die Hochsprache in Assembler konvertiert nennt sich \IT{Compiler} oder Übersetzer.
+
+\myindex{ARM!\ARMMode}%
+\myindex{ARM!\ThumbMode}%
+\myindex{ARM!\ThumbTwoMode}%
+
+\subsubsection{Einige Anmerkungen zu den verschiedenen \ac{ISA}s}
+Die x86 \ac{ISA} hatte immer Opcodes variabler Länge. Als die 64-Bit-Ära aufkam beeinflussten deren Erweiterungen die Befehlssatz-Architektur
+nicht sehr stark. Tatsächlich enthält die x86-Architektur immer noch viele Befehle, die zunächst in den 16-bit 8086 CPU implementiert
+wurden und noch immer in aktuellen CPU enthalten sind.
+ARM ist eine \ac{RISC} \ac{CPU} mit einer konstanten Opcode-Länge, die in der Vergangenheit einige Vorteile aufwies.
+In den Anfängen waren alle ARM-Befehle in vier Byte kodiert%
+\footnote{
+Befehle mit fester Länge sind ürigens so praktisch weil die nächste (oder vorherige) 
+Befehlsadresse ohne großen Aufwand berechnet werden kann. Diese Eigenschaft wird im Kapitel switch() diskutiert.}.
+Dies ist nun als \q{ARM-Mode} bekannt.
+Irgendwann dachte ARM, dass dieser Vorgehensweise nicht so sparsam war wie zuerst angenommen.
+Tatsächlich, benötigen die meisten Befehle in der Praxis\footnote{zum Beispiel MOV/PUSH/CALL/Jcc} weniger Platz für die Kodierung.
+Darum wurde ein Befehlssatz, genannt Thumb, eingeführt, in dem jeder Befehl in zwei Byte kodiert wird.
+Dies ist nun als \q{Thumb-Mode} bekannt.
+Trotzdem können nicht \IT{alle} ARM-Befehle in nur zwei Byte kodiert werden, was den Thumb Befehlssatz in gewisser Weise einschränkt.
+Erwähnenswert ist, dass Code der für ARM- und Thumb-Mode kompiliert wurde in einem einzelnen Programm vermischt sein kann.
+Die ARM-Erfinder beschlossen den Thumb-Mode zu erweitern, was zu Thumb-2 führte, der in ARMv7 auftaucht.
+Thumb-2 nutzt immer noch 2-Byte-Befehle, enthält aber zusätzlich auch einige 4-Byte-Befehle.
+Ein verbreitetes Missverständnis ist, dass Thumb-2 eine Mischung aus und Thumb und ARM ist. Dies ist falsch.
+Stattdessen wurde Thumb-2 erweitert um alle Prozessor-Eigenschaften zu unterstützen, so dass er mit dem ARM-Mode konkurrieren kann---ein
+Ziel, dass klar erreicht wurde, da der Großteil der \idevices mit dem Thumb-2-Befehlssatz kompiliert werden (zugegebenermaßen, auch durch
+die Tatsache, dass Xcode dies als Standard-Einstellung so macht).
+Später erschienen die 64-bit ARM. Diese \ac{ISA} hat 4-Byte-Opcodes und benötigt den traditionellen Thumb-Mode nicht mehr.
+Die 64-Bit-Anforderungen beeinflussten die \ac{ISA}, was uns nun zu drei ARM-Befehlssätzen führt: ARM-Mode, Thumb-Mode (inklusive Thumb-2) und ARM64.
+Diese Befehlssätze überschneiden sich teilweise, dennoch sind sie eher eigenständig als Variationen eines einzelnen Befehlssatz.
+Aus diesem Grund wird versucht in diesem Buch von allen drei Varianten Code-Beispiele zu zeigen.
+\myindex{PowerPC}%
+\myindex{MIPS}%
+\myindex{Alpha AXP}%
+Es gibt übrigens noch eine Menge anderer \ac{RISC} \ac{ISA}s mit einer konstanten Opcode-Länge von 32 Bit, wie MIPS, PowerPC und Alpha AXP.

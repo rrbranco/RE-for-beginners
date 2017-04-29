@@ -1,0 +1,36 @@
+\section{Пример strstr()}
+\label{strstr_example}
+\myindex{\CStandardLibrary!strstr()}
+
+Вернемся к тому факту, что GCC иногда использует только часть строки: \myref{use_parts_of_C_strings}.
+
+Ф-ция \IT{strstr()} (из стандартной библиотеки \CCpp) используется для поиска вхождений в строке.
+Вот что мы сделаем:
+
+\begin{lstlisting}[style=customc]
+#include <string.h>
+#include <stdio.h>
+
+int main()
+{
+	char *s="Hello, world!";
+	char *w=strstr(s, "world");
+
+	printf ("%p, [%s]\n", s, s);
+	printf ("%p, [%s]\n", w, w);
+};
+\end{lstlisting}
+
+Вывод:
+
+\begin{lstlisting}
+0x8048530, [Hello, world!]
+0x8048537, [world!]
+\end{lstlisting}
+
+Разница между адресом оригинальной строки и адресом подстроки, который вернула \IT{strstr()}, это 7.
+Действительно, строка \q{Hello, } имеет длину в 7 символов.
+
+Ф-ция \printf{} во время второго вызова не знает о том, что перед переданной строкой имеются еще какие-то символы,
+и печатает символы с середины оригинальной строки, до конца (который обозначен нулевым байтом).
+

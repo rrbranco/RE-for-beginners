@@ -1,0 +1,34 @@
+0035F940   00FD1039  RETURN to fib.00FD1039 from fib.00FD1000
+0035F944   00000008  1st argument: a
+0035F948   0000000D  2nd argument b
+0035F94C   00000014  3rd argument: limit
+0035F950  /0035F964  saved EBP register
+0035F954  |00FD1039  RETURN to fib.00FD1039 from fib.00FD1000
+0035F958  |00000005  1st argument: a    
+0035F95C  |00000008  2nd argument: b    
+0035F960  |00000014  3rd argument: limit
+0035F964  ]0035F978  saved EBP register
+0035F968  |00FD1039  RETURN to fib.00FD1039 from fib.00FD1000
+0035F96C  |00000003  1st argument: a    
+0035F970  |00000005  2nd argument: b    
+0035F974  |00000014  3rd argument: limit
+0035F978  ]0035F98C  saved EBP register
+0035F97C  |00FD1039  RETURN to fib.00FD1039 from fib.00FD1000
+0035F980  |00000002  1st argument: a    
+0035F984  |00000003  2nd argument: b    
+0035F988  |00000014  3rd argument: limit
+0035F98C  ]0035F9A0  saved EBP register
+0035F990  |00FD1039  RETURN to fib.00FD1039 from fib.00FD1000
+0035F994  |00000001  1st argument: a    
+0035F998  |00000002  2nd argument: b    
+0035F99C  |00000014  3rd argument: limit
+0035F9A0  ]0035F9B4  saved EBP register
+0035F9A4  |00FD105C  RETURN to fib.00FD105C from fib.00FD1000
+0035F9A8  |00000001  1st argument: a            \                          
+0035F9AC  |00000001  2nd argument: b            | prepared in main() for f1()
+0035F9B0  |00000014  3rd argument: limit        /                          
+0035F9B4  ]0035F9F8  saved EBP register
+0035F9B8  |00FD11D0  RETURN to fib.00FD11D0 from fib.00FD1040
+0035F9BC  |00000001  main() 1st argument: argc  \
+0035F9C0  |006812C8  main() 2nd argument: argv  | prepared in CRT for main()
+0035F9C4  |00682940  main() 3rd argument: envp  /

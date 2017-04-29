@@ -1,0 +1,42 @@
+\section{The method}
+
+When the author of this book first started learning C and, later, \Cpp, he used to write small pieces of code, compile them,
+and then look at the assembly language output. This made it very easy for him to understand what was going on in the code that he had written.
+\footnote{In fact, he still does it when he can't understand what a particular bit of code does.}.
+He did it so many times that the relationship between the \CCpp code and what the compiler produced was imprinted deeply in his mind.
+It's easy to imagine instantly a rough outline of C code's appearance and function.
+Perhaps this technique could be helpful for others.
+
+%There are a lot of examples for both x86/x64 and ARM.
+%Those who already familiar with one of architectures, may freely skim over pages.
+
+Sometimes ancient compilers are used here, in order to get the shortest (or simplest) possible code snippet.
+
+By the way, there is a great website where you can do the same, with various compilers, instead of installing them on your box.
+You can use it as well: \url{http://gcc.beta.godbolt.org/}.
+
+\section*{\Exercises}
+
+When the author of this book studied assembly language, he also often compiled small C-functions and then rewrote
+them gradually to assembly, trying to make their code as short as possible.
+This probably is not worth doing in real-world scenarios today,
+because it's hard to compete with latest compilers in terms of efficiency. It is, however, a very good way to gain a better understanding of assembly.
+Feel free, therefore, to take any assembly code from this book and try to make it shorter.
+However, don't forget to test what you have written.
+
+% rewrote to show that debug\release and optimisations levels are orthogonal concepts.
+\section*{Optimization levels and debug information}
+
+Source code can be compiled by different compilers with various optimization levels.
+A typical compiler has about three such levels, where level zero means disable optimization.
+Optimization can also be targeted towards code size or code speed.
+A non-optimizing compiler is faster and produces more understandable (albeit verbose) code,
+whereas an optimizing compiler is slower and tries to produce code that runs faster (but is not necessarily more compact).
+In addition to optimization levels, a compiler can include in the resulting file some debug information,
+thus producing code for easy debugging.
+One of the important features of the ´debug' code is that it might contain links
+between each line of the source code and the respective machine code addresses.
+Optimizing compilers, on the other hand, tend to produce output where entire lines of source code
+can be optimized away and thus not even be present in the resulting machine code.
+Reverse engineers can encounter either version, simply because some developers turn on the compiler's optimization flags and others do not.
+Because of this, we'll try to work on examples of both debug and release versions of the code featured in this book, where possible.

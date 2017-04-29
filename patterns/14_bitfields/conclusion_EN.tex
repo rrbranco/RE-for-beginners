@@ -1,0 +1,130 @@
+﻿% TODO: add ROL/ROR
+\subsection{\Conclusion{}}
+
+\myindex{x86!\Instructions!SHR}
+\myindex{x86!\Instructions!SHL}
+\myindex{x86!\Instructions!SAR}
+
+Analogous to the \CCpp shifting operators \TT{$\ll$} and \TT{$\gg$},
+the shift instructions in x86 are \SHR/\SHL (for unsigned values) and \SAR/\SHL (for signed values).
+
+\myindex{ARM!\Instructions!LSR}
+\myindex{ARM!\Instructions!LSL}
+\myindex{ARM!\Instructions!ASR}
+
+The shift instructions in ARM are \LSR/\LSL (for unsigned values) and \ASR/\LSL (for signed values).
+
+It's also possible to add shift suffix to some instructions 
+(which are called \q{data processing instructions}).
+% FIXME: which instructions?
+
+\subsubsection{Check for specific bit (known at compile stage)}
+
+Test if the 0b1000000 bit (0x40) is present in the register's value:
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet0.c}
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/14_bitfields/TEST_JNZ_EN.lst}
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/14_bitfields/TEST_JZ_EN.lst}
+
+\lstinputlisting[caption=ARM (\ARMMode),style=customasmARM]{patterns/14_bitfields/TST_BNE_EN.lst}
+
+\myindex{x86!\Instructions!AND}
+\myindex{x86!\Instructions!TEST}
+
+Sometimes, \AND is used instead of \TEST, but the flags that are set are the same.
+
+\subsubsection{Check for specific bit (specified at runtime)}
+
+This is usually done by this \CCpp code snippet (shift value by $n$ bits right, then cut off lowest bit):
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet1.c}
+
+This is usually implemented in x86 code as:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; REG=input_value
+; CL=n
+SHR REG, CL
+AND REG, 1
+\end{lstlisting}
+
+Or (shift 1 bit $n$ times left, isolate this bit in input value and check if it's not zero):
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet2.c}
+
+This is usually implemented in x86 code as:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; CL=n
+MOV REG, 1
+SHL REG, CL
+AND input_value, REG
+\end{lstlisting}
+
+\subsubsection{Set specific bit (known at compile stage)}
+
+\begin{lstlisting}[caption=\CCpp]
+value=value|0x40;
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+OR REG, 40h
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ARM (\ARMMode) and ARM64,style=customasmARM]
+ORR R0, R0, #0x40
+\end{lstlisting}
+
+\subsubsection{Set specific bit (specified at runtime)}
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet3.c}
+
+This is usually implemented in x86 code as:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; CL=n
+MOV REG, 1
+SHL REG, CL
+OR input_value, REG
+\end{lstlisting}
+
+\subsubsection{Clear specific bit (known at compile stage)}
+
+Just apply \AND operation with the inverted value:
+
+\begin{lstlisting}[caption=\CCpp,style=customc]
+value=value&(~0x40);
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+AND REG, 0FFFFFFBFh
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x64,style=customasmx86]
+AND REG, 0FFFFFFFFFFFFFFBFh
+\end{lstlisting}
+
+This is actually leaving all bits set except one.
+
+\myindex{ARM!\Instructions!BIC}
+
+ARM in ARM mode has \BIC instruction, which works like the \NOT+\AND instruction pair:
+
+\begin{lstlisting}[caption=ARM (\ARMMode),style=customasmARM]
+BIC R0, R0, #0x40
+\end{lstlisting}
+
+\subsubsection{
+Clear specific bit (specified at runtime)}
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet4.c}
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; CL=n
+MOV REG, 1
+SHL REG, CL
+NOT REG
+AND input_value, REG
+\end{lstlisting}

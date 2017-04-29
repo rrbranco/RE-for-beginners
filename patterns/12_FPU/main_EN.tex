@@ -1,0 +1,113 @@
+\section{\FPUChapterName}
+\label{sec:FPU}
+
+\newcommand{\FNURLSTACK}{\footnote{\href{http://go.yurichev.com/17123}{wikipedia.org/wiki/Stack\_machine}}}
+\newcommand{\FNURLFORTH}{\footnote{\href{http://go.yurichev.com/17124}{wikipedia.org/wiki/Forth\_(programming\_language)}}}
+\newcommand{\FNURLIEEE}{\footnote{\href{http://go.yurichev.com/17125}{wikipedia.org/wiki/IEEE\_floating\_point}}}
+\newcommand{\FNURLSP}{\footnote{\href{http://go.yurichev.com/17126}{wikipedia.org/wiki/Single-precision\_floating-point\_format}}}
+\newcommand{\FNURLDP}{\footnote{\href{http://go.yurichev.com/17127}{wikipedia.org/wiki/Double-precision\_floating-point\_format}}}
+\newcommand{\FNURLEP}{\footnote{\href{http://go.yurichev.com/17128}{wikipedia.org/wiki/Extended\_precision}}}
+
+The \ac{FPU} is a device within the main \ac{CPU}, specially designed to deal with floating point numbers.
+
+It was called \q{coprocessor} in the past and it stays somewhat aside of the main \ac{CPU}.
+
+\subsection{IEEE 754}
+
+A number in the IEEE 754 format consists of a \IT{sign}, a \IT{significand} (also called \IT{fraction}) and an \IT{exponent}.
+
+\subsection{x86}
+
+It is worth looking into stack machines\FNURLSTACK or learning the basics of the Forth language\FNURLFORTH,
+before studying the \ac{FPU} in x86.
+
+\myindex{Intel!80486}
+\myindex{Intel!FPU}
+It is interesting to know that in the past (before the 80486 CPU) the coprocessor was a separate chip 
+and it was not always pre-installed on the motherboard. It was possible to buy it separately and install it
+\footnote{For example, John Carmack used fixed-point arithmetic 
+(\href{http://go.yurichev.com/17356}{wikipedia.org/wiki/Fixed-point\_arithmetic}) values in his Doom video game, stored in 
+32-bit \ac{GPR} registers (16 bit for integral part and another 16 bit for fractional part), so Doom
+could work on 32-bit computers without FPU, i.e., 80386 and 80486 SX.}.
+
+Starting with the 80486 DX CPU, the \ac{FPU} is integrated in the \ac{CPU}.
+
+\myindex{x86!\Instructions!FWAIT}
+The \INS{FWAIT} instruction reminds us of that fact---it switches the \ac{CPU} to a waiting state, so it can wait until the \ac{FPU} has finished with its work.
+
+Another rudiment is the fact that the \ac{FPU} instruction 
+opcodes start with the so called \q{escape}-opcodes (\GTT{D8..DF}), i.e., 
+opcodes passed to a separate coprocessor.
+
+\myindex{IEEE 754}
+\label{FPU_is_stack}
+
+The FPU has a stack capable to holding 8 80-bit registers, and each register can hold a number 
+in the IEEE 754\FNURLIEEE format.
+
+They are \ST{0}..\ST{7}. For brevity, IDA and \olly show \ST{0} as \GTT{ST}, 
+which is represented in some textbooks and manuals as \q{Stack Top}.
+
+\subsection{ARM, MIPS, x86/x64 SIMD}
+
+In ARM and MIPS the FPU is not a stack, but a set of registers.
+
+The same ideology is used in the SIMD extensions of x86/x64 CPUs.
+
+\subsection{\CCpp}
+
+\myindex{float}
+\myindex{double}
+
+The standard \CCpp languages offer at least two floating number types, \Tfloat (\IT{single-precision}\FNURLSP, 32 bits)
+\footnote{the single precision floating point number format is also addressed in 
+the \IT{\WorkingWithFloatAsWithStructSubSubSectionName}~(\myref{sec:floatasstruct}) section}
+and \Tdouble (\IT{double-precision}\FNURLDP, 64 bits).
+
+In \InSqBrackets{\TAOCPvolII 246} we can find the \IT{single-precision} means that the floating point value can be placed into a single
+[32-bit] machine word, \IT{double-precision} means it can be stored in two words (64 bits).
+
+\myindex{long double}
+
+GCC also supports the \IT{long double} type (\IT{extended precision}\FNURLEP, 80 bit), which MSVC doesn't.
+
+The \Tfloat type requires the same number of bits as the \Tint type in 32-bit environments, 
+but the number representation is completely different.
+
+\input{patterns/12_FPU/1_simple/main}
+\input{patterns/12_FPU/2_passing_floats/main}
+\input{patterns/12_FPU/3_comparison/main}
+
+\subsection{Some constants}
+
+It's easy to find representations of some constants in Wikipedia for IEEE 754 encoded numbers.
+It's interesting to know that 0.0 in IEEE 754 is represented as 32 zero bits (for single precision) or 64 zero bits
+(for double).
+So in order to set a floating point variable to 0.0 in register or memory, one can use \MOV or \TT{XOR reg, reg} instruction.
+\myindex{\CStandardLibrary!memset()}
+This is suitable for structures where many variables present of various data types.
+With usual memset() function one can set all integer variables to 0, all boolean variables to \IT{false}, all pointers
+to NULL, and all floating point variables (of any precision) to 0.0.
+
+\subsection{Copying}
+
+One may think inertially that \INS{FLD}/\INS{FST} instructions must be used to load and store (and hence, copy) IEEE 754 values.
+Nevertheless, same can be achieved easier by usual \INS{MOV} instruction, which, of course, copies values bitwisely.
+
+\subsection{Stack, calculators and reverse Polish notation}
+
+\myindex{Reverse Polish notation}
+
+Now we understand why some old calculators use reverse Polish notation
+\footnote{\href{http://go.yurichev.com/17354}{wikipedia.org/wiki/Reverse\_Polish\_notation}}.
+
+For example, for addition of 12 and 34 one has to enter 12, then 34, then press \q{plus} sign.
+
+It's because old calculators were just stack machine implementations, and this was much simpler
+than to handle complex parenthesized expressions.
+\subsection{x64}
+
+On how floating point numbers are processed in x86-64, read more here: \myref{floating_SIMD}.
+
+% sections
+\input{patterns/12_FPU/exercises}

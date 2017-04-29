@@ -1,0 +1,214 @@
+\section{\MinesweeperWinXPExampleChapterName}
+\label{minesweeper_winxp}
+\myindex{Windows!Windows XP}
+
+For those who are not very good at playing Minesweeper, we could try to reveal the hidden mines in the debugger.
+
+\myindex{\CStandardLibrary!rand()}
+\myindex{Windows!PDB}
+
+As we know, Minesweeper places mines randomly, so there has to be some kind of random number generator or
+a call to the standard \TT{rand()} C-function.
+
+What is really cool about reversing Microsoft products is that there are \gls{PDB} 
+file with symbols (function names, \etc{}).
+When we load \TT{winmine.exe} into \IDA, it downloads the 
+\gls{PDB} file exactly for this 
+executable and shows all names.
+
+So here it is, the only call to \TT{rand()} is this function:
+
+\begin{lstlisting}[style=customasmx86]
+.text:01003940 ; __stdcall Rnd(x)
+.text:01003940 _Rnd@4          proc near               ; CODE XREF: StartGame()+53
+.text:01003940                                         ; StartGame()+61
+.text:01003940
+.text:01003940 arg_0           = dword ptr  4
+.text:01003940
+.text:01003940                 call    ds:__imp__rand
+.text:01003946                 cdq
+.text:01003947                 idiv    [esp+arg_0]
+.text:0100394B                 mov     eax, edx
+.text:0100394D                 retn    4
+.text:0100394D _Rnd@4          endp
+\end{lstlisting}
+
+\IDA named it so, and it was the name given to it by Minesweeper's developers.
+
+The function is very simple:
+
+\begin{lstlisting}[style=customc]
+int Rnd(int limit)
+{
+    return rand() % limit;
+};
+\end{lstlisting}
+
+(There is no \q{limit} name in the \gls{PDB} file; we manually named this argument like this.)
+
+So it returns 
+a random value from 0 to a specified limit.
+
+\TT{Rnd()} is called only from one place, 
+a function called \TT{StartGame()}, 
+and as it seems, this is exactly 
+the code which place the mines:
+
+\begin{lstlisting}[style=customasmx86]
+.text:010036C7                 push    _xBoxMac
+.text:010036CD                 call    _Rnd@4          ; Rnd(x)
+.text:010036D2                 push    _yBoxMac
+.text:010036D8                 mov     esi, eax
+.text:010036DA                 inc     esi
+.text:010036DB                 call    _Rnd@4          ; Rnd(x)
+.text:010036E0                 inc     eax
+.text:010036E1                 mov     ecx, eax
+.text:010036E3                 shl     ecx, 5          ; ECX=ECX*32
+.text:010036E6                 test    _rgBlk[ecx+esi], 80h
+.text:010036EE                 jnz     short loc_10036C7
+.text:010036F0                 shl     eax, 5          ; EAX=EAX*32
+.text:010036F3                 lea     eax, _rgBlk[eax+esi]
+.text:010036FA                 or      byte ptr [eax], 80h
+.text:010036FD                 dec     _cBombStart
+.text:01003703                 jnz     short loc_10036C7
+\end{lstlisting}
+
+Minesweeper allows you to set the board size, so the X (xBoxMac) and Y (yBoxMac) of the board are global variables.
+They are passed to \TT{Rnd()} and random 
+coordinates are generated.
+A mine is placed by the \TT{OR} instruction at \TT{0x010036FA}. 
+And if it has been placed before 
+(it's possible if the pair of \TT{Rnd()} 
+generates a coordinates pair which has been already 
+generated), 
+then \TT{TEST} and \TT{JNZ} at \TT{0x010036E6} 
+jumps to the generation routine again.
+
+\TT{cBombStart} is the global variable containing total number of mines. So this is loop.
+
+The width of the array is 32 
+(we can conclude this by looking at the \TT{SHL} instruction, which multiplies one of the coordinates by 32).
+
+The size of the \TT{rgBlk} 
+global array can be easily determined by the difference 
+between the \TT{rgBlk} 
+label in the data segment and the next known one. 
+It is 0x360 (864):
+
+\begin{lstlisting}[style=customasmx86]
+.data:01005340 _rgBlk          db 360h dup(?)          ; DATA XREF: MainWndProc(x,x,x,x)+574
+.data:01005340                                         ; DisplayBlk(x,x)+23
+.data:010056A0 _Preferences    dd ?                    ; DATA XREF: FixMenus()+2
+...
+\end{lstlisting}
+
+$864/32=27$.
+
+So the array size is $27*32$?
+It is close to what we know: when we try to set board size to $100*100$ in Minesweeper settings, it fallbacks to a board of size $24*30$.
+So this is the maximal board size here.
+And the array has a fixed size for any board size.
+
+So let's see all this in \olly.
+We will ran Minesweeper, attaching \olly to it and now we can see the memory dump at the address of the \TT{rgBlk} array (\TT{0x01005340})
+\footnote{All addresses here are for Minesweeper for Windows XP SP3 English. 
+They may differ for other service packs.}.
+
+So we got this memory dump of the array:
+
+\lstinputlisting[style=customasmx86]{examples/minesweeper/1.lst}
+
+\olly, like any other hexadecimal editor, shows 16 bytes per line.
+So each 32-byte array row occupies exactly 2 lines here.
+
+This is beginner level (9*9 board).
+
+There is some square 
+structure can be seen visually (0x10 bytes).
+
+We will click \q{Run} in \olly to unfreeze the Minesweeper process, then we'll clicked randomly at the Minesweeper window 
+and trapped into mine, but now all mines are visible:
+
+\begin{figure}[H]
+\centering
+\myincludegraphicsSmall{examples/minesweeper/1.png}
+\caption{Mines}
+\label{fig:minesweeper1}
+\end{figure}
+
+By comparing the mine places and the dump, we can conclude that 0x10 stands for border, 0x0F---empty block, 0x8F---mine.
+
+Now we'll add comments and also enclose all 0x8F bytes into square brackets:
+
+\lstinputlisting[style=customasmx86]{examples/minesweeper/2.lst}
+
+Now we'll remove all \IT{border bytes} (0x10) and what's beyond those:
+
+\lstinputlisting[style=customasmx86]{examples/minesweeper/3.lst}
+
+Yes, these are mines, now it can be clearly seen and compared with the screenshot.
+
+\clearpage
+What is interesting is that we can modify the array right in \olly.
+We can remove all mines by changing all 0x8F bytes by 0x0F, and here is what we'll get in Minesweeper:
+
+\begin{figure}[H]
+\centering
+\myincludegraphicsSmall{examples/minesweeper/3.png}
+\caption{All mines are removed in debugger}
+\label{fig:minesweeper3}
+\end{figure}
+
+We can also move all of them to the first line: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphicsSmall{examples/minesweeper/2.png}
+\caption{Mines set in debugger}
+\label{fig:minesweeper2}
+\end{figure}
+
+Well, the debugger is not very convenient for eavesdropping (which is our goal anyway), so we'll write a small utility
+to dump the contents of the board:
+
+\lstinputlisting[style=customc]{examples/minesweeper/minesweeper_cheater.c}
+
+Just set the \ac{PID}
+\footnote{PID it can be seen in Task Manager 
+(enable it in \q{View $\rightarrow$ Select Columns})} 
+and the address of the array (\TT{0x01005340} for Windows XP SP3 English) 
+and it will dump it
+\footnote{The compiled executable is here: 
+\href{http://go.yurichev.com/17165}{beginners.re}}.
+
+It attaches itself to a win32 process by \ac{PID} and just reads process memory an the address.
+
+\subsection{Finding grid automatically}
+
+This is kind of nuisance to set address each time when we run our utility.
+Also, various Minesweeper versions may have the array on different address.
+Knowing the fact that there is always a border (0x10 bytes), we can just find it in memory:
+
+\lstinputlisting[style=customc]{examples/minesweeper/cheater2_fragment.c}
+
+Full source code: \url{https://github.com/dennis714/RE-for-beginners/blob/master/examples/minesweeper/minesweeper_cheater2.c}.
+
+\subsection{\Exercises}
+
+\begin{itemize}
+
+\item 
+Why do the \IT{border bytes} (0x10) exist in the array?
+
+What they are for if they are not visible in Minesweeper's interface?
+How could it work without them?
+
+\item 
+As it turns out, there are more values possible (for open blocks, for flagged by user, \etc{}).
+Try to find the meaning of each one.
+
+\item 
+Modify my utility so it can remove all mines or set them in a fixed pattern that you want in the Minesweeper
+process currently running.
+
+\end{itemize}

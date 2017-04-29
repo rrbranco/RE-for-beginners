@@ -1,0 +1,20 @@
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/08_switch/2_lot/MIPS_O3_IDA_RU.lst}
+
+\myindex{MIPS!\Instructions!SLTIU}
+Новая для нас инструкция здесь это \INS{SLTIU} (\q{Set on Less Than Immediate Unsigned}~--- установить,
+если меньше чем значение, беззнаковое сравнение).
+
+\myindex{MIPS!\Instructions!SLTU}
+На самом деле, это то же что и \INS{SLTU} (\q{Set on Less Than Unsigned}), но \q{I} означает \q{immediate},
+т.е. число может быть задано в самой инструкции.
+
+\myindex{MIPS!\Instructions!BNEZ}
+\INS{BNEZ} это \q{Branch if Not Equal to Zero} (переход если не равно нулю).
+
+Код очень похож на код для других \ac{ISA}.
+\myindex{MIPS!\Instructions!SLL}
+\INS{SLL} (\q{Shift Word Left Logical}~--- логический сдвиг влево) совершает умножение на 4.
+MIPS всё-таки это 32-битный процессор, так что все адреса в таблице переходов (\IT{jumptable}) 32-битные.
+

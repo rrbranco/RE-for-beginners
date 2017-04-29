@@ -1,0 +1,19 @@
+﻿\section{ARM-specific details}
+
+\subsection{Number sign (\#) before number}
+
+The Keil compiler, \IDA and objdump precede all numbers with the \q{\#} number sign, for example:
+\lstref{Keil_number_sign}.
+
+But when GCC 4.9 generates assembly language output, it doesn't, for example: 
+\lstref{GCC_no_number_sign}.
+
+The ARM listings in this book are somewhat mixed.
+
+It's hard to say, which method is right.
+Supposedly, one has to obey the rules accepted in environment he/she works in.
+
+% sections
+\input{patterns/ARM/post_pre_index_EN.tex}
+\input{patterns/ARM/big_constants_EN.tex}
+\input{patterns/ARM/relocs_EN.tex}

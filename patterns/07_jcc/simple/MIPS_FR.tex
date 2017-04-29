@@ -1,0 +1,41 @@
+﻿\subsubsection{MIPS}
+
+Une des caractéristiques distinctives de MIPS est l'absence de flag. 
+Apparemment, cela a été fait pour simplifier l'analyse des dépendances de données.
+
+\myindex{x86!\Instructions!SETcc}
+\myindex{MIPS!\Instructions!SLT}
+\myindex{MIPS!\Instructions!SLTU}
+
+Il y a des instructions similaires à \INS{SETcc} en x86: \INS{SLT} (\q{Set on Less Than}:
+mettre si plus petit que, version signée) et \INS{SLTU} (version non signée).
+Ces instructions mettent le registre de destination à 1 si la condition est vraie
+ou à 0 autrement.
+
+\myindex{MIPS!\Instructions!BEQ}
+\myindex{MIPS!\Instructions!BNE}
+
+Le registre de destination est ensuite testé avec \INS{BEQ} (\q{Branch on Equal}
+branchement si égal) ou \INS{BNE} (\q{Branch on Not Equal} branchement si non égal)
+et un saut peut survenir.
+Donc, cette paire d'instructions doit être utilisée en MIPS pour comparer et effectuer
+un branchement.
+Essayons avec la version signée de notre fonction:
+
+\lstinputlisting[caption=GCC 4.4.5 \NonOptimizing (IDA),style=customasmMIPS]{patterns/07_jcc/simple/O0_MIPS_signed_IDA_FR.lst}
+
+\INS{SLT REG0, REG0, REG1} est réduit par IDA à sa forme plus courte:\\
+\INS{SLT REG0, REG1}. 
+\myindex{MIPS!\Pseudoinstructions!BEQZ}
+
+Nous voyons également ici la pseudo instruction \INS{BEQZ} (\q{Branch if Equal to Zero}
+branchement si égal à zéro),\\
+qui est en fait \INS{BEQ REG, \$ZERO, LABEL}.
+
+\myindex{MIPS!\Instructions!SLTU}
+
+La version non signée est la même, mais \INS{SLTU} (version non signée, d'où
+le \q{U} de unsigned) est utilisée au lieu de \INS{SLT}:
+
+\lstinputlisting[caption=GCC 4.4.5 \NonOptimizing (IDA),style=customasmMIPS]{patterns/07_jcc/simple/O0_MIPS_unsigned_IDA.lst}
+

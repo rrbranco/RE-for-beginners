@@ -1,0 +1,51 @@
+\subsection{Array as function argument}
+
+Someone may ask, what is the difference between declaring function argument type as array and as pointer?
+
+As it seems, there are no difference at all:
+
+\begin{lstlisting}[style=customc]
+void write_something1(int a[16])
+{
+	a[5]=0;
+};
+
+void write_something2(int *a)
+{
+	a[5]=0;
+};
+
+int f()
+{
+	int a[16];
+	write_something1(a);
+	write_something2(a);
+};
+\end{lstlisting}
+
+Optimizing GCC 4.8.4:
+
+\begin{lstlisting}[style=customasmx86]
+write_something1:
+        mov     DWORD PTR [rdi+20], 0
+        ret
+
+write_something2:
+        mov     DWORD PTR [rdi+20], 0
+        ret
+\end{lstlisting}
+
+But you may still declare array instead of pointer for self-documenting purposes, if the size of array is always fixed.
+And maybe, some static analysis tool will be able to warn you about possible buffer overflow.
+Or is it possible with some tools today?
+
+Some people, including Linus Torvalds, criticizes this \CCpp feature: \url{https://lkml.org/lkml/2015/9/3/428}.
+
+C99 standard also have \IT{static} keyword \InSqBrackets{\CNineNineStd{} 6.7.5.3}:
+
+\begin{framed}
+\begin{quotation}
+If the keyword static also appears  within the [ and ] of the array type derivation, then for each call to the function, the value of the corresponding actual argument shall provide access to the first element of an array with at least as many elements as specified by the size expression.
+\end{quotation}
+\end{framed}
+

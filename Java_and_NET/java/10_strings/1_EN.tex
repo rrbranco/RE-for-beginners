@@ -1,0 +1,49 @@
+% TODO proof-reading
+\subsubsection{First example}
+
+Strings are objects and are constructed in the same way as other objects (and arrays).
+
+
+\begin{lstlisting}[style=customjava]
+	public static void main(String[] args)
+	{
+		System.out.println("What is your name?");
+		String input = System.console().readLine();
+		System.out.println("Hello, "+input);
+	}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=3, locals=2, args_size=1
+         0: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+         3: ldc           #3        // String What is your name?
+         5: invokevirtual #4        // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+         8: invokestatic  #5        // Method java/lang/System.console:()Ljava/io/Console;
+        11: invokevirtual #6        // Method java/io/Console.readLine:()Ljava/lang/String;
+        14: astore_1      
+        15: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+        18: new           #7        // class java/lang/StringBuilder
+        21: dup           
+        22: invokespecial #8        // Method java/lang/StringBuilder."<init>":()V
+        25: ldc           #9        // String Hello, 
+        27: invokevirtual #10       // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        30: aload_1       
+        31: invokevirtual #10       // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        34: invokevirtual #11       // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+        37: invokevirtual #4        // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+        40: return        
+\end{lstlisting}
+
+The \TT{readLine()} method is called at offset 11, a \IT{reference} to string (which is supplied by the user) 
+is then stored at \ac{TOS}.
+
+At offset 14 the \IT{reference} to string is stored in slot 1 of \ac{LVA}.
+
+The string the user entered is reloaded at offset 30 and concatenated with the \q{Hello, } string
+using the \TT{StringBuilder} class.
+
+The constructed string is then printed using \TT{println} at offset 37.
+

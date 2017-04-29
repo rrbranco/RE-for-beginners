@@ -1,0 +1,103 @@
+\section{\PrintfSeveralArgumentsSectionName}
+
+Now let's extend the \IT{\HelloWorldSectionName}~(\myref{sec:helloworld}) example, replacing \printf in
+the \main function body with this:
+
+\lstinputlisting[label=hw_c,style=customc]{patterns/03_printf/1.c}
+
+% sections
+\input{patterns/03_printf/x86/main}
+\input{patterns/03_printf/ARM/main}
+\input{patterns/03_printf/MIPS/main}
+
+\subsection{\Conclusion{}}
+
+Here is a rough skeleton of the function call:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+...
+PUSH 3rd argument
+PUSH 2nd argument
+PUSH 1st argument
+CALL function
+; modify stack pointer (if needed)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x64 (MSVC),style=customasmx86]
+MOV RCX, 1st argument
+MOV RDX, 2nd argument
+MOV R8, 3rd argument
+MOV R9, 4th argument
+...
+PUSH 5th, 6th argument, etc. (if needed)
+CALL function
+; modify stack pointer (if needed)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x64 (GCC),style=customasmx86]
+MOV RDI, 1st argument
+MOV RSI, 2nd argument
+MOV RDX, 3rd argument
+MOV RCX, 4th argument
+MOV R8, 5th argument
+MOV R9, 6th argument
+...
+PUSH 7th, 8th argument, etc. (if needed)
+CALL function
+; modify stack pointer (if needed)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ARM,style=customasmARM]
+MOV R0, 1st argument
+MOV R1, 2nd argument
+MOV R2, 3rd argument
+MOV R3, 4th argument
+; pass 5th, 6th argument, etc., in stack (if needed)
+BL function
+; modify stack pointer (if needed)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ARM64,style=customasmARM]
+MOV X0, 1st argument
+MOV X1, 2nd argument
+MOV X2, 3rd argument
+MOV X3, 4th argument
+MOV X4, 5th argument
+MOV X5, 6th argument
+MOV X6, 7th argument
+MOV X7, 8th argument
+; pass 9th, 10th argument, etc., in stack (if needed)
+BL function
+; modify stack pointer (if needed)
+\end{lstlisting}
+
+\myindex{MIPS!O32}
+\begin{lstlisting}[caption=MIPS (O32 calling convention),style=customasmMIPS]
+LI $4, 1st argument ; AKA $A0
+LI $5, 2nd argument ; AKA $A1
+LI $6, 3rd argument ; AKA $A2
+LI $7, 4th argument ; AKA $A3
+; pass 5th, 6th argument, etc., in stack (if needed)
+LW temp_reg, address of function
+JALR temp_reg
+\end{lstlisting}
+
+\subsection{By the way}
+
+\myindex{fastcall}
+By the way, this difference between the arguments passing in x86, x64, 
+fastcall, ARM and MIPS is a good illustration of the fact that the CPU is oblivious to how the arguments are passed to functions. 
+It is also possible to create a hypothetical compiler able to pass arguments 
+via a special structure without using stack at all.
+
+\myindex{MIPS!O32}
+MIPS \$A0 \dots \$A3 registers are labeled this way only for convenience (that is in the O32 calling convention).
+Programmers may use any other register (well, maybe except \$ZERO) 
+to pass data or use any other calling convention.
+
+The \ac{CPU} is not aware of calling conventions whatsoever.
+
+We may also recall how new coming assembly language programmers passing arguments into
+other functions: usually via registers, without any explicit order, or even via global variables.
+Of course, it works fine.
+

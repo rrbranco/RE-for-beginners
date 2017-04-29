@@ -1,0 +1,17 @@
+﻿\subsubsection{ARM}
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+Этот же пример:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/15_structs/3_tm_linux/ARM/tm_ARM_keil_thumb.asm}
+
+\myparagraph{\OptimizingXcodeIV (\ThumbTwoMode)}
+
+\IDA \q{узнала} структуру \TT{tm} 
+(потому что \IDA \q{знает} типы аргументов библиотечных функций, 
+таких как \TT{localtime\_r()}), 
+поэтому показала здесь обращения к отдельным элементам структуры и присвоила им имена
+.
+
+\lstinputlisting[caption=\OptimizingXcodeIV (\ThumbTwoMode),style=customasmARM]{patterns/15_structs/3_tm_linux/ARM/tm_ARM_xcode_thumb.asm}

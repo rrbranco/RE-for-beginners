@@ -1,0 +1,102 @@
+\section{\PrintfSeveralArgumentsSectionName}
+
+An dieser Stelle wird das \IT{\HelloWorldSectionName}~(\myref{sec:helloworld})-Beispiel ein
+wenig erweitert, indem \printf in der \main-Funktion durch folgendes ersetzt wird:
+
+\lstinputlisting[label=hw_c,style=customc]{patterns/03_printf/1.c}
+
+% sections
+\input{patterns/03_printf/x86/main}
+\input{patterns/03_printf/ARM/main}
+\input{patterns/03_printf/MIPS/main}
+
+\subsection{\Conclusion{}}
+
+Hier ist der grobe Aufbau der Aufruffunktion:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+...
+PUSH Drittes Argument
+PUSH Zweites Argument
+PUSH Erstes Argument
+CALL Funktion
+; gegebenenfalls den Stackpointer modifizieren
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x64 (MSVC),style=customasmx86]
+MOV RCX, Erstes Argument
+MOV RDX, Zweites Argument
+MOV R8, Drittes Argument
+MOV R9, Viertes Argument
+...
+PUSH fünftes, sechstes Argument, usw. (falls notwendig)
+CALL Funktion
+; gegebenenfalls den Stackpointer modifizieren
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x64 (GCC),style=customasmx86]
+MOV RDI, Erstes Argument
+MOV RSI, Zweites Argument
+MOV RDX, Drittes Argument
+MOV RCX, Viertes Argument
+MOV R8, Fünftes Argument
+MOV R9, Sechstes Argument
+...
+PUSH Siebtes, Achtes Argument, usw. (falls notwendig)
+CALL Funktion
+; gegebenenfalls den Stackpointer modifizieren
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ARM,style=customasmARM]
+MOV R0, Erstes Argument
+MOV R1, Zweites Argument
+MOV R2, Drittes Argument
+MOV R3, Viertes Argument
+; Fünftes, Sechstes Argument, usw. auf den Stack (falls notwendig)
+BL Funktion
+; gegebenenfalls den Stackpointer modifizieren
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ARM64,style=customasmARM]
+MOV X0, Erstes Argument
+MOV X1, Zweites Argument
+MOV X2, Drittes Argument
+MOV X3, Viertes Argument
+MOV X4, Fünftes Argument
+MOV X5, Sechstes Argument
+MOV X6, Siebtes Argument
+MOV X7, Achtes Argument
+; Neuntes, Zehntes Argument, usw. auf den Stack (falls notwendig)
+BL Funktion
+; gegebenenfalls den Stackpointer modifizieren
+\end{lstlisting}
+
+\myindex{MIPS!O32}
+\begin{lstlisting}[caption=MIPS (O32 calling convention),style=customasmMIPS]
+LI $4, Erstes argument ; AKA $A0
+LI $5, Zweites argument ; AKA $A1
+LI $6, Drittes argument ; AKA $A2
+LI $7, Viertes argument ; AKA $A3
+; pass Fünftes, Sechstes argument, usw. auf den Stack (falls notwendig)
+LW temporäres Register, Adresse der Funktion
+JALR temporäres Regist
+\end{lstlisting}
+
+\subsection{Übrigens\dots{}}
+
+\myindex{fastcall}
+Übrigens ist der Unterschied der Art der Argumenten Übergabe in x86, x64, fastcall, ARM und MIPS eine gute
+Darstellung der Tatsache, dass die CPU nicht weiß wie die Argumente an die Funktion übergeben werden.
+Es ist auch möglich einen hypothetischen Compiler zu erstellen, der die Möglichkeit hat Argumente mittels
+einer speziellen Struktur, ohne den Stack an die Funktionen zu übergebe.
+
+\myindex{MIPS!O32}
+MIPS \$A0 \dots \$A3-Register sind aus Bequemlichkeitsgründen auf diese Weise beschriftet (O32 Aufrufkonvention).
+Programmierer können auch andere Register (vielleicht außer \$ZERO) nutzen um Daten zu übergeben
+oder eine andere Aufrufkonvention zu nutzen.
+
+Die \ac{CPU} hatte jedoch keinerlei Kenntnisse über die Aufrufkonvention.
+
+Man sieht hier auch wie Neulinge der Assemblersprache Argumente an andere Funktionen übergeben:
+in der Regel per Register ohne explizite Reihenfolge oder globale Variablen.
+Natürlich funktioniert das ebenso gut.

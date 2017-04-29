@@ -1,0 +1,3 @@
+
+.text:6440503F                 jnz     exit ; bypass drawing
+

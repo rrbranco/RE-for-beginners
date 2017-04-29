@@ -1,0 +1,26 @@
+\subsubsection{MIPS}
+
+\myindex{MIPS!\Registers!FCCR}
+
+В сопроцессоре MIPS есть бит результата, который устанавливается в FPU и проверяется в CPU.
+
+Ранние MIPS имели только один бит (с названием FCC0), а у поздних их 8 (с названием FCC7-FCC0).
+Этот бит (или биты) находятся в регистре с названием FCCR.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/12_FPU/3_comparison/MIPS_O3_IDA_RU.lst}
+
+\myindex{MIPS!\Instructions!C.LT.D}
+\INS{C.LT.D} сравнивает два значения. 
+\GTT{LT} это условие \q{Less Than} (меньше чем).
+\GTT{D} означает переменные типа \Tdouble.
+
+В зависимости от результата сравнения, бит FCC0 устанавливается или очищается.
+
+\myindex{MIPS!\Instructions!BC1T}
+\myindex{MIPS!\Instructions!BC1F}
+\INS{BC1T} проверяет бит FCC0 и делает переход, если бит выставлен.
+\GTT{T} означает, что переход произойдет если бит выставлен (\q{True}).
+Имеется также инструкция \INS{BC1F} которая сработает, если бит сброшен (\q{False}).
+
+В зависимости от перехода один из аргументов функции помещается в регистр \$F0.
+

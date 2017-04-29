@@ -1,0 +1,23 @@
+﻿\subsection{ARM: \OptimizingKeilVI (\ARMMode)}
+
+И снова, компилятор пользуется условными инструкциями в режиме ARM, поэтому код более 
+компактный.
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{\CURPATH/Keil_ARM_O3_RU.s}
+
+\subsection{ARM: \OptimizingKeilVI (\ThumbMode)}
+\myindex{\CompilerAnomaly}
+\label{Keil_anomaly}
+
+В режиме Thumb куда меньше условных инструкций, так что код более простой.
+
+Но здесь есть одна странность со сдвигами на 0x20 и 0x1F (строки 22 и 23).
+
+Почему компилятор Keil сделал так?
+Честно говоря, трудно сказать.
+Возможно, это выверт процесса оптимизации компилятора.
+
+Тем не менее, код будет работать корректно.
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),numbers=left,style=customasmARM]{\CURPATH/Keil_thumb_O3_RU.s}
+
