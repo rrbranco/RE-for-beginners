@@ -1,0 +1,78 @@
+\myparagraph{GCC 4.4.1}
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/12_FPU/3_comparison/x86/GCC_EN.asm}
+
+\myindex{x86!\Instructions!FUCOMPP}
+
+\FUCOMPP{} is almost like \FCOM, but pops both values from the stack and handles
+\q{not-a-numbers} differently.
+
+\myindex{Non-a-numbers (NaNs)}
+A bit about \IT{not-a-numbers}.
+
+\newcommand{\NANFN}{\footnote{\href{http://go.yurichev.com/17130}{wikipedia.org/wiki/NaN}}}
+
+The FPU is able to deal with special values which are \IT{not-a-numbers} or \gls{NaN}s\NANFN. 
+These are infinity, result of division by 0, etc.
+Not-a-numbers can be \q{quiet} and \q{signaling}. It is possible to continue to work with \q{quiet} NaNs, 
+but if one tries to do any operation with \q{signaling} NaNs, an exception is to be raised.
+
+\myindex{x86!\Instructions!FCOM}
+\myindex{x86!\Instructions!FUCOM}
+
+\FCOM raising an exception if any operand is \gls{NaN}. 
+\FUCOM raising an exception only if any operand is a signaling \gls{NaN} (SNaN).
+
+\myindex{x86!\Instructions!SAHF}
+\label{SAHF}
+
+The next instruction is \SAHF (\IT{Store AH into Flags})~---this is a rare 
+instruction in code not related to the FPU. 
+8 bits from AH are moved into the lower 8 bits of the CPU flags in the following order:
+
+\input{SAHF_LAHF}
+
+\myindex{x86!\Instructions!FNSTSW}
+
+Let's recall that \FNSTSW moves the bits that interest us (\CThreeBits) into \AH 
+and they are in positions 6, 2, 0 of the \AH register:
+
+\input{C3_in_AH}
+
+In other words, the \INS{fnstsw  ax / sahf} instruction pair moves \CThreeBits into \ZF, \PF and \CF.
+
+Now let's also recall the values of \CThreeBits in different conditions:
+
+\begin{itemize}
+\item If $a$ is greater than $b$ in our example, then \CThreeBits are to be set to: 0, 0, 0.
+\item if $a$ is less than $b$, then the bits are to be set to: 0, 0, 1.
+\item If $a=b$, then: 1, 0, 0.
+\end{itemize}
+% TODO: table?
+
+In other words, these states of the CPU flags are possible
+after three \\
+\FUCOMPP/\FNSTSW/\SAHF instructions:
+
+\begin{itemize}
+\item If $a>b$, the CPU flags are to be set as: \GTT{ZF=0, PF=0, CF=0}.
+\item If $a<b$, then the flags are to be set as: \GTT{ZF=0, PF=0, CF=1}.
+\item And if $a=b$, then: \GTT{ZF=1, PF=0, CF=0}.
+\end{itemize}
+% TODO: table?
+
+\myindex{x86!\Instructions!SETcc}
+\myindex{x86!\Instructions!JNBE}
+
+Depending on the CPU flags and conditions, \SETNBE stores 1 or 0 to AL. 
+It is almost the counterpart of \JNBE, with the exception that \SETcc 
+\footnote{\IT{cc} is \IT{condition code}} stores 1 or 0 in \AL, 
+but \Jcc does actually jump or not. 
+\SETNBE stores 1 only if \GTT{CF=0} and \GTT{ZF=0}. 
+If it is not true, 0 is to be stored into \AL.
+
+Only in one case both \CF and \ZF are 0: if $a>b$.
+
+Then 1 is to be stored to \AL, the subsequent \JZ is not to be triggered and the function will return {\_a}. 
+In all other cases, {\_b} is to be returned.
+

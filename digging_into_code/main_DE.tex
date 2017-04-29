@@ -1,0 +1,104 @@
+\chapter{Finden von wichtigen/ interessanten Stellen im Code}
+
+Minimalismus ist kein beliebtes Feature von moderner Software.
+
+\myindex{\Cpp!STL}
+
+Aber nicht weil die Programmierer so viel Code schreiben, sondern weil die libaries allgemein statisch zu ausf\"uhrbaren
+Dateien gelinkt werden. 
+Wenn alle externen libraries in externe DLL Dateien verschoben werden w\"urden w\"are die Welt ein anderer Ort.
+(Ein weiterer Grund f\"ur C++ sind die \ac{STL} und andere template libraries.)
+
+\newcommand{\FOOTNOTEBOOST}{\footnote{\url{http://go.yurichev.com/17036}}}
+\newcommand{\FOOTNOTELIBPNG}{\footnote{\url{http://go.yurichev.com/17037}}}
+
+Deshalb ist es sehr wichtig den Ursprung einer Funktion zu bestimmen, wenn die Funktion aus 
+einer Standard library oder aus einer sehr bekannten library stammt (wie z.B Boost\FOOTNOTEBOOST, libpng\FOOTNOTELIBPNG),
+oder ob die Funktion sich auf das bezieht was wir im Code versuchen zu finden.
+
+Es ist ein wenig absurd s\"amtlichen Code neu zu schreiben in \CCpp um das zu finden 
+was wir suchen.
+
+Eine der Hauptaufgaben eines Reverse Enigneers ist es schnell Code zu finden den er/sie sucht.
+
+\myindex{\GrepUsage}
+
+Der \IDA disassembler erlaubt es durch Text Strings, Byte Sequenzen und konstanten zu suchen. 
+Es ist sogar m\"oglich den Code in .lst oder .asm Text Dateien zu exportieren und diese mit \TT{grep}, \TT{awk}, etc. zu untersuchen.
+
+Wenn man versucht zu verstehen wie ein bestimmter Code funktioniert, kann es auch einfach eine open-source library wie libpng sein. % <-- kling scheisse, noch mal \"uber den Sinn nachdenken?!
+Wenn man also eine Konstante oder Textstrings findet die vertraut erscheinen, ist es immer einen Versuch wert diese zu \IT{google}n .
+Und wenn man ein Opensource Projekt findet in dem diese Funktion benutzt wird, 
+reicht es meist aus diese Funktionen miteinander zu vergleichen.
+Es k\"onnte helfen Teile des Problems zu l\"osen.
+
+% When you try to understand what some code is doing, this easily could be some open-source library like libpng.
+% So when you see some constants or text strings which look familiar, it is always worth to \IT{google} them.
+% And if you find the opensource project where they are used, 
+% then it's enough just to compare the functions.
+% It may solve some part of the problem.
+
+Zum Beispiel, wenn ein Programm XML Dateien benutzt, w\"are der erste Schritt zu ermitteln welche
+XML library benutzt wird f\"ur die Verarbeitung, da die Standard (oder am weitesten verbreitete) libraries
+normal benutzt werden anstatt selbst geschriebene librarys.
+
+\myindex{SAP}
+\myindex{Windows!PDB}
+
+Zum Beispiel, der Autor dieser Zeilen wollte verstehen wie die Kompression/Dekompression von Netzwerkpaketen in SAP 6.0 funktioniert.
+SAP ist ein gewaltiges St\"uck Software, aber detaillierte -\gls{PDB} Dateien mit Debug Informationen sind vorhanden, was sehr praktisch 
+ist. Der Autor hat schließlich eine Ahnung gehabt, das eine Funktion genannt \IT{CsDecomprLZC} die Dekompression der Netzwerkpakete \"ubernahm.
+Er hat nach dem Namen der Funktion auf google gesucht und ist schnell zum schluss gekommen das diese Funktion in 
+MaxDB benutzt wurde (Das ist ein Open-Source SAP Projekt) \footnote{Mehr dar\"uber in der relevanten Sektion~(\myref{sec:SAPGbUI})}. 
+
+\url{http://www.google.com/search?q=CsDecomprLZC}
+
+Erstaunlich, das MaxDB und die SAP 6.0 Software den selben Code geteilt haben f\"ur die Kompression/Dekompression der Netzwerkpakete.
+
+\input{digging_into_code/identification/exec_DE} 
+
+\section{Kommunikation mit der außen Welt (Funktion Level)} 
+Oft ist es empfehlenswert die Funktion Argumente und die R\"uckgabe werte im Debugger oder \ac{DBI} zu \"uberwachen.
+Zum Beispiel, einmal hat der Autor versucht die Bedeutung einer obskuren Funktion zu verstehen, die einen inkorrekten
+Bubble sort Algorithmus implementiert hatte (Sie hat funktioniert, jedoch viel langsamer als normal). Die Eingaben und Ausgaben zur laufzeit 
+der Funktion zu \"uberwachen hilft instant zu verstehen was die Funktion tut.
+
+% sections:
+\input{digging_into_code/communication_win32_DE}
+\input{digging_into_code/strings_DE}
+\input{digging_into_code/assert_DE}
+\input{digging_into_code/constants_DE}
+\input{digging_into_code/instructions_DE}
+\input{digging_into_code/suspicious_code_DE}
+\input{digging_into_code/magic_numbers_tracing_DE}
+% TBT \input{digging_into_code/loops_DE}
+
+\section{Andere Dinge}
+
+\subsection{Die Idee}  
+
+Ein Reverse Engineer sollte versuchen so oft wie M\"oglich in den Schuhen des Programmierers zu laufen.
+Um ihren/seinen Standpunkt zu betrachten uns sich selbst zu Fragen wie man einen Task in spezifischen F\"allen l\"osen w\"urde.
+
+\subsection{Anordnung von Funktionen in Bin\"ar Code}  
+
+S\"amtliche Funktionen die in einer einzelnen .c oder .cpp-Datei gefunden werden, werden zu den entsprechenden Objekt Dateien (.o) kompiliert. Sp\"ater, f\"ugt der Linker alle Objektdatein die er braucht zusammen, ohne die Reihenfolge oder die Funktionen in Ihnen zu ver\"andern. Als eine Konsequenz, ergibt sich daraus wenn man zwei oder mehr aufeinander folgende Funktionen sieht, bedeutet dass das sie in der gleichen Source Code Datei platziert waren ( Ausser nat\"urlich man bewegt sich an der Grenze zwischen zwei Dateien. ).  Das bedeutet
+das diese Funktionen etwas gemeinsam haben, das sie aus dem gleichen \ac{API} Level stammen oder aus der gleichen library, etc.
+
+\subsection{kleine Funktionen} 
+
+Sehr kleine oder leere Funktionen  (\myref{empty_func})
+oder Funktionen die nur ``true'' (1) oder ``false'' (0) (\myref{ret_val_func}) sind weit verbreitet,
+und fast jeder ordentlicher Compiler tendiert dazu nur solche Funktionen in den resultierenden ausf\"uhrbaren Code zu stecken,
+sogar wenn es mehrere gleiche Funktionen im Source Code bereits gibt. 
+Also, wann immer man solche kleinen Funktionen sieht die z.B nur aus \TT{mov eax, 1 / ret} bestehen und von mehreren 
+Orten aus referenziert werden (und aufgerufen werden k\"onnen), und scheinbar keine Verbindung zu einander haben, dann 
+ist das wahrscheinlich das Ergebnis einer Optimierung. 
+
+\subsection{\Cpp}
+
+\ac{RTTI}~(\myref{RTTI})-data ist vielleicht auch n\"utzlich f\"ur die \Cpp Klassen Identifikation.
+
+\input{digging_into_code/binary/main_DE}
+\input{digging_into_code/snapshots_comparing_DE}
+

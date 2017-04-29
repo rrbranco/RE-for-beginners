@@ -1,0 +1,51 @@
+\subsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5,style=customasmMIPS]{patterns/05_passing_arguments/MIPS_O3_IDA_EN.lst}
+
+Die ersten vier Funktoins Argumente werden in vier Register übergeben die das A- Präfix haben.
+
+\myindex{MIPS!\Instructions!MULT}
+
+Es gibt zwei spezial Register in MIPS: HI und LO die das 64-Bit Multiplikation Ergebnis der
+Ausführung der \TT{MULT} Instruktion enthalten.
+
+\myindex{MIPS!\Instructions!MFLO}
+\myindex{MIPS!\Instructions!MFHI}
+
+Auf diese Register sind nur zugreifbar durch die \TT{MFLO} und die \TT{MFHI} Instruktionen.
+\TT{MFLO} enthält hier die niedrigen Bits aus dem Multiplikations Ergebnis und speichert diese in \$V0.
+Also wird der höhere Wert des 32-Bit Teils der multiplikation einfach verworfen ( der HI Register in halt 
+wird nicht verwendet ) .
+In der Tat: Wir operieren hier auf 32-Bit \Tint Daten Typen.
+
+\myindex{MIPS!\Instructions!ADDU}
+
+Zum Schluss addiert \TT{ADDU} (\q{Add Unsigned}) den Wert des dritten Argumentes zum Ergebnis.
+
+\myindex{MIPS!\Instructions!ADD}
+\myindex{MIPS!\Instructions!ADDU}
+\myindex{Ada}
+\myindex{Integer overflow}
+
+Es gibt zwei unterschiedliche Addition Instruktionen auf der MIPS Plattform: \TT{ADD} und \TT{ADDU}.
+Der unterschied zwischen den beiden Instruktionen bezieht sich nicht auf das Vorzeichen (+/-) sondern
+auf die exceptions. \TT{ADD} kann eine exception werfen bei einem overflow, was manchmal nützlich\footnote{\url{http://go.yurichev.com/17326}} sein kann und wird auch bei Ada \ac{PL} unterstützt, zum Beispiel:
+
+\TT{ADDU} wirft keine exception bei einem overflow.
+
+Da \CCpp keine Unterstützung hierfür bietet, sehen wir in unserem Beispiel \TT{ADDU} statt \TT{ADD}.
+
+
+Das 32-Bit Ergebnis bleibt übrig in \$V0.
+
+\myindex{MIPS!\Instructions!JAL}
+\myindex{MIPS!\Instructions!JALR}
+
+In \main existiert nun eine neue Instruktion, die interessant für uns ist: \TT{JAL} {\q{Jump an Link}).
+
+Der unterschied zwischen \INS{JAL} und \INS{JALR} ist das in der ersten Instruktion ein relatives offset
+hart codiert ist, während \INS{JALR} zur absoluten Adresse gespeichert in einem Register springt (\q{Jump und Link Register}).
+
+Beide \ttf und die  \main Funktionen liegen innerhalb der gleichen Objekt Datei, also ist die 
+relative Adresse von \ttf bekannt und fix.
+

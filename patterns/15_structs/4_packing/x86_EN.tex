@@ -1,0 +1,91 @@
+﻿\subsubsection{x86}
+
+This compiles to:
+
+\lstinputlisting[caption=MSVC 2012 /GS- /Ob0,label=src:struct_packing_4,numbers=left,style=customasmx86]{patterns/15_structs/4_packing/packing_EN.asm}
+
+We pass the structure as a whole, but in fact, as we can see, the structure
+is being copied to a temporary one (a place in stack is allocated in line 10 for it,
+and then all 4 fields, one by one, are copied in lines 12 \ldots\ 19), 
+and then its pointer (address) is to be passed.
+
+The structure is copied because it's not known whether the \ttf{} 
+function going to modify the structure or not.
+If it gets changed, then the structure in \main has to remain as it has been.
+
+We could use \CCpp pointers, and the resulting code will be almost the same, but without
+the copying.
+
+As we can see, each field's address is aligned on a 4-byte boundary.
+That's why each \Tchar occupies 4 bytes here (like \Tint). Why?
+Because it is easier for the CPU to access memory at aligned addresses and to cache data from it.
+
+However, it is not very economical.
+
+Let's try to compile it with option (\TT{/Zp1}) 
+(\IT{/Zp[n] pack structures on n-byte boundary}).
+
+\lstinputlisting[caption=MSVC 2012 /GS- /Zp1,label=src:struct_packing_1,numbers=left,style=customasmx86]{patterns/15_structs/4_packing/packing_msvc_Zp1_EN.asm}
+
+Now the structure takes only 10 bytes and each \Tchar value takes 1 byte. What does it give to us?
+Size economy. And as drawback~---the CPU accessing these fields slower than it could.
+
+\label{short_struct_copying_using_MOV}
+
+The structure is also copied in \main. Not field-by-field, but directly 10 bytes, using three pairs of \MOV.
+Why not 4?
+
+The compiler decided that it's better to copy 10 bytes using 3 \MOV pairs than to copy two 32-bit words
+and two bytes using 4 \MOV pairs.
+
+By the way, such copy implementation using \MOV instead of calling the \TT{memcpy()} function is widely
+used, because it's faster than a call to \TT{memcpy()}---for short blocks, of course:
+\myref{copying_short_blocks}.
+
+As it can be easily guessed, if the structure is used in many source and object files,
+all these must be compiled with the same convention about structures packing.
+
+\newcommand{\FNURLMSDNZP}{\footnote{\href{http://go.yurichev.com/17067}
+{MSDN: Working with Packing Structures}}}
+\newcommand{\FNURLGCCPC}{\footnote{\href{http://go.yurichev.com/17068}
+{Structure-Packing Pragmas}}}
+
+Aside from MSVC \TT{/Zp} option which sets how to align each structure field, there is also
+the \TT{\#pragma pack} compiler option, which can be defined right in the source code.
+It is available in both MSVC\FNURLMSDNZP and GCC\FNURLGCCPC{}.
+
+Let's get back to the \TT{SYSTEMTIME} structure that consists of 16-bit fields.
+How does our compiler know to pack them on 1-byte alignment boundary?
+
+\TT{WinNT.h} file has this:
+
+\begin{lstlisting}[caption=WinNT.h,style=customc]
+#include "pshpack1.h"
+\end{lstlisting}
+
+And this:
+
+\begin{lstlisting}[caption=WinNT.h,style=customc]
+#include "pshpack4.h"                   // 4 byte packing is the default
+\end{lstlisting}
+
+The file PshPack1.h looks like:
+
+\begin{lstlisting}[caption=PshPack1.h,style=customc]
+#if ! (defined(lint) || defined(RC_INVOKED))
+#if ( _MSC_VER >= 800 && !defined(_M_I86)) || defined(_PUSHPOP_SUPPORTED)
+#pragma warning(disable:4103)
+#if !(defined( MIDL_PASS )) || defined( __midl )
+#pragma pack(push,1)
+#else
+#pragma pack(1)
+#endif
+#else
+#pragma pack(1)
+#endif
+#endif /* ! (defined(lint) || defined(RC_INVOKED)) */
+\end{lstlisting}
+
+This tell the compiler how to pack the structures defined after \TT{\#pragma pack}.
+
+\input{patterns/15_structs/4_packing/olly_EN.tex}

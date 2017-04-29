@@ -1,0 +1,23 @@
+﻿\section{CPU}
+
+\subsection{Predictores del saltos}
+\label{branch_predictors}
+
+Algunos compiladores modernos intentan deshacerse de las instrucciones de saltos condicionales.
+Ejemplos en este libro son: \myref{subsec:jcc_ARM}, \myref{chap:cond}, \myref{subsec:popcnt}.
+
+Esto se debe a que el predictor de saltos no siempre es perfecto, por lo tanto los compiladores
+tratan de evitar los saltos condicionales, de ser posible.
+
+\myindex{x86!\Instructions!CMOVcc}
+\myindex{ARM!\Instructions!ADRcc}
+Las instrucciones condicionales en ARM (como ADRcc) son una forma de hacerlo, otra es el conjunto de instrucciones x86 CMOVcc.
+
+\subsection{Dependencias de datos}
+
+Los CPUs modernos son capaces de ejecutar instrucciones de manera simultanea (\ac{OOE}), pero para
+poder lograrlo, los resultados de una instrucci\'on en un grupo no debe influenciar la ejecuci\'on de otras.
+Como consecuencia, el compilador se esfuerza en hacer uso de instrucciones que tengan una influencia m\'inima en el estado del CPU.
+
+\myindex{ARM!\Instructions!LEA}
+Por eso la instrucci\'on \LEA es tan popular, porque no modifica las banderas del CPU, mientras que otras instrucciones aritm\'eticas s\'i lo hacen.

@@ -1,0 +1,105 @@
+\section{64 Bit}
+
+\subsection{x86-64}
+\myindex{x86-64}
+\label{x86-64}
+Es handelt sich um eine 64-Bit-Erweiterung der x86 Architektur.
+
+Aus Sicht eines Reverse Engineers sind die wichtigsten Veränderungen die folgenden:
+
+\myindex{\CLanguageElements!\Pointers}
+\begin{itemize}
+
+\item
+Fast alle Regsiter (außer FPU und SIMD) wurden auf 64 Bit erweitert und erhielten den Präfix R-. 8 zusätzliche Register
+wurden hinzugefügt.
+Die \ac{GPR} sind jetzt: \RAX, \RBX, \RCX, \RDX, 
+\RBP, \RSP, \RSI, \RDI, \Reg{8}, \Reg{9}, \Reg{10}, 
+\Reg{11}, \Reg{12}, \Reg{13}, \Reg{14}, \Reg{15}. 
+Es ist immernoch mgölich die älteren Registerteile wie gewohnt anzusprechen.
+Zum Beispiel ist es möglich, auf den niederen 32-Bit-Teil von \RAX mit \EAX zuzugreifen:
+
+\RegTableOne{RAX}{EAX}{AX}{AH}{AL}
+Die neuen \GTT{R8-R15} Register besitzen ebenfalls niedere Teile: \GTT{R8D-R15D} (niedere 32 Bit),
+\GTT{R8W-R15W} (niedere 16 Bit), \GTT{R8L-R15L} (niedere 8 Bit).
+
+\RegTableFour{R8}{R8D}{R8W}{R8L}
+Die Anzahl der SIMD Register wurde von 8 auf 16 erhöht:\XMM{0}-\XMM{15}.
+
+\item
+In Win64 ist die Konvention zum Aufruf von Funktionen ein wenig verändert worden und erinnert nun an
+fastcall(\myref{fastcall}). Die ersten vier Argumente werden in den \RCX, \RDX, \Reg{8} und \Reg{9} Registern
+gespeichert~---der Rest auf dem Stack.
+Die aufrufende Funktion muss also 32 Byte reservieren, sodass der Aufgerufene die ersten 4 Argumente dort speichern 
+und sie für eigene Zwecke verwenden kann.
+Kurze Funktionen können Argumente verwenden, die ausschließlich aus Registern stammen, aber größere müssen ihre
+Variablen auf dem Stack speichern.
+
+System V AMD64 ABI (Linux, *BSD, \MacOSX)\SysVABI erinnert auch an
+fastcall: es verwendet die 6 Register 
+\RDI, \RSI, \RDX, \RCX, \Reg{8}, \Reg{9} für die ersten 6 Argumente.
+Der Rest wird wie gehabt über den Stack übergeben.
+
+Siehe dazu auch den Abschnitt über Aufrufkonventionen~(\myref{sec:callingconventions}).
+
+\item
+Der Typ \Tint in \CCpp hat aus Kompatibilitätsgründen immernoch die Größe 32 Bit.
+
+\item
+Alle Pointer haben jetzt eine Größe von 64 Bit.
+
+\end{itemize}
+
+\myindex{Register allocation}
+Da sich die Anzahl der Register verdoppelt hat, hat der Compiler mehr Spielraum für den \glslink{register allocator}.
+Für uns hat dies zur Folge, dass der erzeugte Code eine geringere Anzahl lokaler Variabeln enthält.
+
+\myindex{DES}
+Die Funktionm, die die erste S-Box im DES Verschlüsselungsalgorithmus berechnet, verarbeitet beispielsweise
+32/64/128/256 Werte auf einmal (abhängig vom \GTT{DES\_type}: uint32, uint64, SSE2 oder AVX)) mithilfe der Bitslice DES
+Methode (mehr zu dieser Technik unter~(\myref{bitslicedes})):
+
+\lstinputlisting[style=customc]{patterns/20_x64/19_1.c}
+Es gibt eine Menge lokaler Variablen.
+Natürlich werden diese nicht alle auf dem lokalen Stack gespeichert.
+Kompilieren wir mit MSVC 2008 mit der Option \GTT{Ox}:
+
+\lstinputlisting[caption=\Optimizing MSVC 2008,style=customasmx86]{patterns/20_x64/19_2_msvc_Ox.asm}
+Der Compiler legt auf dem lokalen Stack 5 Variablen an.
+
+Untersuchen wir dasselbe Programm in der 64-Bit-Version mit MSVC 2008:
+
+\lstinputlisting[caption=\Optimizing MSVC 2008,style=customasmx86]{patterns/20_x64/19_3_msvc_x64.asm}
+Hier wurde im lokalen Stack nichts durch den Compiler angelegt, \GTT{x36} ist ein Synonym für \GTT{a5}.
+
+\iffalse
+% FIXME1 невнятно
+Wir sehen hier übrigens, dass die Funktion die Register \RCX und \RDX in vom Aufrufenden bereitgestellten Speicherplatz
+gesichert hat. \Reg{8} und \Reg{9} wurden nicht gesichert, aber trotzdem von Beginn an benutzt.
+
+\fi
+
+Es gibt übrigens CPUs mit viel mehr \ac{GPR}s, z.B. Itanium (128 Register).
+
+\subsection{ARM}
+
+64-Bit-Befehle erschienen in ARMv8.
+
+\subsection{Fließkommazahlen}
+Den Umgang mit Fließkommazahlen in x86-64 haben wir hier erklärt: \myref{floating_SIMD}.
+
+\subsection{Kritik an der 64-Bit-Architektur}
+Einige Leute sind manchmal am Zweifeln bezüglich der Vorteil von 64-Bit-Architekturen: man benötigt nun doppelt soviel
+Platz für das Speichern von Pointern, inklusive Cachespeicher, obwohl die x64 CPUs nur 48 Bit an externem \ac{RAM}
+adressieren können.
+
+Einige leute schrieben ihre eigenen Speicherreservierungen.
+
+\myindex{CryptoMiniSat}
+Interessant ist dabei der Fall CryptoMiniSat\footnote{\url{https://github.com/msoos/cryptominisat/}}.
+Dieses Programm benötigt fast nie mehr als 4GiB \ac{RAM}, macht aber starken Gebrauch von Pointern.
+Es benötigt also auf einer 32-Bit-Architektur weniger Speicher als unter einer 64-Bit-Architektur.
+Um dieses Problem zu lösen, hat der Autor seine eigene Speicherreservierung (in den Dateien
+\IT{clauseallocator.(h|cpp)}) geschrieben, welche erlaubt, Speicher mit 32-Bit-Identifiern anstelle von 64-Bit-Pointern
+zu reservieren.
+

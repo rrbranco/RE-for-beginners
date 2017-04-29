@@ -1,0 +1,55 @@
+\subsubsection{x86}
+
+\myparagraph{\NonOptimizing MSVC}
+
+We get (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/08_switch/2_lot/lot_msvc_EN.asm}
+
+\myindex{jumptable}
+
+What we see here is a set of \printf calls with various arguments. 
+All they have not only addresses in the memory of the process, but also internal symbolic labels assigned 
+by the compiler. 
+All these labels are also mentioned in the \TT{\$LN11@f} internal table.
+
+At the function start, if $a$ is greater than 4, control flow is passed to label 
+\TT{\$LN1@f}, where \printf with argument \TT{'something unknown'} is called.
+
+But if the value of $a$ is less or equals to 4, then it gets multiplied by 4 and added with the \TT{\$LN11@f} 
+table address. That is how an address inside the table is constructed, pointing exactly to the 
+element we need. For example, let's say $a$ is equal to 2. $2*4 = 8$ (all table elements 
+are addresses in a 32-bit process and that is why all elements are 4 bytes wide). 
+The address of the \TT{\$LN11@f} table + 8 is the table element where the \TT{\$LN4@f} label is stored.
+\JMP fetches the \TT{\$LN4@f} address from the table and jumps to it.
+
+This table is sometimes called \IT{jumptable} or \IT{branch table}\footnote{The whole method was once called 
+\IT{computed GOTO} in early versions of Fortran:
+\href{http://go.yurichev.com/17122}{wikipedia}.
+Not quite relevant these days, but what a term!}.
+
+Then the corresponding \printf is called with argument \TT{'two'}.\\
+Literally, the \TT{jmp DWORD PTR \$LN11@f[ecx*4]} instruction implies
+\IT{jump to the DWORD that is stored at address} \TT{\$LN11@f + ecx * 4}.
+
+\TT{npad} (\myref{sec:npad}) is an assembly language macro that align the next label so that it will be stored at an address aligned on a 4 byte
+(or 16 byte) boundary.
+This is very suitable for the processor since it is able to fetch 32-bit values from memory through the memory bus,
+cache memory, etc., in a more effective way if it is aligned.
+
+\input{patterns/08_switch/2_lot/olly_EN}
+
+\myparagraph{\NonOptimizing GCC}
+\label{switch_lot_GCC}
+
+Let's see what GCC 4.4.1 generates:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/08_switch/2_lot/lot_gcc.asm}
+
+\myindex{x86!\Registers!JMP}
+
+It is almost the same, with a little nuance: argument \TT{arg\_0} is multiplied by 4 by
+shifting it to left by 2 bits (it is almost the same as multiplication by 4)~(\myref{SHR}).
+Then the address of the label is taken from the \TT{off\_804855C} array, stored in 
+\EAX, and then \TT{JMP EAX} does the actual jump.
+

@@ -1,0 +1,215 @@
+% TODO proof-reading
+\subsection{Простая вычисляющая функция}
+
+Продолжим с простой вычисляющей функцией.
+
+\begin{lstlisting}[style=customjava]
+public class calc
+{
+	public static int half(int a)
+	{
+		return a/2;
+	}
+}
+\end{lstlisting}
+
+
+Это тот случай, когда используется инструкция \INS{iconst\_2}:
+
+\begin{lstlisting}
+  public static int half(int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: iload_0       
+         1: iconst_2      
+         2: idiv          
+         3: ireturn       
+\end{lstlisting}
+         
+\INS{iload\_0} 
+Берет нулевой аргумент функции и заталкивает его в стек.
+\INS{iconst\_2} заталкивает в стек 2.
+
+Вот как выглядит стек после исполнения этих двух инструкций:
+
+% FIXME: TikZ
+\begin{lstlisting}
+      +---+
+TOS ->| 2 |
+      +---+
+      | a |
+      +---+
+\end{lstlisting}
+
+
+\INS{idiv} просто берет два значения на вершине стека (\ac{TOS}), 
+делит одно на другое и оставляет результат на вершине (\ac{TOS}):
+
+% FIXME: TikZ
+\begin{lstlisting}
+      +--------+
+TOS ->| result |
+      +--------+
+\end{lstlisting}
+
+\INS{ireturn} берет его и возвращает.
+
+
+Продолжим с числами с плавающей запятой, двойной точности:
+
+\begin{lstlisting}[style=customjava]
+public class calc
+{
+	public static double half_double(double a)
+	{
+		return a/2.0;
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Constant pool]
+...
+   #2 = Double             2.0d
+...
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static double half_double(double);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=4, locals=2, args_size=1
+         0: dload_0       
+         1: ldc2_w        #2                  // double 2.0d
+         4: ddiv          
+         5: dreturn       
+\end{lstlisting}
+
+
+Почти то же самое, но инструкция \INS{ldc2\_w} используется для загрузки константы 
+2.0 из пула констант.
+
+Также, все три инструкции имеют префикс \IT{d}, что означает, что они работают с переменными
+типа \IT{double}.
+
+
+Теперь перейдем к функции с двумя аргументами:
+
+\begin{lstlisting}[style=customjava]
+public class calc
+{
+	public static int sum(int a, int b)
+	{
+		return a+b;
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static int sum(int, int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=2, args_size=2
+         0: iload_0       
+         1: iload_1       
+         2: iadd          
+         3: ireturn       
+\end{lstlisting}
+
+
+\INS{iload\_0} загружает первый аргумент функции (a), \INS{iload\_1} --- второй (b).
+
+Вот так выглядит стек после исполнения обоих инструкций:
+
+\begin{lstlisting}
+      +---+
+TOS ->| b |
+      +---+
+      | a |
+      +---+
+\end{lstlisting}
+
+
+\INS{iadd} складывает два значения и оставляет результат на \ac{TOS}:
+
+\begin{lstlisting}
+      +--------+
+TOS ->| result |
+      +--------+
+\end{lstlisting}
+
+
+Расширим этот пример до типа данных \IT{long}:
+
+\begin{lstlisting}[style=customjava]
+	public static long lsum(long a, long b)
+	{
+		return a+b;
+	}
+\end{lstlisting}
+
+\dots получим:
+
+\begin{lstlisting}
+  public static long lsum(long, long);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=4, locals=4, args_size=2
+         0: lload_0       
+         1: lload_2       
+         2: ladd          
+         3: lreturn       
+\end{lstlisting}
+
+
+Вторая инструкция \TT{lload} берет второй аргумент из второго слота.
+
+Это потому что 64-битное значение \IT{long} занимает ровно два 32-битных слота.
+
+
+Немного более сложный пример:
+
+\begin{lstlisting}[style=customjava]
+public class calc
+{
+	public static int mult_add(int a, int b, int c)
+	{
+		return a*b+c;
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static int mult_add(int, int, int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=3, args_size=3
+         0: iload_0       
+         1: iload_1       
+         2: imul          
+         3: iload_2       
+         4: iadd          
+         5: ireturn       
+\end{lstlisting}
+
+
+Первый шаг это умножение. Произведение остается на \ac{TOS}:
+
+\begin{lstlisting}
+      +---------+
+TOS ->| product |
+      +---------+
+\end{lstlisting}
+
+\TT{iload\_2} загружает третий аргумент (c) в стек:
+
+\begin{lstlisting}
+      +---------+
+TOS ->|    c    |
+      +---------+
+      | product |
+      +---------+
+\end{lstlisting}
+
+
+Теперь инструкция \TT{iadd} может сложить два значения.

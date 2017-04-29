@@ -1,0 +1,17 @@
+\subsection{Pseudo-random number generator example revisited}
+\label{FPU_PRNG_SIMD}
+
+Let's revisit \q{pseudo-random number generator example} example \lstref{FPU_PRNG}.
+
+If we compile this in MSVC 2012, it will use the SIMD instructions for the FPU.
+
+\lstinputlisting[caption=\Optimizing MSVC 2012,style=customasmx86]{patterns/205_floating_SIMD/FPU_PRNG/MSVC2012_Ox_Ob0_EN.asm}
+
+% FIXME1 rewrite!
+
+All instructions have the -SS suffix, which stands for \q{Scalar Single}.
+
+\q{Scalar} implies that only one value is stored in the register.
+
+\q{Single} stands for \Tfloat data type.
+

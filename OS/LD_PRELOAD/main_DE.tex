@@ -1,0 +1,120 @@
+\subsection{\IT{LD\_PRELOAD}-Hack in Linux}
+
+\myindex{LD\_PRELOAD}
+\label{ld_preload}
+
+Diese Technik erlaubt es eigene, dynamische Bibliotheken vor anderen zu laden\dots{}
+sogar vor denen des Systems, wie libc.so.6.
+
+Dies wiederum erlaubt es die eigenen Funktionen für die des Systems zu \q{ersetzen}.
+Es ist zum Beispiel einfach alle Aufrufe zu time(), read(), write(), usw. abzufangen.
+
+\myindex{uptime}
+Sehen wir uns einmal an, wie das Tool \IT{uptime} ausgetrickst werden kann.
+Wie bekannt ist, zeigt dieses Programm an, wie lange der Computer schon arbeitet.
+\myindex{strace}
+Mithilfe von strace(\myref{strace}), ist es möglich zu sehen, dass das Tool die
+Informationen aus der Datei \TT{/proc/uptime} ausliest:
+
+\begin{lstlisting}
+$ strace uptime 
+...
+open("/proc/uptime", O_RDONLY)          = 3
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "416166.86 414629.38\n", 2047)  = 20
+...
+\end{lstlisting}
+
+Es handelt sich dabei nicht um eine reale Datei auf der Festplatte sondern um eine
+virtuelle, bei der die Dateien on-the-fly im Linux Kernel erstellt werden.
+Es gibt zwei Zahlen:
+
+\begin{lstlisting}
+$ cat /proc/uptime
+416690.91 415152.03
+\end{lstlisting}
+
+Nachfolgend, der englischen Wikipedia\footnote{\href{http://go.yurichev.com/17043}{Wikipedia}}:
+
+\begin{framed}
+\begin{quotation}
+The first number is the total number of seconds the system has been up.
+The second number is how much of that time the machine has spent idle, in seconds.
+\end{quotation}
+\end{framed}
+
+\myindex{\CStandardLibrary!open()}
+\myindex{\CStandardLibrary!read()}
+\myindex{\CStandardLibrary!close()}
+
+Versuchen wir eine eigene dynamische Bibliothek mit den Funktionen open(), read()
+und close() zu schreiben die so funktionieren wie wir es gerne hätten.
+
+Zunächst wird unsere open()-Funktion den Namen der zu öffnenden Datei mit dem was
+wir brauchen vergleichen. Ist dies der Fall, soll der Deskriptor der geöffnete Datei
+geschrieben werden.
+
+Als zweites read(): Wenn diese Funktion für den Datei-Deskriptor aufgerufen wird,
+soll die Ausgaben ersetzt werden und der Rest dem original read() aus libc.so.6
+entsprechen.
+close() wird eine Meldung geben wenn die Datei der zur Zeit gefolgt wird geschlossen
+wurde.
+
+\myindex{dlopen()}
+\myindex{dlsym()}
+
+Wir werden die dlopen()- und dlsym()-Funktionen nutzen, um die Adressen der Original-Funktionen
+in libc.so.6 herauszufinden.
+
+Diese werden benötigt, weil die Ausführkontrolle wieder an die \q{realen} Funktionen
+übergeben werden müssen.
+
+\myindex{\CStandardLibrary!strcmp()}
+
+Auf der anderen Seite: wenn wir strcmp() unterbrechen und jeden einzelnen Vergleich
+von Zeichenketten im Programm untersuchen, müssten wir eine eigene strcmp()-Variante
+schreiben und nicht die Original-Funktion
+nutzen\footnote{Als Beispiel, wie einfach strcmp()-Unterbrechung funktioniert
+\footnote{\href{http://go.yurichev.com/17143}{yurichev.com}} von Yong Huang}, was
+einfacher wäre.
+
+\lstinputlisting[style=customc]{OS/LD_PRELOAD/fool_uptime.c}
+( \href{https://github.com/dennis714/RE-for-beginners/blob/master/OS/LD_PRELOAD/fool_uptime.c}{Quellcode auf GitHub} )
+% FIXME go.yurichev.com...
+
+Kompilieren wir den Code als gemeinsame, dynamische Bibliothek:
+
+\begin{lstlisting}
+gcc -fpic -shared -Wall -o fool_uptime.so fool_uptime.c -ldl
+\end{lstlisting}
+
+Jetzt starten wir \IT{uptime} während unsere Bibliothek vor den anderen geladen wird:
+
+\begin{lstlisting}
+LD_PRELOAD=`pwd`/fool_uptime.so uptime
+\end{lstlisting}
+
+Und wir sehen:
+
+\begin{lstlisting}
+ 01:23:02 up 24855 days,  3:14,  3 users,  load average: 0.00, 0.01, 0.05
+\end{lstlisting}
+
+Wenn die \IT{LD\_PRELOAD}-Umgebungsvariable immer auf den Dateinamen und -pfad unserer
+Bibliothek zeigt, wird diese vor allen anderen gestarteten Programmen geladen.
+
+Weitere Beispiele:
+
+\begin{itemize}
+
+\item
+Sehr einfache Unterbrechung von strcmp() (Yong Huang)
+\url{http://go.yurichev.com/17143}
+
+\item
+Kevin Pulo---Fun with LD\_PRELOAD. Viele Beispiele und Ideen.
+\href{http://go.yurichev.com/17145}{yurichev.com}
+
+\item
+Datei-Funktionen unterbrechen beim Komprimieren/Entkomprimieren on-the-fly (zlibc). \url{http://go.yurichev.com/17146}
+\end{itemize}

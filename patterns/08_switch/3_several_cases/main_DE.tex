@@ -1,0 +1,71 @@
+\subsection{Wenn es mehrere \IT{case} Ausdrücke in einem Block gibt}
+Hier ist eine weit verbreitete Konstruktion: mehrere \IT{case} Ausdrücke für einen einzigen Block:
+
+\lstinputlisting[style=customc]{patterns/08_switch/3_several_cases/several_cases.c}
+Es ist zu verschwenderisch einen Block für jeden möglichen Fall zu erzeugen, sodass normalerweise ein Block und eine Art
+Dispatcher erzeugt werden.
+
+\subsubsection{MSVC}
+
+\lstinputlisting[caption=\Optimizing MSVC
+2010,numbers=left,style=customasmx86]{patterns/08_switch/3_several_cases/several_cases_MSVC_2010_Ox_DE.asm}
+Wir sehen hier zwei Tabellen: die erste Tabelle (\TT{\$LN10@f}) ist eine Indextabelle und die zweite (\TT{\$LN11@f}) ist
+ein Array von Pointern auf Blöcke.
+
+Zuerst wird der Eingabewert als Index in der Indextabelle verwendet (Zeile 13).
+
+Hier ist eine kurze Legende für die Werte in der Tabelle:
+0 ist der erste \IT{case} Block (für die Werte 1, 2, 7, 10),
+1 ist der zweite (für die Werte 3, 4, 5),
+2 ist der dritte (für die Werte 8, 9, 21),
+3 ist der vierte (für die Werte 22),
+4 ist der Defaultblock.
+Hier erhalten wir einen Index für die zweite Tabelle aus Pointern und springen zu einem solchen (Zeile 14).
+
+Bemerkenswert ist auch, dass es keinen Case für den Eingabewert 0 gibt. 
+
+Aus diesem Grund haben wir den \DEC Befehl in Zeile 10 und die Tabelle beginnt bei $a=1$, da kein Tabellenelement für
+$a=0$ angelegt werden muss.
+
+Dies ist ein weitverbreitetes Muster.
+
+Warum ist dieses Vorgehen so ökonomisch?
+Warum ist es nicht möglich wie vorher in (\myref{switch_lot_GCC}) vorzugehen mit nur einer Tabelle aus Blockpointern?
+Der Grund hierfür ist, dass die Elemente in der Indextabelle nur 8 Bit groß sind und alles deshalb deutlich kompakter
+ist.
+
+\subsubsection{GCC}
+
+GCC erledigt seinen Job unter Verwendung von nur einer Pointertabelle wie bereits hier besprochen
+(\myref{switch_lot_GCC}).
+
+\subsubsection{ARM64: \Optimizing GCC 4.9.1}
+Es wird kein Code ausgeführt, wenn der Eingabewert 0 ist, weshalb GCC versucht, die Jumptable kleiner zu machen und erst
+beim Eingabewert 1 zu beginnen.
+
+GCC 4.9.1 für ARM64 verwendeten einen noch ausgefeilteren Trick.
+Es ist möglich alle Offsets als 8 Bit Werte zu kodieren.
+
+Erinnern wir uns, dass alle ARM64 Befehle eine Größe von 4 Bytes haben.
+
+GCC verwendet den Umstand, dass alle Offsets in unserem Minimalbeispiel in der Nähe voneinander liegen. Daher kann die
+Jumptable aus einzelnen Bytes bestehen.
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1
+ARM64,style=customasmARM]{patterns/08_switch/3_several_cases/ARM64_GCC491_O3_DE.s}
+Kompilieren wir dieses Beispiel in eine Object-Datei und öffnen es ist \IDA. Hier ist die Jumptable:
+
+\lstinputlisting[caption=jumptable in IDA,style=customasmARM]{patterns/08_switch/3_several_cases/ARM64_GCC491_O3_IDA.lst}
+
+Im Fall von 1, 9 wird also mit 4 multipliziert und zur Adresse des Labels \TT{Lrtx4} addiert.
+
+Im Fall von 22, wird 0 mit 4 multipliziert; mit dem Ergebnis 0. 
+
+Direkt hinter dem \TT{Lrtx4} Label befindet sich das \TT{L7} Label, an dem sich der Code befindet, der \q{22} ausgibt.
+
+Es gibt keine Jumptable im Codesegment; sie wird in einem getrennten .rodata Segment angelegt (es besteht keine
+Notwendigkeit, die Tabelle im Codesegment anzulegen).
+
+Hier befinden sich auch negative Bytes (0xF7), die für das Zurückspringen im Code verwendet werden, um den \q{Default}
+String am Label \TT{.L2} auszugeben.
+

@@ -1,0 +1,138 @@
+\subsection{Example \#3: MS-DOS}
+\label{dongle_16bit_dos}
+
+\myindex{MS-DOS}
+Another very old software for MS-DOS from 1995 
+also developed by a company that disappeared a long time ago.
+
+\myindex{Intel!8086}
+\myindex{Intel!80286}
+
+In the pre-DOS extenders era, all the software for MS-DOS mostly relied on 16-bit 8086 or 80286 CPUs,
+so the code was 16-bit en masse.
+
+The 16-bit code is mostly same as you already saw in this book, but all registers
+are 16-bit and there are less instructions available.
+
+\label{IN_example}
+\label{OUT_example}
+\myindex{x86!\Instructions!IN}
+\myindex{x86!\Instructions!OUT}
+
+The MS-DOS environment has no system drivers, and any program can deal with the bare hardware via ports,
+so here you can see the \TT{OUT}/\TT{IN} instructions, which are present in mostly in drivers in our times
+(it is impossible to access ports directly in \gls{user mode} on all modern \ac{OS}es).
+
+Given that, the MS-DOS program which works with a dongle has to access the LPT printer port directly.
+
+So we can just search for such instructions. And yes, here they are:
+
+\lstinputlisting[style=customasmx86]{examples/dongles/3/1.lst}
+
+(All label names in this example were given by me).
+
+\TT{out\_port()} is referenced only in one function:
+
+\lstinputlisting[style=customasmx86]{examples/dongles/3/2.lst}
+
+This is again a Sentinel Pro \q{hashing} dongle as in the previous example.
+It is noticeably because text strings are passed here, too, and 16 bit values are returned and compared with others.
+
+So that is how Sentinel Pro is accessed via ports.
+
+The output port address is usually 0x378, i.e.,
+the printer port, where the data to the old printers in pre-USB era was passed to.
+
+The port is uni-directional, because when it was developed, no one imagined that someone
+will need to transfer information from the printer
+\footnote{If we consider Centronics only. The following IEEE 1284 standard allows the transfer of information from
+the printer.}.
+
+The only way to get information from the printer is a status register on port 0x379, which contains
+such bits as \q{paper out}, \q{ack}, \q{busy}---thus the printer may signal to the host computer
+if it is ready or not and if paper is present in it.
+
+So the dongle returns information from one of these bits, one bit at each iteration.
+
+\TT{\_in\_port\_2} contains the address of the status word (0x379) and 
+\TT{\_in\_port\_1} contains the control register address (0x37A).
+
+It seems that the dongle returns information via the \q{busy} flag at \TT{seg030:00B9}: 
+each bit is stored in the \TT{DI} register, which is returned at the end of the function.
+
+What do all these bytes sent to output port mean?
+Hard to say. Perhaps, commands to the dongle.
+
+But generally speaking, it is not necessary to know: it is easy to solve our task without that knowledge.
+
+Here is the dongle checking routine:
+
+\lstinputlisting[style=customasmx86]{examples/dongles/3/3.lst}
+
+Since the routine can be called very frequently, e.g., before the execution of each important software feature, 
+and accessing the dongle is generally slow (because of the slow printer port and also slow
+\ac{MCU} in the dongle), they probably added a way to skip some dongle checks,
+by checking the current time in the \TT{biostime()} function.
+
+\myindex{\CStandardLibrary!rand()}
+The \TT{get\_rand()} 
+function uses the standard C function:
+
+\lstinputlisting[style=customasmx86]{examples/dongles/3/4.lst}
+
+So the text string is selected randomly, passed into the dongle, and then the result of the hashing 
+is compared with the correct value.
+
+The text strings seem to be constructed randomly as well, during software development.
+
+And this is how the main dongle checking function is called:
+
+\lstinputlisting[style=customasmx86]{examples/dongles/3/5.lst}
+
+Bypassing the dongle is easy, just force the \TT{check\_dongle()} function to always return 0.
+
+For example, by inserting this code at its beginning:
+
+\begin{lstlisting}[style=customasmx86]
+mov ax,0
+retf
+\end{lstlisting}
+
+\myindex{\CStandardLibrary!strcpy()}
+
+The observant reader might recall that the \TT{strcpy()} C function usually requires two pointers in its arguments,
+but we see that 4 values are passed:
+
+\begin{lstlisting}[style=customasmx86]
+seg033:088F 1E                          push    ds
+seg033:0890 68 22 44                    push    offset aTrupcRequiresA ; "This Software Requires a Software Lock\n"
+seg033:0893 1E                          push    ds
+seg033:0894 68 60 E9                    push    offset byte_6C7E0 ; dest
+seg033:0897 9A 79 65 00+                call    _strcpy
+seg033:089C 83 C4 08                    add     sp, 8
+\end{lstlisting}
+
+This is related to MS-DOS' memory model. You can read more about it here: 
+\myref{8086_memory_model}.
+
+So as you may see, \TT{strcpy()} and any other function that take pointer(s) in arguments
+work with 16-bit pairs.
+
+Let's get back to our example.
+\TT{DS} is currently set to the data segment located in the executable,
+that is where the text string is stored.
+
+\myindex{x86!\Instructions!LES}
+
+In the \TT{sent\_pro()} function, each byte of the string is loaded at\\
+\TT{seg030:00EF}: the \TT{LES} instruction
+loads the ES:BX pair simultaneously from the passed argument.
+
+The \MOV at \TT{seg030:00F5} loads the byte from the memory at which the ES:BX pair points.
+
+% TODO rewrite
+%
+%At \TT{seg030:00F2} only a second 16-bit part of address is \glslink{increment}{incremented}.
+%
+%This implies that the string passed to the function cannot be located on the boundary between two data segments.
+

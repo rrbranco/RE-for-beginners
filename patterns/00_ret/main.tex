@@ -2,22 +2,24 @@
 \RU{Простейшая функция}%
 \EN{The simplest Function}%
 \ES{Spanish text here}%
-\PTBR{Brazilian portuguese text here}%
+\PTBR{A função mais simples}%
 }
 
 \RU{Наверное, простейшая из возможных функций это та что возвращает некоторую константу:}%
 \EN{The simplest possible function is arguably one that simply returns a constant value:}
+\PTBR{A função mais simples é indiscutivelmente uma que retorna um valor constante:}
 
-\RU{Вот, например}\EN{Here it is}:
+\RU{Вот, например}\EN{Here it is}\PTBR{Vejamos}:
 
 \lstinputlisting[caption=\EN{\CCpp Code}\RU{Код на \CCpp}]{patterns/00_ret/1.c}
 
 \RU{Скомпилируем её!}
 \EN{Lets compile it!}
+\PTBR{Vamos compilar !}
 
 \section{x86}
 
-\RU{И вот что делает оптимизирующий GCC}\EN{Here's what both the optimizing GCC and MSVC compilers produce on the x86 platform}:
+\RU{И вот что делает оптимизирующий GCC}\EN{Here's what both the optimizing GCC and MSVC compilers produce on the x86 platform}\PTBR{Aqui está o código que ambos, o GCC otimizado e compiladores MSVC, produzem na plataforma x86 }:
 
 \lstinputlisting[caption=\Optimizing GCC/MSVC (\assemblyOutput)]{patterns/00_ret/1.s}
 
@@ -26,8 +28,10 @@
 для передачи возвращаемых значений. Вторая это \RET, которая возвращает управление в вызывающую функцию.}
 \EN{There are just two instructions: the first places the value 123 into the \EAX register, which is used by convention for storing the return
 value and the second one is \RET, which returns execution to the \gls{caller}.}
+\PTBR{Há apenas duas intruções: a primeira coloca o valor 123 dentro do registrador \EAX, que por convencao e utilizado pra armazenar o valor de retorno e a segunda instrução é o \RET, que retorna a execução pro \gls{caller}.}
 \RU{Вызывающая функция возьмет результат из регистра \EAX.}
 \EN{The caller will take the result from the \EAX register.}
+\PTBR{A chamada pegara o resultado do registrador \EAX.}
 
 \ifdefined\IncludeARM
 \section{ARM}
@@ -51,9 +55,11 @@ so the \TT{BX LR} instruction causes execution to jump to that address\EMDASH{}e
 \index{x86!\Instructions!MOV}
 \RU{Нужно отметить, что название инструкции \MOV в x86 и ARM сбивает с толку.}
 \EN{It is worth noting that \MOV is a misleading name for the instruction in both x86 and ARM \ac{ISA}s. }
+%In portuguese misleading can give the notion of Falso Cognato, should we use?
+\EN{Vale notar que a instrução \MOV é um da a impressão errada em ambas as plataformas x86 e ARM \ac{ISA}s. }
 \RU{На самом деле, данные не \IT{перемещаются}, а скорее \IT{копируются}.}
 \EN{The data is not in fact \IT{moved}, but \IT{copied}.}
-
+\PTBR{O dado não é \IT{movido} de fato, mas sim \IT{copiado}.}
 \ifdefined\IncludeMIPS
 \section{MIPS}
 

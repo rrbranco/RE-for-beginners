@@ -1,0 +1,25 @@
+﻿d_max:
+; сохранить входные аргументы в "Register Save Area"
+	sub	sp, sp, #16
+	str	d0, [sp,8]
+	str	d1, [sp]
+; перезагрузить значения
+	ldr	x1, [sp,8]
+	ldr	x0, [sp]
+	fmov	d0, x1
+	fmov	d1, x0
+; D0 - a, D1 - b
+	fcmpe	d0, d1
+	ble	.L76
+; a>b; загрузить D0 (a) в X0
+	ldr	x0, [sp,8]
+	b	.L74
+.L76:
+; a<=b; загрузить D1 (b) в X0
+	ldr	x0, [sp]
+.L74:
+; результат в X0
+	fmov	d0, x0
+; результат в D0
+	add	sp, sp, 16
+	ret

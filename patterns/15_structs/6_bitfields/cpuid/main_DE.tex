@@ -1,0 +1,66 @@
+\subsubsection{CPUID Beispiel}
+Die Sprache \CCpp erlaubt die Definition der exakten Anzahl von Bits für jedes Feld in einem struct.
+Das ist sehr nützlich, wenn man Speicherplatz sparen muss.
+Zum Beispiel genügt ein Bit für eine \Tbool Variable.
+Natürlich ist dieses Vorgehen nicht angebracht, wenn die Geschwindigkeit wichtig ist.
+
+% FIXME!
+% another use of this is to parse binary protocols/packets, for example
+% the definition of struct iphdr in include/linux/ip.h
+
+\newcommand{\FNCPUID}{\footnote{\href{http://go.yurichev.com/17069}{wikipedia}}}
+
+\myindex{x86!\Instructions!CPUID}
+\label{cpuid}
+Betrachten wir das Beispiel des \CPUID\FNCPUID Befehls.
+Dieser Befehl liefert Informationen über die aktuelle CPU und ihre Eigenschaften.
+
+Wenn \EAX vor der Ausführung des Befehls auf 1 gesetzt ist, liefert \CPUID diese Informationen gepackt in das \EAX
+Register zurück:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+3:0 (4 bits)& Schrittweite \\
+7:4 (4 bits) & Modell \\
+11:8 (4 bits) & Familie \\
+13:12 (2 bits) & Prozessortype \\
+19:16 (4 bits) & Erweitertes Modell \\
+27:20 (8 bits) & Erweiterte Familie \\
+\hline
+\end{tabular}
+\end{center}
+
+\newcommand{\FNGCCAS}{\footnote{\href{http://go.yurichev.com/17070}
+{Mehr zum internen GCC Assembler}}}
+MSVC 2010 verfügt über ein \CPUID Makro, aber GCC 4.4.1 nicht.
+Erstellen wir also für uns eine solche Funktion in GCC, indem wir den built-in Assembler\FNGCCAS verwenden.
+
+\lstinputlisting[style=customc]{patterns/15_structs/6_bitfields/cpuid/CPUID.c}
+Nachdem \CPUID die Register \EAX/\EBX/\ECX/\EDX befüllt hat, werden deren Inhalte in das Array \TT{b[]} geschrieben.
+Danach haben wir einen Pointer auf das \TT{CPUID\_1\_EAX} struct und zeigen auf den Wert in \EAX aus dem Array \TT{b[]}.
+
+Mit anderen Worten: wir behandeln einen 32-Bit \Tint wie ein struct.
+Danach lesen wir spezifische Bits aus dem struct.
+
+\myparagraph{MSVC}
+Kompilieren wir das Beispiel in MSVC 2008 mit der Option \Ox:
+
+\lstinputlisting[caption=\Optimizing MSVC 2008,style=customasmx86]{patterns/15_structs/6_bitfields/cpuid/CPUID_msvc_Ox.asm}
+
+\myindex{x86!\Instructions!SHR}
+Der Befehl \TT{SHR} verschiebt den Wert in \EAX um die Anzahl der Bits die überprungen werden müssen, d.h. wir
+ignorieren einige Bits am rechten Rand.
+
+\myindex{x86!\Instructions!AND}
+Der Befehl \AND löscht die nicht benötigten Bits am linken Rand bzw. belässt nur die Bits in \EAX, die wir auch
+benötigen.
+
+\input{patterns/15_structs/6_bitfields/cpuid/olly_DE.tex}
+
+\myparagraph{GCC}
+Versuchen wir es mit GCC 4.4.1 mit der Option \Othree
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.1,style=customasmx86]{patterns/15_structs/6_bitfields/cpuid/CPUID_gcc_O3.asm}
+Fast das gleiche. Das einzig Bemerkenswerte ist, dass GCC die Berechnung von \TT{extended\_model\_id} und
+\TT{extended\_family\_id} in einem Block kombiniert, anstatt sie vor jedem Aufruf von \printf getrennt zu berechnen.

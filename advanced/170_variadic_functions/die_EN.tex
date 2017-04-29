@@ -1,0 +1,27 @@
+\subsection{\IT{vprintf()} function case}
+\myindex{\CStandardLibrary!vprintf}
+\myindex{\CStandardLibrary!va\_list}
+
+Many programmers define their own logging functions which take a printf-like format string + 
+a variable number of arguments.
+
+Another popular example is the die() function, which prints some message and exits.
+
+We need some way to pack input arguments of unknown number and pass them to the \printf function.
+But how?
+
+That's why there are functions with \q{v} in name.
+
+One of them is \IT{vprintf()}: it takes a format-string and a pointer to a variable of type \TT{va\_list}:
+
+\lstinputlisting[style=customc]{\CURPATH/die.c}
+
+By closer examination, we can see that \TT{va\_list} is a pointer to an array.
+Let's compile:
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{\CURPATH/die_MSVC2010_Ox_EN.asm}
+
+We see that all our function does is just taking a pointer to the arguments and
+passing it to \IT{vprintf()}, and that function is treating it like an infinite array of arguments!
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{\CURPATH/die_MSVC2012_x64_Ox_EN.asm}

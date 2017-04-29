@@ -1,0 +1,146 @@
+% TODO proof-reading
+\subsection{Classes}
+
+Simple class:
+
+\begin{lstlisting}[caption=test.java,style=customjava]
+public class test
+{
+        public static int a;
+        private static int b;
+
+        public test()
+        {
+            a=0;
+            b=0;
+        }
+        public static void set_a (int input)
+	{
+		a=input;
+	}
+	public static int get_a ()
+	{
+		return a;
+	}
+	public static void set_b (int input)
+	{
+		b=input;
+	}
+	public static int get_b ()
+	{
+		return b;
+	}
+}
+\end{lstlisting}
+
+The constructor just sets both fields to zero:
+
+
+\begin{lstlisting}
+  public test();
+    flags: ACC_PUBLIC
+    Code:
+      stack=1, locals=1, args_size=1
+         0: aload_0       
+         1: invokespecial #1         // Method java/lang/Object."<init>":()V
+         4: iconst_0      
+         5: putstatic     #2         // Field a:I
+         8: iconst_0      
+         9: putstatic     #3         // Field b:I
+        12: return        
+\end{lstlisting}
+        
+Setter of \TT{a}:
+
+\begin{lstlisting}
+  public static void set_a(int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=1, locals=1, args_size=1
+         0: iload_0       
+         1: putstatic     #2         // Field a:I
+         4: return        
+\end{lstlisting}
+
+Getter of \TT{a}:
+
+\begin{lstlisting}
+  public static int get_a();
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=1, locals=0, args_size=0
+         0: getstatic     #2         // Field a:I
+         3: ireturn       
+\end{lstlisting}
+
+Setter of \TT{b}:
+
+\begin{lstlisting}
+  public static void set_b(int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=1, locals=1, args_size=1
+         0: iload_0       
+         1: putstatic     #3         // Field b:I
+         4: return        
+\end{lstlisting}
+
+Getter of \TT{b}:
+
+\begin{lstlisting}
+  public static int get_b();
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=1, locals=0, args_size=0
+         0: getstatic     #3         // Field b:I
+         3: ireturn       
+\end{lstlisting}
+
+There is no difference in the code which works with public and private fields.
+
+But this type information is present in the \TT{.class} file, 
+and it's not possible to access private fields from everywhere.
+
+
+Let's create an object and call its method:
+
+
+\begin{lstlisting}[caption=ex1.java,style=customjava]
+public class ex1
+{
+	public static void main(String[] args)
+	{
+		test obj=new test();
+		obj.set_a (1234);
+		System.out.println(obj.a);
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=2, args_size=1
+         0: new           #2        // class test
+         3: dup           
+         4: invokespecial #3        // Method test."<init>":()V
+         7: astore_1      
+         8: aload_1       
+         9: pop           
+        10: sipush        1234
+        13: invokestatic  #4        // Method test.set_a:(I)V
+        16: getstatic     #5        // Field java/lang/System.out:Ljava/io/PrintStream;
+        19: aload_1       
+        20: pop           
+        21: getstatic     #6        // Field test.a:I
+        24: invokevirtual #7        // Method java/io/PrintStream.println:(I)V
+        27: return        
+\end{lstlisting}
+
+The \TT{new} instruction creates an object, but doesn't call the constructor (it is called at offset 4).
+
+The \TT{set\_a()} method is called at offset 16.
+
+The \TT{a} field is accessed using the \TT{getstatic} instruction at offset 21.
+

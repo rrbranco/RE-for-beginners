@@ -1,0 +1,52 @@
+\subsubsection{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=IDA,style=customasmARM]{patterns/04_scanf/2_global/ARM.lst}
+
+So, the \TT{x} variable is now global and for this reason located in another segment, namely the data segment (\IT{.data}).
+One could ask, why are the text strings located in the code segment (\IT{.text}) and \TT{x} is located right here?
+Because it is a variable and by definition its value could change. Moreover it could possibly change often.
+While text strings has constant type, they will not be changed, so they are located in the \IT{.text} segment.
+\myindex{\RAM}
+\myindex{\ROM}
+
+The code segment might sometimes be located in a \ac{ROM} chip (keep in mind, we now deal
+with embedded microelectronics, and memory scarcity is common here), and changeable 
+variables~---in \ac{RAM}.
+
+It is not very economical to store constant variables in RAM when you have ROM.
+
+Furthermore, constant variables in RAM must be initialized, because after powering on, the RAM, obviously, contains random information.
+
+\myindex{Linker}
+
+Moving forward, we see a pointer to the \TT{x} (\TT{off\_2C}) variable in the code segment, and that all
+operations with the variable occur via this pointer.
+
+That is because the \TT{x} variable could be located somewhere far from this particular code fragment, so its address
+must be saved somewhere in close proximity to the code.
+\myindex{ARM!\Instructions!LDR}
+
+The \INS{LDR} instruction in Thumb mode can only address variables in a range of 1020 bytes from its location, 
+
+and in in ARM-mode~---variables in range of $\pm{}4095$ bytes.
+
+And so the address of the \TT{x} variable
+must be located somewhere in close proximity, because there is no guarantee that the linker would be able to accommodate the variable somewhere nearby the code, it may well be even in an external memory chip!
+
+\myindex{\CLanguageElements!const}
+\myindex{\ROM}
+
+One more thing: if a variable is declared as \IT{const}, the Keil compiler allocates it in 
+the \TT{.constdata} segment.
+
+Perhaps thereafter, the linker could place this segment in ROM too, along with the code segment.
+
+\subsubsection{ARM64}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1 ARM64,numbers=left,style=customasmARM]{patterns/04_scanf/2_global/ARM64_GCC491_O0_EN.s}
+
+\myindex{ARM!\Instructions!ADRP/ADD pair}
+
+In this case the $x$ variable is declared as global and its address is calculated using 
+the \INS{ADRP}/\INS{ADD} instruction pair (lines 21 and 25).
+

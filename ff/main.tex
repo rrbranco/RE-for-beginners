@@ -1,11 +1,31 @@
-﻿\part{\RU{Примеры разбора закрытых (proprietary) форматов файлов}\EN{Examples of reversing proprietary file formats}\ESph{}\PTBRph{}\PLph{}\ITAph{}\DEph{}}
+\chapter{\RU{Примеры разбора закрытых (proprietary) форматов файлов}\EN{Examples of reversing proprietary file formats}\ESph{}\PTBRph{}\PLph{}\ITAph{}
+\DE{Beispiele für das Reverse Engineering proprietärer Dateiformate}
+\NLph{}}
 
-% chapters
+% sections
 \input{ff/XOR/main}
-\ifdefined\IncludeMSDOS
-\input{ff/millenium/main}
-\fi
-\ifdefined\IncludeOracle
-\input{ff/Oracle_SYM/main}
-\input{ff/Oracle_MSB/main}
-\fi
+\EN{\input{ff/entropy/main_EN}}
+\EN{\input{ff/millenium/main_EN}}\RU{\input{ff/millenium/main_RU}}
+\EN{\input{ff/fortune/main_EN}}
+\EN{\input{ff/Oracle_SYM/main_EN}}\RU{\input{ff/Oracle_SYM/main_RU}}
+\EN{\input{ff/Oracle_MSB/main_EN}}\RU{\input{ff/Oracle_MSB/main_RU}}
+
+\ifdefined\ENGLISH
+\section{\Exercise}
+
+Try to reverse engineer of any binary files of your favorite game, including high-score files, resources, etc.
+
+There are also binary files with known structure: utmp/wtmp files.
+
+The EXIF header in JPEG file is documented, but you can try to understand its structure without help, just shoot photos
+at various date/time, places, and try to find date/time and GPS location in EXIF.
+Try to patch GPS location, upload JPEG file to Facebook and see, how it will put your picture on the map.
+
+Try to patch any information in MP3 file and see how your favorite MP3-player will react.
+
+\section{Further reading}
+
+\href{https://yurichev.com/mirrors/SSTIC2016-Article-cryptanalyse_en_boite_noire_de_chiffrement_proprietaire-capillon.pdf}{Pierre Capillon -- Black-box cryptanalysis of home-made encryption algorithms: a practical case study}.
+
+\fi % ENGLISH
+

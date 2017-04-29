@@ -1,0 +1,38 @@
+\subsection{Verschachtelte structs}
+Wir betrachten nun Situationen, in denen ein struct innerhalb eines anderen definiert ist.
+
+\lstinputlisting[style=customc]{patterns/15_structs/5_nested/nested.c}
+Beide Felder von \TT{inner\_struct} werden hier zwischen den Feldern a,b und d,e von \TT{outer\_struct} platziert.
+
+Kompilieren wir mit (MSVC 2010):
+
+\lstinputlisting[caption=\Optimizing MSVC 2010 /Ob0,style=customasmx86]{patterns/15_structs/5_nested/nested_msvc.asm}
+Eine Kuriosität ist hier, dass wir, wenn wir in den Assemblercode schauen, nicht einmal feststellen können, dass hier
+ein struct innerhalb eines anderen verwendet wurde! Durch diese Beobachtung können wir sagen, dass verschachtelte
+structs in lineare oder eindimensionale structs ausgefaltet werden.
+
+Wenn wir aber die Deklaration von \TT{struct inner\_struct c;} durch \TT{struct inner\_struct *c;} ersetzen (also einen
+Pointer verwenden), sieht die Sache ganz anders aus.
+% FIXME1: нарисовать вложенную структуру и развернутую
+
+\clearpage
+\subsubsection{\olly}
+\myindex{\olly}
+Laden wir dieses Beispiel in \olly und schauen uns \TT{outer\_struct} im Speicher an:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/15_structs/5_nested/olly.png}
+\caption{\olly: vor der Ausführung von \printf}
+\label{fig:nested_olly}
+\end{figure}
+Die Werte werden wie folgt im Speicher abgelegt:
+\begin{itemize}
+\item \IT{(outer\_struct.a)} (byte) 1 + 3 Byte mit zufälligen Werten;
+\item \IT{(outer\_struct.b)} (32-bit word) 2;
+\item \IT{(inner\_struct.a)} (32-bit word) 0x64 (100);
+\item \IT{(inner\_struct.b)} (32-bit word) 0x65 (101);
+\item \IT{(outer\_struct.d)} (byte) 3 + 3 Byte mit zufälligen Werten;
+\item \IT{(outer\_struct.e)} (32-bit word) 4.
+\end{itemize}
+

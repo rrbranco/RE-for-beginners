@@ -1,0 +1,23 @@
+my_atoi:
+; load input character into EDX
+	movsx	edx, BYTE PTR [rdi]
+; EAX is allocated for "rt" variable
+	xor	eax, eax
+; exit, if loaded character is null byte
+	test	dl, dl
+	je	.L4
+.L3:
+	lea	eax, [rax+rax*4]
+; EAX=RAX*5=rt*5
+; shift pointer to the next character:
+	add	rdi, 1
+	lea	eax, [rdx-48+rax*2]
+; EAX=input character - 48 + RAX*2 = input character - '0' + rt*10
+; load next character:
+	movsx	edx, BYTE PTR [rdi]
+; goto loop begin, if loaded character is not null byte
+	test	dl, dl
+	jne	.L3
+	rep ret
+.L4:
+	rep ret

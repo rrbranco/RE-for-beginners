@@ -1,0 +1,79 @@
+\section{8086 memory model}
+\myindex{Intel!8086!Memory model}
+\myindex{MS-DOS}
+\label{8086_memory_model}
+
+When dealing with 16-bit programs for MS-DOS or Win16
+(\myref{dongle_16bit_dos} or \myref{win16_near_far_pointers}),
+we can see that the pointers consist of two 16-bit values.
+What do they mean? Oh yes, that is another weird MS-DOS and 8086 artifact.
+
+8086/8088 was a 16-bit CPU, but was able to address 20-bit address in RAM 
+(thus being able to access 1MB of external memory).
+
+The external memory address space was divided between \ac{RAM} (640KB max),
+\ac{ROM}, windows for video memory, EMS cards, \etc{}.
+
+Let's also recall that 8086/8088 was in fact an inheritor of the 8-bit 8080 CPU.
+
+The 8080 has a 16-bit memory space, i.e., it was able to address only 64KB.
+
+And probably because of reason of old software porting\footnote{The author is not 100\% sure here},
+8086 can support many 64KB windows simultaneously, placed
+within the 1MB address space.
+
+This is some kind of a toy-level virtualization.
+\myindex{x86!\Registers!CS}
+\myindex{x86!\Registers!DS}
+\myindex{x86!\Registers!ES}
+\myindex{x86!\Registers!SS}
+
+All 8086 registers are 16-bit, so to address more, special segment registers (CS, DS, ES, SS) were
+introduced.
+
+Each 20-bit pointer is calculated using the values from a segment register and 
+an address register pair (e.g. DS:BX) as follows:
+
+\begin{center}
+$real\_address = (segment\_register \ll 4) + address\_register$
+\end{center}
+
+For example, the graphics (\ac{EGA}, \ac{VGA}) video \ac{RAM} window on old IBM PC-compatibles 
+has a size of 64KB.
+
+To access it, a value of 0xA000 has to be stored in one of the segment registers, e.g. into DS.
+
+Then DS:0 will address the first byte of video \ac{RAM} and DS:0xFFFF ~--- the last byte of RAM.
+
+The real address on the 20-bit address bus, however, will range from 0xA0000 to 0xAFFFF.
+
+The program may contain hard-coded addresses like 0x1234, but the \ac{OS} may need to load the program at arbitrary
+addresses, so it recalculates the segment register values in a way that the program does not have to care 
+where it's placed in the RAM.
+
+So, any pointer in the old MS-DOS environment in fact consisted of the segment address and the address inside
+segment, i.e., two 16-bit values. 20-bit was enough for that, though, but we needed to recalculate
+the addresses very often: passing more information on the stack seemed a better space/convenience balance.
+
+By the way, because of all this it was not possible to allocate a memory block larger than 64KB.
+
+\myindex{Intel!80286}
+\myindex{Intel!80386}
+
+The segment registers were reused at 80286 as selectors, serving a different function.
+
+\myindex{MS-DOS!DOS extenders}
+
+When the 80386 CPU and computers with bigger \ac{RAM} were introduced,
+MS-DOS was still popular, so the DOS extenders emerged: these were in fact
+a step toward a \q{serious} \ac{OS},
+switching the CPU in protected mode and providing much better memory \ac{API}s for the programs 
+which still needed to run under MS-DOS.
+
+Widely popular examples include DOS/4GW (the DOOM video game was compiled for it), Phar Lap, PMODE.
+\par
+\myindex{Windows!Windows 3.x}
+\myindex{Windows!Win32}
+
+By the way, the same way of addressing memory was used in the 16-bit line of Windows 3.x, before Win32.
+

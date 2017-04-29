@@ -1,0 +1,22 @@
+\subsection{Popular mistake}
+
+It's a very popular mistake (and/or typo) to pass value of \IT{x} instead of pointer to \IT{x}:
+
+\lstinputlisting[style=customc]{patterns/04_scanf/error.c}
+
+So what happens here?
+\IT{x} is not uninitialized and contains some random noise from local stack.
+When \scanf called, it takes string from user, parses it into number and tries to write it into \IT{x}, treating
+it as an address in memory.
+But there is a random noise, so \scanf will try to write at random address.
+Most likely, the process will crash.
+
+\myindex{0xCCCCCCCC}
+\myindex{0x0BADF00D}
+Interestingly enough, some \ac{CRT} libraries in debug build, put visually distinctive patterns
+into memory just allocated, like 0xCCCCCCCC or 0x0BADF00D and so on.
+In this case, \IT{x} may contain 0xCCCCCCCC, and \scanf would try to write at address 0xCCCCCCCC.
+And if you'll notice that something in your process tries to write at address 0xCCCCCCCC, you'll know
+that uninitialized variable (or pointer) gets used without prior initialization.
+This is better than as if newly allocated memory is just cleared.
+

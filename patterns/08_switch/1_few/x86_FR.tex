@@ -1,0 +1,105 @@
+\subsubsection{x86}
+
+\myparagraph{MSVC \NonOptimizing}
+
+Résultat (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/08_switch/1_few/few_msvc.asm}
+
+Notre fonction avec quelques cas dans switch() est en fait analogue à cette construction:
+
+\lstinputlisting[label=switch_few_ifelse,style=customc]{patterns/08_switch/1_few/few_analogue.c}
+
+\myindex{\CLanguageElements!switch}
+\myindex{\CLanguageElements!if}
+
+Si nous utilisons switch() avec quelques cas, il est impossible de savoir si il y
+avait un vrai switch() dans le code source, ou un ensemble de directives if().
+\myindex{\SyntacticSugar}
+
+Ceci implique que switch() est comme un sucre syntaxique pour un grand nombre de if()
+imbriqués.
+
+Il n'y a rien de particulièrement nouveau pour nous dans le code généré, à l'exception
+que le compilateur déplace la variable d'entrée $a$ dans une variable locale temporaire
+\TT{tv64} \footnote{Les variables locales sur la pile sont préfixées avec \TT{tv}---c'est
+ainsi que MSVC appelle les variables internes dont il a besoin}.
+
+Si nous compilons ceci avec GCC 4.4.1, nous obtenons presque le même résultat,
+même avec le plus haut niveau d'optimisation (\Othree option).
+
+\myparagraph{MSVC \Optimizing}
+
+% TODO separate various kinds of \TT
+% idea: enclose command lines in a specific environment, like \cmdline{} 
+% assembly instructions in \asm{} (now both \TT and \q{} are used),
+% variables in,  like \var{}
+% messages (string constants) in something else, like \strconst
+% to separate them all. Now they all use \TT, which is not best
+% \INS{} for all instructions including operands? --DY
+Maintenant compilons avec l'optimisation dans MSVC (\Ox): \TT{cl 1.c /Fa1.asm /Ox}
+
+\label{JMP_instead_of_RET}
+\lstinputlisting[caption=MSVC,style=customasmx86]{patterns/08_switch/1_few/few_msvc_Ox.asm}
+
+Ici, nous voyons quelques hacks moches.
+
+\myindex{x86!\Instructions!JZ}
+\myindex{x86!\Instructions!JE}
+\myindex{x86!\Instructions!SUB}
+
+Premièrement: la valeurs de $a$ est mise dans \EAX et 0 en est soustrait. Ca semble
+absurde, mais cela est fait pour vérifier si la valeur dans \EAX est 0. Si oui, le
+flag \ZF est mis (e.g. soustraire de 0 est 0) et le premier saut conditionnel \JE
+(\IT{Jump if Equal} saut si égal ou synonyme \JZ~---\IT{Jump if Zero} saut si zéro)
+va être effectué et le déroulement du programme passera au label \TT{\$LN4@f}, oú
+le message \TT{'zero'} est affiché.
+Si le premier saut n'est pas effectué, 1 est soustrait de la valeur d'entrée et si
+à une étape le résultat est 0, le saut correspondant sera effectué.
+
+Et si aucun saut n'est exécuté, l'exécution passera au \printf avec comme argument
+la chaîne \TT{'something unknown'}.
+
+\label{jump_to_last_printf}
+\myindex{\Stack}
+
+Deuxièmement: nous voyons quelque chose d'inhabituel pour nous: un pointeur sur une
+chaîne est mis dans la variable $a$ et ensuite \printf est appelé non pas par \CALL,
+mais par \JMP. Il y a une explication simple à cela: l'\glslink{caller}{appelant}
+pousse une valeur sur la pile et appelle notre fonction via \CALL.
+\CALL lui même pousse l'adresse de retour (\ac{RA}) sur la pile et fait un saut
+inconditionnel à l'adresse de notre fonction.
+Notre fonction, à tout moment de son exécution (car elle ne contient pas d'instruction
+qui modifie le pointeur de pile) à le schéma suivant pour sa pile:
+
+\begin{itemize}
+\item\ESP---pointe sur \ac{RA}
+\item\TT{ESP+4}---pointe sur la variable $a$
+\end{itemize}
+
+D'un autre côté, lorsque nous appelons \printf ici nous avons exactement la même
+disposition de pile, excepté pour le premier argument de \printf, qui doit pointer
+sur la chaîne. Et c'est ce que fait notre code.
+
+Il remplace le premier argument de la fonction par l'adresse de la chaîne et saute
+à \printf, comme si nous n'avions pas appelé notre fonction \ttf, mais directement
+\printf.
+\printf affiche la chaîne sur la \glslink{stdout}{sortie standard} et ensuite exécute
+l'instruction \RET qui POPs \ac{RA} de la pile et l'exécution est renvoyée non pas
+à \ttf mais plutôt à l'\glslink{caller}{appelant} de \ttf, ignorant la fin de la
+fonction \ttf.
+
+\myindex{\CStandardLibrary!longjmp()}
+\newcommand{\URLSJ}{\href{http://go.yurichev.com/17121}{wikipedia}}
+
+% TODO \myref{}
+Tout ceci est possible car \printf est appeléi, dans tous les cas, tout à la fin
+de la fonction \ttf.
+Dans un certain sens, c'est similaire à la fonction \TT{longjmp()}\footnote{\URLSJ}.
+Et bien sûr, c'est fait dans un but de vitesse d'exécution.
+
+Un cas similaire avec le compilateur ARM est décrit dans la section \q{\PrintfSeveralArgumentsSectionName},
+ici~(\myref{ARM_B_to_printf}).
+
+\input{patterns/08_switch/1_few/olly_FR.tex}
+

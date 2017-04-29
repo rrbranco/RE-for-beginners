@@ -1,0 +1,71 @@
+\subsection{x64}
+
+\myindex{x86-64}
+
+The story is a bit different in x86-64. Function arguments (first 4 or first 6 of them) 
+are passed in registers i.e. the \gls{callee} reads them from registers instead of reading them from the stack.
+
+\subsubsection{MSVC}
+
+\Optimizing MSVC:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{patterns/05_passing_arguments/x64_MSVC_Ox_EN.asm}
+
+As we can see, the compact function \ttf takes all its arguments from the registers.
+
+The \LEA instruction here is used for addition,
+apparently the compiler considered it faster than \TT{ADD}.
+\myindex{x86!\Instructions!LEA}
+
+\LEA is also used in the \main function to prepare the first and third \ttf arguments. The compiler
+must have decided that this would work faster than the usual way of loading values into a register using \MOV instruction.
+
+Let's take a look at the non-optimizing MSVC output:
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/05_passing_arguments/x64_MSVC_IDA_EN.asm}
+
+It looks somewhat puzzling because all 3 arguments from the registers are saved to the stack for some reason.
+\myindex{Shadow space}
+\label{shadow_space}
+This is called \q{shadow space}
+\footnote{\href{http://go.yurichev.com/17256}{MSDN}}: 
+every Win64 may (but is not required to) save all 4 register values there.
+This is done for two reasons: 
+1) it is too lavish to allocate a whole register (or even 4 registers) for an input argument,
+so it will be accessed via stack;
+2) the debugger is always aware where to find the function arguments at a break
+\footnote{\href{http://go.yurichev.com/17257}{MSDN}}.
+
+So, some large functions can save their input arguments in the \q{shadows space} if they want to use them
+during execution, but some small functions (like ours) may not do this.
+
+It is a \gls{caller} responsibility to allocate \q{shadow space} in the stack.
+
+\subsubsection{GCC}
+
+\Optimizing GCC generates more or less understandable code:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.6 x64,style=customasmx86]{patterns/05_passing_arguments/x64_GCC_O3_EN.s}
+
+\NonOptimizing GCC:
+
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{patterns/05_passing_arguments/x64_GCC_EN.s}
+
+\myindex{Shadow space}
+
+There are no \q{shadow space} requirements in System V *NIX (\SysVABI), but the \gls{callee} may want to save
+its arguments somewhere in case of registers shortage.
+
+\subsubsection{GCC: uint64\_t instead of int}
+
+
+Our example works with 32-bit \Tint, that is why 32-bit register parts are used (prefixed by \TT{E-}).
+
+It can be altered slightly in order to use 64-bit values:
+
+\lstinputlisting[style=customc]{patterns/05_passing_arguments/ex64.c}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.6 x64,style=customasmx86]{patterns/05_passing_arguments/ex64_GCC_O3_IDA_EN.asm}
+
+The code is the same, but this time the \IT{full size} registers (prefixed by \TT{R-}) are used.
+

@@ -1,0 +1,113 @@
+\subsection{Трюк с \IT{LD\_PRELOAD} в Linux}
+
+\myindex{LD\_PRELOAD}
+\label{ld_preload}
+
+Это позволяет загружать свои динамические библиотеки перед другими, даже перед системными, такими как libc.so.6.
+
+Что в свою очередь, позволяет \q{подставлять} написанные нами функции перед оригинальными из системных библиотек.
+
+Например, легко перехватывать все вызовы к time(), read(), write(), итд. \\
+\\
+\myindex{uptime}
+Попробуем узнать, сможем ли мы обмануть утилиту \IT{uptime}.
+Как известно, она сообщает, как долго компьютер работает.
+\myindex{strace}
+При помощи strace(\myref{strace}), можно увидеть, что эту информацию утилита получает из файла \TT{/proc/uptime}:
+
+\begin{lstlisting}
+$ strace uptime 
+...
+open("/proc/uptime", O_RDONLY)          = 3
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "416166.86 414629.38\n", 2047)  = 20
+...
+\end{lstlisting}
+
+Это не реальный файл на диске, это виртуальный файл, содержимое которого генерируется на лету в ядре Linux.
+
+Там просто два числа:
+
+\begin{lstlisting}
+$ cat /proc/uptime
+416690.91 415152.03
+\end{lstlisting}
+
+Из Wikipedia, можно узнать
+\footnote{\href{http://go.yurichev.com/17043}{wikipedia}}:
+
+\begin{framed}
+\begin{quotation}
+The first number is the total number of seconds the system has been up.
+The second number is how much of that time the machine has spent idle, in seconds.
+\end{quotation}
+\end{framed}
+
+\myindex{\CStandardLibrary!open()}
+\myindex{\CStandardLibrary!read()}
+\myindex{\CStandardLibrary!close()}
+Попробуем написать свою динамическую библиотеку, в которой будет open(), read(), close() с нужной нам функциональностью.
+
+Во-первых, наш open() будет сравнивать имя открываемого файла с тем что нам нужно, и если да, 
+то будет запоминать дескриптор открытого файла.
+
+Во-вторых, read(), если будет вызываться для этого дескриптора, будет подменять вывод,
+а в остальных случаях, будет вызывать настоящий read() из libc.so.6.
+А также close(), будет следить, закрывается ли файл за которым мы следим.
+
+\myindex{dlopen()}
+\myindex{dlsym()}
+Для того чтобы найти адреса настоящих функций в libc.so.6, используем dlopen() и dlsym().
+
+Нам это нужно, потому что нам нужно передавать управление \q{настоящим} функциями.
+
+\myindex{\CStandardLibrary!strcmp()}
+С другой стороны, если бы мы перехватывали, скажем, strcmp(), и следили бы за всеми сравнениями строк в программе, 
+то, наверное, strcmp() можно было бы и самому реализовать, не пользуясь настоящей функцией
+\footnote{Например, посмотрите как обеспечивается простейший перехват strcmp() в статье
+\footnote{\href{http://go.yurichev.com/17143}{yurichev.com}} написанной Yong Huang}, так было бы проще.
+
+\lstinputlisting[style=customc]{OS/LD_PRELOAD/fool_uptime.c}
+( \href{https://github.com/dennis714/RE-for-beginners/blob/master/OS/LD_PRELOAD/fool_uptime.c}{Исходный код на GitHub} )
+% FIXME go.yurichev.com...
+
+Компилируем как динамическую библиотеку:
+
+\begin{lstlisting}
+gcc -fpic -shared -Wall -o fool_uptime.so fool_uptime.c -ldl
+\end{lstlisting}
+
+Запускаем \IT{uptime}, подгружая нашу библиотеку перед остальными:
+
+\begin{lstlisting}
+LD_PRELOAD=`pwd`/fool_uptime.so uptime
+\end{lstlisting}
+
+Видим такое:
+
+\begin{lstlisting}
+ 01:23:02 up 24855 days,  3:14,  3 users,  load average: 0.00, 0.01, 0.05
+\end{lstlisting}
+
+Если переменная окружения \IT{LD\_PRELOAD} 
+будет всегда указывать на путь и имя файла нашей библиотеки, то она будет
+загружаться для всех запускаемых программ.  \\
+\\
+Еще примеры:
+
+\begin{itemize}
+\item
+Перехват time() в Sun Solaris \href{http://go.yurichev.com/17144}{yurichev.com}
+
+\item
+Очень простой перехват strcmp() (Yong Huang) 
+\url{http://go.yurichev.com/17143}
+
+\item
+Kevin Pulo --- Fun with LD\_PRELOAD. Много примеров и идей.
+\href{http://go.yurichev.com/17145}{yurichev.com}
+
+\item
+Перехват функций работы с файлами для компрессии и декомпрессии файлов на лету (zlibc). \url{http://go.yurichev.com/17146}
+
+\end{itemize}

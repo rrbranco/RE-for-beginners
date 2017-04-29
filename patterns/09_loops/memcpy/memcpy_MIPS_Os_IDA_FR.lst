@@ -1,0 +1,28 @@
+my_memcpy:
+; sauter §à§ la partie test de la boucle:
+                b       loc_14
+; initialiser le compteur (i) §à§ 0
+; il se trouvera toujours dans $v0:
+                move    $v0, $zero ; slot de §délai§ de branchement
+
+loc_8:                                   # CODE XREF: my_memcpy+1C
+; charger l'octet non-§signé à§ l'adresse $t0 dans $v1:
+                lbu     $v1, 0($t0)
+; §incrémenter§ le compteur (i):
+                addiu   $v0, 1
+; stocker l'octet en $a3
+                sb      $v1, 0($a3)
+
+loc_14:                                  # CODE XREF: my_memcpy
+; tester si le compteur (i) dans $v0 est toujours §inférieur§ au 3§ème§ argument de la fonction ("cnt" dans $a2):
+                sltu    $v1, $v0, $a2
+; former l'adresse de l'octet dans le bloc source:
+                addu    $t0, $a1, $v0
+; $t0 = $a1+$v0 = src+i
+; sauter au corps de la boucle  si le compteur est toujours §inférieur à§ "cnt":
+                bnez    $v1, loc_8
+; former l'adresse de l'octet dans le bloc de destination ($a3 = $a0+$v0 = dst+i):
+                addu    $a3, $a0, $v0 ; slot de §délai§ de branchement
+; terminer si BNEZ n'a pas §exécuté de saut§:
+                jr      $ra
+                or      $at, $zero ; slot de §délai§ de branchement, NOP

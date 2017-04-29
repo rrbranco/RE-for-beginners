@@ -1,0 +1,37 @@
+\subsubsection{ARM}
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/15_structs/4_packing/packing_Keil_thumb.asm}
+Wir sehen, dass hier ein struct anstelle eines Pointers auf ein struct übergeben wird und da die ersten vier
+Funktionsargumente in ARM über Register übergeben werden, werden die Felder des structs mittels \TT{R0-R3} übergeben.
+
+\myindex{ARM!\Instructions!LDRB}
+\myindex{x86!\Instructions!MOVSX}
+\TT{LDRB} lädt ein Byte aus dem Speicher und erweitert es unter Berücksichtigung des Vorzeichens auf 32 Bit.
+Dies entspricht \MOVSX in x86. 
+Hier wird der Befehl verwendet, um die Felder $a$ und $a$ des structs zu laden.
+
+\myindex{Funktionsepilog}
+Eine weitere Sache, die ins Auge sticht, ist, dass anstelle eines Funktionsepilogs ein Sprung zum Epilog einer anderen
+Funktion vorliegt.
+Bei der anderen handelt es sich um eine komplett unterschiedliche Funktion, die in keiner Weise mit unserer
+zusammenhängt, aber denselben Epilog hat (möglicherweise, da diese ebenfalls 5 lokale Variablen enthält ($5*4=0x14$)).
+
+Außerdem befindet sie sich im Code in der Nähe (man vergleiche die Adressen).
+
+Tatsächlich spielt es auch keine Rolle, welcher Epilog ausgeführt wird, solange dieser wie gewünscht funktioniert.
+
+Offensichtlich hat Keil aus ökonomischen Gründen entschieden, einen Teil der anderen Funktion wiederzuverwenden.
+
+Der Epilog benötigt 4 Bytes---während der Sprung nur 2 verbraucht.
+
+\myparagraph{ARM + \OptimizingXcodeIV (\ThumbTwoMode)}
+
+\lstinputlisting[caption=\OptimizingXcodeIV (\ThumbTwoMode),style=customasmARM]{patterns/15_structs/4_packing/packing_Xcode_thumb.asm}
+
+\myindex{ARM!\Instructions!SXTB}
+\myindex{x86!\Instructions!MOVSX}
+\TT{SXTB} (\IT{Signed Extend Byte}) ist analog zu \MOVSX in x86.
+Der ganze Rest ist identisch.
+

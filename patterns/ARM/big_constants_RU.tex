@@ -1,0 +1,129 @@
+﻿\subsection{Загрузка констант в регистр}
+\label{ARM_big_constants}
+
+\subsubsection{32-битный ARM}
+\label{ARM_big_constants_loading}
+
+Как мы уже знаем, все инструкции имеют длину в 4 байта в режиме ARM и 2 байта в режиме Thumb.
+
+Как в таком случае записать в регистр 32-битное число, если его невозможно закодировать
+внутри одной инструкции?
+
+Попробуем:
+
+\begin{lstlisting}[style=customc]
+unsigned int f()
+{
+	return 0x12345678;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[caption=GCC 4.6.3 -O3 \ARMMode,style=customasmARM]
+f:
+        ldr     r0, .L2
+        bx      lr
+.L2:
+        .word   305419896 ; 0x12345678
+\end{lstlisting}
+
+Т.е., значение \TT{0x12345678} просто записано в памяти отдельно и загружается, если нужно.
+
+Но можно обойтись и без дополнительного обращения к памяти.
+
+\begin{lstlisting}[caption=GCC 4.6.3 -O3 -march{=}armv7-a (\ARMMode),style=customasmARM]
+movw    r0, #22136      ; 0x5678
+movt    r0, #4660       ; 0x1234
+bx      lr
+\end{lstlisting}
+
+Видно, что число загружается в регистр по частям, в начале младшая часть 
+(при помощи инструкции \INS{MOVW}), затем старшая (при помощи \INS{MOVT}).
+
+Следовательно, нужно 2 инструкции в режиме ARM, чтобы записать 32-битное число в регистр.
+
+Это не так уж и страшно, потому что в реальном коде не так уж и много констант (кроме 0 и 1).
+
+Значит ли это, что это исполняется медленнее чем одна инструкция, как две инструкции?
+
+Вряд ли, наверняка современные процессоры ARM наверняка умеют распознавать такие 
+последовательности и исполнять их быстро.
+
+А \IDA легко распознает подобные паттерны в коде и дизассемблирует эту функцию как:
+
+\begin{lstlisting}[style=customasmARM]
+MOV    R0, 0x12345678
+BX     LR
+\end{lstlisting}
+
+\subsubsection{ARM64}
+
+\begin{lstlisting}[style=customc]
+uint64_t f()
+{
+	return 0x12345678ABCDEF01;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[caption=GCC 4.9.1 -O3,style=customasmARM]
+mov	x0, 61185   ; 0xef01
+movk	x0, 0xabcd, lsl 16
+movk	x0, 0x5678, lsl 32
+movk	x0, 0x1234, lsl 48
+ret
+\end{lstlisting}
+
+\myindex{ARM!\Instructions!MOVK}
+\TT{MOVK} означает \q{MOV Keep}, т.е. она записывает 16-битное значение в регистр, не трогая
+при этом остальные биты.
+\myindex{ARM!Optional operators!LSL}
+Суффикс \TT{LSL} сдвигает значение в каждом случае влево на 16, 32 и 48 бит. Сдвиг происходит
+перед загрузкой.
+Таким образом, нужно 4 инструкции, чтобы записать в регистр 64-битное значение.
+
+\myparagraph{Записать числа с плавающей точкой в регистр}
+
+Некоторые числа можно записывать в D-регистр при помощи только одной инструкции.
+
+Например:
+
+\begin{lstlisting}[style=customc]
+double a()
+{
+	return 1.5;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[caption=GCC 4.9.1 -O3 + objdump,style=customasmARM]
+0000000000000000 <a>:
+   0:   1e6f1000        fmov    d0, #1.500000000000000000e+000
+   4:   d65f03c0        ret
+\end{lstlisting}
+
+Число $1.5$ действительно было закодировано в 32-битной инструкции.
+
+Но как?
+\myindex{ARM!\Instructions!FMOV}
+В ARM64, инструкцию \TT{FMOV} есть 8 бит для кодирования некоторых чисел с плавающей запятой.
+
+В \ARMSixFourRefURL алгоритм называется \TT{VFPExpandImm()}.
+
+\myindex{minifloat}
+Это также называется \IT{minifloat}\footnote{\href{http://go.yurichev.com/17139}{wikipedia}}.
+Мы можем попробовать разные: $30.0$ и $31.0$ компилятору удается закодировать, а $32.0$ уже нет, для него
+приходится выделять 8 байт в памяти и записать его там в формате IEEE 754:
+
+\begin{lstlisting}[style=customc]
+double a()
+{
+	return 32;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[caption=GCC 4.9.1 -O3,style=customasmARM]
+a:
+	ldr	d0, .LC0
+	ret
+.LC0:
+	.word	0
+	.word	1077936128
+\end{lstlisting}

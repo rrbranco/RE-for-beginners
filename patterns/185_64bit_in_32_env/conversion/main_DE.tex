@@ -1,0 +1,34 @@
+\subsection{32-Bit-Werte in 64-Bit-Werte umwandeln}
+\label{subsec:sign_extending_32_to_64}
+
+\lstinputlisting[style=customc]{patterns/185_64bit_in_32_env/conversion/4.c}
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012,style=customasmx86]{patterns/185_64bit_in_32_env/conversion/MSVC2012_Ox.asm}
+Hier müssen wir einen vorzeichenbehafteten 32-Bit-Wert in einen 64-Bit-Wert mit Vorzeichen umwandeln.
+Vorzeichenlose Werte werden ganz einfach umgewandelt: alle Bits im höheren Teil werden auf 0 gesetzt.
+Bei Werten mit Vorzeichen funktioniert diese Methode nicht: das Vorzeichen muss in den höheren Teil des
+32-Bit-Ergebnisses kopiert werden.
+\myindex{x86!\Instructions!CDQ}
+Der Befehl \INS{CDQ} übernimmt hier diese Aufgabe. Er nimmt seinen Eingabewert aus \EAX, erweitert ihn auf 64 Bit und
+speichert das Ergebnis im Registerpaar \EDX/\EAX.
+Mit anderen Worten: \INS{CDQ} extrahiert das Vorzeichen aus \EAX (dies ist das MSB in \EAX) und setzt je nach Wert des
+Vorzeichens alle 32 Bits in \EDX auf 0 oder 1.
+Dieser Befehl ähnelt dem Befehl \MOVSX.
+
+\subsubsection{ARM}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/185_64bit_in_32_env/conversion/Keil_ARM_O3.s}
+Keil für ARM geht anders vor: er verschiebt den Eingabewert um 31 Bits nach rechts.
+Wie wir wissen ist das Vorzeichenbit das \ac{MSB} und die arithmetische Verschiebung kopiert das Vorzeichenbit in die
+ausgeschobenen Bits. Nach Ausführung von \q{ASR r1,r0,\#31} enthält \Reg{1} also 0xFFFFFFFF, falls der Eingabewert
+negativ war und ansonsten 0.
+\Reg{1} enthält den höheren Teil des resultierenden 64-Bit-Wertes.
+Mit anderen Worten: dieser Code kopiert das \ac{MSB} (Vorzeichenbit) vom Eingabewert in \Reg{0} in alle Bits der höheren
+32 Bits des Ergebnisses.
+
+\subsubsection{MIPS}
+GCC für MIPS erzeugt das gleich wie Keil für ARM mode:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/185_64bit_in_32_env/conversion/MIPS_O3_IDA.lst}

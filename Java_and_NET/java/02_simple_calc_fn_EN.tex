@@ -1,0 +1,215 @@
+% TODO proof-reading
+\subsection{Simple calculating functions}
+
+Let's continue with a simple calculating functions.
+
+\begin{lstlisting}[style=customjava]
+public class calc
+{
+	public static int half(int a)
+	{
+		return a/2;
+	}
+}
+\end{lstlisting}
+
+Here's the output when the \INS{iconst\_2} instruction is used:
+
+
+\begin{lstlisting}
+  public static int half(int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: iload_0       
+         1: iconst_2      
+         2: idiv          
+         3: ireturn       
+\end{lstlisting}
+         
+\INS{iload\_0} takes the zeroth function argument and pushes it to the stack.
+
+\INS{iconst\_2} pushes 2 in the stack.
+After the execution of these two instructions, this is how stack looks like:
+
+
+% FIXME: TikZ
+\begin{lstlisting}
+      +---+
+TOS ->| 2 |
+      +---+
+      | a |
+      +---+
+\end{lstlisting}
+
+\INS{idiv} just takes the two values at the \ac{TOS}, divides one by the other and leaves
+the result at \ac{TOS}:
+
+
+% FIXME: TikZ
+\begin{lstlisting}
+      +--------+
+TOS ->| result |
+      +--------+
+\end{lstlisting}
+
+\INS{ireturn} takes it and returns.
+
+Let's proceed with double precision floating point numbers:
+
+
+\begin{lstlisting}[style=customjava]
+public class calc
+{
+	public static double half_double(double a)
+	{
+		return a/2.0;
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Constant pool]
+...
+   #2 = Double             2.0d
+...
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static double half_double(double);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=4, locals=2, args_size=1
+         0: dload_0       
+         1: ldc2_w        #2                  // double 2.0d
+         4: ddiv          
+         5: dreturn       
+\end{lstlisting}
+
+It's the same, but the \INS{ldc2\_w} instruction is used to load the constant 
+2.0 from the constant pool.
+
+Also, the other three instructions have the \IT{d} prefix, 
+meaning they work with \IT{double} data type values.
+
+
+Let's now use a function with two arguments:
+
+
+\begin{lstlisting}[style=customjava]
+public class calc
+{
+	public static int sum(int a, int b)
+	{
+		return a+b;
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static int sum(int, int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=2, args_size=2
+         0: iload_0       
+         1: iload_1       
+         2: iadd          
+         3: ireturn       
+\end{lstlisting}
+
+\INS{iload\_0} loads the first function argument (a), \INS{iload\_1}---second (b).
+
+Here is the stack after the execution of both instructions:
+
+
+\begin{lstlisting}
+      +---+
+TOS ->| b |
+      +---+
+      | a |
+      +---+
+\end{lstlisting}
+
+\INS{iadd} adds the two values and leaves the result at \ac{TOS}:
+
+
+\begin{lstlisting}
+      +--------+
+TOS ->| result |
+      +--------+
+\end{lstlisting}
+
+Let's extend this example to the \IT{long} data type:
+
+
+\begin{lstlisting}[style=customjava]
+	public static long lsum(long a, long b)
+	{
+		return a+b;
+	}
+\end{lstlisting}
+
+\dots we got:
+
+\begin{lstlisting}
+  public static long lsum(long, long);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=4, locals=4, args_size=2
+         0: lload_0       
+         1: lload_2       
+         2: ladd          
+         3: lreturn       
+\end{lstlisting}
+
+The second \TT{lload} instruction takes the second argument from the 2nd slot.
+
+That's because a 64-bit \IT{long} value occupies exactly two 32-bit slots.
+
+
+Slightly more advanced example:
+
+
+\begin{lstlisting}[style=customjava]
+public class calc
+{
+	public static int mult_add(int a, int b, int c)
+	{
+		return a*b+c;
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static int mult_add(int, int, int);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=3, args_size=3
+         0: iload_0       
+         1: iload_1       
+         2: imul          
+         3: iload_2       
+         4: iadd          
+         5: ireturn       
+\end{lstlisting}
+
+The first step is multiplication. The product is left at the \ac{TOS}:
+
+
+\begin{lstlisting}
+      +---------+
+TOS ->| product |
+      +---------+
+\end{lstlisting}
+
+\TT{iload\_2} loads the third argument (c) in the stack:
+
+\begin{lstlisting}
+      +---------+
+TOS ->|    c    |
+      +---------+
+      | product |
+      +---------+
+\end{lstlisting}
+
+Now the \TT{iadd} instruction can add the two values.
+

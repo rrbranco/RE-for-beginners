@@ -1,0 +1,162 @@
+\subsubsection{std::string}
+\myindex{\Cpp!STL!std::string}
+\label{std_string}
+
+\myparagraph{Internals}
+
+Many string libraries \InSqBrackets{\CNotes 2.2} implement a structure that contains a pointer to a string buffer,
+a variable that always contains the current string length 
+(which is very convenient for many functions: \InSqBrackets{\CNotes 2.2.1}) and
+a variable containing the current buffer size.
+
+The string in the buffer is usually terminated with zero, in order to be able to pass a pointer to the buffer
+into the functions that take  usual C \ac{ASCIIZ} strings.
+
+It is not specified in the \Cpp standard how std::string has to be implemented,
+however, it is usually implemented as explained above.
+
+The \Cpp string is not a class (as QString in Qt, for instance) but a template (basic\_string),
+this is made in order to support various character types: at least \Tchar and \IT{wchar\_t}.
+
+So, std::string is a class with \Tchar as its base type.
+
+And std::wstring is a class with \IT{wchar\_t} as its base type.
+
+\mysubparagraph{MSVC}
+
+The MSVC implementation may store the buffer in place instead of using a pointer to a buffer 
+(if the string is shorter than 16 symbols).
+
+This implies that a short string is to occupy at least $16 + 4 + 4 = 24$ 
+bytes in 32-bit environment or at least $16 + 8 + 8 = 32$ 
+
+bytes in 64-bit one, and if the string is longer than 16 characters, we also have to add the length of the string itself.
+
+\lstinputlisting[caption=example for MSVC,style=customc]{\CURPATH/STL/string/MSVC_EN.cpp}
+
+Almost everything is clear from the source code.
+
+A couple of notes:
+
+If the string is shorter than 16 symbols, 
+a buffer for the string is not to be allocated in the \gls{heap}.
+
+This is convenient because
+in practice, a lot of strings are short indeed.
+
+Looks like that Microsoft's developers chose 16 characters as a good balance.
+
+One very important thing here can be seen at the end of main(): we're not using the c\_str() method, nevertheless,
+if we compile and run this code, both strings will appear in the console!
+
+This is why it works.
+
+In the first case the string is shorter than 16 characters and the buffer with the string is located in the
+beginning of the std::string object (it can be treated as a structure).
+printf() treats the pointer as a pointer to the null-terminated 
+array of characters, hence it works.
+
+Printing the second string (longer than 16 characters) is even more dangerous: it is a typical programmer's mistake
+(or typo) to forget to write c\_str().
+
+This works because at the moment a pointer to buffer is located at the start of structure.
+
+This may stay unnoticed for a long time, until a longer string appears there at some time, 
+then the process will crash.
+
+\mysubparagraph{GCC}
+
+GCC's implementation of this structure has one more variable---reference count.
+
+One interesting fact is that in GCC a pointer an instance of std::string instance points not to
+the beginning of the structure, but to the buffer pointer.
+In \IT{libstdc++-v3\textbackslash{}include\textbackslash{}bits\textbackslash{}basic\_string.h}
+we can read that it was done for more convenient debugging:
+
+\begin{lstlisting}
+   *  The reason you want _M_data pointing to the character %array and
+   *  not the _Rep is so that the debugger can see the string
+   *  contents. (Probably we should add a non-inline member to get
+   *  the _Rep for the debugger to use, so users can check the actual
+   *  string length.)
+\end{lstlisting}
+
+\href{http://go.yurichev.com/17085}{basic\_string.h source code}
+
+We consider this in our example:
+
+\lstinputlisting[caption=example for GCC,style=customc]{\CURPATH/STL/string/GCC_EN.cpp}
+
+A trickery has to be used to imitate the mistake we already have seen above because GCC
+has stronger type checking, nevertheless, printf() works here without c\_str() as well.
+
+\myparagraph{A more advanced example}
+
+\lstinputlisting[style=customc]{\CURPATH/STL/string/3.cpp}
+
+\lstinputlisting[caption=MSVC 2012,style=customasmx86]{\CURPATH/STL/string/3_MSVC_EN.asm}
+
+The compiler does not construct strings statically: it would not be possible anyway if the buffer needs to be located
+in the \gls{heap}.
+
+Instead, the \ac{ASCIIZ} strings are stored in the data segment, and later, at runtime,
+with the help of the \q{assign} method, the s1 and s2 strings are constructed.
+And with the help of \TT{operator+}, the s3 string is constructed.
+
+Please note that 
+there is no call to the c\_str() method, because its code is tiny enough so the compiler
+inlined it right there: if the string is shorter than 16 characters, a pointer to buffer is left
+in \EAX, otherwise the address of the string buffer located in the \gls{heap} is fetched.
+
+Next, we see calls to the 3 destructors, they are called if
+the string is longer than 16 characters: then the buffers in the \gls{heap} have to be freed.
+Otherwise, since all three std::string objects
+are stored in the stack, they are freed automatically, when the function ends.
+
+As a consequence, processing short strings is faster, because of less \gls{heap} accesses.
+
+GCC code is even simpler (because the GCC way, as we saw above, is to not store
+shorter strings right in the structure):
+
+% TODO1 comment each function meaning
+\lstinputlisting[caption=GCC 4.8.1,style=customasmx86]{\CURPATH/STL/string/3_GCC_EN.s}
+
+It can be seen that it's not a pointer to the object that is passed to destructors, but rather an address 12 bytes (or 3 words)
+before, i.e., a pointer to the real start of the structure.
+
+\myparagraph{std::string as a global variable}
+\label{sec:std_string_as_global_variable}
+
+Experienced \Cpp programmers knows that global variables of \ac{STL} types can be defined without problems.
+
+Yes, indeed:
+
+\lstinputlisting[style=customc]{\CURPATH/STL/string/5.cpp}
+
+But how and where \TT{std::string} constructor will be called?
+
+In fact, this variable is to be initialized even before \main start.
+
+\lstinputlisting[caption=MSVC 2012: here is how a global variable is constructed and also its destructor is registered,style=customasmx86]{\CURPATH/STL/string/5_MSVC_p2.asm}
+
+\lstinputlisting[caption=MSVC 2012: here a global variable is used in \main,style=customasmx86]{\CURPATH/STL/string/5_MSVC_p1.asm}
+
+\lstinputlisting[caption=MSVC 2012: this destructor function is called before exit,style=customasmx86]{\CURPATH/STL/string/5_MSVC_p3.asm}
+
+\myindex{\CStandardLibrary!atexit()}
+
+In fact, a special function with all constructors of global variables is called from \ac{CRT}, before
+main().
+
+More than that: with the help of atexit() another function is registered, 
+which contain calls to all destructors of such global variables.
+
+GCC works likewise:
+
+\lstinputlisting[caption=GCC 4.8.1,style=customasmx86]{\CURPATH/STL/string/5_GCC.s}
+
+But it does not create a separate function for this, 
+each destructor is passed to atexit(), one by one.
+
+% TODO а если глобальная STL-переменная в другом модуле? надо проверить.
+

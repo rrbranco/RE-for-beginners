@@ -1,0 +1,29 @@
+\section{\HelloWorldSectionName}
+\label{sec:helloworld}
+
+Utilizziamo il famoso esempio dal libro \KRBook:
+
+\lstinputlisting[style=customc]{patterns/01_helloworld/hw.c}
+
+\subsection{x86}
+
+\input{patterns/01_helloworld/MSVC_x86}
+\input{patterns/01_helloworld/GCC_x86}
+
+\subsection{x86-64}
+\input{patterns/01_helloworld/MSVC_x64}
+\input{patterns/01_helloworld/GCC_x64}
+
+\input{patterns/01_helloworld/GCC_one_more}
+\input{patterns/01_helloworld/ARM/main}
+\input{patterns/01_helloworld/MIPS/main}
+
+\subsection{\Conclusion{}}
+
+La differenza principale tra il codice x86/ARM e x64/ARM64 è che il puntatore alla stringa è adesso lungo 64 bit.
+Infatti, le moderne \ac{CPU} sono ora a 64-bit grazie ai costi ridotti della memoria e alla sua grande richiesta da parte delle applicazioni moderne. 
+Possiamo aggiungere ai nostri computer più memoria di quanto i puntatori a 32-bit siano in grado di indirizzare.  
+Di conseguenza, tutti i puntatori sono oggi a 64-bit.
+
+% sections
+\input{patterns/01_helloworld/exercises}

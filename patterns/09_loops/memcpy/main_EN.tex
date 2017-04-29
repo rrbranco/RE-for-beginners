@@ -1,0 +1,48 @@
+﻿\subsection{Memory blocks copying routine}
+\label{loop_memcpy}
+
+Real-world memory copy routines may copy 4 or 8 bytes at each iteration, use \ac{SIMD}, 
+vectorization, etc.
+But for the sake of simplicity, this example is the simplest possible.
+
+\lstinputlisting[style=customc]{memcpy.c}
+
+\subsubsection{Straight-forward implementation}
+
+\lstinputlisting[caption=GCC 4.9 x64 optimized for size (-Os),style=customasmx86]{patterns/09_loops/memcpy/memcpy_GCC49_x64_Os_EN.s}
+
+\lstinputlisting[caption=GCC 4.9 ARM64 optimized for size (-Os),style=customasmARM]{patterns/09_loops/memcpy/memcpy_GCC49_ARM64_Os_EN.s}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/09_loops/memcpy/memcpy_Keil_Thumb_O3_EN.s}
+
+\subsubsection{ARM in ARM mode}
+
+Keil in ARM mode takes full advantage of conditional suffixes:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/09_loops/memcpy/memcpy_Keil_ARM_O3_EN.s}
+
+That's why there is only one branch instruction instead of 2.
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=GCC 4.4.5 optimized for size (-Os) (IDA),style=customasmMIPS]{patterns/09_loops/memcpy/memcpy_MIPS_Os_IDA_EN.lst}
+
+\myindex{MIPS!\Instructions!LBU}
+\myindex{MIPS!\Instructions!SB}
+
+Here we have two new instructions: \INS{LBU} (\q{Load Byte Unsigned}) and \INS{SB} (\q{Store Byte}).
+
+Just like in ARM, all MIPS registers are 32-bit wide, there are no byte-wide parts like in x86.
+
+So when dealing with single bytes, we have to allocate whole 32-bit registers for them.
+
+\INS{LBU} loads a byte and clears all other bits (\q{Unsigned}).
+\myindex{MIPS!\Instructions!LB}
+
+On the other hand, \INS{LB} (\q{Load Byte}) instruction sign-extends the loaded byte to a 32-bit value.
+
+\INS{SB} just writes a byte from lowest 8 bits of register to memory.
+
+\subsubsection{Vectorization}
+
+\Optimizing GCC can do much more on this example: \myref{vec_memcpy}.

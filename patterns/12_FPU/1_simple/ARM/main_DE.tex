@@ -1,0 +1,125 @@
+%TODO
+\subsubsection{ARM: \OptimizingXcodeIV (\ARMMode)}
+Bis die Unterstützung für Fließkommaarithmetik in ARM standardisiert wurde,
+fügten einige Hersteller von Prozessoren ihre eigenen Befehlserweiterungen
+hinzu. 
+Schließlich wurde VFP (\IT{Vector Floating Point}) standardisiert.
+
+Ein wichtiger Unterschied zum x86 ist, dass in es in ARM keinen Stack gibt,
+sondern man nur mit den Registern arbeitet.
+
+\lstinputlisting[label=ARM_leaf_example10,caption=\OptimizingXcodeIV (\ARMMode),style=customasmARM]{patterns/12_FPU/1_simple/ARM/Xcode_ARM_O3_DE.asm}
+
+\myindex{ARM!D-\registers{}}
+\myindex{ARM!S-\registers{}}
+
+Hier sehen wir, dass einige neue Register mit einem D als Präfix verwendet
+werden.
+
+Bei diesen handelt es sich um 64-bit-Register; es gibt 32 von ihnen und sie
+können sowohl für Fließkommazahlen (doppelte Genauigkeit (double)) als auch für
+SIMD (heißt hier in ARM NEON) benutzt werden.
+
+Es gibt also 32 32-bit-S-Register vorgesehen für Fließkommazahlen in einfacher
+Genauigkeit (float).
+
+Es ist leicht zu merken: D-Register sind für Zahlen in doppelter Genauigkeit,
+während S-Register für einfache Genauigkeit (engl. single) vorgesehen sind.
+Mehr dazu hier:\myref{ARM_VFP_registers}
+
+Beide Konstanten (3.14 und 4.1) werden im IEEE 754 Format im Speicher abgelegt.
+
+\myindex{ARM!\Instructions!VLDR}
+\myindex{ARM!\Instructions!VMOV}
+Wie man leicht sieht sind \INS{VLDR} und \INS{VMOV} analog zu den \INS{LDR} und
+\MOV Befehlen, aber arbeiten auf D-Registern.
+
+Es muss angemerkt werden, dass diese Befehle genau wie die D-Register nicht nur
+für Fließkommazahlen vorgesehen sind, sondern ebenfalls für SIMD (NEON)
+Operationen verwendet werden können, was wir im folgenden zeigen werden.
+
+Die Paraemter werden der Funktion auf übliche Weise über die R-Register
+übergeben, aber da jede Zahl in doppelter Genauigkeit eine Größe von 64 Bit hat
+werden jeweils zwei R-Register benötigt, um eine Zahl zu übergeben.
+
+Der Befehl \INS{VMOV D17, R0, R1} zu Beginn, fasst zwei 32-Bit-Werte aus
+\Reg{0} und \Reg{1} zu einem 64-Bit-Wert zusammen und speichert diesen in
+\GTT{D17}.
+
+\INS{VMOV R0, R1, D16} ist die umgekehrte Operation: was vorher in \GTT{D16}
+war, wird in zwei Register, \Reg{0} und \Reg{1} aufgeteilt, denn eine Zahl in
+doppelter Genauigkeit, die 64 Bit Speicherplatz benötigt, wird über \Reg{0} und
+\Reg{1} zurückgegeben.
+
+\myindex{ARM!\Instructions!VDIV}
+\myindex{ARM!\Instructions!VMUL}
+\myindex{ARM!\Instructions!VADD}
+\INS{VDIV}, \INS{VMUL} und \INS{VADD} sind Befehle zur Verarbeitung von
+Fließkommazahlen, die \glslink{quotient}{Quotient}, \glslink{product}{Produkt} bzw. Summe berechnen.
+
+Der Code für Thumb-2 ist identisch.
+
+\subsubsection{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/12_FPU/1_simple/ARM/Keil_O3_thumb_DE.asm}
+
+Keil erzeugte Code für einen Prozessor ohne FPU oder NEON Unterstützung.
+
+Die Fließkommazahlen in doppelter Genauigkeit werden über die üblichen
+R-Register übergeben und anstelle von FPU-Befehlen werden Programmbibliotheken
+(wie z.B. \GTT{\_\_aeabi\_dmul}, \GTT{\_\_aeabi\_ddiv}, \GTT{\_\_aeabi\_dadd})
+aufgerufen, welche Multiplikation, Division und Addition auf Fließkommazahlen
+emulieren. 
+
+Diese Vorgehensweise ist natürlich langsamer als der FPU-Koprozessor, aber es
+ist besser als nichts.
+
+Übrigens waren ähnliche FPU-emulierende Programmbibliotheken auch in der
+x86-Welt sehr beliebt als Koprozessoren selten und teuer waren und nur auf
+wertvollen Computern installiert waren.
+
+\myindex{ARM!soft float}
+\myindex{ARM!armel}
+\myindex{ARM!armhf}
+\myindex{ARM!hard float}
+Die Emulation des FPU-Koprozessors wird \IT{soft float} oder \IT{armel} (in der
+ARM-Welt) genannt, wohingegen die FPU-Befehle des Koprozessors \IT{hard float}
+oder \IT{armhf} genannt werden.
+
+\iffalse
+% TODO разобраться...
+\myindex{Raspberry Pi}
+Der Linux Kernel des Raspberry Pi beispielsweise wird in zwei Varianten
+kompiliert.
+
+Im Falle von \IT{soft float} werden Parameter über R-Register übergeben und im
+Falle von \IT{hard float} über D-Register.
+
+Diese Tatsache hält einen davon ab armhf-Programmbibliotheken für armel-Code
+oder umgekehrt zu verwenden und dies ist der Grund warum der gesamte Code in
+Linux-Distributionen speziell für eine der beiden Konventionen kompiliert wird.
+\fi
+
+\subsubsection{ARM64: \Optimizing GCC (Linaro) 4.9}
+
+Sehr kompakter Code:
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.9,style=customasmARM]{patterns/12_FPU/1_simple/ARM/ARM64_GCC_O3_DE.s}
+
+\subsubsection{ARM64: \NonOptimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[caption=\NonOptimizing GCC (Linaro) 4.9,style=customasmARM]{patterns/12_FPU/1_simple/ARM/ARM64_GCC_O0_DE.s}
+
+\NonOptimizing GCC ist geschwätziger.
+Hier findet eine Menge unnützes Verschieben von Werten statt, inklusive einigem
+eindeutig redundantem Code (die letzten beiden \INS{FMOV} Befehle). Vermutlich
+ist GCC 4.9 noch nicht besonders gut im Erzeugen von ARM64 Code.
+
+Bemerkenswert ist, dass ARM64 64-Bit-Register besitzt und die D-Register
+ebenfalls 64 Bit breit sind.
+
+Dadurch steht es dem Compiler frei Werte von Typ \Tdouble in \ac{GPR}s anstelle
+auf dem lokalen Stack zu speichern. Dies ist in 32-bit-CPUs nicht möglich.
+
+Wiederum kann man als Übung versuchen diese Funktion manuell zu optimieren ohne
+neue Befehl wie \INS{FMADD} einzuführen. 

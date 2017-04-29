@@ -1,0 +1,167 @@
+% TODO translate to RU
+\subsection{Numeral systems}
+
+Humans accustomed to decimal numeral system probably because almost all ones has 10 fingers.
+Nevertheless, number 10 has no significant meaning in science and mathematics.
+Natural numeral system in digital electronics is binary: 0 is for absence of current in wire and 1 for presence.
+10 in binary is 2 in decimal; 100 in binary is 4 in decimal and so on.
+
+If the numeral system has 10 digits, it has \IT{radix} (or \IT{base}) of 10.
+Binary numeral system has \IT{radix} of 2.
+
+Important things to recall:
+1) \IT{number} is a number, while \IT{digit} is a term of writing system and is usually one character;
+2) number is not changed when converted to another radix: writing notation is (and way of representing it in \ac{RAM}).
+
+How to convert a number from one radix to another?
+
+Positional notation is used almost everywhere, this means, a digit has some weight depending on where it is placed inside of number.
+If 2 is placed at the rightmost place, it's 2.
+If it is placed at the place one digit before rightmost, it's 20.
+
+What does $1234$ stand for?
+
+$10^3 \cdot 1 + 10^2 \cdot 2 + 10^1 \cdot 3 + 1 \cdot 4$ = 1234 or
+$1000 \cdot 1 + 100 \cdot 2 + 10 \cdot 3 + 4 = 1234$
+
+Same story for binary numbers, but base is 2 instead of 10.
+What does 0b101011 stand for?
+
+$2^5 \cdot 1 + 2^4 \cdot 0 + 2^3 \cdot 1 + 2^2 \cdot 0 + 2^1 \cdot 1 + 2^0 \cdot 1 = 43$ or
+$32 \cdot 1 + 16 \cdot 0 + 8 \cdot 1 + 4 \cdot 0 + 2 \cdot 1 + 1 = 43$
+
+Positional notation can be opposed to non-positional notation such as Roman numeric system
+\footnote{About numeric system evolution, see \InSqBrackets{\TAOCPvolII{}, 195--213.}}.
+Perhaps, humankind switched to positional notation because it's easier to do basic operations (addition, multiplication, etc.) on paper by hand.
+
+Indeed, binary numbers can be added, subtracted and so on in the very same as taught in schools, but only 2 digits are available.
+
+Binary numbers are bulky when represented in source code and dumps, so that is where hexadecimal numeral system can be used.
+Hexadecimal radix uses 0..9 digits and also 6 Latin characters: A..F.
+Each hexadecimal digit takes 4 bits or 4 binary digits, so it's very easy to convert from binary number to hexadecimal and back, even manually, in one's mind.
+
+\begin{center}
+\begin{longtable}{ | l | l | l | }
+\hline
+\HeaderColor hexadecimal & \HeaderColor binary & \HeaderColor decimal \\
+\hline
+0	&0000	&0 \\
+1	&0001	&1 \\
+2	&0010	&2 \\
+3	&0011	&3 \\
+4	&0100	&4 \\
+5	&0101	&5 \\
+6	&0110	&6 \\
+7	&0111	&7 \\
+8	&1000	&8 \\
+9	&1001	&9 \\
+A	&1010	&10 \\
+B	&1011	&11 \\
+C	&1100	&12 \\
+D	&1101	&13 \\
+E	&1110	&14 \\
+F	&1111	&15 \\
+\hline
+\end{longtable}
+\end{center}
+
+How to understand, which radix is used in a specific place?
+
+Decimal numbers are usually written as is, i.e., 1234. But some assemblers allows to make emphasis on decimal radix and this number can be written with "d" suffix: 1234d.
+
+Binary numbers sometimes prepended with "0b" prefix: 0b100110111 (\ac{GCC} has non-standard language extension for this\footnote{\url{https://gcc.gnu.org/onlinedocs/gcc/Binary-constants.html}}).
+There is also another way: "b" suffix, for example: 100110111b.
+I'll try to stick to "0b" prefix throughout the book for binary numbers.
+
+Hexadecimal numbers are prepended with "0x" prefix in \CCpp and other \ac{PL}s: 0x1234ABCD.
+Or they are has "h" suffix: 1234ABCDh---this is common way of representing them in assemblers and debuggers.
+If the number is started with A..F digit, 0 is to be added before: 0ABCDEFh.
+There was also convention that was popular in 8-bit home computers era, using \$ prefix, like \$ABCD.
+I'll try to stick to "0x" prefix throughout the book for hexadecimal numbers.
+
+Should one learn to convert numbers in mind? A table of 1-digit hexadecimal numbers can easily be memorized.
+As of larger numbers, probably, it's not worth to torment yourself.
+
+Perhaps, the most visible to all people hexadecimal numbers are in \ac{URL}s.
+This is the way how non-Latin characters are encoded.
+For example:
+\url{https://en.wiktionary.org/wiki/na\%C3\%AFvet\%C3\%A9} is the \ac{URL} of Wiktionary article about \q{naïveté} word.
+
+\subsubsection{Octal radix}
+
+Another numeral system heavily used in past of computer programming is octal: there are 8 digits (0..7) and each is mapped to 3 bits, so it's easy to convert numbers back and forth.
+It has been superseded by hexadecimal system almost everywhere, but surprisingly, there is *NIX utility used by many people often which takes octal number as argument: \TT{chmod}.
+
+\myindex{UNIX!chmod}
+As many *NIX users know, \TT{chmod} argument can be a number of 3 digits. The first digit is rights for owner of file, second is rights for group (to which file belongs), third is for everyone else.
+And each digit can be represented in binary form:
+
+\begin{center}
+\begin{longtable}{ | l | l | l | }
+\hline
+\HeaderColor decimal & \HeaderColor binary & \HeaderColor meaning \\
+\hline
+7	&111	&\textbf{rwx} \\
+6	&110	&\textbf{rw-} \\
+5	&101	&\textbf{r-x} \\
+4	&100	&\textbf{r-{}-} \\
+3	&011	&\textbf{-wx} \\
+2	&010	&\textbf{-w-} \\
+1	&001	&\textbf{-{}-x} \\
+0	&000	&\textbf{-{}-{}-} \\
+\hline
+\end{longtable}
+\end{center}
+
+So each bit is mapped to a flag: read/write/execute.
+
+Now the reason why I'm talking about \TT{chmod} here is that the whole number in argument can be represented as octal number.
+Let's take for example, 644.
+When you run \TT{chmod 644 file}, you set read/write permissions for owner, read permissions for group and again, read permissions for everyone else.
+Let's convert 644 octal number to binary, this will be \TT{110100100}, or (in groups of 3 bits) \TT{110 100 100}.
+
+Now we see that each triplet describe permissions for owner/group/others: first is \TT{rw-}, second is \TT{r--} and third is \TT{r--}.
+
+Octal numeral system was also popular on old computers like PDP-8, because word there could be 12, 24 or 36 bits, and these numbers are divisible by 3, so octal system was natural on that environment.
+Nowadays, all popular computers employs word/address size of 16, 32 or 64 bits, and these numbers are divisible by 4, so hexadecimal system is more natural here.
+
+Octal numeral system is supported by all standard \CCpp compilers.
+This is source of confusion sometimes, because octal numbers are encoded with zero prepended, for example, 0377 is 255.
+And sometimes, you may make a typo and write "09" instead of 9, and the compiler would report error.
+GCC may report something like that:\\
+\TT{error: invalid digit "9" in octal constant}.
+
+\subsubsection{Divisibility}
+
+When you see a decimal number like 120, you can quickly deduce that it's divisible by 10, because the last digit is zero.
+In the same way, 123400 is divisible by 100, because two last digits are zeros.
+
+Likewise, hexadecimal number 0x1230 is divisible by 0x10 (or 16), 0x123000 is divisible by 0x1000 (or 4096), etc.
+
+Binary number 0b1000101000 is divisible by 0b1000 (8), etc.
+
+This property can be used often to realize quickly if a size of some block in memory is padded to some boundary.
+For example, sections in \ac{PE} files are almost always started at addresses ending with 3 hexadecimal zeros: 0x41000, 0x10001000, etc.
+The reason behind this is in the fact that almost all \ac{PE} sections are padded to boundary of 0x1000 (4096) bytes.
+
+\subsubsection{Multi-precision arithmetic and radix}
+
+\index{RSA}
+Multi-precision arithmetic can use huge numbers, and each one may be stored in several bytes.
+For example, RSA keys, both public and private, are spanning up to 4096 bits and maybe even more.
+
+In \InSqBrackets{\TAOCPvolII, 265} we can find the following idea: when you store multi-precision number in several bytes,
+the whole number can be represented as having a radix of $2^8=256$, and each digit goes to corresponding byte.
+Likewise, if you store multi-precision number in several 32-bit integer values, each digit goes to each 32-bit slot,
+and you may think about this number as stored in radix of $2^{32}$.
+
+\subsubsection{Pronouncement}
+
+Numbers in non-decimal base are usually pronounced by one digit: ``one-zero-zero-one-one-...''.
+Words like ``ten'', ``thousand'', etc, are usually not pronounced, because it will be confused with decimal base then.
+
+\subsubsection{Floating point numbers}
+
+To distinguish floating point numbers from integer ones, they are usually written with ``.0'' at the end,
+like $0.0$, $123.0$, etc.
+

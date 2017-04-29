@@ -1,0 +1,34 @@
+\subsection{Boundaries of strings}
+
+\myindex{win32!GetOpenFileName}
+It's interesting to note, how parameters are passed into win32 \IT{GetOpenFileName()} function.
+In order to call it, one must set list of allowed file extensions:
+
+\begin{lstlisting}[style=customc]
+	OPENFILENAME *LPOPENFILENAME;
+	...
+	char * filter = "Text files (*.txt)\0*.txt\0MS Word files (*.doc)\0*.doc\0\0";
+	...
+	LPOPENFILENAME = (OPENFILENAME *)malloc(sizeof(OPENFILENAME));
+	...
+	LPOPENFILENAME->lpstrFilter = filter;
+	...
+
+	if(GetOpenFileName(LPOPENFILENAME))
+	{
+		...
+\end{lstlisting}
+
+What happens here is that list of strings are passed into \IT{GetOpenFileName()}.
+It is not a problem to parse it: whenever you encounter single zero byte, this is an item.
+Whenever you encounter two zero bytes, this is end of the list.
+If you will pass this string into \printf, it will treat first item as a single string.
+
+So this is string, or...?
+It's better say this is buffer containing several zero-terminated C-strings, which can be stored and processed
+as a whole.
+
+\myindex{\CStandardLibrary!strtok}
+Another exmaple is \IT{strtok()} function. It takes a string and write zero bytes in the middle of it.
+It thus transforms input string into some kind of buffer, which has several zero-terminated C-strings.
+

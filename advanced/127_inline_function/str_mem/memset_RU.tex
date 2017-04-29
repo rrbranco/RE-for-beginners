@@ -1,0 +1,35 @@
+﻿\subsubsection{memset()}
+\myindex{\CStandardLibrary!memset()}
+
+\myparagraph{\Example \#1}
+
+\lstinputlisting[caption=32 байта,style=customc]{\CURPATH/str_mem/memset_32.c}
+
+\myindex{x86!\Instructions!MOV}
+
+Многие компиляторы не генерируют вызов memset() для коротких блоков, а просто вставляют набор \MOV{}-ов:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 x64,style=customasmx86]{\CURPATH/str_mem/memset_32_GCC491_x64_O3.s}
+
+\myindex{Unrolled loop}
+Кстати, это напоминает развернутые циклы: 
+\myref{ARM_unrolled_loops}.
+
+\myparagraph{\Example \#2}
+
+\lstinputlisting[caption=67 байт,style=customc]{\CURPATH/str_mem/memset_67.c}
+
+
+Когда размер блока не кратен 4 или 8, разные компиляторы могут вести себя по-разному.
+
+\myindex{x86!\Instructions!MOV}
+
+Например, MSVC 2012 продолжает вставлять \MOV:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{\CURPATH/str_mem/memset_67_MSVC2012_x64_Ox.asm}
+
+\myindex{x86!\Instructions!STOSQ}
+
+\dots а GCC использует \TT{REP STOSQ}, полагая, что так будет короче, чем пачка \TT{MOV}'s:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 x64,style=customasmx86]{\CURPATH/str_mem/memset_67_GCC491_x64_O3.s}

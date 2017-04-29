@@ -1,0 +1,13 @@
+﻿\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/14_bitfields/2_set_reset/MIPS_O3_IDA_EN.lst}
+
+\myindex{MIPS!\Instructions!ORI}
+
+\INS{ORI} is, of course, the OR operation. \q{I} in the instruction name means that the value is embedded in the machine code.
+
+\myindex{MIPS!\Instructions!AND}
+
+But after that we have \AND. There is no way to use \INS{ANDI} because it's not possible to embed the 0xFFFFFDFF number
+in a single instruction, so the compiler has to load 0xFFFFFDFF into register \$V0 first and then generates
+\AND which takes all its values from registers.

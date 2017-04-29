@@ -1,0 +1,75 @@
+\subsection{Minimale und maximale Werte berechnen}
+
+\subsubsection{32-bit}
+
+\lstinputlisting[style=customc]{patterns/07_jcc/minmax/minmax.c}
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2013,style=customasmx86]{patterns/07_jcc/minmax/minmax_MSVC_2013_DE.asm}
+
+\myindex{x86!\Instructions!Jcc}
+Diese beiden Funktionen unterscheiden sich nur hinsichtliche der bedingten Sprungbefehle:
+\INS{JGE} (\q{Jump if Greater or Equal}) wird in der ersten verwendet
+und \INS{JLE} (\q{Jump if Less or Equal}) in der zweiten.
+
+\myindex{\CompilerAnomaly}
+\label{MSVC_double_JMP_anomaly}
+Hier gibt es jeweils einen unnötigen \JMP Befehl pro Funtion, den MSVC wahrscheinlich fehlerhafterweise dort belassen
+hat.
+
+\myparagraph{Verzweigungslos}
+
+ARM im Thumb mode erinnert uns an den x86 Code:
+
+\lstinputlisting[caption=\OptimizingKeilVI
+(\ThumbMode),style=customasmARM]{patterns/07_jcc/minmax/minmax_Keil_Thumb_O3_DE.s}
+
+\myindex{ARM!\Instructions!Bcc}
+Die Funktionen unterscheiden sich in den Verzweigebefehlen: \INS{BGT} und \INS{BLT}.
+Es ist möglich im ARM mode conditional codes zu verwenden, sodass der Code kürzer ist.
+
+\myindex{ARM!\Instructions!MOVcc}
+\INS{MOVcc} wird nur ausgeführt, wenn die Bedingung erfüllt (d.h. wahr) ist:
+
+\lstinputlisting[caption=\OptimizingKeilVI
+(\ARMMode),style=customasmARM]{patterns/07_jcc/minmax/minmax_Keil_ARM_O3_DE.s}
+
+\myindex{x86!\Instructions!CMOVcc}
+\Optimizing GCC 4.8.1 und der optimierende MSVC 2013 können den \INS{CMOVcc} Befehl verwenden, der analog zu
+\INS{MOVcc} in ARM funktioniert:
+
+\lstinputlisting[caption=\Optimizing MSVC 2013,style=customasmx86]{patterns/07_jcc/minmax/minmax_GCC481_O3_DE.s}
+
+\subsubsection{64-bit}
+
+\lstinputlisting[style=customc]{patterns/07_jcc/minmax/minmax64.c}
+Hier findet ein unnötiges Verschieben von Variablen statt, aber der Code ist verständlich:
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1 ARM64,style=customasmARM]{patterns/07_jcc/minmax/minmax64_GCC_49_ARM64_O0.s}
+
+\myparagraph{Verzweigungslos}
+Die Funtionsargumente müssen nicht vom Stack geladen werden, da sie sich bereits in den Registern befinden:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1
+x64,style=customasmx86]{patterns/07_jcc/minmax/minmax64_GCC_49_x64_O3_DE.s}
+
+MSVC 2013 tut beinahe das gleiche:
+
+\myindex{ARM!\Instructions!CSEL}
+
+ARM64 verfügt über den \INS{CSEL} Befehl, der genau wie \INS{MOVcc} in ARM oder \INS{CMOVcc} in x86 arbeitet; er hat
+lediglich einen anderen Namen:
+\q{Conditional SELect}.
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1
+ARM64,style=customasmARM]{patterns/07_jcc/minmax/minmax64_GCC_49_ARM64_O3_DE.s}
+
+\subsubsection{MIPS}
+
+Leider ist GCC 4.4.5 für MIPS nicht so gut:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA),style=customasmMIPS]{patterns/07_jcc/minmax/minmax_MIPS_O3_IDA_DE.lst} 
+Vergessen Sie nicht die \IT{branch delay slots}: der erste \INS{MOVE} wird \IT{vor} \INS{BEQZ} ausgeführt, der zweite
+\INS{MOVE} wird nur dann ausgeführt, wenn die Verzweigung nicht genommen wird.
+
+

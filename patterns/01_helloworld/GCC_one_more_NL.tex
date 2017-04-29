@@ -1,0 +1,68 @@
+% TODO to be resynced with English version
+\subsection{GCC---Nog een ding}
+\label{use_parts_of_C_strings}
+
+Het feit dat een \IT{anonieme} C-string het type \IT{const} heeft (\myref{string_is_const_char}), 
+en dat C-string gealloceerd in het segment met de constanten gegarandeerd immuteerbaar zijn, heeft een interessant gevolg:
+De compiler kan een specifiek gedeelte van de string gebruiken.
+
+Laten we dit voorbeeld proberen:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int f1()
+{
+	printf ("world\n");
+}
+
+int f2()
+{
+	printf ("hello world\n");
+}
+
+int main()
+{
+	f1();
+	f2();
+}
+\end{lstlisting}
+
+Veelgebruikte \CCpp{}-compilers (inclusief MSVC) alloceren twee strings, maar laat ons eens kijken wat GCC 4.8.1 doet:
+
+\begin{lstlisting}[caption=GCC 4.8.1 + IDA,style=customasmx86]
+f1              proc near
+
+s               = dword ptr -1Ch
+
+                sub     esp, 1Ch
+                mov     [esp+1Ch+s], offset s ; "world\n"
+                call    _puts
+                add     esp, 1Ch
+                retn
+f1              endp
+
+f2              proc near
+
+s               = dword ptr -1Ch
+
+                sub     esp, 1Ch
+                mov     [esp+1Ch+s], offset aHello ; "hello "
+                call    _puts
+                add     esp, 1Ch
+                retn
+f2              endp
+
+aHello          db 'hello '
+s               db 'world',0xa,0
+\end{lstlisting}
+
+Inderdaad: wanneer we de \q{hello world} string printen, 
+Worden deze twee woorden aangrenzend in het geheugen geplaatsd, en \puts, die geroepen wordt van de \GTT{f2()}
+functie, is er zicht niet van bewust dat deze string opgedeeld is. 
+In feite is hij ook niet opgedeeld, hij is slechts \q{virtueel} opgedeeld in deze listing.
+
+Wanneer \puts aangeroepen wordt vanuit \GTT{f1()}, gebruikt het de \q{world} string plus een nulbyte. \puts is er zich niet van bewust dat er nog iets voor deze string staat!
+
+Dit slimme truukje wordt vaak gebruikt door op zijn minst GCC, en kan geheugen besparen.
+

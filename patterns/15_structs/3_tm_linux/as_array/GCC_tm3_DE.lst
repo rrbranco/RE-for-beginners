@@ -1,0 +1,36 @@
+main            proc near
+                push    ebp
+                mov     ebp, esp
+                push    esi
+                push    ebx
+                and     esp, 0FFFFFFF0h
+                sub     esp, 40h
+                mov     dword ptr [esp], 0 ; timer
+                lea     ebx, [esp+14h]
+                call    _time
+                lea     esi, [esp+38h]
+                mov     [esp+4], ebx    ; tp
+                mov     [esp+10h], eax
+                lea     eax, [esp+10h]
+                mov     [esp], eax      ; timer
+                call    _localtime_r
+                nop
+                lea     esi, [esi+0]	; NOP
+loc_80483D8:
+; EBX ist hier ein Pointer auf das struct, ESI ist der Pointer auf dessen Ende.
+                mov     eax, [ebx]	; hole 32-Bit-Wort aus dem Array
+                add     ebx, 4          ; nächstes Feld im struct
+                mov     dword ptr [esp+4], offset a0x08xD ; "0x%08X (%d)\n"
+                mov     dword ptr [esp], 1
+                mov     [esp+0Ch], eax	; übergib Wert an printf()
+                mov     [esp+8], eax	; übergib Wert an printf()
+                call    ___printf_chk
+                cmp     ebx, esi        ; Ende des structs?
+                jnz     short loc_80483D8	; nein - dann lade nächsten Wert
+                lea     esp, [ebp-8]
+                pop     ebx
+                pop     esi
+                pop     ebp
+                retn
+main            endp
+

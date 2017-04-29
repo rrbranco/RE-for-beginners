@@ -1,0 +1,235 @@
+\subsubsection{ARM}
+
+\myparagraph{\OptimizingXcodeIV (\ARMMode)}
+
+\lstinputlisting[caption=\OptimizingXcodeIV (\ARMMode),style=customasmARM]{patterns/12_FPU/3_comparison/ARM/Xcode_ARM_RU.lst}
+
+\myindex{ARM!\Registers!APSR}
+\myindex{ARM!\Registers!FPSCR}
+Очень простой случай.
+Входные величины помещаются в \GTT{D17} и \GTT{D16} и сравниваются при помощи инструкции \INS{VCMPE}.
+Как и в сопроцессорах x86, сопроцессор в ARM имеет свой собственный регистр статуса и флагов (\ac{FPSCR}),
+потому что есть необходимость хранить специфичные для его работы флаги.
+
+% TODO -> расписать регистр по битам
+\myindex{ARM!\Instructions!VMRS}
+И так же, как и в x86, 
+в ARM нет инструкций условного перехода, проверяющих биты в регистре статуса сопроцессора. 
+Поэтому имеется инструкция \INS{VMRS}, копирующая 4 бита (N, Z, C, V) 
+из статуса сопроцессора в биты \IT{общего} статуса (регистр \ac{APSR}).
+
+\myindex{ARM!\Instructions!VMOVGT}
+\INS{VMOVGT} это аналог \INS{MOVGT}, инструкция для D-регистров, срабатывающая, если при сравнении один операнд был больше чем второй
+(\IT{GT --- Greater Than}). 
+
+Если она сработает, 
+в \GTT{D16} запишется значение $a$, лежащее в тот момент в \GTT{D17}.
+В обратном случае в \GTT{D16} остается значение $b$.
+
+
+\myindex{ARM!\Instructions!VMOV}
+Предпоследняя инструкция \INS{VMOV} готовит то, что было в \GTT{D16}, для возврата через 
+пару регистров \Reg{0} и \Reg{1}.
+
+\myparagraph{\OptimizingXcodeIV (\ThumbTwoMode)}
+
+\begin{lstlisting}[caption=\OptimizingXcodeIV (\ThumbTwoMode),style=customasmARM]
+VMOV            D16, R2, R3 ; b
+VMOV            D17, R0, R1 ; a
+VCMPE.F64       D17, D16
+VMRS            APSR_nzcv, FPSCR
+IT GT 
+VMOVGT.F64      D16, D17
+VMOV            R0, R1, D16
+BX              LR
+\end{lstlisting}
+
+Почти то же самое, что и в предыдущем примере, за парой отличий.
+Как мы уже знаем, многие инструкции в режиме ARM можно дополнять условием.
+Но в режиме Thumb такого нет.
+В 16-битных инструкций просто нет места для лишних 4 битов, при помощи
+которых можно было бы закодировать условие выполнения.
+
+\myindex{ARM!\ThumbTwoMode}
+Поэтому в Thumb-2 добавили возможность дополнять \\
+Thumb-инструкции условиями.
+В листинге, сгенерированном при помощи \IDA, мы видим инструкцию \INS{VMOVGT}, 
+такую же как и в предыдущем примере.
+
+В реальности там закодирована обычная инструкция \INS{VMOV}, просто \IDA добавила суффикс \GTT{-GT} к ней, 
+потому что перед этой инструкцией стоит \INS{IT GT}.
+
+\label{ARM_Thumb_IT}
+\myindex{ARM!\Instructions!IT}
+\myindex{ARM!if-then block}
+Инструкция \INS{IT} определяет так называемый \IT{if-then block}. 
+После этой инструкции можно указывать до четырех инструкций, 
+к каждой из которых будет добавлен суффикс условия.
+
+В нашем примере \INS{IT GT} означает,
+что следующая за ней инструкция будет исполнена, если условие
+\IT{GT} (\IT{Greater Than}) справедливо.
+
+\myindex{Angry Birds}
+Теперь более сложный пример. Кстати, из 
+Angry Birds (для iOS):
+
+\begin{lstlisting}[caption=Angry Birds Classic,style=customasmARM]
+...
+ITE NE
+VMOVNE          R2, R3, D16
+VMOVEQ          R2, R3, D17
+BLX             _objc_msgSend ; без суффикса
+...
+\end{lstlisting}
+
+\INS{ITE} означает \IT{if-then-else} 
+и кодирует суффиксы для двух следующих за ней инструкций.
+
+Первая из них исполнится, если условие, закодированное в \INS{ITE} (\IT{NE, not equal}) будет в тот момент справедливо,
+а вторая~--- если это условие не сработает.
+(Обратное условие от \GTT{NE} это \GTT{EQ} (\IT{equal})).
+
+Инструкция следующая за второй \INS{VMOV} (или VMOEQ) нормальная, без суффикса (\INS{BLX}).
+
+\myindex{Angry Birds}
+Ещё чуть сложнее, и снова этот фрагмент из Angry Birds:
+
+\begin{lstlisting}[caption=Angry Birds Classic,style=customasmARM]
+...
+ITTTT EQ
+MOVEQ           R0, R4
+ADDEQ           SP, SP, #0x20
+POPEQ.W         {R8,R10}
+POPEQ           {R4-R7,PC}
+BLX             ___stack_chk_fail ; без суффикса
+...
+\end{lstlisting}
+
+Четыре символа \q{T} в инструкции означают, что четыре последующие инструкции будут исполнены если условие соблюдается.
+Поэтому \IDA добавила ко всем четырем инструкциям суффикс \GTT{-EQ}. 
+А если бы здесь было, например,
+\INS{ITEEE EQ} (\IT{if-then-else-else-else}), 
+тогда суффиксы для следующих четырех инструкций были бы расставлены так:
+
+\begin{lstlisting}
+-EQ
+-NE
+-NE
+-NE
+\end{lstlisting}
+
+\myindex{Angry Birds}
+Ещё фрагмент из Angry Birds:
+
+\begin{lstlisting}[caption=Angry Birds Classic,style=customasmARM]
+...
+CMP.W           R0, #0xFFFFFFFF
+ITTE LE
+SUBLE.W         R10, R0, #1
+NEGLE           R0, R0
+MOVGT           R10, R0
+MOVS            R6, #0         ; без суффикса
+CBZ             R0, loc_1E7E32 ; без суффикса
+...
+\end{lstlisting}
+
+\INS{ITTE} (\IT{if-then-then-else}) 
+означает, что первая и вторая инструкции исполнятся, если условие \GTT{LE} (\IT{Less or Equal})
+справедливо, а третья~--- если справедливо обратное условие (\GTT{GT} --- \IT{Greater Than}).
+
+Компиляторы способны генерировать далеко не все варианты.
+
+\myindex{Angry Birds}
+Например, в вышеупомянутой игре Angry Birds (версия \IT{classic} для iOS)
+
+встречаются только такие варианты инструкции \INS{IT}: 
+\INS{IT}, \INS{ITE}, \INS{ITT}, \INS{ITTE}, \INS{ITTT}, \INS{ITTTT}.
+\myindex{\GrepUsage}
+Как это узнать?
+В \IDA можно сгенерировать листинг (что и было сделано), только в опциях был установлен показ 4 байтов для каждого опкода.
+
+Затем, зная что старшая часть 16-битного опкода (\INS{IT} это \GTT{0xBF}), сделаем при помощи \GTT{grep} это:
+
+\begin{lstlisting}
+cat AngryBirdsClassic.lst | grep " BF" | grep "IT" > results.lst
+\end{lstlisting}
+
+\myindex{ARM!\ThumbTwoMode}
+Кстати, если писать на ассемблере для режима Thumb-2 вручную, и дополнять инструкции суффиксами
+условия, то ассемблер автоматически будет добавлять инструкцию \INS{IT} с соответствующими флагами там,
+где надо.
+
+\myparagraph{\NonOptimizingXcodeIV (\ARMMode)}
+
+\begin{lstlisting}[caption=\NonOptimizingXcodeIV (\ARMMode),style=customasmARM]
+b               = -0x20
+a               = -0x18
+val_to_return   = -0x10
+saved_R7        = -4
+
+                STR             R7, [SP,#saved_R7]!
+                MOV             R7, SP
+                SUB             SP, SP, #0x1C
+                BIC             SP, SP, #7
+                VMOV            D16, R2, R3
+                VMOV            D17, R0, R1
+                VSTR            D17, [SP,#0x20+a]
+                VSTR            D16, [SP,#0x20+b]
+                VLDR            D16, [SP,#0x20+a]
+                VLDR            D17, [SP,#0x20+b]
+                VCMPE.F64       D16, D17
+                VMRS            APSR_nzcv, FPSCR
+                BLE             loc_2E08
+                VLDR            D16, [SP,#0x20+a]
+                VSTR            D16, [SP,#0x20+val_to_return]
+                B               loc_2E10
+
+loc_2E08
+                VLDR            D16, [SP,#0x20+b]
+                VSTR            D16, [SP,#0x20+val_to_return]
+
+loc_2E10
+                VLDR            D16, [SP,#0x20+val_to_return]
+                VMOV            R0, R1, D16
+                MOV             SP, R7
+                LDR             R7, [SP+0x20+b],#4
+                BX              LR
+\end{lstlisting}
+
+Почти то же самое, что мы уже видели, 
+но много избыточного кода из-за хранения $a$ и $b$, 
+а также выходного значения, в локальном стеке.
+
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\begin{lstlisting}[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]
+                PUSH    {R3-R7,LR}
+                MOVS    R4, R2
+                MOVS    R5, R3
+                MOVS    R6, R0
+                MOVS    R7, R1
+                BL      __aeabi_cdrcmple
+                BCS     loc_1C0
+                MOVS    R0, R6
+                MOVS    R1, R7
+                POP     {R3-R7,PC}
+
+loc_1C0
+                MOVS    R0, R4
+                MOVS    R1, R5
+                POP     {R3-R7,PC}
+\end{lstlisting}
+
+Keil не генерирует FPU-инструкции, потому что не 
+рассчитывает на то, что они будет поддерживаться, а простым сравнением побитово здесь не обойтись.
+
+%TODO1: why?
+Для сравнения вызывается библиотечная функция \GTT{\_\_aeabi\_cdrcmple}. 
+\myindex{ARM!\Instructions!BCS}
+
+N.B. Результат сравнения эта функция оставляет в флагах, чтобы следующая за вызовом инструкция
+\INS{BCS} (\IT{Carry set~--- Greater than or equal})
+могла работать без дополнительного кода.
+

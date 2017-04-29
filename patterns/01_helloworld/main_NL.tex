@@ -1,0 +1,29 @@
+\section{\HelloWorldSectionName}
+\label{sec:helloworld}
+
+We bekijken het beroemde voorbeeld uit het boek \KRBook:
+
+\lstinputlisting[style=customc]{patterns/01_helloworld/hw.c}
+
+\subsection{x86}
+
+\input{patterns/01_helloworld/MSVC_x86}
+\input{patterns/01_helloworld/GCC_x86}
+
+\subsection{x86-64}
+\input{patterns/01_helloworld/MSVC_x64}
+\input{patterns/01_helloworld/GCC_x64}
+
+\input{patterns/01_helloworld/GCC_one_more}
+\input{patterns/01_helloworld/ARM/main}
+\input{patterns/01_helloworld/MIPS/main}
+
+\subsection{\Conclusion{}}
+
+Het grootste verschil tussen x86/ARM en x64/ARM64 code is dat de pointer naar de string nu 64-bits in lengte is.
+De meeste moderne \ac{CPU}s zijn tegenwoordig 64-bit wegens zowel de verminderde gebruik van geheugen, als de grote vraag ervoor door moderne applicaties.
+We kunnen hierdoor veel meer geheugen aan onze computers toevoegen dan dat 32-bit pointers kunnen aanspreken.
+Bijgevolg zijn alle pointers nu 64-bit.
+
+% sections
+\input{patterns/01_helloworld/exercises}

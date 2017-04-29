@@ -1,0 +1,31 @@
+my_srand:
+; store $a0 to rand_state:
+                lui     $v0, (rand_state >> 16)
+                jr      $ra
+                sw      $a0, rand_state
+my_rand:
+; load rand_state to $v0:
+                lui     $v1, (rand_state >> 16)
+                lw      $v0, rand_state
+                or      $at, $zero  ; load delay slot
+; multiplicate rand_state in $v0 by 1664525 (RNG_a):
+                sll     $a1, $v0, 2
+                sll     $a0, $v0, 4
+                addu    $a0, $a1, $a0
+                sll     $a1, $a0, 6
+                subu    $a0, $a1, $a0
+                addu    $a0, $v0
+                sll     $a1, $a0, 5
+                addu    $a0, $a1
+                sll     $a0, 3
+                addu    $v0, $a0, $v0
+                sll     $a0, $v0, 2
+                addu    $v0, $a0
+; add 1013904223 (RNG_c)
+; the LI instruction is coalesced by IDA from LUI and ORI
+                li      $a0, 0x3C6EF35F 
+                addu    $v0, $a0
+; store to rand_state:
+                sw      $v0, (rand_state & 0xFFFF)($v1)
+                jr      $ra
+                andi    $v0, 0x7FFF ; branch delay slot

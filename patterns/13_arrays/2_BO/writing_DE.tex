@@ -1,0 +1,125 @@
+\subsubsection{Schreibzugriff außerhalb von Arraygrenzen}
+Nehmen wir an, wir hätte ein paar Werte illegalerweise vom Stack gelesen, wie könnten wir etwas hineinschreiben?
+
+Hier ist, was wir haben:
+
+\lstinputlisting[style=customc]{patterns/13_arrays/2_BO/w.c}
+
+\myparagraph{MSVC}
+
+Wir erhalten das Folgende:
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2008,style=customasmx86]{patterns/13_arrays/2_BO/w_DE.asm}
+Das kompilierte Programm stürzt nach der Ausführung ab. Das verwundert nicht. Schauen wir, was genau den Absturz
+verursacht.
+
+\clearpage
+\myindex{\olly}
+Laden wir das Programm in \olly und verfolgen den Ablauf, bis alle 30 Elemente geschrieben worden sind:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/13_arrays/2_BO/olly_w1.png}
+\caption{\olly: nach Wiederherstellung des Wertes von EBP}
+\label{fig:array_BO_olly_w1}
+\end{figure}
+
+\clearpage
+Nachverfolgen bis zum Ende der Funktion:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/13_arrays/2_BO/olly_w2.png}
+\caption{\olly: 
+\TT{EIP} wurde wiederhergestellt, aber \olly kann an 0x15 nicht disassemblieren}
+\label{fig:array_BO_olly_w2}
+\end{figure}
+Richten wir unser Augenmerk auf die Register.
+
+\EIP ist jetzt gerade 0x15. Das ist keine gültige Adreses für Code---zumindest nicht für win32 Code!
+Interessant ist auch, dass das \EBP Register 0x14 enthält und \ECX sowie \EDX jeweils 0x1D
+
+Schauen wir uns das Stacklayout etwas genauer an.
+
+Nachdem der Control Flow an \TT{\main} übergeben worde ist, wurde der Wert in \EBP auf dem Stack abgelegt.
+Danach wurden 84 Byte für das Array und die Variable $i$ reserviert.
+Das entspricht \TT{(20+1)*sizeof(int)}.
+\ESP zeigt jetzt auf die Variable \TT{\_i} im lokalen Stack und nach der Ausführung von \TT{PUSH something} scheint sich
+\TT{something} neben \TT{\_i} zu befinden.
+
+Hier ist das Stacklayout während der Control Flow in der \main ist:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \TT{ESP}    & 4 Byte reserviert für Variable $i$ \\
+\hline
+  \TT{ESP+4}  & 80 Byte reserviert für Array \TT{a[20]} \\
+\hline
+  \TT{ESP+84} & sichere Wert von \EBP \\
+\hline
+  \TT{ESP+88} & Rücksprungadresse \\
+\hline
+\end{tabular}
+\end{center}
+Der Befehl \TT{a[19]=something} schreibt den letzten \Tint innerhalb der Grenzen des Arrays (bis hierhin ist alles in
+Ordnung!).
+Der Befehl \TT{a[20]=something} schreibt \IT{something} an die Stelle, an der der \EBP gespeichert ist.
+
+Sehen wir uns den Zustand der Register im Moment des Absturzes an. In unserem Fall wurde 20 in das zwanzigste Element
+geschrieben. Am Ende der Funktion stellt der Funktionsepilog den originalen Wert von \EBP wieder her.
+(20 dezimal entspricht \TT{0x14} hexadezimal).
+Danach wird \RET ausgeführt, was äquivalent zum Befehl \TT{POP EIP} ist.
+
+Der Befehl \RET nimmt die Rücksprungadresse vom Stack (das ist die Adresse in \ac{CRT}, die \main aufgerufen hat) und
+speichert hier den Wert 21 (\TT{0x15} hexadezimal).
+Die CPU springt an die Adresse \TT{0x15}, aber hier befindet sich kein ausführbarer Code, sodass eine Exception geworfen
+wird.
+
+\myindex{\BufferOverflow}
+Dies nennt man einen \IT{Buffer Overflow}\footnote{\href{http://go.yurichev.com/17132}{wikipedia}}.
+
+Ersetzt man das \Tint Array durch einen String (\Tchar Array) und erzeugt absichtlich einen langen String und übergibt
+ihn im Programm an eine Funktion, die die Länge des Strings nicht prüft und ihn in einen kurzen Buffer kopiert, kann man
+das Programm zwingen an eine bestimmte Adresse zu springen.
+In der Realität ist dieses Verhalten nicht so einfach zu erzeugen, funktioniert aber von Prinzip her genau wie hier.
+Ein klassischer Artikel dazu:\AlephOne.
+
+\myparagraph{GCC}
+
+Kompilieren wir denselben Code mit GCC 4.4.1, erhalten wir:
+
+\lstinputlisting[style=customasmx86]{patterns/13_arrays/2_BO/w_gcc.asm}
+
+Lässt man das Programm unter Linux laufen, lautet das Ergebnis: \TT{Segmentation fault}.
+
+\myindex{GDB}
+Wenn wir es mit dem GDB Debugger laufen lassen, erhalten wir das Folgende:
+
+
+\begin{lstlisting}
+(gdb) r
+Starting program: /home/dennis/RE/1 
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00000016 in ?? ()
+(gdb) info registers
+eax            0x0	0
+ecx            0xd2f96388	-755407992
+edx            0x1d	29
+ebx            0x26eff4	2551796
+esp            0xbffff4b0	0xbffff4b0
+ebp            0x15	0x15
+esi            0x0	0
+edi            0x0	0
+eip            0x16	0x16
+eflags         0x10202	[ IF RF ]
+cs             0x73	115
+ss             0x7b	123
+ds             0x7b	123
+es             0x7b	123
+fs             0x0	0
+gs             0x33	51
+(gdb) 
+\end{lstlisting}
+Die Registerwerte unterscheiden sich geringfügig vom win32 Beispiel, da auch das Stacklayout ein wenig anders ist.

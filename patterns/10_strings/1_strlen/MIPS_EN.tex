@@ -1,0 +1,24 @@
+﻿\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/10_strings/1_strlen/MIPS_O3_IDA_EN.lst}
+
+\myindex{MIPS!\Instructions!NOR}
+\myindex{MIPS!\Pseudoinstructions!NOT}
+
+MIPS lacks a \NOT instruction, but has \NOR which is \TT{OR~+~NOT} operation.
+
+This operation is widely used in digital electronics\footnote{NOR is called \q{universal gate}}.
+\index{Apollo Guidance Computer}
+For example, the Apollo Guidance Computer used in the Apollo program, 
+was built by only using 5600 NOR gates:
+[Jens Eickhoff, \IT{Onboard Computers, Onboard Software and Satellite Operations: An Introduction}, (2011)].
+But NOR element isn't very popular in computer programming.
+
+So, the NOT operation is implemented here as \TT{NOR~DST,~\$ZERO,~SRC}.
+
+From fundamentals \myref{sec:signednumbers} we know that bitwise inverting a signed number is the same 
+as changing its sign and subtracting 1 from the result.
+
+So what \NOT does here is to take the value of $str$ and transform it into $-str-1$.
+The addition operation that follows prepares result.
+

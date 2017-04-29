@@ -1,0 +1,105 @@
+\subsubsection{MSVC}
+
+我们在MSVC 2010上编译一下看看:
+
+\begin{lstlisting}
+cl 1.cpp /Fa1.asm
+\end{lstlisting}
+
+(\TT{/Fa}参数通知编译器生成汇编语句列表)
+
+\begin{lstlisting}[caption=MSVC 2010,style=customasmx86]
+CONST	SEGMENT
+$SG3830	DB	'hello, world', 0AH, 00H
+CONST	ENDS
+PUBLIC	_main
+EXTRN	_printf:PROC
+; Function compile flags: /Odtp
+_TEXT	SEGMENT
+_main	PROC
+	push	ebp
+	mov	ebp, esp
+	push	OFFSET $SG3830
+	call	_printf
+	add	esp, 4
+	xor	eax, eax
+	pop	ebp
+	ret	0
+_main	ENDP
+_TEXT	ENDS
+\end{lstlisting}
+
+MSVC生成Intel语法的汇编语句列表。
+Intel语法和AT-T语法的区别将在\myref{ATT_syntax}讨论。
+
+编译器生成名为\TT{1.obj}的文件，该文件随后被链接成\TT{1.exe}。
+在我这边，生成的文件包含两部分: \TT{CONST}段(用于存放常量)和\TT{\_TEXT}段(用于存放代码)。
+
+\myindex{\CLanguageElements!const}
+\label{string_is_const_char}
+在\CCpp中，字符串\TT{hello, world}具有\TT{const char[]}类型\InSqBrackets{\TCPPPL p176, 7.3.2}，但这个字符串没有名称。
+编译器为了对字符串进行操作，为其指定了一个内部名\TT{\$SG3830}。
+
+所以这个样例的代码可以被重写为如下形式:
+
+\lstinputlisting[style=customc]{patterns/01_helloworld/hw_2.c}
+
+现在我们继续看汇编代码。如我们所见，字符串由一个字节'0'结尾，这是\CCpp中字符串标准规定的。
+关于\CCpp字符串的更多细节参考这一节: \myref{C_strings}。
+
+在代码段\TT{\_TEXT}中，目前只有一个函数\main{}。
+
+像大部分函数一样，\main函数以prologue代码开始，以epilogue代码结束(没有找到比较合适的词翻译)。
+\footnote{在这一节你可以阅读到更多关于prologue和epilogue的内容~(\myref{sec:prologepilog})。}
+
+\myindex{x86!\Instructions!CALL}
+在prologue代码之后，我们能看到对\printf{}函数的调用:\\
+\INS{CALL \_printf}.
+\myindex{x86!\Instructions!PUSH}
+在调用函数前，字符串(或指向字符串的指针)的地址通过\PUSH指令被传递到栈上。
+
+当\printf函数将控制权返回给\main函数的时候，字符串(或指向字符串的指针)的地址仍留存在栈上。
+然而我们已经不再需要它，\gls{栈指针}(\ESP寄存器)需要被修正。
+
+\myindex{x86!\Instructions!ADD}
+\INS{ADD ESP, 4}表示将\ESP寄存器中的值加4。
+
+为什么是4呢？因为这是一个32位程序，我们通过栈来传递地址时需要4个字节，如果它是64位程序，我们则需要8个字节。
+\INS{ADD ESP, 4}是\INS{POP register}的有效替代品，并且不需要任何额外的寄存器。\footnote{然而CPU的标志位被修改了}
+
+\myindex{Intel C++}
+\myindex{\oracle}
+\myindex{x86!\Instructions!POP}
+
+出于同样的原因，一些编译器(例如Intel C++编译器)会生成\TT{POP ECX}
+而不是\ADD(例如，在\oracle{}的代码中可以观察到这个现象，而它正是由Intel C++编译器所编译的)。
+这两个指令的效果几乎完全相同，区别只在于\ECX寄存器的值是否会被覆盖掉。
+Intel C++编译器使用\TT{POP ECX}是因为它的机器码比\TT{ADD ESP, x}少(前者占用1字节，后者占用3字节)。
+
+下面就是\oracle{}中一个使用\POP代替\ADD的例子:
+
+\begin{lstlisting}[caption=\oracle 10.2 Linux (app.o file),style=customasmx86]
+.text:0800029A                 push    ebx
+.text:0800029B                 call    qksfroChild
+.text:080002A0                 pop     ecx
+\end{lstlisting}
+
+%Read more about the stack in section
+% ~(\myref{sec:stack}).
+\myindex{\CLanguageElements!return}
+在调用\printf后，原始的\CCpp代码包含了语句\TT{return 0}~---将0作为\main函数的返回值。
+
+\myindex{x86!\Instructions!XOR}
+而在生成的代码中，这一语句通过\INS{XOR EAX, EAX}指令实现。
+
+\myindex{x86!\Instructions!MOV}
+
+\XOR即\q{eXclusive OR}，\footnote{\href{http://go.yurichev.com/17118}{wikipedia}}但是编译器通常使用它来代替
+\INS{MOV EAX, 0}---原因还是它的机器码更少(\XOR占用2字节而\MOV占用5字节)。
+
+\myindex{x86!\Instructions!SUB}
+一些编译器会生成\INS{SUB EAX, EAX}，即从\EAX中的值减去\EAX的值，意即，将EAX清零。
+
+\myindex{x86!\Instructions!RET}
+最后一条指令\RET将控制权返回给\gls{调用者}。通常情况下，这是\CCpp的\ac{CRT}代码，即会将控制权返回给\ac{OS}。
+

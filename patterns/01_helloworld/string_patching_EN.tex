@@ -1,0 +1,52 @@
+\subsubsection{String patching (Win32)}
+
+We can easily find ``hello, world'' string in executable file using Hiew:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/01_helloworld/hola_edit1.png}
+\caption{Hiew}
+\label{}
+\end{figure}
+
+And we can try to translate our message to Spanish language:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/01_helloworld/hola_edit2.png}
+\caption{Hiew}
+\label{}
+\end{figure}
+
+Spanish text is one byte shorter than English, so we also add 0x0A byte at the end (\TT{\textbackslash{}n}) and zero byte.
+
+It works.
+
+What if we want to insert longer message?
+There are some zero bytes after original English text.
+Hard to say if they can be overwritten: they may be used somewhere in \ac{CRT} code, or maybe not.
+Anyway, you can overwrite them only if you really know what you are doing.
+
+\subsubsection{String patching (Linux x64)}
+
+\myindex{\radare}
+Let's try to patch Linux x64 executable using \radare{}:
+
+\lstinputlisting[caption=\radare{} session]{patterns/01_helloworld/radare.lst}
+
+What I do here: I search for \q{hello} string using \TT{/} command, 
+then I set \IT{cursor} (or \IT{seek} in \radare{} terms) to that address.
+Then I want to be sure that this is really that place: \TT{px} dumps bytes there.
+\TT{oo+} switches \radare{} to \IT{read-write} mode.
+\TT{w} writes ASCII string at the current \IT{seek}.
+Note \TT{\textbackslash{}00} at the end---this is zero byte.
+\TT{q} quits.
+
+\subsubsection{Software \IT{localization} of MS-DOS era}
+
+The way I described was a common way to translate MS-DOS software to Russian language back to 1980's and 1990's.
+Russian words and sentences are usually slightly longer than its English counterparts, so that is why \IT{localized}
+software has a lot of weird acronyms and hardly readable abbreviations.
+
+Perhaps, this also happened to other languages during that era.
+

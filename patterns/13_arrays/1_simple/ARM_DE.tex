@@ -1,0 +1,44 @@
+\subsubsection{ARM}
+
+\myparagraph{\NonOptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/13_arrays/1_simple/simple_Keil_ARM_O0_DE.asm}
+
+Der Typ \Tint benötigt 32 Bit (oder 4 Byte) zum Speichern, weshalb zum Speichern von 20 \Tint Variablen 80 (\TT{0x50})
+Bytes benötigt werden. Deshalb reserviert der Befehl \INS{SUB SP, SP, \#0x50} im Funktionsprolog genau diese Menge an
+Speicherplatz auf dem Stack.
+
+In sowohl der ersten als auch der zweiten Scheife befindet sich der Scheifenzähler \var{i} im \Reg{4} Register.
+
+\myindex{ARM!Optional operators!LSL}
+Die Zahl, die in das Array geschrieben wird, wird über den Ausdruck $i\cdot 2$ berechnet, was äquivalent zur
+Linksverschiebung um 1 Bit ist, weshalb der Befehl \INS{MOV R0, R4,LSL\#1} verwendet wird.
+
+\myindex{ARM!\Instructions!STR}
+\INS{STR R0, [SP,R4,LSL\#2]} schreibt den Inhalt von \Reg{0} in das Array.
+
+Ein Pointer auf ein Arrayelement wird wie folgt berechnet: \ac{SP} zeigt auf den Beginn des Arrays, Reg{4} ist $i$.
+Eine Linksverschiebung von $i$ um 2 Bits entspricht effektiv einer Multiplikation mit 4 (da jedes Arrayelement eine
+Größe von 4 Byte hat) und wird dann zur Adresse am Beginn des Arrays addiert.
+
+\myindex{ARM!\Instructions!LDR}
+Die zweite Schleife enthält den inversen Befehl \INS{LDR R2, [SP,R4,LSL\#2]}. Er lädt den benötigten Wert aus dem Array
+und der Pointer hierauf wird analog berechnet.
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/13_arrays/1_simple/simple_Keil_thumb_O3_DE.asm}
+
+Der Thumb Code ist sehr ähnlich.
+\myindex{ARM!\Instructions!LSLS}
+Der Thumb mode kennt spezielle Befehl für das bitweise Verschieben (wie \TT{LSLS}), der den in das Array zu schreibenden
+Wert und die Adresse jedes Elements im Array berechnet.
+
+Der Compiler reserviert ein wenig mehr Platz auf dem lokalen Stack, aber die letzten 4 Byte davon werden nicht
+verwendet.
+
+\myparagraph{\NonOptimizing GCC 4.9.1 (ARM64)}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1
+(ARM64),style=customasmARM]{patterns/13_arrays/1_simple/ARM64_GCC491_O0_DE.s}
+

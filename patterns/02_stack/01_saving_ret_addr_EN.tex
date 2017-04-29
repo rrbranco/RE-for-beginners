@@ -1,0 +1,102 @@
+\subsubsection{Save the function's return address}
+
+\myparagraph{x86}
+
+\myindex{x86!\Instructions!CALL}
+When calling another function with a \CALL instruction, the address of the point exactly after the \CALL instruction is saved 
+to the stack and then an unconditional jump to the address in the \CALL operand is executed.
+
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!JMP}
+The \CALL instruction is equivalent to a\\
+\INS{PUSH address\_after\_call / JMP operand} instruction pair.
+
+\myindex{x86!\Instructions!RET}
+\myindex{x86!\Instructions!POP}
+\RET fetches a value from the stack and jumps to it~---that is equivalent to a \TT{POP tmp / JMP tmp} instruction pair.
+
+\myindex{\Stack!\MLStackOverflow}
+\myindex{\Recursion}
+Overflowing the stack is straightforward. Just run eternal recursion:
+
+\begin{lstlisting}[style=customc]
+void f()
+{
+	f();
+};
+\end{lstlisting}
+
+MSVC 2008 reports the problem:
+
+\begin{lstlisting}
+c:\tmp6>cl ss.cpp /Fass.asm
+Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 15.00.21022.08 for 80x86
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ss.cpp
+c:\tmp6\ss.cpp(4) : warning C4717: 'f' : recursive on all control paths, function will cause runtime stack overflow
+\end{lstlisting}
+
+\dots but generates the right code anyway:
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+	push	ebp
+	mov	ebp, esp
+; Line 3
+	call	?f@@YAXXZ	; f
+; Line 4
+	pop	ebp
+	ret	0
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+\dots Also if we turn on the compiler optimization (\TT{\Ox} option) the optimized code will not overflow the stack 
+and will work \IT{correctly}\footnote{irony here} instead:
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+$LL3@f:
+; Line 3
+	jmp	SHORT $LL3@f
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+GCC 4.4.1 generates similar code in both cases without, however,  issuing any warning about the problem.
+
+\myparagraph{ARM}
+
+\myindex{ARM!\Registers!Link Register}
+ARM programs also use the stack for saving return addresses, but differently.
+As mentioned in \q{\HelloWorldSectionName}~(\myref{sec:hw_ARM}),
+the \ac{RA} is saved to the \ac{LR} (\gls{link register}).
+If one needs, however, to call another function and use the \ac{LR} register
+one more time, its value has to be saved.
+\myindex{Function prologue}
+Usually it is saved in the function prologue.
+
+\myindex{ARM!\Instructions!PUSH}
+\myindex{ARM!\Instructions!POP}
+Often, we see instructions like \INS{PUSH {R4-R7,LR}} along with this instruction in epilogue
+\INS{POP {R4-R7,PC}}---thus register values to be used in the function are saved in the stack, including \ac{LR}.
+
+\myindex{ARM!Leaf function}
+Nevertheless, if a function never calls any other function, in \ac{RISC} terminology it is called a
+\IT{\gls{leaf function}}\footnote{\href{http://go.yurichev.com/17064}{infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.faqs/ka13785.html}}. 
+As a consequence, leaf functions do not save the \ac{LR} register (because they don't modify it).
+If such function is small and uses a small number of registers, it may not use the stack at all.
+Thus, it is possible to call leaf functions without using the stack,
+which can be faster than on older x86 machines because external RAM is not used for the stack
+\footnote{Some time ago, on PDP-11 and VAX, the CALL instruction (calling other functions) was expensive; up to 50\%
+of execution time might be spent on it, so it was considered that having a big number of small functions is an \gls{anti-pattern} \InSqBrackets{\TAOUP Chapter 4, Part II}.}.
+This can be also useful for situations when memory for the stack is not yet allocated or not available.
+
+Some examples of leaf functions:
+\myref{ARM_leaf_example1}, \myref{ARM_leaf_example2}, 
+\myref{ARM_leaf_example3}, \myref{ARM_leaf_example4}, \myref{ARM_leaf_example5},
+\myref{ARM_leaf_example6}, \myref{ARM_leaf_example7}, \myref{ARM_leaf_example10}.
+

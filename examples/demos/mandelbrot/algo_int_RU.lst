@@ -1,0 +1,28 @@
+def check_if_is_in_set(X, Y):
+    X_start=X
+    Y_start=Y
+    iterations=0
+
+    while True:
+        if (X^2 + Y^2 > bounds):
+            break
+        new_X=X^2 - Y^2 + X_start
+        new_Y=2*X*Y + Y_start
+        if iterations > max_iterations:
+            break
+        iterations++
+
+    return iterations
+
+# §черно-белое§
+for X = min_X to max_X:
+    for Y = min_Y to max_Y:
+        if check_if_is_in_set (X,Y) < max_iterations:
+            нарисовать точку на X, Y
+
+# цветное
+for X = min_X to max_X:
+    for Y = min_Y to max_Y:
+        iterations = if check_if_is_in_set (X,Y)
+        преобразовать количество итераций в цвет
+        нарисовать цветную точку на X,Y

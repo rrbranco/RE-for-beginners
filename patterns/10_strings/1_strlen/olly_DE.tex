@@ -1,0 +1,71 @@
+\clearpage
+\myparagraph{\Optimizing MSVC + \olly}
+\myindex{\olly}
+
+Wir untersuchen das (optimierte) Beispiel in \olly. Hier ist der erste
+Durchlauf:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/10_strings/1_strlen/olly1.png}
+\caption{\olly: Beginn erster Durchlauf}
+\label{fig:strlen_olly_1}
+\end{figure}
+
+Wir sehen, dass \olly eine Schleife gefunden hat, und zur Verbesserung der
+Lesbarkeit, diese in eckige Klammern \IT{eingeschlossen} hat.
+Nach Rechtsklick auf \EAX wählen wir \q{Follow in Dump} und das Speicherfenster
+scrollt an die passende Stelle. 
+Hier sehen wir den String \q{hello!} im Speicher. 
+Dahinter befindet sich mindestens ein Nullbyte und im Anschluss Zufallsbits.
+
+Wenn \olly ein Register mit einer gültigen Adresse, die auf einen String zeigt,
+findet, wird dieser String angezeigt.
+
+\clearpage
+Wir drücken einige Male F8 (\stepover) um zum Anfang der Schleifenkörpers zu
+gelangen:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/10_strings/1_strlen/olly2.png}
+\caption{\olly: Beginn zweiter Durchlauf}
+\label{fig:strlen_olly_2}
+\end{figure}
+
+Wir sehen, dass \EAX nun die Adresse des zweiten Zeichens des Strings enthält.
+
+\clearpage
+
+Durch hinreichend häufiges Drücken von F8 verlassen wir schließlich die
+Schleife:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/10_strings/1_strlen/olly3.png}
+\caption{\olly: Pointer Differenz wird berechnet}
+\label{fig:strlen_olly_3}
+\end{figure}
+
+Wir sehen, dass \EAX jetzt die Adresse des Nullbytes direkt hinter dem String
+enthält. In der Zwischenzeit hat sich \EDX nicht verändert, es zeigt also immer
+noch auf den Anfang des Strings. 
+
+Die Differenz zwischen den beiden Adressen wird jetzt berechnet. 
+
+\clearpage
+Der \SUB Befehl wurde gerade ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/10_strings/1_strlen/olly4.png}
+\caption{\olly: \EAX muss dekrementiert werden}
+\label{fig:strlen_olly_4}
+\end{figure}
+
+Die Differenz der Pointer im \EAX Register beträgt nun--7.
+Tatsächlich beträgt die Länge des \q{hello!} Strings 6 Zeichen, aber mit dem
+Nullbyte am Ende dazugezählt sind es 7.
+Die Funktion \TT{strlen()} soll aber die Anzahl der Nicht-Null-Zeichen im String
+zurückliefert, also wird einmal dekrementiert und der Funktionsaufruf
+anschließend beendet.

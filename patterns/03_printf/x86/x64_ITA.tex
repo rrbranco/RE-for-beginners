@@ -1,0 +1,172 @@
+\subsubsection{x64: 8 argomenti}
+
+\myindex{x86-64}
+\label{example_printf8_x64}
+Per vedere come altri argomenti sono passati tramite lo stack, cambiamo nuovamente l'esempio per aumentare il numero degli argomenti a 9 (format string di \printf + 8 variabili \Tint):
+
+\lstinputlisting[style=customc]{patterns/03_printf/2.c}
+
+\myparagraph{MSVC}
+
+Come gia' detto in precedenza, i primi 4 argomenti devono essere passati tramite i registri \RCX, \RDX, \Reg{8}, \Reg{9} in Win64,
+mentre tutto il resto ---tramite lo stack.
+E' esattamente quello che vediamo qui.
+Tuttavia, l'istruzione \MOV instruction e' usata al posto di \PUSH per preparare lo stack, in modo tale che i valori siano memorizzati
+nello stack in maniera diretta.
+
+% TODO translate to Italian
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/03_printf/x86/2_MSVC_x64_EN.asm}
+
+Il lettore attento potrebbe chiedere perche' per i valori \Tint sono allocati 8 byte quando ne bastano 4?
+Bisogna ricordare che per ogni tipo di dato piu' piccolo di 64 bit, sono allocati 8 byte.
+Questo e' stabilito per convenienza: rende piu' facile calcolare l'indirizzo di argomenti arbitrari. E inoltre fa si che tutti
+siano allocati ad indirizzi di memoria allineati.
+Succede lo stesso in ambienti a 32-bit environments: sono riservati 4 byte per ogni tipo di dato.
+
+% also for local variables?
+
+\myparagraph{GCC}
+
+L'immagine e' simile per i sistemi operativi x86-64 e *NIX, con l'eccezzione che i primi 6 argomenti sono passati attraverso
+i registri \RDI, \RSI, \RDX, \RCX, \Reg{8}, \Reg{9} registers.
+Tutto il resto ---tramite lo stack.
+GCC genera il codice memorizzando il puntatore alla stringa in \EDI invece che \RDI{}---lo abbiamo visto in precedenza: 
+\myref{hw_EDI_instead_of_RDI}.
+
+Abbiamo anche notato prima che il registro \EAX e' stato azzerato prima di una chiamata a \printf: \myref{SysVABI_input_EAX}.
+
+% TODO translate to Italian
+\lstinputlisting[caption=\Optimizing GCC 4.4.6 x64,style=customasmx86]{patterns/03_printf/x86/2_GCC_x64_EN.s}
+
+\myparagraph{GCC + GDB}
+\myindex{GDB}
+
+Proviamo l'esempio in \ac{GDB}.
+
+\begin{lstlisting}
+$ gcc -g 2.c -o 2
+\end{lstlisting}
+
+\begin{lstlisting}
+$ gdb 2
+GNU gdb (GDB) 7.6.1-ubuntu
+...
+Reading symbols from /home/dennis/polygon/2...done.
+\end{lstlisting}
+
+\begin{lstlisting}[caption=impostiamo il breakpoint su \printf{,} e avviamo]
+(gdb) b printf
+Breakpoint 1 at 0x400410
+(gdb) run
+Starting program: /home/dennis/polygon/2 
+
+Breakpoint 1, __printf (format=0x400628 "a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%d; h=%d\n") at printf.c:29
+29	printf.c: No such file or directory.
+\end{lstlisting}
+
+I registri \RSI/\RDX/\RCX/\Reg{8}/\Reg{9} hanno i valori previsti.
+\RIP ha l'indirizzo della prima istruzione della funzione \printf.
+
+\begin{lstlisting}
+(gdb) info registers
+rax            0x0	0
+rbx            0x0	0
+rcx            0x3	3
+rdx            0x2	2
+rsi            0x1	1
+rdi            0x400628	4195880
+rbp            0x7fffffffdf60	0x7fffffffdf60
+rsp            0x7fffffffdf38	0x7fffffffdf38
+r8             0x4	4
+r9             0x5	5
+r10            0x7fffffffdce0	140737488346336
+r11            0x7ffff7a65f60	140737348263776
+r12            0x400440	4195392
+r13            0x7fffffffe040	140737488347200
+r14            0x0	0
+r15            0x0	0
+rip            0x7ffff7a65f60	0x7ffff7a65f60 <__printf>
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ispezioniamo la format string]
+(gdb) x/s $rdi
+0x400628:	"a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%d; h=%d\n"
+\end{lstlisting}
+
+Effettuiamo un dump dello stack, questa volta con il comando x/g ---\IT{g} sta per \IT{giant words}, ovvero 64-bit words.
+
+\begin{lstlisting}
+(gdb) x/10g $rsp
+0x7fffffffdf38:	0x0000000000400576	0x0000000000000006
+0x7fffffffdf48:	0x0000000000000007	0x00007fff00000008
+0x7fffffffdf58:	0x0000000000000000	0x0000000000000000
+0x7fffffffdf68:	0x00007ffff7a33de5	0x0000000000000000
+0x7fffffffdf78:	0x00007fffffffe048	0x0000000100000000
+\end{lstlisting}
+
+Il primo elemento dello stack, proprio come nel caso precedente, e' il {RA}.
+3 valori vengono passatri trvamite lo stack : 6, 7, 8.
+Notiamo anche che 8 e' passato nei 32-bit alti non azzerati: \GTT{0x00007fff00000008}.
+Cio' va bene, perche' i valori hanno tipo \Tint , che e' a 32-bit.
+Quindi, i registri alti o gli elementi alti dello stack potrebbero contenere \q{random garbage}.
+
+Se andiamo a vedere dove viene restituito il controllodopo l'esecuzione di \printf, 
+\ac{GDB} mostrera' l'intera funzione \main:
+
+\begin{lstlisting}[style=customasmx86]
+(gdb) set disassembly-flavor intel
+(gdb) disas 0x0000000000400576
+Dump of assembler code for function main:
+   0x000000000040052d <+0>:	push   rbp
+   0x000000000040052e <+1>:	mov    rbp,rsp
+   0x0000000000400531 <+4>:	sub    rsp,0x20
+   0x0000000000400535 <+8>:	mov    DWORD PTR [rsp+0x10],0x8
+   0x000000000040053d <+16>:	mov    DWORD PTR [rsp+0x8],0x7
+   0x0000000000400545 <+24>:	mov    DWORD PTR [rsp],0x6
+   0x000000000040054c <+31>:	mov    r9d,0x5
+   0x0000000000400552 <+37>:	mov    r8d,0x4
+   0x0000000000400558 <+43>:	mov    ecx,0x3
+   0x000000000040055d <+48>:	mov    edx,0x2
+   0x0000000000400562 <+53>:	mov    esi,0x1
+   0x0000000000400567 <+58>:	mov    edi,0x400628
+   0x000000000040056c <+63>:	mov    eax,0x0
+   0x0000000000400571 <+68>:	call   0x400410 <printf@plt>
+   0x0000000000400576 <+73>:	mov    eax,0x0
+   0x000000000040057b <+78>:	leave  
+   0x000000000040057c <+79>:	ret    
+End of assembler dump.
+\end{lstlisting}
+
+Finiamo di eseguire \printf, eseguiamo l'istruzione che azzera \EAX, e notiamo che il registro \EAX register ha esattamente il valore zero.
+\RIP adesso punta all'istruzione \INS{LEAVE} , ovvero la penultima nella funzione \main.
+
+\begin{lstlisting}
+(gdb) finish
+Run till exit from #0  __printf (format=0x400628 "a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%d; h=%d\n") at printf.c:29
+a=1; b=2; c=3; d=4; e=5; f=6; g=7; h=8
+main () at 2.c:6
+6		return 0;
+Value returned is $1 = 39
+(gdb) next
+7	};
+(gdb) info registers
+rax            0x0	0
+rbx            0x0	0
+rcx            0x26	38
+rdx            0x7ffff7dd59f0	140737351866864
+rsi            0x7fffffd9	2147483609
+rdi            0x0	0
+rbp            0x7fffffffdf60	0x7fffffffdf60
+rsp            0x7fffffffdf40	0x7fffffffdf40
+r8             0x7ffff7dd26a0	140737351853728
+r9             0x7ffff7a60134	140737348239668
+r10            0x7fffffffd5b0	140737488344496
+r11            0x7ffff7a95900	140737348458752
+r12            0x400440	4195392
+r13            0x7fffffffe040	140737488347200
+r14            0x0	0
+r15            0x0	0
+rip            0x40057b	0x40057b <main+78>
+...
+\end{lstlisting}

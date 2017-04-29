@@ -1,0 +1,329 @@
+\subsection{\TT{V\$VERSION} table in the \oracle}
+
+\myindex{\oracle}
+\myindex{Linux}
+\myindex{Windows!ntoskrnl.exe}
+\oracle 11.2 is a huge program, its main module \TT{oracle.exe} contain approx. 124,000 functions. For comparison, the Windows 7 x86 kernel (ntoskrnl.exe) contains approx. 11,000 functions and the Linux 3.9.8 kernel
+(with default drivers compiled)---31,000 functions.
+
+Let's start with an easy question. Where does \oracle get all this information, when we execute this simple statement in SQL*Plus:
+
+\begin{lstlisting}
+SQL> select * from V$VERSION;
+\end{lstlisting}
+
+And we get:
+
+\begin{lstlisting}
+BANNER
+--------------------------------------------------------
+
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - Production
+PL/SQL Release 11.2.0.1.0 - Production
+CORE    11.2.0.1.0      Production
+TNS for 32-bit Windows: Version 11.2.0.1.0 - Production
+NLSRTL Version 11.2.0.1.0 - Production
+\end{lstlisting}
+
+Let's start. Where in the \oracle can we find the string \TT{V\$VERSION}?
+
+In the win32-version, \TT{oracle.exe} file contains the string,
+it's easy to see.
+But we can also use the object (.o) files from the Linux version of \oracle since, unlike the win32 version \TT{oracle.exe}, the function names (and global variables as well) are preserved there.
+
+So, the \TT{kqf.o} file contains the \TT{V\$VERSION} string.
+The object file is in the main Oracle-library \TT{libserver11.a}.
+
+A reference to this text string can find in the \TT{kqfviw} table stored in the same file, \TT{kqf.o}:
+
+\begin{lstlisting}[caption=kqf.o,style=customasmx86]
+.rodata:0800C4A0 kqfviw dd 0Bh    ; DATA XREF: kqfchk:loc_8003A6D
+.rodata:0800C4A0                  ; kqfgbn+34
+.rodata:0800C4A4        dd offset _2__STRING_10102_0 ; "GV$WAITSTAT"
+.rodata:0800C4A8        dd 4
+.rodata:0800C4AC        dd offset _2__STRING_10103_0 ; "NULL"
+.rodata:0800C4B0        dd 3
+.rodata:0800C4B4        dd 0
+.rodata:0800C4B8        dd 195h
+.rodata:0800C4BC        dd 4
+.rodata:0800C4C0        dd 0
+.rodata:0800C4C4        dd 0FFFFC1CBh
+.rodata:0800C4C8        dd 3
+.rodata:0800C4CC        dd 0
+.rodata:0800C4D0        dd 0Ah
+.rodata:0800C4D4        dd offset _2__STRING_10104_0 ; "V$WAITSTAT"
+.rodata:0800C4D8        dd 4
+.rodata:0800C4DC        dd offset _2__STRING_10103_0 ; "NULL"
+.rodata:0800C4E0        dd 3
+.rodata:0800C4E4        dd 0
+.rodata:0800C4E8        dd 4Eh
+.rodata:0800C4EC        dd 3
+.rodata:0800C4F0        dd 0
+.rodata:0800C4F4        dd 0FFFFC003h
+.rodata:0800C4F8        dd 4
+.rodata:0800C4FC        dd 0
+.rodata:0800C500        dd 5
+.rodata:0800C504        dd offset _2__STRING_10105_0 ; "GV$BH"
+.rodata:0800C508        dd 4
+.rodata:0800C50C        dd offset _2__STRING_10103_0 ; "NULL"
+.rodata:0800C510        dd 3
+.rodata:0800C514        dd 0
+.rodata:0800C518        dd 269h
+.rodata:0800C51C        dd 15h
+.rodata:0800C520        dd 0
+.rodata:0800C524        dd 0FFFFC1EDh
+.rodata:0800C528        dd 8
+.rodata:0800C52C        dd 0
+.rodata:0800C530        dd 4
+.rodata:0800C534        dd offset _2__STRING_10106_0 ; "V$BH"
+.rodata:0800C538        dd 4
+.rodata:0800C53C        dd offset _2__STRING_10103_0 ; "NULL"
+.rodata:0800C540        dd 3
+.rodata:0800C544        dd 0
+.rodata:0800C548        dd 0F5h
+.rodata:0800C54C        dd 14h
+.rodata:0800C550        dd 0
+.rodata:0800C554        dd 0FFFFC1EEh
+.rodata:0800C558        dd 5
+.rodata:0800C55C        dd 0
+\end{lstlisting}
+
+By the way, often, while analyzing \oracle's internals, you may ask yourself, why are the names of the functions and global variable so weird.
+
+Probably, because \oracle is a very old product and was developed in C in the 1980s.
+
+And that was a time when the C standard guaranteed that the function names/variables can support only up to 6 characters inclusive: <<6 significant initial characters in an external identifier>>\footnote{\href{http://go.yurichev.com/17142}{Draft ANSI C Standard (ANSI X3J11/88-090) (May 13, 1988) (yurichev.com)}}
+
+Probably, the table \TT{kqfviw} contains most (maybe even all) views prefixed with V\$, these are \IT{fixed views}, present all the time.
+Superficially, by noticing the cyclic recurrence of data, we can easily see that each \TT{kqfviw} table element has 12 32-bit fields.
+It is very simple to create a 12-elements structure in \IDA and apply it to all table elements.
+As of \oracle version 11.2, there are 1023 table elements, i.e., in it are described 1023 of all possible \IT{fixed views}.
+
+We are going to return to this number later.
+
+As we can see, there is not much information in these numbers in the fields. The first number is always equals to the name of the view (without the terminating zero.
+This is correct for each element. But this information is not very useful.
+
+We also know that the information about all fixed views can be retrieved from a \IT{fixed view} named \TT{V\$FIXED\_VIEW\_DEFINITION}
+(by the way, the information for this view is also taken from the \TT{kqfviw} and \TT{kqfvip} tables.)
+By the way, there are 1023 elements in those too. Coincidence? No.
+
+\begin{lstlisting}
+SQL> select * from V$FIXED_VIEW_DEFINITION where view_name='V$VERSION';
+
+VIEW_NAME
+------------------------------
+VIEW_DEFINITION
+------------------------------
+
+V$VERSION
+select  BANNER from GV$VERSION where inst_id = USERENV('Instance')
+\end{lstlisting}
+
+So, \TT{V\$VERSION} is some kind of a \IT{thunk view} for another view, named \TT{GV\$VERSION}, which is, in turn:
+
+\begin{lstlisting}
+SQL> select * from V$FIXED_VIEW_DEFINITION where view_name='GV$VERSION';
+
+VIEW_NAME
+------------------------------
+VIEW_DEFINITION
+------------------------------
+
+GV$VERSION
+select inst_id, banner from x$version
+\end{lstlisting}
+
+The tables prefixed with X\$ in the \oracle are service tables too, undocumented, cannot be changed by the user and are refreshed dynamically.
+
+If we search for the text \\
+\begin{lstlisting}
+select BANNER from GV\$VERSION where inst\_id = 
+USERENV('Instance')
+\end{lstlisting}
+... 
+in the \TT{kqf.o} file, we find it in the \TT{kqfvip} table:
+
+\begin{lstlisting}[caption=kqf.o,style=customasmx86]
+.rodata:080185A0 kqfvip dd offset _2__STRING_11126_0 ; DATA XREF: kqfgvcn+18
+.rodata:080185A0                                ; kqfgvt+F
+.rodata:080185A0                                ; "select inst_id,decode(indx,1,'data bloc"...
+.rodata:080185A4        dd offset kqfv459_c_0
+.rodata:080185A8        dd 0
+.rodata:080185AC        dd 0
+
+...
+
+.rodata:08019570        dd offset _2__STRING_11378_0 ; "select  BANNER from GV$VERSION where in"...
+.rodata:08019574        dd offset kqfv133_c_0
+.rodata:08019578        dd 0
+.rodata:0801957C        dd 0
+.rodata:08019580        dd offset _2__STRING_11379_0 ; "select inst_id,decode(bitand(cfflg,1),0"...
+.rodata:08019584        dd offset kqfv403_c_0
+.rodata:08019588        dd 0
+.rodata:0801958C        dd 0
+.rodata:08019590        dd offset _2__STRING_11380_0 ; "select  STATUS , NAME, IS_RECOVERY_DEST"...
+.rodata:08019594        dd offset kqfv199_c_0
+\end{lstlisting}
+
+
+The table appear to have 4 fields in each element. By the way, there are 1023 elements in it, again, the number we already know.
+
+The second field points to another table that contains the table fields for this \IT{fixed view}.
+As for \TT{V\$VERSION}, this table has only two elements, the first is 6 and the second is 
+the \TT{BANNER} string (the number 6 is this string's length) and after, a \IT{terminating} element that contains 
+0 and a \IT{null} C string:
+
+\begin{lstlisting}[caption=kqf.o,style=customasmx86]
+.rodata:080BBAC4 kqfv133_c_0 dd 6     ; DATA XREF: .rodata:08019574
+.rodata:080BBAC8             dd offset _2__STRING_5017_0 ; "BANNER"
+.rodata:080BBACC             dd 0
+.rodata:080BBAD0             dd offset _2__STRING_0_0
+\end{lstlisting}
+
+By joining data from both \TT{kqfviw} and \TT{kqfvip} tables, we can get the SQL statements which are executed when the user wants to query information from a specific \IT{fixed view}.
+
+So we can write an \oracletables program, to gather all this information from \oracle for Linux's object files.
+For \TT{V\$VERSION}, we find this:
+
+\begin{lstlisting}[caption=Result of \OracleTablesName]
+kqfviw_element.viewname: [V$VERSION] ?: 0x3 0x43 0x1 0xffffc085 0x4
+kqfvip_element.statement: [select  BANNER from GV$VERSION where inst_id = USERENV('Instance')]
+kqfvip_element.params:
+[BANNER] 
+\end{lstlisting}
+
+And:
+
+\begin{lstlisting}[caption=Result of \OracleTablesName]
+kqfviw_element.viewname: [GV$VERSION] ?: 0x3 0x26 0x2 0xffffc192 0x1
+kqfvip_element.statement: [select inst_id, banner from x$version]
+kqfvip_element.params:
+[INST_ID] [BANNER] 
+\end{lstlisting}
+
+The \TT{GV\$VERSION} \IT{fixed view} is different from \TT{V\$VERSION} only in that it has one more field with the identifier \IT{instance}.
+
+Anyway, we are going to stick with the \TT{X\$VERSION} table. Just like any other X\$-table, it is undocumented, however, we can query it:
+
+\begin{lstlisting}
+SQL> select * from x$version;
+
+ADDR           INDX    INST_ID
+-------- ---------- ----------
+BANNER
+------------------------------
+
+0DBAF574          0          1
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - Production
+
+...
+\end{lstlisting}
+
+This table has some additional fields, like \TT{ADDR} and \TT{INDX}.
+
+While scrolling \TT{kqf.o} in \IDA we can spot another table that contains a pointer to the \TT{X\$VERSION} string, this is \TT{kqftab}:
+
+\begin{lstlisting}[caption=kqf.o,style=customasmx86]
+.rodata:0803CAC0      dd 9                    ; element number 0x1f6
+.rodata:0803CAC4      dd offset _2__STRING_13113_0 ; "X$VERSION"
+.rodata:0803CAC8      dd 4
+.rodata:0803CACC      dd offset _2__STRING_13114_0 ; "kqvt"
+.rodata:0803CAD0      dd 4
+.rodata:0803CAD4      dd 4
+.rodata:0803CAD8      dd 0
+.rodata:0803CADC      dd 4
+.rodata:0803CAE0      dd 0Ch
+.rodata:0803CAE4      dd 0FFFFC075h
+.rodata:0803CAE8      dd 3
+.rodata:0803CAEC      dd 0
+.rodata:0803CAF0      dd 7
+.rodata:0803CAF4      dd offset _2__STRING_13115_0 ; "X$KQFSZ"
+.rodata:0803CAF8      dd 5
+.rodata:0803CAFC      dd offset _2__STRING_13116_0 ; "kqfsz"
+.rodata:0803CB00      dd 1
+.rodata:0803CB04      dd 38h
+.rodata:0803CB08      dd 0
+.rodata:0803CB0C      dd 7
+.rodata:0803CB10      dd 0
+.rodata:0803CB14      dd 0FFFFC09Dh
+.rodata:0803CB18      dd 2
+.rodata:0803CB1C      dd 0
+\end{lstlisting}
+
+There are a lot of references to the X\$-table names, apparently, to all \oracle 11.2 X\$-tables.
+But again, we don't have enough information.
+
+It's not clear what does the \TT{kqvt} string stands for. 
+
+The \TT{kq} prefix may mean \IT{kernel} or \IT{query}. 
+
+\TT{v} apparently stands for \IT{version} and \TT{t}---\IT{type}? 
+Hard to say.
+
+A table with a similar name can be found in \TT{kqf.o}:
+
+\begin{lstlisting}[caption=kqf.o]
+.rodata:0808C360 kqvt_c_0 kqftap_param <4, offset _2__STRING_19_0, 917h, 0, 0, 0, 4, 0, 0>
+.rodata:0808C360                                  ; DATA XREF: .rodata:08042680
+.rodata:0808C360                                  ; "ADDR"
+.rodata:0808C384          kqftap_param <4, offset _2__STRING_20_0, 0B02h, 0, 0, 0, 4, 0, 0> ; "INDX"
+.rodata:0808C3A8          kqftap_param <7, offset _2__STRING_21_0, 0B02h, 0, 0, 0, 4, 0, 0> ; "INST_ID"
+.rodata:0808C3CC          kqftap_param <6, offset _2__STRING_5017_0, 601h, 0, 0, 0, 50h, 0, 0> ; "BANNER"
+.rodata:0808C3F0          kqftap_param <0, offset _2__STRING_0_0, 0, 0, 0, 0, 0, 0, 0>
+\end{lstlisting}
+
+It contains information about all fields in the \TT{X\$VERSION} table.
+The only reference to this table is in the \TT{kqftap} table:
+
+\begin{lstlisting}[caption=kqf.o]
+.rodata:08042680                 kqftap_element <0, offset kqvt_c_0, offset kqvrow, 0> ; element 0x1f6
+\end{lstlisting}
+
+It is interesting that this element here is \TT{0x1f6th} (502nd), just like the pointer to the \TT{X\$VERSION} string in 
+the \TT{kqftab} table.
+
+Probably, the \TT{kqftap} and \TT{kqftab} tables complement each other, just like \TT{kqfvip} and \TT{kqfviw}.
+
+We also see a pointer to the \TT{kqvrow()} function. Finally, we got something useful!
+
+So we will add these tables to our \oracletables utility too. For \TT{X\$VERSION} we get:
+
+\begin{lstlisting}[caption=Result of \OracleTablesName]
+kqftab_element.name: [X$VERSION] ?: [kqvt] 0x4 0x4 0x4 0xc 0xffffc075 0x3
+kqftap_param.name=[ADDR] ?: 0x917 0x0 0x0 0x0 0x4 0x0 0x0
+kqftap_param.name=[INDX] ?: 0xb02 0x0 0x0 0x0 0x4 0x0 0x0
+kqftap_param.name=[INST_ID] ?: 0xb02 0x0 0x0 0x0 0x4 0x0 0x0
+kqftap_param.name=[BANNER] ?: 0x601 0x0 0x0 0x0 0x50 0x0 0x0
+kqftap_element.fn1=kqvrow
+kqftap_element.fn2=NULL
+\end{lstlisting}
+
+\myindex{tracer}
+With the help of \tracer, it is easy to check that this function is called 6 times in row (from the \TT{qerfxFetch()} function) while querying the \TT{X\$VERSION} table.
+
+Let's run \tracer in \TT{cc} mode (it comments each executed instruction):
+
+\begin{lstlisting}
+tracer -a:oracle.exe bpf=oracle.exe!_kqvrow,trace:cc
+\end{lstlisting}
+
+\lstinputlisting[style=customasmx86]{examples/oracle/VERSION_kqvrow.asm}
+
+Now it is easy to see that the row number is passed from outside. The function returns the string, constructing it as follows:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline                        
+String 1	& Using \TT{vsnstr}, \TT{vsnnum}, \TT{vsnban} global variables. \\
+                                & Calls \TT{sprintf()}. \\
+String 2	& Calls \TT{kkxvsn()}. \\
+String 3	& Calls \TT{lmxver()}. \\
+String 4	& Calls \TT{npinli()}, \TT{nrtnsvrs()}. \\
+String 5	& Calls \TT{lxvers()}. \\
+\hline  
+\end{tabular}
+\end{center}
+
+That's how the corresponding functions are called for determining each module's version.
+

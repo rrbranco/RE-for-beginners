@@ -1,0 +1,11 @@
+
+\subsection{AND/OR/XOR como MOV}
+
+\INS{OR reg, 0xFFFFFFFF} establece todos los bits a 1, por lo tanto, no importa lo que estaba antes en el registro, este ser\'a establecido a $-1$.
+\INS{OR reg, -1} es m\'as corto que \INS{MOV reg, -1}, as\'í que MSVC usa el OR en vez del MOV.
+
+por ejemplo \myref{using_OR_instead_of_MOV}.
+
+As\'i, \INS{AND reg, 0} siempre resetea todos los bits, por lo tanto, act\'ua como un \INS{MOV reg, 0}.
+
+\INS{XOR reg, reg}, resetea todos los bits, sin importar lo que estuviese antes en el registro, y tambi\'en es quivalente a un \INS{MOV reg, 0}.

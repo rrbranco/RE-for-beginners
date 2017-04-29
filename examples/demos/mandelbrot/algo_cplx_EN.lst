@@ -1,0 +1,24 @@
+def check_if_is_in_set(P):
+    P_start=P
+    iterations=0
+
+    while True:
+        if (P>bounds):
+            break
+        P=P^2+P_start
+        if iterations > max_iterations:
+            break
+        iterations++
+
+    return iterations
+
+# black-white
+for each point on screen P:
+    if check_if_is_in_set (P) < max_iterations:
+        draw point
+
+# colored
+for each point on screen P:
+    iterations = if check_if_is_in_set (P)
+    map iterations to color
+    draw color point

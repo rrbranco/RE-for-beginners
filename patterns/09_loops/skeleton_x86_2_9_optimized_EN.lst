@@ -1,0 +1,10 @@
+    mov [counter], 2 ; initialization
+    jmp check
+body:
+    ; loop body
+    ; do something here
+    ; use counter variable in local stack
+    add [counter], 1 ; increment
+check:
+    cmp [counter], 9
+    jle body

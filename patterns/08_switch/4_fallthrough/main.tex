@@ -1,44 +1,5 @@
-﻿\section{Fall-through}
+﻿\EN{\input{patterns/08_switch/4_fallthrough/main_EN}}
+\RU{\input{patterns/08_switch/4_fallthrough/main_RU}}
+\DE{\input{patterns/08_switch/4_fallthrough/main_DE}}
+\FR{\input{patterns/08_switch/4_fallthrough/main_FR}}
 
-\RU{Ещё одно популярное использование оператора}\EN{Another very popular usage of} \TT{switch()} 
-\EN{is the fall-through}\RU{это т.н. \q{fallthrough} (\q{провал})}.
-\RU{Вот простой пример}\EN{Here is a small example}:
-
-\lstinputlisting[numbers=left]{patterns/08_switch/4_fallthrough/fallthrough.c}
-
-\RU{Если}\EN{If} $type=1$ (R), $read$ \RU{будет выставлен в}\EN{is to be set to} 1, \RU{если}\EN{if} 
-$type=2$ (W), $write$ \RU{будет выставлен в}\EN{is to be set to} 2.
-\RU{В случае}\EN{In case of} $type=3$ (RW), \RU{обе}\EN{both} $read$ \AndENRU $write$ \RU{будут 
-выставлены в}\EN{is to be set to} 1.
-
-\RU{Фрагмент кода на строке 14 будет исполнен в двух случаях: если}\EN{The code at 
-line 14 is executed in two cases: if} $type=RW$ \RU{или если}\EN{or if} $type=W$.
-\RU{Там нет \q{break} для \q{case RW}, и это нормально}\EN{There is no \q{break} 
-for \q{case RW}x and that's OK}.
-
-\subsection{MSVC x86}
-
-\lstinputlisting[caption=MSVC 2012]{patterns/08_switch/4_fallthrough/fallthrough_MSVC.asm}
-
-\RU{Код почти полностью повторяет то, что в исходнике.}
-\EN{The code mostly resembles what is in the source.}
-\RU{Там нет переходов между метками}\EN{There are no jumps between labels} \TT{\$LN4@f} \AndENRU 
-\TT{\$LN3@f}: \RU{так что когда управление (code flow) находится на}\EN{so when code flow is at} 
-\TT{\$LN4@f}, $read$ \RU{в начале выставляется в 1, затем}\EN{is first set to 1, then} $write$.
-\EN{This is why it's called fall-through: code flow falls through one piece of code
-(setting $read$) to another (setting $write$).}
-\RU{Наверное, поэтому всё это и называется \q{проваливаться}: управление проваливается через
-один фрагмент кода (выставляющий $read$) в другой (выставляющий $write$).}
-\RU{Если}\EN{If} $type=W$, \RU{мы оказываемся на}\EN{we land at} \TT{\$LN3@f}, 
-\RU{так что код выставляющий $read$ в 1 не исполнится}\EN{so no code setting $read$ to 1 
-is executed}.
-
-\ifdefined\IncludeARM
-\subsection{ARM64}
-
-\lstinputlisting[caption=GCC (Linaro) 4.9]{patterns/08_switch/4_fallthrough/fallthrough_ARM64.s.\LANG}
-
-\RU{Почти то же самое}\EN{Merely the same thing}.
-\RU{Здесь нет переходов между метками}\EN{There are no jumps between labels} \TT{.L4} 
-\AndENRU \TT{.L3}.
-\fi

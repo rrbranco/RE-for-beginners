@@ -1,0 +1,70 @@
+str_trim:
+; IDA не в курсе об именах переменных, мы присвоили их сами:
+saved_GP          = -0x10
+saved_S0           = -8
+saved_RA           = -4
+
+                lui     $gp, (__gnu_local_gp >> 16)
+                addiu   $sp, -0x20
+                la      $gp, (__gnu_local_gp & 0xFFFF)
+                sw      $ra, 0x20+saved_RA($sp)
+                sw      $s0, 0x20+saved_S0($sp)
+                sw      $gp, 0x20+saved_GP($sp)
+; вызов strlen(). адрес входной строки всё еще в $a0, strlen() возьмет его оттуда:
+                lw      $t9, (strlen & 0xFFFF)($gp)
+                or      $at, $zero ; load delay slot, NOP
+                jalr    $t9
+; адрес входной строки всё еще в $a0, переложить его в $s0:
+                move    $s0, $a0   ; branch delay slot
+; результат strlen() (§т.е.,§ длина строки) теперь в $v0
+; перейти на выход, если $v0==0 (§т.е.,§ §если§ §длина§ §строки§ §это§ 0):
+                beqz    $v0, exit
+                or      $at, $zero ; branch delay slot, NOP
+                addiu   $a1, $v0, -1
+; $a1 = $v0-1 = str_len-1
+                addu    $a1, $s0, $a1
+; $a1 = адрес входной строки + $a1 = s+strlen-1
+; загрузить байт по адресу $a1:
+                lb      $a0, 0($a1)
+                or      $at, $zero ; load delay slot, NOP
+; загруженный байт - это ноль? перейти на выход, если это так:
+                beqz    $a0, exit
+                or      $at, $zero ; branch delay slot, NOP
+                addiu   $v1, $v0, -2
+; $v1 = str_len-2
+                addu    $v1, $s0, $v1
+; $v1 = $s0+$v1 = s+str_len-2
+                li      $a2, 0xD
+; пропустить тело цикла:
+                b       loc_6C
+                li      $a3, 0xA   ; branch delay slot
+loc_5C:
+; загрузить следующий байт из памяти в $a0:
+                lb      $a0, 0($v1)
+                move    $a1, $v1
+; $a1=s+str_len-2
+; перейти на выход, если загруженный байт - это ноль:
+                beqz    $a0, exit
+; декремент str_len:
+                addiu   $v1, -1    ; branch delay slot
+loc_6C:
+; в этот момент, $a0=§загруженный§ §байт§, $a2=0xD (§символ§ CR) и $a3=0xA (§символ§ LF)
+; загруженный байт - это CR? тогда перейти на loc_7C:
+                beq     $a0, $a2, loc_7C
+                addiu   $v0, -1    ; branch delay slot
+; загруженный байт - это LF? перейти на выход, если это не LF:
+                bne     $a0, $a3, exit
+                or      $at, $zero ; branch delay slot, NOP
+loc_7C:
+; загруженный байт в этот момент это CR
+; перейти на loc_5c (§начало§ §тела§ §цикла§) если str_len (§в§ $v0) не ноль:
+                bnez    $v0, loc_5C
+; одновременно с этим, записать ноль в этом месте памяти:
+                sb      $zero, 0($a1) ; branch delay slot
+; метка "exit" была так названа мною:
+exit:
+                lw      $ra, 0x20+saved_RA($sp)
+                move    $v0, $s0
+                lw      $s0, 0x20+saved_S0($sp)
+                jr      $ra
+                addiu   $sp, 0x20     ; branch delay slot

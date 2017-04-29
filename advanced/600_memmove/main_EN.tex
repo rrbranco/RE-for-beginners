@@ -1,0 +1,85 @@
+\section{memmove() and memcpy()}
+\label{memmove_and_DF}
+\myindex{\CStandardLibrary!memmove()}
+\myindex{\CStandardLibrary!memcpy()}
+
+The difference between these standard functions is that \IT{memcpy()} blindly copies a block to another place,
+while \IT{memmove()} correctly handles overlapping blocks.
+For example, you want to tug a string two bytes forward:
+
+% TODO TikZ
+\begin{lstlisting}
+`|.|.|h|e|l|l|o|...` -> `|h|e|l|l|o|...`
+\end{lstlisting}
+
+\IT{memcpy()} which copies 32-bit or 64-bit words at once, or even \ac{SIMD},
+will obviously fail here, a byte-wise copy routine must be used instead.
+
+Now even more advanced example, insert two bytes in front of string:
+
+\begin{lstlisting}
+`|h|e|l|l|o|...` -> `|.|.|h|e|l|l|o|...`
+\end{lstlisting}
+
+Now even byte-wise memory copy routine will fail, you have to copy bytes starting at the end.
+
+\myindex{x86!\Registers!DF}
+That's a rare case where \TT{DF} x86 flag is to be set before \INS{REP MOVSB} instruction:
+\TT{DF} defines direction, and now we must move backwardly.
+
+The typical \IT{memmove()} routine works like this:
+1) if source is below destination, copy forward;
+2) if source is above destination, copy backward.
+
+\myindex{uClibc}
+This is \IT{memmove()} from uClibc:
+
+\begin{lstlisting}[style=customc]
+void *memmove(void *dest, const void *src, size_t n)
+{
+	int eax, ecx, esi, edi;
+	__asm__ __volatile__(
+		"	movl	%%eax, %%edi\n"
+		"	cmpl	%%esi, %%eax\n"
+		"	je	2f\n" /* (optional) src == dest -> NOP */
+		"	jb	1f\n" /* src > dest -> simple copy */
+		"	leal	-1(%%esi,%%ecx), %%esi\n"
+		"	leal	-1(%%eax,%%ecx), %%edi\n"
+		"	std\n"
+		"1:	rep; movsb\n"
+		"	cld\n"
+		"2:\n"
+		: "=&c" (ecx), "=&S" (esi), "=&a" (eax), "=&D" (edi)
+		: "0" (n), "1" (src), "2" (dest)
+		: "memory"
+	);
+	return (void*)eax;
+}
+\end{lstlisting}
+
+In the first case, \INS{REP MOVSB} is called with \TT{DF} flag cleared.
+In the second, \TT{DF} is set, then cleared.
+
+More complex algorithm has the following piece in it:
+
+\q{if difference between \IT{source} and \IT{destination} is larger than width of \gls{word},
+copy using words rather than bytes, and use byte-wise copy to copy unaligned parts}.
+
+\myindex{Glibc}
+This how it happens in Glibc 2.24 in non-optimized C part.
+
+Given all that, \IT{memmove()} may be slower than \IT{memcpy()}.
+But some people, including Linus Torvalds, argue\footnote{\url{https://bugzilla.redhat.com/show_bug.cgi?id=638477\#c132}}
+that \IT{memcpy()} should be an alias (or synonym) of \IT{memmove()}, and the latter
+function must just check at start, if the buffers are overlapping or not, and then behave as \IT{memcpy()} or \IT{memmove()}.
+Nowadays, check for overlapping buffers is very cheap, after all.
+
+\subsection{Anti-debugging trick}
+
+I've heard about anti-debugging trick where all you need is just set \TT{DF} to crash the process: the very next \IT{memcpy()}
+routine will lead to crash because it copies backwardly.
+But I can't check this: it seems all memory copy routines clears/sets \TT{DF} as they want to.
+On the other hand, \IT{memmove()} from uClibc I cited here,
+has no explicit clear of \TT{DF} (it assumes \TT{DF} is always clear?),
+so it can really crash.
+

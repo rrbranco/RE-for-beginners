@@ -1,0 +1,186 @@
+\section{Обфускация}
+
+Обфускация это попытка спрятать код (или его значение) от reverse engineer-а.
+
+\subsection{Текстовые строки}
+
+Как мы увидели в (\myref{sec:digging_strings}) текстовые строки могут быть крайне
+полезны.
+Знающие об этом программисты могут попытаться их спрятать так, чтобы их не было видно в \IDA{} или любом
+шестнадцатеричном редакторе.
+
+Вот простейший метод.
+
+Вот как строка может быть сконструирована:
+
+\begin{lstlisting}[style=customasmx86]
+mov     byte ptr [ebx], 'h'
+mov     byte ptr [ebx+1], 'e'
+mov     byte ptr [ebx+2], 'l'
+mov     byte ptr [ebx+3], 'l'
+mov     byte ptr [ebx+4], 'o'
+mov     byte ptr [ebx+5], ' '
+mov     byte ptr [ebx+6], 'w'
+mov     byte ptr [ebx+7], 'o'
+mov     byte ptr [ebx+8], 'r'
+mov     byte ptr [ebx+9], 'l'
+mov     byte ptr [ebx+10], 'd'
+\end{lstlisting}
+
+Строка также может сравниваться с другой:
+
+\begin{lstlisting}[style=customasmx86]
+mov	ebx, offset username
+cmp	byte ptr [ebx], 'j'
+jnz	fail
+cmp	byte ptr [ebx+1], 'o'
+jnz	fail
+cmp	byte ptr [ebx+2], 'h'
+jnz	fail
+cmp	byte ptr [ebx+3], 'n'
+jnz	fail
+jz	it_is_john
+\end{lstlisting}
+
+В обоих случаях, эти строки нельзя так просто найти в шестнадцатеричном редакторе.
+
+\myindex{Shellcode}
+Кстати, точно также со строками можно работать в тех случаях, 
+когда строку нельзя разместить в сегменте данных, например, в \ac{PIC}, или в шелл-коде.
+
+Еще метод с использованием функции \TT{sprintf()} для конструирования:
+
+\begin{lstlisting}[style=customc]
+sprintf(buf, "%s%c%s%c%s", "hel",'l',"o w",'o',"rld");
+\end{lstlisting}
+
+Код выглядит ужасно, но как простейшая мера для анти-реверсинга, это может помочь.
+
+Текстовые строки могут также присутствовать в зашифрованном виде, в таком случае,
+их использование будет предварять вызов функции для дешифровки.
+
+Например: \myref{examples_SCO}.
+
+\subsection{Исполняемый код}
+
+\subsubsection{Вставка мусора}
+
+Обфускация исполняемого кода --- это вставка случайного мусора (между настоящим кодом), который исполняется, но не делает
+ничего полезного.
+
+Просто пример:
+
+\begin{lstlisting}[caption=оригинальный код,style=customasmx86]
+add	eax, ebx
+mul	ecx
+\end{lstlisting}
+
+\lstinputlisting[caption=obfuscated code,style=customasmx86]{\CURPATH/1_RU.asm}
+
+Здесь код-мусор использует регистры, которые не используются в настоящем коде (\TT{ESI} и \TT{EDX}).
+Впрочем, промежуточные результаты полученные при исполнении настоящего кода вполне могут использоваться
+кодом-мусором для б\'{о}льшей путаницы --- почему нет?
+
+\subsubsection{Замена инструкций на раздутые эквиваленты}
+
+\begin{itemize}
+\item \TT{MOV op1, op2} может быть заменена на пару \TT{PUSH op2 / POP op1}.
+\item \TT{JMP label} может быть заменена на пару \TT{PUSH label / RET}. 
+\IDA{} не покажет ссылок на эту метку.
+\item \TT{CALL label} может быть заменена на следующую тройку инструкций:\\
+\TT{PUSH label\_after\_CALL\_instruction / PUSH label / RET}.
+\item \TT{PUSH op} также можно заменить на пару инструкций: \TT{SUB ESP, 4 (или 8) / MOV [ESP], op}.
+\end{itemize}
+
+\subsubsection{Всегда исполняющийся/никогда не исполняющийся код}
+
+Если разработчик уверен, что в ESI всегда будет 0 в этом месте:
+
+\lstinputlisting[style=customasmx86]{\CURPATH/2_RU.asm}
+
+Reverse engineer-у понадобится какое-то время чтобы с этим разобраться.
+
+\myindex{opaque predicate}
+Это также называется \IT{opaque predicate}.
+
+Еще один пример (и снова разработчик уверен, что \TT{ESI} --- всегда ноль):
+
+\lstinputlisting[style=customasmx86]{\CURPATH/3_RU.asm}
+
+\subsubsection{Сделать побольше путаницы}
+
+\begin{lstlisting}
+instruction 1
+instruction 2
+instruction 3
+\end{lstlisting}
+
+Можно заменить на:
+
+\begin{lstlisting}[style=customasmx86]
+begin:		jmp	ins1_label
+
+ins2_label:	instruction 2
+		jmp	ins3_label
+
+ins3_label:	instruction 3
+		jmp	exit:
+
+ins1_label:	instruction 1
+		jmp	ins2_label
+exit:
+\end{lstlisting}
+
+\subsubsection{Использование косвенных указателей}
+
+\begin{lstlisting}[style=customasmx86]
+dummy_data1	db	100h dup (0)
+message1	db	'hello world',0
+
+dummy_data2	db	200h dup (0)
+message2	db	'another message',0
+
+func		proc
+		...
+		mov	eax, offset dummy_data1 ; PE or ELF reloc here
+		add	eax, 100h
+		push	eax
+		call	dump_string
+		...
+		mov	eax, offset dummy_data2 ; PE or ELF reloc here
+		add	eax, 200h
+		push	eax
+		call	dump_string
+		...
+func		endp
+\end{lstlisting}
+
+\IDA{} покажет ссылки на \TT{dummy\_data1} и \TT{dummy\_data2}, но не на сами текстовые строки.
+
+К глобальным переменным и даже функциям можно обращаться так же.
+
+\subsection{Виртуальная машина / псевдо-код}
+
+Программист может также создать свой собственный \ac{PL} или \ac{ISA} и интерпретатор для него.
+
+(Как версии Visual Basic перед 5.0, .NET or Java machines).
+
+Reverse engineer-у придется потратить какое-то время для понимания деталей всех инструкций в \ac{ISA}.
+Ему также возможно придется писать что-то вроде дизассемблера/декомпилятора.
+% TODO about obfuscation VMs
+
+\subsection{Еще кое-что}
+
+Моя попытка (хотя и слабая) пропатчить компилятор Tiny C чтобы он выдавал обфусцированный код:
+\url{http://go.yurichev.com/17220}.
+
+Использование инструкции \MOV для действительно сложных вещей: 
+[Stephen Dolan, \IT{mov is Turing-complete}, (2013)]
+\footnote{\AlsoAvailableAs \url{http://www.cl.cam.ac.uk/~sd601/papers/mov.pdf}}. 
+
+\subsection{\Exercise}
+
+\begin{itemize}
+	\item \url{http://challenges.re/29}
+\end{itemize}
+

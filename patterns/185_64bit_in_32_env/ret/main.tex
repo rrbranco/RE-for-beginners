@@ -1,35 +1,3 @@
-﻿\section{\RU{Возврат 64-битного значения}\EN{Returning of 64-bit value}}
-
-\lstinputlisting{patterns/185_64bit_in_32_env/ret/0.c}
-
-\subsection{x86}
-
-\RU{64-битные значения в 32-битной среде возвращаются из функций в паре регистров \EDX{}:\EAX{}.}
-\EN{In a 32-bit environment, 64-bit values are returned from functions in the \EDX{}:\EAX{} register pair.}
-
-\lstinputlisting[caption=\Optimizing MSVC 2010]{patterns/185_64bit_in_32_env/ret/0_MSVC_2010_Ox.asm}
-
-\ifdefined\IncludeARM
-\subsection{ARM}
-
-\RU{64-битное значение возвращается в паре регистров R0-R1 ---
-(R1 это старшая часть и R0 --- младшая часть):}
-\EN{A 64-bit value is returned in the R0-R1 register pair 
-(R1 is for the high part and R0 for the low part):}
-
-\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode)]{patterns/185_64bit_in_32_env/ret/Keil_ARM_O3.s}
-
-\fi
-
-\ifdefined\IncludeMIPS
-\subsection{MIPS}
-
-\RU{64-битное значение возвращается в паре регистров V0-V1 (\$2-\$3) ---
-(V0 (\$2) это старшая часть и V1 (\$3) --- младшая часть):}
-\EN{A 64-bit value is returned in the V0-V1 (\$2-\$3) register pair 
-(V0 (\$2) is for the high part and V1 (\$3) for the low part):}
-
-\lstinputlisting[caption=\Optimizing GCC 4.4.5 (assembly listing)]{patterns/185_64bit_in_32_env/ret/0_MIPS.s}
-
-\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA)]{patterns/185_64bit_in_32_env/ret/0_MIPS_IDA.lst}
-\fi
+﻿\EN{\input{patterns/185_64bit_in_32_env/ret/main_EN}}
+\RU{\input{patterns/185_64bit_in_32_env/ret/main_RU}}
+\DE{\input{patterns/185_64bit_in_32_env/ret/main_DE}}

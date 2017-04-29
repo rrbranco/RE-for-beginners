@@ -1,0 +1,128 @@
+\subsection{Setting and clearing specific bits: \ac{FPU} example}
+
+\myindex{IEEE 754}
+
+Here is how bits are located in the \Tfloat type in IEEE 754 form:
+
+\input{float_IEEE754.tex}
+
+The sign of number is in the \ac{MSB}. 
+Will it be possible to change the sign of a floating point number without any FPU instructions?
+
+\lstinputlisting[style=customc]{patterns/14_bitfields/35_set_reset_FPU/abs.c}
+
+We need this trickery in \CCpp to copy to/from \Tfloat value without actual conversion.
+So there are three functions: my\_abs() resets \ac{MSB}; \TT{set\_sign()} sets \ac{MSB} and negate() flips it.
+
+\XOR can be used to flip a bit: \myref{XOR_property}.
+
+\subsubsection{x86}
+
+The code is pretty straightforward:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012,style=customasmx86]{patterns/14_bitfields/35_set_reset_FPU/abs_MSVC2012_Ox.asm}
+
+An input value of type \Tfloat is taken from the stack, but treated as an integer value.
+
+\AND and \OR reset and set the desired bit.
+\XOR flips it.
+
+Finally, the modified value is loaded into \TT{ST0}, because floating-point numbers are returned in this register.
+
+Now let's try optimizing MSVC 2012 for x64:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{patterns/14_bitfields/35_set_reset_FPU/abs_MSVC2012_x64_Ox.asm}
+
+\myindex{x86!\Instructions!BTR}
+\myindex{x86!\Instructions!BTS}
+\myindex{x86!\Instructions!BTC}
+
+The input value is passed in \TT{XMM0}, then it is copied into the local stack and then we see 
+some instructions that are new to us: \BTR, \BTS, \BTC.
+
+These instructions are used for resetting (\BTR), setting (\BTS) and inverting (or complementing: \BTC) 
+specific bits.
+The 31st bit is \ac{MSB}, counting from 0.
+
+Finally, the result is copied into \TT{XMM0}, because floating point values are returned through \TT{XMM0} in Win64
+environment.
+
+\subsubsection{MIPS}
+
+GCC 4.4.5 for MIPS does mostly the same:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/14_bitfields/35_set_reset_FPU/MIPS_O3_IDA_EN.lst}
+
+\myindex{MIPS!\Instructions!LUI}
+
+One single \LUI instruction is used to load 0x80000000 into a register, because 
+\LUI is clearing the low 16 bits and these are zeros in the constant, so one \LUI without subsequent \ORI is enough.
+
+\subsubsection{ARM}
+
+\myparagraph{\OptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/14_bitfields/35_set_reset_FPU/abs_Keil_ARM_O3_EN.s}
+
+So far so good.
+\myindex{ARM!\Instructions!BIC}
+\myindex{ARM!\Instructions!EOR}
+
+ARM has the \BIC instruction, which explicitly clears specific bit(s).
+\EOR is the ARM instruction name for \XOR 
+(\q{Exclusive OR}).
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmx86]{patterns/14_bitfields/35_set_reset_FPU/abs_Keil_thumb_O3.s}
+
+Thumb mode in ARM offers 16-bit instructions and not much data can be encoded in them, so here a 
+\INS{MOVS}/\INS{LSLS} instruction pair is used for forming the 0x80000000 constant.
+It works like this: $1<<31 = 0x80000000$.
+
+\myindex{ARM!\Instructions!LSLS}
+\myindex{ARM!\Instructions!LSRS}
+
+The code of \TT{my\_abs} is weird and it effectively works like this expression: $(i<<1)>>1$.
+This statement looks meaningless.
+But nevertheless, when $input<<1$ is executed, the \ac{MSB} (sign bit) is just dropped.
+When the subsequent $result>>1$ statement is executed, all bits are now in their own places,
+but \ac{MSB} is zero, because all \q{new} bits appearing from the shift operations are always zeros.
+That is how the \LSLS/\LSRS instruction pair clears \ac{MSB}.
+
+\myparagraph{\Optimizing GCC 4.6.3 (Raspberry Pi, \ARMMode)}
+
+\lstinputlisting[caption=\Optimizing GCC 4.6.3 for Raspberry Pi (\ARMMode),style=customasmARM]{patterns/14_bitfields/35_set_reset_FPU/raspberry_GCC_O3_ARM_mode_EN.lst}
+
+Let's run Raspberry Pi Linux in QEMU and it emulates an ARM FPU, so S-registers are used here for floating point
+numbers instead of R-registers.
+
+\myindex{ARM!\Instructions!FMRS}
+
+The \FMRS instruction copies data from \ac{GPR} to the FPU and back.
+
+\TT{my\_abs()} and \TT{set\_sign()} looks as expected, but negate()?
+Why is there \ADD instead of \XOR?
+
+\myindex{ARM!\Instructions!XOR}
+\myindex{ARM!\Instructions!ADD}
+It's hard to believe, but the instruction 
+\INS{ADD register, 0x80000000} works just like \\
+\INS{XOR register, 0x80000000}.
+First of all, what's our goal?
+The goal is to flip the \ac{MSB}, so let's forget about the \XOR operation.
+From school-level mathematics we may recall that adding values like 1000 to other values never affects
+the last 3 digits.
+For example: $1234567 + 10000 = 1244567$ (last 4 digits are never affected).
+
+But here we operate in binary base and\\
+0x80000000 is 0b100000000000000000000000000000000, i.e., only the highest bit is set.
+
+Adding 0x80000000 to any value never affects the lowest 31 bits, but affects only the \ac{MSB}.
+Adding 1 to 0 is resulting in 1.
+
+Adding 1 to 1 is resulting in 0b10 in binary form, but the 32th bit (counting from zero) gets dropped, 
+because our registers are 32 bit wide, so the result is 0.
+That's why \XOR can be replaced by \ADD here.
+
+It's hard to say why GCC decided to do this, but it works correctly.

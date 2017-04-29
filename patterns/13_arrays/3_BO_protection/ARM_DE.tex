@@ -1,0 +1,19 @@
+\subsubsection{\OptimizingXcodeIV (\ThumbTwoMode)}
+Betrachten wir nochmals unser einfaches Arraybeispiel(\myref{arrays_simple}), erkennen wir nun wie LLVM die Korrektheit
+des \q{canary} überprüft:
+
+% TODO shorten the listing a bit? is full display of unrolled loop necessary?
+\lstinputlisting[style=customasmARM]{patterns/13_arrays/3_BO_protection/simple_Xcode_thumb_O3_DE.asm}
+
+\myindex{Unrolled loop}
+Zunächst hat LLVM die Schleife entwickelt und alle Werte werden nacheinander vorberechnet in ein Array geschrieben, da
+LLVM dies für schneller hält. 
+Befehle im ARM mode können helfen, das noch schneller auszuführen und dies herauszufinden könnte Ihre Aufgabe sein.
+
+Am Ende der Funktion sehen wir den Vergleich der beiden \q{canaries}--dem im lokalen Stack und dem richtigen, auf den
+\Reg{8} zeigt.
+\myindex{ARM!\Instructions!IT}
+Wenn sie gleich sind wird durch \INS{ITTTT EQ} ein Block aus vier Befehlen ausgeführt, der 0 nach \Reg{0} schreibt, den
+Funktionsepilog durchführt und dann beendet.
+Wenn die \q{canaries} ungleich sind, wird der Block übersprungen und es wird zu \\
+\TT{\_\_\_stack\_chk\_fail} gesprungen und die Ausführung wird angehalten.

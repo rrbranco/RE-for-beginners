@@ -1,0 +1,61 @@
+\subsubsection{x86}
+
+\myparagraph{MSVC \NonOptimizing}
+
+Nous obtenons (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/08_switch/2_lot/lot_msvc_FR.asm}
+
+\myindex{jumptable}
+
+Ce que nous voyons ici est un ensemble d'appels à \printf avec des arguments variés.
+Ils ont tous, non seulement des adresses dans la mémoire du procesus, mais aussi
+des labels symboliques internes assignés par le compilateur.
+Tous ces labels ont aussi mentionnés dans la table interne \TT{\$LN11@f}.
+
+Au début de la fonctions, si $a$ est supérieur à 4, l'exécution est passée au
+labal \TT{\$LN1@f}, oú \printf est appelé avec l'argument \TT{'something unknown'}.
+
+Mais si la valeur de $a$ est inférieure ou égale à 4, elle est alors multipliée
+par 4 et ajoutée à l'adresse de la table \TT{\$LN11@f}. C'est ainsi qu'une adresse
+à l'intérieur de la table est construite, pointant exactement sur l'élément dont
+nous avons besoin. Par exemple, supposons que $a$ soit égale à 2. $2*4 = 8$ (tous
+les éléments de la table sont adressés dans un processus 32-bit et c'est pourquoi
+les éléments ont une taille de 4 octets).
+L'adresse de la table \TT{\$LN11@f} + 8 est celle de l'élément de la table oú
+le label \TT{\$LN4@f} est stocké.
+\JMP prend l'adresse de \TT{\$LN4@f} dans la table et y saute.
+
+Cette table est quelquefois appelée \IT{jumptable} (table de saut) ou \IT{branch table}
+(table de branchement)\footnote{L'ensemble de la méthode était appelé \IT{computed
+GOTO} (GOTO calculés) dans les premières versions de ForTran:
+\href{http://go.yurichev.com/17122}{wikipedia}.
+Pas très pertinent de nos jours, mais quel terme!}.
+
+Le \printf correspondant est appelé avec l'argument \TT{'two'}.\\
+Littéralement, l'instruction \TT{jmp DWORD PTR \$LN11@f[ecx*4]} signifie
+\IT{sauter au DWORD qui est stocké à l'adresse} \TT{\$LN11@f + ecx * 4}.
+
+\TT{npad} (\myref{sec:npad}) est une macro du langage d'assemblage qui aligne le
+label suivant de telle sorte qu'il soit stocké à une adresse alignée sur une limite
+de 4 octets (ou 16 octets).
+C'est très adapté pour le processeur puisqu'il est capable d'aller chercher des
+valeurs 32-bit dans la mémoire à travers le bus mémoire, la mémoire cache, etc.,
+de façons beaucoup plus éfficace si c'est aligné.
+
+\input{patterns/08_switch/2_lot/olly_FR}
+
+\myparagraph{GCC \NonOptimizing}
+\label{switch_lot_GCC}
+
+Voyons ce que GCC 4.4.1 génère:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/08_switch/2_lot/lot_gcc.asm}
+
+\myindex{x86!\Registers!JMP}
+
+C'est presque la même chose, avec une petite nuance: l'argument \TT{arg\_0} est multiplié
+par 4 en décalant de 2 bits vers la gauche (c'est preque comme multiplier par 4)~(\myref{SHR}).
+Ensuite l'adresse du label est prise depuis le tableau \TT{off\_804855C}, stockée
+dans \EAX, et ensuite \TT{JMP EAX} effectue le saut réel.
+

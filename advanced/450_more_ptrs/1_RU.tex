@@ -1,0 +1,202 @@
+\subsection{Работа с адресами вместо указателей}
+
+Указатель это просто адрес в памяти. Но почему мы пишем \TT{char* string} вместо чего-нибудь вроде \TT{address string}?
+Переменная-указатель дополнена типом переменной, на которую указатель указывает.
+Тогда у компилятора будет возможность находить потенциальные ошибки типизации во время компиляции.
+
+Если быть педантом, типизация данных в языках программирования существует для предотвращения ошибок и самодокументации.
+Вполне возможно использовать только два типа данных вроде \IT{int} (или \IT{int64\_t}) и байт --- это те единственные типы, которые
+доступны для программистов на ассемблере.
+Но написать что-то больше и практичное на ассемблере, при этом без ошибок, это трудная задача.
+Любая мелкая опечатка может привести к труднонаходимой ошибке.
+
+Информации о типах нет в скомпилированном коде (и это одна из основных проблем для декомпиляторов),
+и я могу это продемонстрировать.
+
+Вот как напишет обычный программист на \CCpp{}:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+void print_string (char *s)
+{
+	printf ("(address: 0x%llx)\n", s);
+	printf ("%s\n", s);
+};
+
+int main()
+{
+	char *s="Hello, world!";
+
+	print_string (s);
+};
+\end{lstlisting}
+
+А вот что могу напистаь я:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+void print_string (uint64_t address)
+{
+	printf ("(address: 0x%llx)\n", address);
+	puts ((char*)address);
+};
+
+int main()
+{
+	char *s="Hello, world!";
+
+	print_string ((uint64_t)s);
+};
+\end{lstlisting}
+
+Я использую \IT{uint64\_t} потому что я запускаю этот пример на Linux x64. \IT{int} сгодится для 32-битных \ac{OS}.
+В начале, указатель на символ (самый первый в строке с приветствием) приводится к \IT{uint64\_t}, затем он передается далее.
+Ф-ция \TT{print\_string()} приводит тип переданного значения из \IT{uint64\_t} в указатель на символ.
+
+Но вот что интересно, это то что GCC 4.8.4 генерирует идентичный результат на ассемблере для обоих версий:
+
+\begin{lstlisting}
+gcc 1.c -S -masm=intel -O3 -fno-inline
+\end{lstlisting}
+
+\begin{lstlisting}[style=customasmx86]
+.LC0:
+	.string	"(address: 0x%llx)\n"
+print_string:
+	push	rbx
+	mov	rdx, rdi
+	mov	rbx, rdi
+	mov	esi, OFFSET FLAT:.LC0
+	mov	edi, 1
+	xor	eax, eax
+	call	__printf_chk
+	mov	rdi, rbx
+	pop	rbx
+	jmp	puts
+.LC1:
+	.string	"Hello, world!"
+main:
+	sub	rsp, 8
+	mov	edi, OFFSET FLAT:.LC1
+	call	print_string
+	add	rsp, 8
+	ret
+\end{lstlisting}
+
+(Я убрал незначительные директивы GCC.)
+
+Я также пробовал утилиту UNIX \IT{diff} и не нашел разницы вообще.
+
+Продолжим и дальше издеваться над традициями программирования в \CCpp{}.
+Кто-то может написать так:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+uint8_t load_byte_at_address (uint8_t* address)
+{
+	return *address;
+	//this is also possible: return address[0]; 
+};
+
+void print_string (char *s)
+{
+	char* current_address=s;
+	while (1)
+	{
+		char current_char=load_byte_at_address(current_address);
+		if (current_char==0)
+			break;
+		printf ("%c", current_char);
+		current_address++;
+	};
+};
+
+int main()
+{
+	char *s="Hello, world!";
+
+	print_string (s);
+};
+\end{lstlisting}
+
+И это может быьт переписано так:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+uint8_t load_byte_at_address (uint64_t address)
+{
+	return *(uint8_t*)address;
+	//this is also possible: return address[0]; 
+};
+
+void print_string (uint64_t address)
+{
+	uint64_t current_address=address;
+	while (1)
+	{
+		char current_char=load_byte_at_address(current_address);
+		if (current_char==0)
+			break;
+		printf ("%c", current_char);
+		current_address++;
+	};
+};
+
+int main()
+{
+	char *s="Hello, world!";
+
+	print_string ((uint64_t)s);
+};
+\end{lstlisting}
+
+И тот и другой исходный код преобразуется в одинаковый результат на ассемблере:
+
+\begin{lstlisting}
+gcc 1.c -S -masm=intel -O3 -fno-inline
+\end{lstlisting}
+
+\begin{lstlisting}[style=customasmx86]
+load_byte_at_address:
+	movzx	eax, BYTE PTR [rdi]
+	ret
+print_string:
+.LFB15:
+	push	rbx
+	mov	rbx, rdi
+	jmp	.L4
+.L7:
+	movsx	edi, al
+	add	rbx, 1
+	call	putchar
+.L4:
+	mov	rdi, rbx
+	call	load_byte_at_address
+	test	al, al
+	jne	.L7
+	pop	rbx
+	ret
+.LC0:
+	.string	"Hello, world!"
+main:
+	sub	rsp, 8
+	mov	edi, OFFSET FLAT:.LC0
+	call	print_string
+	add	rsp, 8
+	ret
+\end{lstlisting}
+
+(Здесь я также убрал незначительные директивы GCC.)
+
+Разницы нет: указатели в \CCpp{}, в сущности, адреса, но несут в себе также информацию о типе, чтобы предотвратить ошибки
+во время компиляции.
+Типы не проверяются во время исполнения, иначе это был бы огромный (и ненужный) прирост времени исполнения.
+

@@ -1,0 +1,31 @@
+s$ = 8
+my_atoi	PROC
+; загрузить первый символ
+	movzx	r8d, BYTE PTR [rcx]
+; EAX выделен для переменной "rt"
+; в начале там 0
+	xor	eax, eax
+; первый символ - это нулевой байт, §т.е.,§ конец строки?
+; тогда выходим.
+	test	r8b, r8b
+	je	SHORT $LN9@my_atoi
+$LL2@my_atoi:
+	lea	edx, DWORD PTR [rax+rax*4]
+; EDX=RAX+RAX*4=rt+rt*4=rt*5
+	movsx	eax, r8b
+; EAX=§входной символ§
+; загрузить следующий символ в R8D
+	movzx	r8d, BYTE PTR [rcx+1]
+; передвинуть указатель в RCX на следующий символ:
+	lea	rcx, QWORD PTR [rcx+1]
+	lea	eax, DWORD PTR [rax+rdx*2]
+; EAX=RAX+RDX*2=§входной§ §символ§ + rt*5*2=§входной§ §символ§ + rt*10
+; скорректировать цифру вычитая 48 (0x30 §или§ '0')
+	add	eax, -48				; ffffffffffffffd0H
+; последний символ был нулем?
+	test	r8b, r8b
+; перейти на начало цикла, если нет
+	jne	SHORT $LL2@my_atoi
+$LN9@my_atoi:
+	ret	0
+my_atoi	ENDP

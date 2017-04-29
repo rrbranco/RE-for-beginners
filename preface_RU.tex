@@ -1,0 +1,101 @@
+\section*{Предисловие}
+
+У термина \q{\gls{reverse engineering}} несколько популярных значений:
+1) исследование скомпилированных
+программ; 2) сканирование трехмерной модели для последующего копирования;
+3) восстановление структуры СУБД. Настоящий сборник заметок
+связан с первым значением.
+
+\subsection*{Рассмотренные темы}
+
+x86/x64, ARM/ARM64, MIPS, Java/JVM.
+
+\subsection*{Затронутые темы}
+
+\oracle (\myref{oracle}),
+Itanium (\myref{itanium}),
+донглы для защиты от копирования (\myref{dongles}), 
+LD\_PRELOAD (\myref{ld_preload}),
+переполнение стека,
+\ac{ELF},
+формат файла PE в win32 (\myref{win32_pe}),
+x86-64 (\myref{x86-64}),
+критические секции (\myref{critical_sections}),
+системные вызовы (\myref{syscalls}), 
+\ac{TLS},
+адресно-независимый код (\ac{PIC}) (\myref{sec:PIC}), 
+profile-guided optimization (\myref{PGO}),
+C++ STL (\myref{cpp_STL}),
+OpenMP (\myref{openmp}),
+SEH (\myref{sec:SEH}).
+
+\subsection*{Желательные знания перед началом чтения}
+
+Очень желательно базовое знание \ac{PL} Си.
+Рекомендуемые материалы: \myref{CCppBooks}.
+
+\subsection*{Упражнения и задачи}
+
+\dots 
+все перемещены на отдельный сайт: \url{http://challenges.re}.
+
+\subsection*{Об авторе}
+\begin{tabularx}{\textwidth}{ l X }
+
+\raisebox{-\totalheight}{
+\includegraphics[scale=0.60]{Dennis_Yurichev.jpg}
+}
+
+&
+Денис Юричев~--- опытный reverse engineer и программист.
+С ним можно контактировать по емейлу: \textbf{\EMAIL{}}.
+
+% FIXME: no link. \tablefootnote doesn't work
+\end{tabularx}
+
+% subsections:
+\input{praise}
+\input{thanks}
+\input{FAQ_RU}
+
+\subsection*{О переводе на корейский язык}
+
+В январе 2015, издательство Acorn в Южной Корее сделало много работы в переводе 
+и издании моей книги (по состоянию на август 2014) на корейский язык.
+Она теперь доступна на \href{http://go.yurichev.com/17343}{их сайте}.
+
+\iffalse
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.3]{acorn_cover.jpg}
+\end{figure}
+\fi
+
+Переводил Byungho Min (\href{http://go.yurichev.com/17344}{twitter/tais9}).
+Обложку нарисовал мой хороший знакомый художник Андрей Нечаевский
+\href{http://go.yurichev.com/17023}{facebook/andydinka}.
+Они также имеют права на издание книги на корейском языке.
+Так что если вы хотите иметь \IT{настоящую} книгу на полке на корейском языке и
+хотите поддержать мою работу, вы можете купить её.
+
+\subsection*{О переводе на персидский язык (фарси)}
+
+В 2016 году книга была переведена Mohsen Mostafa Jokar (который также известен иранскому сообществу за перевод руководства Radare\footnote{\url{http://rada.re/get/radare2book-persian.pdf}}).
+Книга доступна на сайте издательства\footnote{\url{http://goo.gl/2Tzx0H}} (Pendare Pars).
+
+Первые 40 страниц: \url{https://beginners.re/farsi.pdf}.
+
+Регистрация книги в Национальной Библиотеке Ирана: \url{http://opac.nlai.ir/opac-prod/bibliographic/4473995}.
+
+\subsection*{О переводе на китайский язык}
+
+В апреле 2017, перевод на китайский был закончен китайским издательством PTPress. Они также имеют права на издание книги на китайском языке.
+
+Она доступна для заказа здесь: \url{http://www.epubit.com.cn/book/details/4174}. Что-то вроде рецензии и история о переводе: \url{http://www.cptoday.cn/news/detail/3155}.
+
+Основной переводчик был Archer, перед которым я теперь в долгу.
+Он был крайне дотошным (в хорошем смысле) и сообщил о большинстве известных ошибок и баг, что крайне важно для литературы вроде этой книги.
+Я буду рекомендовать его услуги всем остальным авторам!
+
+Ребята из \href{http://www.antiy.net/}{Antiy Labs} также помогли с переводом. \href{http://www.epubit.com.cn/book/onlinechapter/51413}{Здесь предисловие} написанное ими.
+

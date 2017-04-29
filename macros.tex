@@ -1,11 +1,33 @@
-\newcommand*{\TT}[1]{\texttt{#1}}
+\newcommand{\myhrule}{\begin{center}\rule{0.5\textwidth}{.4pt}\end{center}}
+
+% TODO: find better name:
+\newcommand{\myincludegraphics}[1]{\includegraphics[width=\textwidth]{#1}}
+\newcommand{\myincludegraphicsSmall}[1]{\includegraphics[width=0.3\textwidth]{#1}}
+
+\newcommand{\myincludegraphicsSmallOrNormalForEbook}{\myincludegraphicsSmall}
+
+%\newcommand*{\TT}[1]{\texttt{#1}}
+% synonyms, so far
+\newcommand*{\InSqBrackets}[1]{\lbrack{}#1\rbrack{}}
+
+\newcommand*{\TT}[1]{\colorbox{light-gray}{\texttt{#1}}}
+\newcommand*{\GTT}[1]{\colorbox{light-gray}{\texttt{#1}}}
+
 \newcommand*{\IT}[1]{\textit{#1}}
 \newcommand*{\EN}[1]{\iflanguage{english}{#1}{}}
+
+\newcommand{\HeaderColor}{\cellcolor{blue!25}}
 
 \ifdefined\RUSSIAN{}
 \newcommand*{\RU}[1]{\iflanguage{russian}{#1}{}}
 \else
 \newcommand*{\RU}[1]{}
+\fi
+
+\ifdefined\CHINESE{}
+\newcommand*{\CN}[1]{\iflanguage{chinese}{#1}{}}
+\else
+\newcommand*{\CN}[1]{}
 \fi
 
 \ifdefined\SPANISH{}
@@ -21,7 +43,7 @@
 \fi
 
 \ifdefined\BRAZILIAN{}
-\newcommand*{\PTBR}[1]{\iflanguage{portuguese}{#1}{}}
+\newcommand*{\PTBR}[1]{\iflanguage{portuges}{#1}{}}
 \else
 \newcommand*{\PTBR}[1]{}
 \fi
@@ -39,25 +61,65 @@
 \newcommand*{\DE}[1]{}
 \fi
 
-\newcommand{\LANG}{\RU{ru}\EN{en}\ES{es}\PTBR{ptbr}\PL{pl}\ITA{it}\DE{de}}
+\ifdefined\THAI{}
+\newcommand*{\THA}[1]{\iflanguage{thai}{#1}{}}
+\else
+\newcommand*{\THA}[1]{}
+\fi
 
-\newcommand{\ESph}{\ES{Spanish text placeholder}}
-\newcommand{\PTBRph}{\PTBR{Brazilian Portuguese text placeholder}}
-\newcommand{\PLph}{\PL{Polish text placeholder}}
-\newcommand{\ITAph}{\ITA{Italian text placeholder}}
-\newcommand{\DEph}{\DE{German text placeholder}}
+\ifdefined\DUTCH{}
+\newcommand*{\NL}[1]{\iflanguage{dutch}{#1}{}}
+\else
+\newcommand*{\NL}[1]{}
+\fi
+
+\ifdefined\FRENCH{}
+\newcommand*{\FR}[1]{\iflanguage{french}{#1}{}}
+\else
+\newcommand*{\FR}[1]{}
+\fi
+
+\newcommand{\ESph}{\ES{{\color{red}Spanish text placeholder}}}
+\newcommand{\PTBRph}{\PTBR{{\color{red}Brazilian Portuguese text placeholder}}}
+\newcommand{\PLph}{\PL{{\color{red}Polish text placeholder}}}
+\newcommand{\ITAph}{\ITA{{\color{red}Italian text placeholder}}}
+\newcommand{\DEph}{\DE{{\color{red}German text placeholder}}}
+\newcommand{\THAph}{\THA{{\color{red}Thai text placeholder}}}
+\newcommand{\NLph}{\NL{{\color{red}Dutch text placeholder}}}
+\newcommand{\FRph}{\FR{{\color{red}French text placeholder}}}
+
+\newcommand{\TITLE}{%
+	\RU{Reverse Engineering для начинающих}%
+	\EN{Reverse Engineering for Beginners}%
+	\ES{Ingenier\'ia Inversa para Principiantes}%
+	\PTBRph{}%
+	\DE{Reverse Engineering für Einsteiger}%
+	\PLph{}%
+	\ITAph{}%
+	\THAph{}\NLph{}%
+	\FR{Rétro-ingénierie pour Débutants}%
+}
+
+\ifdefined\RUSSIAN
+\newcommand{\AUTHOR}{Денис Юричев}
+\else
+\newcommand{\AUTHOR}{Dennis Yurichev}
+\fi
+
+\newcommand{\EMAIL}{dennis(a)yurichev.com}
 
 \newcommand*{\dittoclosing}{---''---}
-\newcommand*{\EMDASH}{\RU{~--- }\EN{---}\ESph{}\PTBRph{}\PLph{}\ITAph{}\DEph{}}
+\newcommand*{\EMDASH}{\RU{~--- }\EN{---}\ES{---}\PTBR{---}\PL{---}\ITA{---}\DE{---}\THA{---}\NL{---}}
 \newcommand*{\AsteriskOne}{${}^{*}$}
 \newcommand*{\AsteriskTwo}{${}^{**}$}
 \newcommand*{\AsteriskThree}{${}^{***}$}
 \newcommand{\q}[1]{\enquote{#1}}
 \newcommand{\var}[1]{\textit{#1}}
 
-\newcommand{\ttf}{\TT{f()}\xspace}
-\newcommand{\ttfone}{\TT{f1()}\xspace}
+\newcommand{\ttf}{\GTT{f()}\xspace}
+\newcommand{\ttfone}{\GTT{f1()}\xspace}
 
+% FIXME get rid of
 % without dot!
 \newcommand{\etc}{%
 	\RU{и~т.д}%
@@ -67,10 +129,14 @@
 	\PLph{}%
 	\ITAph{}%
 	\DEph{}%
+	\THAph{}%
+	\NLph{}%
+	\FR{etc}%
 }
 
 % http://tex.stackexchange.com/questions/32160/new-line-after-paragraph
-\newcommand{\myparagraph}[1]{\paragraph{#1}\mbox{}\\} 
+\newcommand{\myparagraph}[1]{\paragraph{#1}\mbox{}\\}
+\newcommand{\mysubparagraph}[1]{\subparagraph{#1}\mbox{}\\}
 
 \newcommand{\figname}{%
 	\RU{илл.}%
@@ -79,8 +145,10 @@
 	\PTBRph{}%
 	\PLph{}%
 	\ITAph{}%
-	\DEph{}%
-\xspace}
+	\DE{Abb.}%
+	\THAph{}%
+	\NLph{}%
+	\FR{fig.}\xspace}
 \newcommand{\figref}[1]{\figname{}\ref{#1}\xspace}
 \newcommand{\listingname}{%
 	\RU{листинг.}%
@@ -89,7 +157,10 @@
 	\PTBRph{}%
 	\PLph{}%
 	\ITAph{}%
-	\DEph{}%
+	\DE{Listing.}%
+	\THAph{}%
+	\NLph{}%
+	\FR{liste.}%
 \xspace}
 \newcommand{\lstref}[1]{\listingname{}\ref{#1}\xspace}
 \newcommand{\bitENRU}{%
@@ -99,8 +170,12 @@
 	\PTBRph{}%
 	\PLph{}%
 	\ITAph{}%
-	\DEph{}%
+	\DE{bit}%
+	\THAph{}%
+	\NLph{}%
+	\FR{bit}%
 \xspace}
+% FIXME get rid of:
 \newcommand{\bitsENRU}{%
 	\RU{бита}%
 	\EN{bits}%
@@ -108,7 +183,10 @@
 	\PTBRph{}%
 	\PLph{}%
 	\ITAph{}%
-	\DEph{}%
+	\DE{bits}%
+	\THAph{}%
+	\NLph{}%
+	\FR{bits}%
 \xspace}
 \newcommand{\Sourcecode}{%
 	\RU{Исходный код}%
@@ -117,7 +195,10 @@
 	\PTBRph{}%
 	\PLph{}%
 	\ITAph{}%
-	\DEph{}%
+	\DE{Quellcode}%
+	\THAph{}%
+	\NLph{}%
+	\FR{Code source}%
 \xspace}
 \newcommand{\Seealso}{%
 	\RU{См. также}%
@@ -126,7 +207,10 @@
 	\PTBRph{}%
 	\PLph{}%
 	\ITAph{}%
-	\DEph{}%
+	\DE{siehe auch}%
+	\THAph{}%
+	\NLph{}%
+	\FR{Voir également}%
 \xspace}
 \newcommand{\MacOSX}{Mac OS X\xspace}
 
@@ -140,7 +224,10 @@
 	\ES{offset}%
 	\PLph{}%
 	\ITAph{}%
-	\DEph{}%
+	\DE{Offset}%
+	\THAph{}%
+	\NLph{}%
+	\FR{offset}%
 & \headercolor{}%
 	\RU{описание}%
 	\EN{description}%
@@ -148,7 +235,10 @@
 	\PTBRph{}%
 	\PLph{}%
 	\ITAph{}%
-	\DEph{}%
+	\DE{Beschreibung}%
+	\THAph{}%
+	\NLph{}%
+	\FR{description}%
 }
 
 \newcommand{\IDA}{\ac{IDA}\xspace}
@@ -163,9 +253,9 @@
 \newcommand{\Tvoid}{\IT{void}\xspace}
 \newcommand{\ITthis}{\IT{this}\xspace}
 
-\newcommand{\Ox}{\TT{/Ox}\xspace}
-\newcommand{\Obzero}{\TT{/Ob0}\xspace}
-\newcommand{\Othree}{\TT{-O3}\xspace}
+\newcommand{\Ox}{\GTT{/Ox}\xspace}
+\newcommand{\Obzero}{\GTT{/Ob0}\xspace}
+\newcommand{\Othree}{\GTT{-O3}\xspace}
 
 \newcommand{\oracle}{Oracle RDBMS\xspace}
 
@@ -173,17 +263,17 @@
 \newcommand{\olly}{OllyDbg\xspace}
 
 % common C functions
-\newcommand{\printf}{\TT{printf()}\xspace} 
-\newcommand{\puts}{\TT{puts()}\xspace} 
-\newcommand{\main}{\TT{main()}\xspace} 
-\newcommand{\qsort}{\TT{qsort()}\xspace} 
-\newcommand{\strlen}{\TT{strlen()}\xspace} 
-\newcommand{\scanf}{\TT{scanf()}\xspace} 
-\newcommand{\rand}{\TT{rand()}\xspace} 
+\newcommand{\printf}{\GTT{printf()}\xspace} 
+\newcommand{\puts}{\GTT{puts()}\xspace} 
+\newcommand{\main}{\GTT{main()}\xspace} 
+\newcommand{\qsort}{\GTT{qsort()}\xspace} 
+\newcommand{\strlen}{\GTT{strlen()}\xspace} 
+\newcommand{\scanf}{\GTT{scanf()}\xspace} 
+\newcommand{\rand}{\GTT{rand()}\xspace} 
 
 
 % for easier fiddling with formatting of all instructions together
-\newcommand{\INS}[1]{\TT{#1}\xspace}
+\newcommand{\INS}[1]{\GTT{#1}\xspace}
 
 % x86 instructions
 \newcommand{\ADD}{\INS{ADD}}
@@ -289,45 +379,45 @@
 
 % x86 flags
 
-\newcommand{\ZF}{\TT{ZF}\xspace} 
-\newcommand{\CF}{\TT{CF}\xspace} 
-\newcommand{\PF}{\TT{PF}\xspace} 
+\newcommand{\ZF}{\GTT{ZF}\xspace} 
+\newcommand{\CF}{\GTT{CF}\xspace} 
+\newcommand{\PF}{\GTT{PF}\xspace} 
 
 % x86 registers
 
-\newcommand{\AL}{\TT{AL}\xspace} 
-\newcommand{\AH}{\TT{AH}\xspace} 
-\newcommand{\AX}{\TT{AX}\xspace} 
-\newcommand{\EAX}{\TT{EAX}\xspace} 
-\newcommand{\EBX}{\TT{EBX}\xspace} 
-\newcommand{\ECX}{\TT{ECX}\xspace} 
-\newcommand{\EDX}{\TT{EDX}\xspace} 
-\newcommand{\DL}{\TT{DL}\xspace} 
-\newcommand{\ESI}{\TT{ESI}\xspace} 
-\newcommand{\EDI}{\TT{EDI}\xspace} 
-\newcommand{\EBP}{\TT{EBP}\xspace} 
-\newcommand{\ESP}{\TT{ESP}\xspace} 
-\newcommand{\RSP}{\TT{RSP}\xspace} 
-\newcommand{\EIP}{\TT{EIP}\xspace} 
-\newcommand{\RIP}{\TT{RIP}\xspace} 
-\newcommand{\RAX}{\TT{RAX}\xspace} 
-\newcommand{\RBX}{\TT{RBX}\xspace} 
-\newcommand{\RCX}{\TT{RCX}\xspace} 
-\newcommand{\RDX}{\TT{RDX}\xspace} 
-\newcommand{\RBP}{\TT{RBP}\xspace} 
-\newcommand{\RSI}{\TT{RSI}\xspace} 
-\newcommand{\RDI}{\TT{RDI}\xspace} 
-\newcommand*{\ST}[1]{\TT{ST(#1)}\xspace}
-\newcommand*{\XMM}[1]{\TT{XMM#1}\xspace}
+\newcommand{\AL}{\GTT{AL}\xspace} 
+\newcommand{\AH}{\GTT{AH}\xspace} 
+\newcommand{\AX}{\GTT{AX}\xspace} 
+\newcommand{\EAX}{\GTT{EAX}\xspace} 
+\newcommand{\EBX}{\GTT{EBX}\xspace} 
+\newcommand{\ECX}{\GTT{ECX}\xspace} 
+\newcommand{\EDX}{\GTT{EDX}\xspace} 
+\newcommand{\DL}{\GTT{DL}\xspace} 
+\newcommand{\ESI}{\GTT{ESI}\xspace} 
+\newcommand{\EDI}{\GTT{EDI}\xspace} 
+\newcommand{\EBP}{\GTT{EBP}\xspace} 
+\newcommand{\ESP}{\GTT{ESP}\xspace} 
+\newcommand{\RSP}{\GTT{RSP}\xspace} 
+\newcommand{\EIP}{\GTT{EIP}\xspace} 
+\newcommand{\RIP}{\GTT{RIP}\xspace} 
+\newcommand{\RAX}{\GTT{RAX}\xspace} 
+\newcommand{\RBX}{\GTT{RBX}\xspace} 
+\newcommand{\RCX}{\GTT{RCX}\xspace} 
+\newcommand{\RDX}{\GTT{RDX}\xspace} 
+\newcommand{\RBP}{\GTT{RBP}\xspace} 
+\newcommand{\RSI}{\GTT{RSI}\xspace} 
+\newcommand{\RDI}{\GTT{RDI}\xspace} 
+\newcommand*{\ST}[1]{\GTT{ST(#1)}\xspace}
+\newcommand*{\XMM}[1]{\GTT{XMM#1}\xspace}
 
 % ARM
-\newcommand*{\Reg}[1]{\TT{R#1}\xspace}
-\newcommand*{\RegX}[1]{\TT{X#1}\xspace}
-\newcommand*{\RegW}[1]{\TT{W#1}\xspace}
-\newcommand*{\RegD}[1]{\TT{D#1}\xspace}
-\newcommand{\ADREQ}{\TT{ADREQ}\xspace}
-\newcommand{\ADRNE}{\TT{ADRNE}\xspace}
-\newcommand{\BEQ}{\TT{BEQ}\xspace}
+\newcommand*{\Reg}[1]{\GTT{R#1}\xspace}
+\newcommand*{\RegX}[1]{\GTT{X#1}\xspace}
+\newcommand*{\RegW}[1]{\GTT{W#1}\xspace}
+\newcommand*{\RegD}[1]{\GTT{D#1}\xspace}
+\newcommand{\ADREQ}{\GTT{ADREQ}\xspace}
+\newcommand{\ADRNE}{\GTT{ADRNE}\xspace}
+\newcommand{\BEQ}{\GTT{BEQ}\xspace}
 
 % instructions descriptions
 \newcommand{\ASRdesc}{%
@@ -338,48 +428,46 @@
 	\PLph{}%
 	\ITAph{}%
 	\DEph{}%
+	\THAph{}\NLph{}%
+	\FR{décalage arithmétique vers la gauche}%
 }
 
 % x86 registers tables
+\newcommand{\RegHeaderTop}{
+	\multicolumn{8}{ | c | }{
+	\RU{Номер байта:}
+	\EN{Byte number:}
+	\ES{}%
+	\PTBRph{}%
+	\PLph{}%
+	\ITAph{}%
+	\DE{Byte-Nummer:}%
+	\THAph{}%
+	\NLph{}%
+	\FR{Nombre d'octets}%
+	}
+}
+
 % TODO: non-overlapping color!
 \newcommand{\RegHeader}{
-\RU{
- 7 \textsuperscript{(номер байта)} &
- 6 &
- 5 &
- 4 &
- 3 &
- 2 &
- 1 &
- 0 }%
-\EN{
- 7th \textsuperscript{(byte number)} &
- 6th &
- 5th &
- 4th &
- 3rd &
- 2nd &
- 1st &
- 0th}%
-\ES{
- 7mo \textsuperscript{(n\'umero de byte)} &
- 6to &
- 5to &
- 4to &
- 3ro &
- 2do &
- 1ro &
- 0}%
+\RU{ 7-й & 6-й & 5-й & 4-й & 3-й & 2-й & 1-й & 0-й }%
+\EN{ 7th & 6th & 5th & 4th & 3rd & 2nd & 1st & 0th }%
+\ES{ 7mo & 6to & 5to & 4to & 3ro & 2do & 1ro & 0 }%
 \PTBRph{}%
 \PLph{}%
 \ITAph{}%
 \DEph{}%
+\THAph{}%
+\NLph{}%
+\FR{7ème & 6ème & 5ème & 4ème & 3ème & 2ème & 1er & 0ème}%
 }
 
 % FIXME навести порядок тут...
 \newcommand{\RegTableThree}[5]{
 \begin{center}
 \begin{tabular}{ | l | l | l | l | l | l | l | l | l |}
+\hline
+\RegHeaderTop \\
 \hline
 \RegHeader \\
 \hline
@@ -401,6 +489,8 @@
 \begin{center}
 \begin{tabular}{ | l | l | l | l | l | l | l | l | l |}
 \hline
+\RegHeaderTop \\
+\hline
 \RegHeader \\
 \hline
 \multicolumn{8}{ | c | }{#1\textsuperscript{x64}} \\
@@ -419,6 +509,8 @@
 \begin{center}
 \begin{tabular}{ | l | l | l | l | l | l | l | l | l |}
 \hline
+\RegHeaderTop \\
+\hline
 \RegHeader \\
 \hline
 \multicolumn{8}{ | c | }{#1} \\
@@ -432,4 +524,266 @@
 \end{tabular}
 \end{center}
 }
+
+\newcommand{\ReturnAddress}{%
+	\RU{Адрес возврата}%
+	\EN{Return Address}%
+	\ES{Direcci\'on de Retorno}%
+	\NL{Return Adres}%
+	\PTBR{Endereço de retorno}%
+	\DE{Rücksprungadresse}%
+	\ITAph{}
+	\FR{Adresse de retour}%
+}
+
+\newcommand{\localVariable}{%
+	\RU{локальная переменная}%
+	\EN{local variable}%
+	\PTBR{Variável local}%
+	\FR{variable locale}%
+	\DE{lokale Variable}%
+}
+\newcommand{\savedValueOf}{%
+	\RU{сохраненное значение}%
+	\EN{saved value of}%
+	\PTBR{Valor salvo de}%
+	\FR{valeur enregistrée de}%
+}
+
+% was in common_phrases.tex
+% for index
+\newcommand{\GrepUsage}{\RU{Использование grep}\EN{grep usage}\PTBR{Uso do grep}\ES{Uso de grep}\FR{Utilisation de grep}}
+\newcommand{\SyntacticSugar}{\RU{Синтаксический сахар}\EN{Syntactic Sugar}\PTBR{Açúcar sintático}\ES{Azúcar sintáctica}\FR{Sucre syntaxique}}
+\newcommand{\CompilerAnomaly}{\RU{Аномалии компиляторов}\EN{Compiler's anomalies}\PTBR{Anomalias do compilador}\ES{Anomalías del compilador}\FR{Anomalies du compilateur}}
+\newcommand{\CLanguageElements}{\RU{Элементы языка Си}\EN{C language elements}\PTBR{Elementos da linguagem C}\ES{Elementos del lenguaje C}\FR{Eléments du langage C}}
+\newcommand{\CStandardLibrary}{\RU{Стандартная библиотека Си}\EN{C standard library}\PTBR{Biblioteca padrão C}\ES{Librería estándar C}\FR{Bibliothèque standard C}}
+\newcommand{\Instructions}{\RU{Инструкции}\EN{Instructions}\PTBR{Instruções}\ES{Instrucciones}\FR{Instructions}}
+\newcommand{\Pseudoinstructions}{\RU{Псевдоинструкции}\EN{Pseudoinstructions}\PTBR{Pseudo-instruções}\ES{Pseudo-instrucciones}\FR{Pseudo-instructions}}
+\newcommand{\Prefixes}{\RU{Префиксы}\EN{Prefixes}\PTBR{Prefixos}\ES{Prefijos}\FR{Préfixes}}
+
+\newcommand{\Flags}{\RU{Флаги}\EN{Flags}\PTBR{Flags}\ES{Flags}\FR{Flags}}
+\newcommand{\Registers}{\RU{Регистры}\EN{Registers}\PTBR{Registradores}\ES{Registros}\FR{Registres}}
+\newcommand{\registers}{\RU{регистры}\EN{registers}\PTBR{registradores}\ES{registros}\FR{registres}}
+\newcommand{\Stack}{\RU{Стек}\EN{Stack}\PTBR{Pilha}\ES{Pila}\FR{Pile}}
+\newcommand{\Recursion}{\RU{Рекурсия}\EN{Recursion}\PTBR{Recursividade}\ES{Recursión}\FR{Récursivité}}
+\newcommand{\RAM}{\RU{ОЗУ}\EN{RAM}\PTBR{RAM}\ES{RAM}\FR{RAM}}
+\newcommand{\ROM}{\RU{ПЗУ}\EN{ROM}\PTBR{ROM}\ES{ROM}\FR{ROM}}
+\newcommand{\Pointers}{\RU{Указатели}\EN{Pointers}\PTBR{Ponteiros}\ES{Apuntadores}\FR{Pointeurs}}
+\newcommand{\BufferOverflow}{\RU{Переполнение буфера}\EN{Buffer Overflow}\PTBR{Buffer Overflow}\ES{Desbordamiento de buffer}\FR{Débordement de tampon}}
+
+% DE: also "Zusammenfassung"
+\newcommand{\Conclusion}{\RU{Вывод}\EN{Conclusion}\DE{Fazit}\PTBR{Conclusão}\ES{Conclusión}\FR{Conclusion}}
+
+\newcommand{\Exercise}{\RU{Упражнение}\EN{Exercise}\PTBR{Exercício}\ES{Ejercicio}\FR{Exercice}\xspace}
+\newcommand{\Exercises}{\RU{Упражнения}\EN{Exercises}\PTBR{Exercícios}\ES{Ejercicios}\FR{Exercices}\DE{Übungen}\xspace}
+\newcommand{\Arrays}{\RU{Массивы}\EN{Arrays}\PTBR{Matriz}\ES{Matriz}\FR{Tableaux}}
+\newcommand{\Cpp}{\RU{Си++}\EN{C++}\PTBR{C++}\ES{C++}\FR{C++}\DE{C++}\xspace}
+\newcommand{\CCpp}{\RU{Си/Си++}\EN{C/C++}\PTBR{C/C++}\ES{C/C++}\FR{C/C++}\DE{C/C++}\xspace}
+\newcommand{\NonOptimizing}{\RU{Неоптимизирующий}\EN{Non-optimizing}\PTBR{Sem otimização}\ES{Sin optimización}\FR{sans optimisation}\xspace}
+\newcommand{\Optimizing}{\RU{Оптимизирующий}\EN{Optimizing}\PTBR{Com otimização}\ES{Con optimización}\FR{avec optimisation}\xspace}
+\newcommand{\NonOptimizingKeilVI}{\NonOptimizing Keil 6/2013\xspace}
+\newcommand{\OptimizingKeilVI}{\Optimizing Keil 6/2013\xspace}
+\newcommand{\NonOptimizingXcodeIV}{\NonOptimizing Xcode 4.6.3 (LLVM)\xspace}
+\newcommand{\OptimizingXcodeIV}{\Optimizing Xcode 4.6.3 (LLVM)\xspace}
+\newcommand{\ARMMode}{\RU{Режим ARM}\EN{ARM mode}\PTBR{Modo ARM}\ES{Modo ARM}\FR{Mode ARM}\xspace}
+\newcommand{\ThumbMode}{\RU{Режим Thumb}\EN{Thumb mode}\PTBR{Modo Thumb}\ES{Modo Thumb}\FR{Mode Thumb}\xspace}
+\newcommand{\ThumbTwoMode}{\RU{Режим Thumb-2}\EN{Thumb-2 mode}\PTBR{Modo Thumb-2}\ES{Modo Thumb-2}\FR{Mode Thumb-2}\xspace}
+\newcommand{\AndENRU}{\RU{и}\EN{and}\PTBR{e}\ES{y}\FR{et}\xspace}
+\newcommand{\OrENRU}{\RU{или}\EN{or}\PTBR{ou}\ES{o}\FR{ou}\xspace}
+\newcommand{\InENRU}{\RU{в}\EN{in}\PTBR{em}\ES{en}\FR{dans}\xspace}
+\newcommand{\ForENRU}{\RU{для}\EN{for}\PTBR{para}\ES{para}\FR{pour}\xspace}
+\newcommand{\LineENRU}{\RU{строка}\EN{line}\PTBR{linha}\ES{línea}\FR{ligne}\xspace}
+
+\newcommand{\DataProcessingInstructionsFootNote}{%
+	\RU{Эти инструкции также называются \q{data processing instructions}}%
+	\EN{These instructions are also called \q{data processing instructions}}%
+	\PTBR{Estas intruções também são chamadas \q{data processing instructions}}%
+	\ES{Estas instrucciones también son llamadas \q{instrucciones de procesamiento de datos}}%
+	\FR{Ces instructions sont également appelées \q{instructions de traitement de données}}%
+}
+
+% for .bib files
+\newcommand{\AlsoAvailableAs}{\RU{Также доступно здесь:}\EN{Also available as}\PTBR{Também disponível como}\ES{También disponible como}\FR{Aussi disponible en tant que}\xspace}
+
+% section names
+\newcommand{\ShiftsSectionName}{\RU{Сдвиги}\EN{Shifts}\PTBR{Shifts}\ES{Desplazamientos}\FR{Décalages}}
+\newcommand{\SignedNumbersSectionName}{\RU{Представление знака в числах}\EN{Signed number representations}\ES{Representaci\'on de n\'umeros con signo}\FR{Représentations en nombre signé}\DE{Darstellung vorzeichenbehafteter Zahlen}}
+\newcommand{\HelloWorldSectionName}{\RU{Hello, world!}\EN{Hello, world!}\ES{!`Hola, mundo!}\FR{Hello, world!}\DE{Hallo, Welt!}}
+\newcommand{\SwitchCaseDefaultSectionName}{switch()/case/default}
+\newcommand{\PrintfSeveralArgumentsSectionName}{printf() \RU{с несколькими аргументами}\EN{with several arguments}\PTBR{com vários argumentos}\ES{con varios argumentos}\ITAph{}\FR{avec plusieurs arguments}}
+\newcommand{\BitfieldsChapter}{\RU{Работа с отдельными битами}\EN{Manipulating specific bit(s)}\PTBR{Manipulando bit(s) específicos}\ES{Manipulando bit(s) específicos}\FR{En manipulant des bits spécifiques}}
+\newcommand{\ArithOptimizations}{%
+	\RU{Замена одних арифметических инструкций на другие}%
+	\EN{Replacing arithmetic instructions to other ones}%
+	\PTBR{Substituição de instruções aritiméticas por outras}%
+	\ES{Substituición de instrucciones aritméticas por otras}
+	\FR{En remplaçant certains instructions arithmétiques par d'autres}
+	}
+\newcommand{\FPUChapterName}{\RU{Работа с FPU}\EN{Floating-point unit}\PTBR{Unidade de Ponto flutuante}\ES{Unidad de punto flotante}\FR{Unité à virgule flottante}}
+\newcommand{\MoreAboutStrings}{\RU{Еще кое-что о строках}\EN{More about strings}\PTBRph{}\ESph{}\FR{Plus d'information sur les chaînes}}
+\newcommand{\DivisionByMultSectionName}{\RU{Деление используя умножение}\EN{Division using multiplication}\PTBR{Divisão por 9}\ES{División entre 9}\FR{Division par 9}}
+\newcommand{\Answer}{\RU{Ответ}\EN{Answer}\PTBR{Responda}\ES{Respuesta}\FR{Réponse}}
+\newcommand{\WhatThisCodeDoes}{\RU{Что делает этот код}\EN{What does this code do}\PTBR{O que este código faz}\ES{?`Qu\'e hace este código}?\FR{Que fait ce code ?}}
+\newcommand{\WorkingWithFloatAsWithStructSubSubSectionName}{%
+\RU{Работа с типом float как со структурой}\EN{Handling float data type as a structure}\PTBR{Trabalhando com o tipo float como uma estrutura}\ES{Trabajando con el tipo float como una estructura}\FR{Travailler avec le type float comme une structure}}
+
+\newcommand{\MinesweeperWinXPExampleChapterName}{\RU{Сапёр}\EN{Minesweeper}\PTBR{Campo minado}\ES{Buscaminas}\FR{Démineur} (Windows XP)}
+
+\newcommand{\StructurePackingSectionName}{\RU{Упаковка полей в структуре}\EN{Fields packing in structure}\PTBR{Organização de campos na estrutura}\ES{Organización de campos en la estructura}\FR{Organisation des champs dans la structure}}
+\newcommand{\StructuresChapterName}{\RU{Структуры}\EN{Structures}\PTBR{Estruturas}\ES{Estructuras}\FR{Structures}}
+\newcommand{\PICcode}{\RU{адресно-независимый код}\EN{position-independent code}\PTBR{código independente de posição}\ES{código independiente de la posición}\FR{code indépendant de la position}\DE{positionsabhängiger Code}}
+\newcommand{\CapitalPICcode}{\RU{Адресно-независимый код}\EN{Position-independent code}\PTBR{Código independente de posição}\ES{Código independiente de lá posición}\FR{Code indépendant de la position}\DE{Positionsabhängiger Code}}
+\newcommand{\Loops}{\RU{Циклы}\EN{Loops}\PTBR{Laços}\ES{Bucles}\FR{Boucles}}
+
+% C
+\newcommand{\PostIncrement}{\RU{Пост-инкремент}\EN{Post-increment}\PTBR{Pós-incremento}\ES{Post-incremento}\FR{Post-incrémentation}}
+\newcommand{\PostDecrement}{\RU{Пост-декремент}\EN{Post-decrement}\PTBR{Pós-decremento}\ES{Post-decremento}\FR{Post-décrémentation}}
+\newcommand{\PreIncrement}{\RU{Пре-инкремент}\EN{Pre-increment}\PTBR{Pré-incremento}\ES{Pre-incremento}\FR{Pré-incrémentation}}
+\newcommand{\PreDecrement}{\RU{Пре-декремент}\EN{Pre-decrement}\PTBR{Pré-decremento}\ES{Pre-decremento}\FR{Post-incrémentation}}
+
+% MIPS
+\newcommand{\GlobalPointer}{\RU{Глобальный указатель}\EN{Global Pointer}\PTBR{Ponteiro Global}\ES{Apuntador Global}\FR{Pointeur Global}}
+
+% other
+\ifdefined\RUSSIAN
+\newcommand{\HERMIT}{Андрей \q{herm1t} Баранович}
+\else
+\newcommand{\HERMIT}{Andrey \q{herm1t} Baranovich}
+\fi
+
+\newcommand{\garbage}{\RU{мусор}\EN{garbage}\PTBR{Lixo}\ES{Basura}\FR{déchets}}
+\newcommand{\IntelSyntax}{\RU{Синтаксис Intel}\EN{Intel syntax}\PTBR{Sintaxe Intel}\ES{Sintaxis Intel}\FR{Syntaxe Intel}}
+\newcommand{\ATTSyntax}{\RU{Синтаксис AT\&T}\EN{AT\&T syntax}\PTBR{Sintaxe AT\&T}\ES{Sintaxis AT\&T}\FR{Syntaxe AT\&T}}
+\newcommand{\randomNoise}{\RU{случайный шум}\EN{random noise}\PTBR{Ruído aleatório}\ES{Ruido aleatorio}\FR{bruit aléatoire}}
+\newcommand{\Example}{\RU{Пример}\EN{Example}\PTBR{Exemplo}\ES{Ejemplo}\FR{Exemple}}
+\newcommand{\argument}{\RU{аргумент}\EN{argument}\PTBR{argumento}\ES{argumento}\FR{argument}}
+\newcommand{\MarkedInIDAAs}{\RU{маркируется в \IDA как}\EN{marked in \IDA as}\PTBR{Marcado no \IDA como}\ES{Marcado en \IDA como}\FR{marqué dans \IDA comme}}
+\newcommand{\stepover}{\RU{сделать шаг, не входя в функцию}\EN{step over}\PTBR{passar por cima}\ES{pasar por encima}\FR{enjamber}}
+\newcommand{\ShortHotKeyCheatsheet}{\RU{Краткий справочник горячих клавиш}\EN{Hot-keys cheatsheet}\PTBR{Cheatsheet de teclas de atalho}\ES{Cheatsheet de teclas de acceso rápido}\FR{Anti-sèche des touches de raccourci}}
+
+\newcommand{\assemblyOutput}{\RU{вывод на ассемблере}\EN{assembly output}\PTBR{saída do assembly}\ES{salida del ensamblador}\FR{résultat en sortie de l'assembleur}}
+
+% was in common_URLS.tex:
+\newcommand{\URLWPDA}{%
+	\RU{\href{http://go.yurichev.com/17012}{Wikipedia: Выравнивание данных}}%
+	\EN{\href{http://go.yurichev.com/17013}{Wikipedia: Data structure alignment}}%
+	\ES{\href{URL}{\ESph{}}}%
+	\PL{\href{URL}{\PLph{}}}%
+	\PTBR{\href{URL}{\PTBRph{}}}%
+	\IT{\href{URL}{\ITAph{}}}%
+	\DE{\href{URL}{\DEph{}}}%
+	\FR{\href{https://fr.wikipedia.org/wiki/Alignement_en_m\%C3\%A9moire}{Wikipedia: Alignement en mémoire}}%
+}
+
+\newcommand{\OracleTablesName}{oracle tables\xspace}
+\newcommand{\oracletables}{\OracleTablesName\footnote{\href{http://go.yurichev.com/17014}{yurichev.com}}\xspace}
+
+\newcommand{\WPMAO}{%
+	\RU{\href{http://go.yurichev.com/17015}{Wikipedia: Умножение-сложение}}%
+	\EN{\href{http://go.yurichev.com/17016}{Wikipedia: Multiply–accumulate operation}}%
+	\ES{\href{URL}{\ESph{}}}%
+	\DE{\href{URL}{\DEph{}}}%
+	\PL{\href{URL}{\PLph{}}}%
+	\PTBR{\href{URL}{\PTBRph{}}}%
+	\ITA{\href{URL}{\ITAph{}}}%
+	\FR{\href{https://fr.wikipedia.org/wiki/Multiply-accumulate}{Wikipedia: Multiply-accumulate}}%
+}
+
+\newcommand{\BGREPURL}{\href{http://go.yurichev.com/17017}{GitHub}}
+\newcommand{\FNMSDNROTxURL}{\footnote{\href{http://go.yurichev.com/17018}{MSDN}}}
+
+\newcommand{\YurichevIDAIDCScripts}{http://go.yurichev.com/17019}
+
+% ML prefix is for multi-lingual words and sentences:
+\newcommand{\MLHeap}{\EN{Heap}\RU{Куча}\PTBR{Heap}\FR{Heap}}
+\newcommand{\MLStack}{\EN{Stack}\RU{Стэк}\PTBR{Pilha}\FR{Pile}}
+\newcommand{\MLStackOverflow}{\EN{Stack overflow}\RU{Переполнение стека}\PTBR{\TBT}\FR{Débordement de pile}\DEph{}\ITAph{}}
+\newcommand{\MLStartOfHeap}{\RU{Начало кучи}\EN{Start of heap}\PTBR{começo da heap}\FR{Début du heap}}
+\newcommand{\MLStartOfStack}{\RU{Вершина стека}\EN{Start of stack}\PTBR{começo da pilha}\FR{Début de la pile}}
+\newcommand{\MLinputA}{\RU{вход А}\EN{input A}\FR{entrée A}}
+\newcommand{\MLinputB}{\RU{вход Б}\EN{input B}\FR{entrée B}}
+\newcommand{\MLoutput}{\RU{выход}\EN{output}\FR{sortie}}
+
+% sources: books, etc
+\newcommand{\TAOCPvolI}{Donald E. Knuth, \IT{The Art of Computer Programming}, Volume 1, 3rd ed., (1997)}
+\newcommand{\TAOCPvolII}{Donald E. Knuth, \IT{The Art of Computer Programming}, Volume 2, 3rd ed., (1997)}
+\newcommand{\Russinovich}{Mark Russinovich, \IT{Microsoft Windows Internals}}
+\newcommand{\Schneier}{Bruce Schneier, \IT{Applied Cryptography}, (John Wiley \& Sons, 1994)}
+\newcommand{\AgnerFog}{Agner Fog, \IT{The microarchitecture of Intel, AMD and VIA CPUs}, (2016)}
+\newcommand{\AgnerFogCPP}{Agner Fog, \IT{Optimizing software in C++} (2015)}
+\newcommand{\AgnerFogCC}{Agner Fog, \IT{Calling conventions} (2015)}
+\newcommand{\JavaBook}{[Tim Lindholm, Frank Yellin, Gilad Bracha, Alex Buckley, \IT{The Java(R) Virtual Machine Specification / Java SE 7 Edition}]
+\footnote{\AlsoAvailableAs \url{https://docs.oracle.com/javase/specs/jvms/se7/jvms7.pdf}; \url{http://docs.oracle.com/javase/specs/jvms/se7/html/}}}
+
+\newcommand{\ARMPCS}{\InSqBrackets{\IT{Procedure Call Standard for the ARM 64-bit Architecture (AArch64)}, (2013)}\footnote{\AlsoAvailableAs \url{http://go.yurichev.com/17287}}}
+
+\newcommand{\IgorSkochinsky}{[Igor Skochinsky, \IT{Compiler Internals: Exceptions and RTTI}, (2012)] \footnote{\AlsoAvailableAs \url{http://go.yurichev.com/17294}}}
+
+\newcommand{\PietrekSEH}{[Matt Pietrek, \IT{A Crash Course on the Depths of Win32\texttrademark{} Structured Exception Handling}, (1997)]\footnote{\AlsoAvailableAs \url{http://go.yurichev.com/17293}}}
+
+\newcommand{\PietrekPE}{Matt Pietrek, \IT{An In-Depth Look into the Win32 Portable Executable File Format}, (2002)]}
+
+\newcommand{\PietrekPEURL}{\PietrekPE\footnote{\AlsoAvailableAs \url{http://go.yurichev.com/17318}}}
+
+\newcommand{\RitchieDevC}{[Dennis M. Ritchie, \IT{The development of the C language}, (1993)]\footnote{\AlsoAvailableAs \url{http://go.yurichev.com/17264}}}
+
+\newcommand{\RitchieThompsonUNIX}{[D. M. Ritchie and K. Thompson, \IT{The UNIX Time Sharing System}, (1974)]\footnote{\AlsoAvailableAs \url{http://go.yurichev.com/17270}}}
+
+\newcommand{\DrepperTLS}{[Ulrich Drepper, \IT{ELF Handling For Thread-Local Storage}, (2013)]\footnote{\AlsoAvailableAs \url{http://go.yurichev.com/17272}}}
+
+\newcommand{\DrepperMemory}{[Ulrich Drepper, \IT{What Every Programmer Should Know About Memory}, (2007)]\footnote{\AlsoAvailableAs \url{http://go.yurichev.com/17341}}}
+
+\newcommand{\AlephOne}{[Aleph One, \IT{Smashing The Stack For Fun And Profit}, (1996)]\footnote{\AlsoAvailableAs \url{http://go.yurichev.com/17266}}}
+
+\ifdefined\RUSSIAN
+\newcommand{\KRBook}{[Брайан Керниган, Деннис Ритчи, \IT{Язык программирования Си}, (1988)]}
+\newcommand{\CppOneOneStd}{Стандарт Си++11}
+\newcommand{\CNotes}{Денис Юричев, \IT{Заметки о языке программирования Си/Си++}}
+\else
+\newcommand{\KRBook}{[Brian W. Kernighan, Dennis M. Ritchie, \IT{The C Programming Language}, (1988)]}
+\newcommand{\CppOneOneStd}{C++11 standard}
+\newcommand{\CNotes}{Dennis Yurichev, \IT{C/C++ programming language notes}}
+\fi
+
+\newcommand{\RobPikePractice}{Brian W. Kernighan, Rob Pike, \IT{Practice of Programming}, (1999)}
+
+\newcommand{\ARMSixFourRef}{\IT{ARM Architecture Reference Manual, ARMv8, for ARMv8-A architecture profile}, (2013)}
+\newcommand{\ARMSixFourRefURL}{\InSqBrackets{\ARMSixFourRef}\footnote{\AlsoAvailableAs \url{http://yurichev.com/mirrors/ARMv8-A_Architecture_Reference_Manual_(Issue_A.a).pdf}}}
+
+\newcommand{\SysVABI}{[Michael Matz, Jan Hubicka, Andreas Jaeger, Mark Mitchell, \IT{System V Application Binary Interface. AMD64 Architecture Processor Supplement}, (2013)]
+\footnote{\AlsoAvailableAs \url{https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf}}}
+
+\newcommand{\IOSABI}{\InSqBrackets{\IT{iOS ABI Function Call Guide}, (2010)}\footnote{\AlsoAvailableAs \url{http://go.yurichev.com/17276}}}
+
+\newcommand{\CNineNineStd}{\IT{ISO/IEC 9899:TC3 (C C99 standard)}, (2007)}
+
+\newcommand{\TCPPPL}{Bjarne Stroustrup, \IT{The C++ Programming Language, 4th Edition}, (2013)}
+
+\newcommand{\AMDOptimization}{\InSqBrackets{\IT{Software Optimization Guide for AMD Family 16h Processors}, (2013)}}
+% note = "\AlsoAvailableAs \url{http://go.yurichev.com/17285}",
+
+\newcommand{\IntelOptimization}{\InSqBrackets{\IT{Intel® 64 and IA-32 Architectures Optimization Reference Manual}, (2014)}}
+% note = "\AlsoAvailableAs \url{http://go.yurichev.com/17342}",
+
+\newcommand{\TAOUP}{Eric S. Raymond, \IT{The Art of UNIX Programming}, (2003)}
+% note = "\AlsoAvailableAs \url{http://go.yurichev.com/17277}",
+
+\newcommand{\HenryWarren}{Henry S. Warren, \IT{Hacker's Delight}, (2002)}
+
+\newcommand{\ParashiftCPPFAQ}{Marshall Cline, \IT{C++ FAQ}}
+% note = "\AlsoAvailableAs \url{http://go.yurichev.com/17291}",
+
+\newcommand{\ARMCookBook}{Advanced RISC Machines Ltd, \IT{The ARM Cookbook}, (1994)}
+% note = "\AlsoAvailableAs \url{http://go.yurichev.com/17273}",
+
+\newcommand{\ARMSevenRef}{\IT{ARM(R) Architecture Reference Manual, ARMv7-A and ARMv7-R edition}, (2012)}
+
+\newcommand{\MAbrash}{Michael Abrash, \IT{Graphics Programming Black Book}, 1997}
+
+\newcommand{\radare}{rada.re}
+
+\newcommand{\RedditHiringThread}{\href{https://www.reddit.com/r/ReverseEngineering/comments/4sbd11/rreverseengineerings_2016_triannual_hiring_thread/}{2016}}
+\newcommand{\NetsecHiringThread}{\href{https://www.reddit.com/r/netsec/comments/552rz1/rnetsecs_q4_2016_information_security_hiring/}{2016}}
+
+\newcommand{\FNURLREDDIT}{\footnote{\href{http://go.yurichev.com/17027}{reddit.com/r/ReverseEngineering/}}}
 

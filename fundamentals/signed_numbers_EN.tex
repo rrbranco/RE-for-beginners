@@ -1,0 +1,148 @@
+\section{\SignedNumbersSectionName}
+\label{sec:signednumbers}
+\myindex{Signed numbers}
+
+\newcommand{\URLS}{\href{http://go.yurichev.com/17117}{wikipedia}}
+
+There are several methods for representing signed numbers\footnote{\URLS}, 
+but \q{two's complement} is the most popular one in computers.
+
+Here is a table for some byte values:
+
+\begin{center}
+\begin{tabular}{ | l | l | l | l | }
+\hline
+\HeaderColor binary & \HeaderColor hexadecimal & \HeaderColor unsigned & \HeaderColor signed \\
+\hline
+01111111 & 0x7f & 127 & 127 \\
+\hline
+01111110 & 0x7e & 126 & 126 \\
+\hline
+\multicolumn{4}{ |c| }{...} \\
+\hline
+00000110 & 0x6 & 6 & 6 \\
+\hline
+00000101 & 0x5 & 5 & 5 \\
+\hline
+00000100 & 0x4 & 4 & 4 \\
+\hline
+00000011 & 0x3 & 3 & 3 \\
+\hline
+00000010 & 0x2 & 2 & 2 \\
+\hline
+00000001 & 0x1 & 1 & 1 \\
+\hline
+00000000 & 0x0 & 0 & 0 \\
+\hline
+11111111 & 0xff & 255 & -1 \\
+\hline
+11111110 & 0xfe & 254 & -2 \\
+\hline
+11111101 & 0xfd & 253 & -3 \\
+\hline
+11111100 & 0xfc & 252 & -4 \\
+\hline
+11111011 & 0xfb & 251 & -5 \\
+\hline
+11111010 & 0xfa & 250 & -6 \\
+\hline
+\multicolumn{4}{ |c| }{...} \\
+\hline
+10000010 & 0x82 & 130 & -126 \\
+\hline
+10000001 & 0x81 & 129 & -127 \\
+\hline
+10000000 & 0x80 & 128 & -128 \\
+\hline
+\end{tabular}
+\end{center}
+
+\myindex{x86!\Instructions!JA}
+\myindex{x86!\Instructions!JB}
+\myindex{x86!\Instructions!JL}
+\myindex{x86!\Instructions!JG}
+The difference between signed and unsigned numbers is that if we represent \TT{0xFFFFFFFE} and \TT{0x00000002} 
+as unsigned, then the first number (4294967294) is bigger than the second one (2). 
+If we represent them both as signed, the first one becomes $-2$, and it is smaller than the second (2). 
+That is the reason why conditional jumps~(\myref{sec:Jcc}) are present both for signed (e.g. \JG, \JL) 
+and unsigned (\JA, \JB) operations.
+
+For the sake of simplicity, this is what one needs to know:
+
+\begin{itemize}
+\item Numbers can be signed or unsigned.
+
+\item \CCpp signed types:
+
+  \begin{itemize}
+    \item \TT{int64\_t} (-9,223,372,036,854,775,808 .. 9,223,372,036,854,775,807)
+	  (-~9.2..~9.2 quintillions) or \\
+                \TT{0x8000000000000000..0x7FFFFFFFFFFFFFFF}),
+    \item \Tint (-2,147,483,648..2,147,483,647 (-~2.15..~2.15Gb) or \\
+	    \TT{0x80000000..0x7FFFFFFF}),
+    \item \Tchar (-128..127 or \TT{0x80..0x7F}),
+    \item \TT{ssize\_t}.
+   \end{itemize}
+
+	Unsigned:
+  \begin{itemize}
+	  \item \TT{uint64\_t} (0..18,446,744,073,709,551,615 
+		  (~18 quintillions) or \TT{0..0xFFFFFFFFFFFFFFFF}),
+   \item \TT{unsigned int} (0..4,294,967,295 (~4.3Gb) or \TT{0..0xFFFFFFFF}),
+   \item \TT{unsigned char} (0..255 or \TT{0..0xFF}), 
+   \item \TT{size\_t}.
+  \end{itemize}
+
+\item Signed types have the sign in the \ac{MSB}: 1 means \q{minus}, 0 means \q{plus}.
+
+\item Promoting to a larger data types is simple:
+\myref{subsec:sign_extending_32_to_64}.
+
+\label{sec:signednumbers:negation}
+\item Negation is simple: just invert all bits and add 1.
+
+We can keep in mind that a number of inverse sign is located on the opposite side at the same proximity from zero.
+The addition of one is needed because zero is present in the middle.
+
+\myindex{x86!\Instructions!IDIV}
+\myindex{x86!\Instructions!DIV}
+\myindex{x86!\Instructions!IMUL}
+\myindex{x86!\Instructions!MUL}
+\myindex{x86!\Instructions!CBW}
+\myindex{x86!\Instructions!CWD}
+\myindex{x86!\Instructions!CWDE}
+\myindex{x86!\Instructions!CDQ}
+\myindex{x86!\Instructions!CDQE}
+\myindex{x86!\Instructions!MOVSX}
+\myindex{x86!\Instructions!SAR}
+\item 
+	The addition and subtraction operations work well for both signed and unsigned values.
+	But for multiplication and division operations, x86 has different instructions:
+	\TT{IDIV}/\TT{IMUL} for signed and \TT{DIV}/\TT{MUL} for unsigned.
+\item
+	Here are some more instructions that work with signed numbers:\\
+	\TT{CBW/CWD/CWDE/CDQ/CDQE} (\myref{ins:CBW_CWD_etc}), \TT{MOVSX} (\myref{MOVSX}), \TT{SAR} (\myref{ins:SAR}).
+\end{itemize}
+
+A table of some negative and positive values (\ref{signed_tbl}) looks like thermometer with Celsius scale.
+This is why addition and subtraction works equally well for both signed and unsigned numbers:
+if the first addend is represented as mark on thermometer, and one need to add a second addend,
+and it's positive, we just shift mark up on thermometer by the value of second addend.
+If the second addend is negative, then we shift mark down to absolute value of the second addend.
+
+Addition of two negative numbers works as follows.
+For example, we need to add -2 and -3 using 16-bit registers.
+-2 and -3 is 0xfffe and 0xfffd repsectively.
+If we add these numbers as unsigned, we will get 0xfffe+0xfffd=0x1fffb.
+But we work on 16-bit registers, so the result is \IT{cut off}, the first 1 is dropped,
+0xfffb is left, and this is -5.
+This works because -2 (or 0xfffe) can be represented using plain English like this:
+``2 lacks in this value up to maximal value in 16-bit register + 1''.
+-3 can be represented as ``\dots 3 lacks in this value up to \dots''.
+Maximal value of 16-bit register + 1 is 0x10000.
+During addition of two numbers and \IT{cutting off} by $2^{16}$ modulo, $2+3=5$ \IT{will be lacking}.
+
+% subsections:
+\input{fundamentals/MUL_IMUL_EN}
+\input{fundamentals/one_more_EN}
+

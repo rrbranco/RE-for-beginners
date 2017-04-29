@@ -1,0 +1,35 @@
+\subsubsection{ARM + \NonOptimizingXcodeIV (\ThumbTwoMode)}
+\label{FPU_passing_floats_ARM}
+
+\lstinputlisting[style=customasmARM]{patterns/12_FPU/2_passing_floats/Xcode_thumb_O0.asm}
+Wie bereits vorher erwähnt werden Pointer auf 64-Bit-Fließkommazahlen über ein
+Paar von R-Registern übergeben.
+
+Dieser Code ist leicht redundant (sicherlich aufgrund der deaktivierten
+Optimierung), da es möglich ist Werte direkt in die R-Register zu laden, ohne
+die D-Register zu verwenden.
+
+Wie wir also sehen erhält die \GTT{\_pow} Funktion ihr erster Argument in
+\Reg{0} und \Reg{1} und das zweite in \Reg{2} und \Reg{3}. Die Funktion
+speichert ihr Ergebnis in \Reg{0} und \Reg{1}. 
+Das Ergebnis von \GTT{\_pow} wird zunächst nach \GTT{D16} und
+anschließend in das Paar \Reg{1} und \Reg{2} verschoben, von wo aus \printf das
+Ergebnis übernimmt. 
+
+\subsubsection{ARM + \NonOptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/12_FPU/2_passing_floats/Keil_ARM_O0.asm}
+
+Die D-Register werden hier nicht verwendet, sondern nur Paare von R-Registern.
+
+\subsubsection{ARM64 + \Optimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.9,style=customasmARM]{patterns/12_FPU/2_passing_floats/ARM64_DE.s}
+
+Die Konstanten werden nach \RegD{0} und \RegD{1} geladen: \TT{pow()} übernimmt
+sie von dort. Das Ergebnis befindet sich nach der Ausführung von \TT{pow()} in
+\RegD{0}. 
+Es wird ohne weitere Änderung oder Verschiebung an die Funktion \printf
+übergeben, da \printf ganzzahlige Werte und Pointer aus X-Registern,
+Fließkommaparameter jedoch aus D-Registern übernimmt.
+

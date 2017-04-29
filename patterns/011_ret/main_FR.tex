@@ -1,0 +1,71 @@
+\section{Valeur de retour}
+\label{ret_val_func}
+
+Une autre fonction simple est celle qui retourne juste une valeur constante:
+
+La voici:
+
+\lstinputlisting[caption=Code \CCpp,style=customc]{patterns/011_ret/1.c}
+
+Compilons le!
+
+\subsection{x86}
+
+Voici ce que les compilateurs GCC et MSVC produisent sur une plateforme x86:
+
+\lstinputlisting[caption=GCC/MSVC \Optimizing (\assemblyOutput),style=customasmx86]{patterns/011_ret/1.s}
+
+\myindex{x86!\Instructions!RET}
+Il y a juste deux instructions: la premiére place la valeur 123 dans le registre \EAX, qui est par convention le registre utilisé pour stocker la valeur retournée d'une fonction et la seconde est \RET, qui retourne l'exécution vers le \gls{caller}.
+
+Le caller prendra le resultat de cette fonction dans le registre \EAX.
+
+\subsection{ARM}
+
+Il y a quelques différences sur la platforme ARM:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) ASM Output,style=customasmARM]{patterns/011_ret/1_Keil_ARM_O3.s}
+
+ARM utilise le registre \Reg{0} pour retourner le résultat d'une fonctions, donc 123 est copié dans \Reg{0}.
+
+\myindex{ARM!\Instructions!MOV}
+\myindex{x86!\Instructions!MOV}
+
+Il est à noter que l'instruction \MOV est trompeuse pour les plateformes x86 et ARM \ac{ISA}s.
+
+La donnée n'est en réalité pas \IT{moved} (déplacée) mais \IT{copied} (copiée).
+
+\subsection{MIPS}
+
+\label{MIPS_leaf_function_ex1}
+
+La sortie de l'assemblage GCC ci-dessous liste les registres par nombre:
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (\assemblyOutput),style=customasmMIPS]{patterns/011_ret/MIPS.s}
+
+\dots tandis que \IDA le fait---avec les pseudo noms:
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (IDA),style=customasmMIPS]{patterns/011_ret/MIPS_IDA.lst}
+
+Le registre \$2 (ou \$V0) est utilisé pour stocker la valeur de retour de la fonction.
+\myindex{MIPS!\Pseudoinstructions!LI}
+\INS{LI} signifie ``Load Immediate'' et est l'équivalent MIPS de \MOV.
+
+\myindex{MIPS!\Instructions!J}
+
+L'autre instruction est l'instruction de saut (J ou JR) qui retourne le flux d'exécution vers le \gls{caller}.
+
+\myindex{MIPS!Branch delay slot}
+
+Vous pouvez vous demander pourquoi la position de l'instruction d'affectation de valeur immédiate (LI) et l'instruction de saut (J ou JR) sont échangées. Ceci est dû à une fontionnalité du \ac{RISC} appelée ``branch delay slot''.
+
+La raison de cela est du à une bizarrerie dans l'architecture de certains RISC \ac{ISA}s et n'est pas importante pour nous. Nous gardons juste en tête qu'en MIPS, l'instruction qui suit une instruction de saut ou de branchement est exécutée \IT{avant} l'instruction de saut ou de branchement elle même.
+
+Par conséquent, les instructions de branchement échangent toujours de place avec l'instruction qui doit être exécutée avant.
+
+% A footnote/link to http://en.wikipedia.org/wiki/Delay_slot#Branch_delay_slots or
+% something similar might be useful for the people more interested in it.
+
+\subsection{En pratique}
+
+Les fonctions qui retournent simplement 1 (\IT{true}) ou 0 (\IT{false}) sont vraiment fréquentes en pratique.

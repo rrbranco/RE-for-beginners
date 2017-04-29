@@ -1,0 +1,289 @@
+\newcommand{\comp}{\TT{comp()}\xspace}
+\section{Pointer auf Funktionen}
+\label{sec:pointerstofunctions}
+
+\myindex{\CLanguageElements!\Pointers}
+Ein Pointer auf eine Funktion ist genau wie alle anderen Pointer nur die Adresse, an der die Funktion im Codesegment
+beginnt.
+
+\myindex{Callbacks}
+Sie werden oft für Callback-Funktionen verwendet\footnote{\href{http://go.yurichev.com/17071}{wikipedia}}.
+
+Bekannte Beispiele hierfür sind:
+
+\begin{itemize}
+\item \qsort\footnote{\href{http://go.yurichev.com/17072}{wikipedia}},
+{\TT{atexit()}}\footnote{\url{http://go.yurichev.com/17073}} aus der Standard C Bibliothek; 
+
+\item *NIX OS Signale\footnote{\href{http://go.yurichev.com/17074}{wikipedia}};
+
+\item Thread Start: \TT{CreateThread()} (win32), \TT{pthread\_create()} (POSIX);
+
+\item viele win32 Funktionen wie \TT{EnumChildWindows()}\footnote{\href{http://go.yurichev.com/17075}{MSDN}}.
+
+\item viele Stellen im Linux kernel, zum Beispiel werden die Treiber für das Dateisystem über Callback-Funktionen
+aufgerufen:
+\url{http://go.yurichev.com/17076}
+
+\item Die GCC Plugin-Functions werden ebenfalls über Callbacks aufgerufen: 
+\url{http://go.yurichev.com/17077}
+\item Ein weiteres Beispiel für Pointer auf Funktionen ist eine Tabelle im \q{dwm} Linux Fenstermanager, der Shortcuts
+definiert. Jeder Shortcur hat eine zugehörige Funktion aufzurufen, wenn eine spezielle Tastenkombination gedrückt wird:
+\href{http://go.yurichev.com/17078}{GitHub}. Wie wir sehen können, ist eine solche Tabelle einfacher zu handhaben als
+ein großer switch()-Ausdruck.
+\end{itemize}
+
+\myindex{\CStandardLibrary!qsort()}
+Die Funktion \qsort ist eine Implementierung von Quicksort in der \CCpp Standardbibliothek.
+Die Funktion ist in der Lage jeden Datentyp zu sortieren, solange dieser über eine Funktion zum Vergleich von zwei
+Elementen verfügt und \qsort in der Lage ist, diese aufzurufen.
+
+Die Vergleichsfunktion kann wie folgt definiert werden:
+
+\begin{lstlisting}
+int (*compare)(const void *, const void *)
+\end{lstlisting}
+
+Verwenden wir das folgende Beispiel:
+
+\lstinputlisting[numbers=left,label=qsort_c_src,style=customc]{patterns/18_pointers_to_functions/17_1.c}
+
+\subsection{MSVC}
+
+Kompilieren wir es in MSVC 2010 (einige Teile wurden zur Verkürzung weggelassen) mit der Option \TT{\Ox}:
+
+\lstinputlisting[caption=\Optimizing MSVC 2010: /GS- /MD,style=customasmx86]{patterns/18_pointers_to_functions/17_2_msvc_Ox.asm}
+Bis hierhin nicht überraschend. 
+Als viertes Argument wird die Adresse des Labels \TT{\_comp} übergeben, die eine Stelle ist, an der sich \comp befindet,
+oder, mit anderen Worten: die Adresse des ersten Befehls dieser Funktion.
+
+Wie kann \qsort diese Funktion aufrufen?
+
+\myindex{Windows!MSVCR80.DLL}
+Schauen wir uns diese Funktion, die sich in MSVCR80.DLL (ein MSVC DLL Modul mit Standard-C-Bibliotheksfunktionen)
+befindet, näher an:
+
+\lstinputlisting[caption=MSVCR80.DLL,style=customasmx86]{patterns/18_pointers_to_functions/17_3_MSVCR.lst}
+
+\TT{comp}---ist das vierte Funktionsargument.
+Hier wird der Control Flow an die Adresse in \TT{comp} Argument übergeben.
+Davor werden zwei Argumente für \comp vorbereitet. Das Ergebnis wird nach der Ausführung überprüft.
+
+Das ist ein Grund, warum es gefährlich ist, Pointer auf Funktionen zu verwenden.
+Erstens: Wenn man \qsort mit einem falschen Funktionspointer aufruft, könnte \qsort den Control Flow an eine falsche
+Stelle übergeben, der Prozess könnte abstürzen und dieser Bug wäre sehr schwer zu finden.
+
+Zweitens: Die Typen der Callback-Funktion müssen ganz genau passend sein, denn der Aufruf der falschen Funktion mit
+falschen Argumenten oder falschen Typen kann zu ernsthaften Problemen führen. Das Abstürzen des Prozesses ist hier kein
+Problem~---das Problem ist die Ursache für den Absturz zu finden~---, da der Compiler während des Kompilierens die
+potentiellen Probleme nicht entdeckt hat.
+
+\input{patterns/18_pointers_to_functions/olly_DE.tex}
+
+\subsubsection{MSVC + Tracer}
+\myindex{tracer}
+Schauen wir uns auch an, welche Paare verglichen werden.
+Diese 10 Zahlen werden sortiert: 
+1892, 45, 200, -98, 4087, 5, -12345, 1087, 88, -100000.
+
+Wir erhalten die Adressen des ersten \CMP Befehls in \comp, d.i. \TT{0x0040100C} und wir haben hier einen Breakpoint
+gesetzt:
+
+\begin{lstlisting}
+tracer.exe -l:17_1.exe bpx=17_1.exe!0x0040100C
+\end{lstlisting}
+
+Jetzt erhalten wir Informationen über die Register am Breakpoint:
+
+\begin{lstlisting}
+PID=4336|New process 17_1.exe
+(0) 17_1.exe!0x40100c
+EAX=0x00000764 EBX=0x0051f7c8 ECX=0x00000005 EDX=0x00000000
+ESI=0x0051f7d8 EDI=0x0051f7b4 EBP=0x0051f794 ESP=0x0051f67c
+EIP=0x0028100c
+FLAGS=IF
+(0) 17_1.exe!0x40100c
+EAX=0x00000005 EBX=0x0051f7c8 ECX=0xfffe7960 EDX=0x00000000
+ESI=0x0051f7d8 EDI=0x0051f7b4 EBP=0x0051f794 ESP=0x0051f67c
+EIP=0x0028100c
+FLAGS=PF ZF IF
+(0) 17_1.exe!0x40100c
+EAX=0x00000764 EBX=0x0051f7c8 ECX=0x00000005 EDX=0x00000000
+ESI=0x0051f7d8 EDI=0x0051f7b4 EBP=0x0051f794 ESP=0x0051f67c
+EIP=0x0028100c
+FLAGS=CF PF ZF IF
+...
+\end{lstlisting}
+
+Filtern wir \TT{EAX} und \TT{ECX} heraus, so erhalten wir:
+
+\begin{lstlisting}
+EAX=0x00000764 ECX=0x00000005
+EAX=0x00000005 ECX=0xfffe7960
+EAX=0x00000764 ECX=0x00000005
+EAX=0x0000002d ECX=0x00000005
+EAX=0x00000058 ECX=0x00000005
+EAX=0x0000043f ECX=0x00000005
+EAX=0xffffcfc7 ECX=0x00000005
+EAX=0x000000c8 ECX=0x00000005
+EAX=0xffffff9e ECX=0x00000005
+EAX=0x00000ff7 ECX=0x00000005
+EAX=0x00000ff7 ECX=0x00000005
+EAX=0xffffff9e ECX=0x00000005
+EAX=0xffffff9e ECX=0x00000005
+EAX=0xffffcfc7 ECX=0xfffe7960
+EAX=0x00000005 ECX=0xffffcfc7
+EAX=0xffffff9e ECX=0x00000005
+EAX=0xffffcfc7 ECX=0xfffe7960
+EAX=0xffffff9e ECX=0xffffcfc7
+EAX=0xffffcfc7 ECX=0xfffe7960
+EAX=0x000000c8 ECX=0x00000ff7
+EAX=0x0000002d ECX=0x00000ff7
+EAX=0x0000043f ECX=0x00000ff7
+EAX=0x00000058 ECX=0x00000ff7
+EAX=0x00000764 ECX=0x00000ff7
+EAX=0x000000c8 ECX=0x00000764
+EAX=0x0000002d ECX=0x00000764
+EAX=0x0000043f ECX=0x00000764
+EAX=0x00000058 ECX=0x00000764
+EAX=0x000000c8 ECX=0x00000058
+EAX=0x0000002d ECX=0x000000c8
+EAX=0x0000043f ECX=0x000000c8
+EAX=0x000000c8 ECX=0x00000058
+EAX=0x0000002d ECX=0x000000c8
+EAX=0x0000002d ECX=0x00000058
+\end{lstlisting}
+
+Das entspricht 34 Paaren.
+Der Quicksort-Algorithmus benötigt hier also 34 Vergleichsoperationen um die 10 Zahlen zu sortieren.
+
+\clearpage
+\subsubsection{MSVC + Tracer (Codebetrachtung)}
+\myindex{tracer}
+Wir können auch alle möglichen Registerwerte über die Ablaufverfolgung sammeln und in \IDA anzeigen.
+
+Verfolgen wir also alle Befehle in \comp:
+
+\begin{lstlisting}
+tracer.exe -l:17_1.exe bpf=17_1.exe!0x00401000,trace:cc
+\end{lstlisting}
+
+Wir erhalten ein .idc-Skript und laden dieses in \IDA:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/18_pointers_to_functions/tracer_cc.png}
+\caption{Tracer und IDA. Werte teilweise rechts abgeschnitten}  
+\label{fig:qsort_tracer_cc}
+\end{figure}
+\IDA hat der Funktion einen Namen gegeben (PtFuncCompare)---denn \IDA erkennt, dass der Pointer auf diese Funktion an
+\qsort übergeben wird.
+
+Wir sehen, dass die Pointer $a$ und $b$ auf diverse Stellen im Array zeigen, aber die Schrittweite ist stets 4, da im
+Array 32-Bit-Werte gespeichert sind.
+
+Wir sehen auch, dass die Befehle an den Stellen \TT{0x401010} und \TT{0x401012} nie ausgeführt wurden (deshalb wurden
+sie weiß gelassen). Da liegt daran, dass \comp nie 0 zurückgegeben hat, da sich im Array keine zwei gleichen Elemente
+befinden.
+
+\subsection{GCC}
+
+Kein großer Unterschied:
+
+\begin{lstlisting}[caption=GCC,style=customasmx86]
+                lea     eax, [esp+40h+var_28]
+                mov     [esp+40h+var_40], eax
+                mov     [esp+40h+var_28], 764h
+                mov     [esp+40h+var_24], 2Dh
+                mov     [esp+40h+var_20], 0C8h
+                mov     [esp+40h+var_1C], 0FFFFFF9Eh
+                mov     [esp+40h+var_18], 0FF7h
+                mov     [esp+40h+var_14], 5
+                mov     [esp+40h+var_10], 0FFFFCFC7h
+                mov     [esp+40h+var_C], 43Fh
+                mov     [esp+40h+var_8], 58h
+                mov     [esp+40h+var_4], 0FFFE7960h
+                mov     [esp+40h+var_34], offset comp
+                mov     [esp+40h+var_38], 4
+                mov     [esp+40h+var_3C], 0Ah
+                call    _qsort
+\end{lstlisting}
+
+Die Funktion \comp:
+
+\begin{lstlisting}[style=customasmx86]
+                public comp
+comp            proc near
+
+arg_0           = dword ptr  8
+arg_4           = dword ptr  0Ch
+
+                push    ebp
+                mov     ebp, esp
+                mov     eax, [ebp+arg_4]
+                mov     ecx, [ebp+arg_0]
+                mov     edx, [eax]
+                xor     eax, eax
+                cmp     [ecx], edx
+                jnz     short loc_8048458
+                pop     ebp
+                retn
+loc_8048458:
+                setnl   al
+                movzx   eax, al
+                lea     eax, [eax+eax-1]
+                pop     ebp
+                retn
+comp            endp
+\end{lstlisting}
+
+\myindex{Linux!libc.so.6}
+Die Implementierung von \qsort befindet sich in \TT{libc.so.6} und ist eigentlich nur ein Wrapper für \TT{qsort\_r()}.
+
+Sie ruft \TT{quicksort()} auf, wo unsere selbst definierte Funktion über einen übergebenen Pointer aufgerufen wird:
+
+\begin{lstlisting}[caption=(file libc.so.6{,} glibc version---2.10.1),style=customasmx86]
+...
+.text:0002DDF6                 mov     edx, [ebp+arg_10]
+.text:0002DDF9                 mov     [esp+4], esi
+.text:0002DDFD                 mov     [esp], edi
+.text:0002DE00                 mov     [esp+8], edx
+.text:0002DE04                 call    [ebp+arg_C]
+...
+\end{lstlisting}
+
+\subsubsection{GCC + GDB (mit Quellcode)}
+\myindex{GDB}
+Natürlich kennen wir den C-Quellcode unseres Beispiels (\myref{qsort_c_src}), sodass wir einen Breakpoint ($b$) auf die
+Zeile (11--die Zeile, in der der erste Vergleich auftaucht), setzen können.
+Wir müssen das Beispiel mit hinzugefügten Debugging-Informationen kompilieren (\TT{-g}), sodass die Tabelle mit den
+Adressen und zugehörigen Zeilennummern verfügbar ist.
+
+Wir können mit den Variablennamen (\TT{p}) die Werte auch ausgeben:
+Die Debugging-Informationen verraten uns auch, welche Register und/oder Elemente auf dem lokalen Stack welche Variablen
+enthalten.
+
+\myindex{Glibc}
+Wir sehen auch den Stack (\TT{bt}) und können folgern, dass es eine Zwischenfunktion \TT{msort\_with\_tmp()} in Glibc
+geben muss.
+
+\lstinputlisting[caption=GDB session]{patterns/18_pointers_to_functions/GDB_source.txt}
+
+\subsubsection{GCC + GDB (ohne Quellcode)}
+\myindex{GDB}
+Oft gibt es aber keinen Quellcode, sodass wir die \comp Funktion (\TT{disas}) disassemblieren und den ersten \CMP Befehl
+finden müssen und dann an dieser Adresse einen Breakpoint ($b$) setzen.
+
+An jedem Breakpoint werden wir alle Registerinhalte (\TT{info registers}) in den Dump schreiben.
+Die Informationen zum Stack (\TT{bt}) sind ebenfalls verfügbar, aber nur teilweise vollständig: es gibt keine
+Informationen zu den Zeilennummern in \comp.
+
+\lstinputlisting[caption=GDB session]{patterns/18_pointers_to_functions/GDB_no_source.txt}
+
+\subsection{Gefahr von Pointern auf Funktionen}
+Wie wir sehen können, erwartet die Funktion \qsort einen Pointer auf eine Funktion, die zwei \IT{void*} Argumente nimmt
+und einen Integer zurückgibt.
+Wenn man viele Vergleichsfunktionen im Code finden (eine vergleicht Strings, ein andere Integer, etc.) kommt man hier
+leicht durcheinander.
+Man könnte versuchen, ein Array aus Strings mit der Vergleichsfunktion für Integer zu sortieren und der Compiler würde
+bei diesem Bug nicht einmal eine Warnung ausgeben.

@@ -1,4 +1,4 @@
-_c$ = 8							; size = 4
+_c$ = 8		; size = 4
 @f3@12	PROC
 ; _a$ = ecx
 ; _b$ = edx

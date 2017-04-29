@@ -1,0 +1,53 @@
+\section{Неверно дизассемблированный код}
+\label{sec:incorrectly_disasmed_code}
+
+Практикующие reverse engineer-ы часто сталкиваются с неверно дизассемблированным кодом.
+
+\subsection{Дизассемблирование началось в неверном месте (x86)}
+
+В отличие от ARM и MIPS (где у каждой инструкции длина или 2 или 4 байта), x86-инструкции имеют переменную длину,
+так что, любой дизассемблер, начиная работу с середины x86-инструкции, может выдать неверные результаты.
+
+Как пример:
+
+\lstinputlisting[style=customasmx86]{\CURPATH/x86_wrong_start_RU.asm}
+
+В начале мы видим неверно дизассемблированные инструкции, но потом, так или иначе, дизассемблер находит верный след.
+
+\subsection{Как выглядят случайные данные в дизассемблированном виде?}
+
+Общее, что можно сразу заметить, это:
+
+\begin{itemize}
+\item Необычно большой разброс инструкций.
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!MOV}
+\myindex{x86!\Instructions!CALL}
+\myindex{x86!\Instructions!IN}
+\myindex{x86!\Instructions!OUT}
+Самые частые x86-инструкции это \PUSH{}, \MOV{}, \CALL{}, 
+но здесь мы видим
+инструкции из любых групп: \ac{FPU}-инструкции, инструкции \TT{IN}/\TT{OUT}, редкие и системные инструкции, всё друг с другом смешано в одном месте.
+
+\item Большие и случайные значения, смещения, immediates.
+
+\item Переходы с неверными смещениями часто имеют адрес перехода в середину другой инструкции.
+\end{itemize}
+
+\lstinputlisting[caption=\randomNoise{} (x86),style=customasmx86]{\CURPATH/x86.asm}
+
+\myindex{x86-64}
+\lstinputlisting[caption=\randomNoise{} (x86-64),style=customasmx86]{\CURPATH/x64.asm}
+
+\myindex{ARM}
+\lstinputlisting[caption=\randomNoise{} (ARM (\ARMMode)),style=customasmARM]{\CURPATH/ARM.asm}
+
+\lstinputlisting[caption=\randomNoise{} (ARM (\ThumbMode)),style=customasmARM]{\CURPATH/ARM_thumb.asm}
+
+\myindex{MIPS}
+\lstinputlisting[caption=\randomNoise{} (MIPS little endian),style=customasmMIPS]{\CURPATH/MIPS.asm}
+
+Также важно помнить, что хитрым образом написанный код для распаковки и дешифровки (включая самомодифицирующийся),
+также может выглядеть как случайный шум, тем не менее, он исполняется корректно.
+
+% TODO таких примеров тоже бы добавить

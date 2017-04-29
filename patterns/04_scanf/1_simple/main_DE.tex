@@ -1,0 +1,37 @@
+\subsection{Ein einfaches Beispiel}
+
+\lstinputlisting[style=customc]{patterns/04_scanf/1_simple/ex1.c}
+
+Es ist nicht ratsam \scanf heutzutage noch für User Interaktionen zu verwenden. Aber dennoch können wir hier die Übergabe eines Pointers an eine Variable vom Typ \Tint betrachten.
+
+\subsubsection{Pointer}
+\myindex{\CLanguageElements!\Pointers}
+Pointer sind eines der fundamentalen Konzepte in der Informatik. Oft ist das Übergeben eines großen Array, eines Structs oder Objekts als Funktionsargument zu teuer, während die Übergabe der Adresse wesentlich billiger ist. 
+Wenn man zum Beispiel einen Textstring auf der Konsole ausgeben möchte, ist es deutlich einfacher, nur dessen Adresse in den Kernel des \ac{OS} zu übergeben.
+
+Wenn die aufgerufene Funktion außerdem das große Array oder Struct verändern muss und das gesamte Object zurückgeben muss, ist die Situation beinahe absurd. 
+Das einfachste ist also die Adresse eines Arrays oder Structs an die aufgerufene Funktion zu übergeben und sie dann die notwendigen Veränderungen durchführen zu lassen.
+
+Ein Pointer ist in \CCpp nichts anderes als die Adresse einer Speicherstelle.
+
+
+\myindex{x86-64}
+In x86 wird die Adresse als 32-Bit-Zahl dargestellt, d.h. sie benötigt 4 Byte, während in x86-64 eine Darstellung durch 64 Bit (d.h. 8 Byte) erfolgt.
+Dies ist übrigens der Grund dafür, dass einige Leute den Wechsel zu x86-64 ablehnen--alle Pointer in der x64-Architektur erfordern doppelt soviel Speicherplatz, inklusive Speicher in Cache, der ein sehr teurer Speicher ist.
+
+\myindex{\CStandardLibrary!memcpy()}
+Es ist möglich lediglich mit untypisierten Pointern zu arbeiten, wenn man ein wenig zusätzlichen Aufwand betreibt; z.B. in der Standard-C-Funktion \TT{memcpy()}, die einen Datenblock von einer Speicherstelle zu einer anderen kopiert, werden zwei Pointer vom Typ \TT{void*} als Argumente verwendet, da es nicht vorhersagbar ist, welchen Datentyp die Funktion kopieren soll. Datentypen sind hier nicht wichtig, entscheidend ist hier nur die Größe des Speicherblocks.
+
+Pointer werden außerdem häufig verwendet, wenn eine Funktion mehr als einen Wert zurückgeben muss. (Darauf kommen wir später in ~(\myref{label_pointers}) zurück.)
+
+Die Funktion \IT{scanf()} ist solch ein Fall: Neben der Tatsache, dass die Funktion angeben muss wie viele Werte erfolgreich gelesen wurden, muss sie auch alle diese Werte zurückliefern.
+
+In \CCpp wird der Pointertyp nur für Typüberprüfungen zur Compilezeit benötigt.
+
+Intern steckt im kompilierten Code keinerlei Information über die Typen der enthaltenen Pointer.
+
+\input{patterns/04_scanf/1_simple/x86}
+\input{patterns/04_scanf/1_simple/x64}
+\input{patterns/04_scanf/1_simple/ARM}
+\input{patterns/04_scanf/1_simple/MIPS/main}
+

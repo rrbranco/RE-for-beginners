@@ -1,0 +1,20 @@
+﻿\section{Кое-что специфичное для ARM}
+
+\subsection{Знак номера (\#) перед числом}
+
+Компилятор Keil, \IDA и objdump предваряет все числа знаком номера (\q{\#}), например:
+
+\lstref{Keil_number_sign}.
+Но когда GCC 4.9 выдает результат на языке ассемблера, он так не делает, например:
+
+\lstref{GCC_no_number_sign}.
+
+Так что листинги для ARM в этой книге в каком-то смысле перемешаны.
+
+Трудно сказать, как правильнее.
+Должно быть, всякий должен придерживаться тех правил, которые приняты в той среде, в которой он работает.
+
+% sections
+\input{patterns/ARM/post_pre_index_RU.tex}
+\input{patterns/ARM/big_constants_RU.tex}
+\input{patterns/ARM/relocs_RU.tex}

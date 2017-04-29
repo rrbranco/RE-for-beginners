@@ -1,0 +1,17 @@
+\subsubsection{Stockage des variables locales}
+
+Une fonction peut allouer de l'espace sur la pile pour ses variables locales
+simplement en décrémentant le \glslink{stack pointer}{pointeur de pile} vers le
+bas de la pile.
+
+% I think here, "stack bottom" means the lowest address in the stack space,
+% but the reader might also think it means towards the top of the stack space,
+% like in a pop, so you might change "towards the stack bottom" to
+% "towards the lowest address of the stack", or just take it out,
+% since "decreasing" also suggests that.
+
+Donc, c'est très rapide, peu importe combien de variables locales sont définis.
+Ce n'est pas une necessité de stocker les variables locles sur la pile.
+Vous pouvez stocker les variables locales où bon vous semble,
+mais c'est traditionnellement fait comme cela.
+

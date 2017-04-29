@@ -1,0 +1,40 @@
+% TODO proof-reading
+\subsection{Introduzione}
+
+\newcommand{\JADURL}{\url{http://varaneckas.com/jad/}}
+
+Esistono alcuni noti decompilatori per Java (o bytecode \\ac{JVM} in generale).
+\footnote{Ad esempio, JAD: \JADURL}.
+
+Il motivo è che la decompilazione del bytecode-\ac{JVM} è più semplice 
+che per un codice di più basso livello per architetture x86:
+
+\begin{itemize}
+\item C'è molta più informazione riguardo i tipi di dato.
+\item Il modello di memoria della \\ac{JVM} è molto più rigoroso e delineato.
+\item Il compilatore Java non esegue alcuna ottimizzazione (la \ac{JVM} \ac{JIT} la esegue in fase di runtime),
+      quindi i bytecode nei file relativi alle classi sono solitamente molto più leggibili.
+      
+\end{itemize}
+
+Quando può essere utile la conoscenza della \\ac{JVM}?
+
+\newcommand{\URLListOfJVMLangs}{\url{http://en.wikipedia.org/wiki/List_of_JVM_languages}}
+
+\begin{itemize}
+\item Patching approssimativo di classi senza la necessità di ricompilare il risultato del decompilatore.
+\item Analisi del codice nascosto.
+\item Realizzazione del proprio obfuscator.
+\item Realizzazione di un compilatore generatore di codice (back-end) orientata alla \ac{JVM} (come Scala, Clojure, etc.
+      \footnote{Elenco completo: \URLListOfJVMLangs}).
+      
+\end{itemize}
+
+Partiamo con alcuni semplici frammenti di codice.
+JDK 1.7 è usato ovunque, se non diversamente indicato.
+
+Questo è il comando usato per decompilare le classi ovunque:\\
+\GTT{javap -c -verbose}.
+
+Questo è il libro che ho usato mentre preparavo tutti gli esempi: \JavaBook.
+

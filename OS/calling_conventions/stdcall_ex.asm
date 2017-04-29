@@ -1,6 +1,6 @@
-_a$ = 8							; size = 4
-_b$ = 12						; size = 4
-_c$ = 16						; size = 4
+_a$ = 8		; size = 4
+_b$ = 12	; size = 4
+_c$ = 16	; size = 4
 _f2@12	PROC
 	push	ebp
 	mov	ebp, esp
@@ -8,7 +8,7 @@ _f2@12	PROC
 	imul	eax, DWORD PTR _b$[ebp]
 	add	eax, DWORD PTR _c$[ebp]
 	pop	ebp
-	ret	12					; 0000000cH
+	ret	12
 _f2@12	ENDP
 
 ; ...

@@ -1,0 +1,91 @@
+\subsubsection{x86}
+
+\myparagraph{MSVC}
+
+Aqui está o que o resultado depois de se compilar com o MSVC 2010:
+
+% TODO to translate
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/1_simple/ex1_MSVC_EN.asm}
+
+\TT{x} é uma variável local.
+
+De acordo com os padrões de \CCpp ela só deve ser visível nessa função e não além dela.
+Tradicionalmente, variáveis locais são guardadas na pilha.
+Provavelmente há outras maneiras de alocá-las, mas no x86 é assim que é feito.
+
+\myindex{x86!\Instructions!PUSH}
+O objetivo da intrução que se segue após o cabeçalho da função, \INS{PUSH ECX},
+não é para salvar o valor de \ECX
+(perceba que não há a instrução \INS{POP ECX} no fim da função).
+
+Na verdade, esse PUSH aloca 4 bytes na pilha para guardar a variável \TT{x}.
+
+\label{stack_frame}
+\myindex{\Stack!\PTBRph{}}
+\myindex{x86!\Registers!EBP}
+\TT{x} é para ser acessada com a ajuda do macro \TT{\_x\$} (que é igual a -4) e o registrador \EBP apontando para a posição atual.
+
+Conforme a execução da função avança, \EBP está apontando para a posição atual da pilha,
+sendo possível acessar variáveis locais e argumentos da função via \TT{EBP+offset}.
+
+\myindex{x86!\Registers!ESP}
+Também é possível usar \ESP para o mesmo objetivo, mas não é muito conveniente pois ele se altera com frequência.
+O valor de \EBP pode ser visto como uma cópia do valor de \ESP no começo da execução da função.
+
+Aqui está a aparência típica de uma pilha em um ambiente de 32-bits:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\dots & \dots \\
+\hline
+EBP-8 & variável local \#2, \MarkedInIDAAs{} \TT{var\_8} \\
+\hline
+EBP-4 & variável local \#1, \MarkedInIDAAs{} \TT{var\_4} \\
+\hline
+EBP & valor salvo de \EBP \\
+\hline
+EBP+4 & Endereço de retorno \\
+\hline
+EBP+8 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+EBP+0xC & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+EBP+0x10 & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+
+A função \scanf no nosso exemplo tem dois argumentos.
+
+O primeiro é um ponteiro para a string contendo \TT{\%d} e a segunda é o endereço da variável \TT{x}.
+
+\myindex{x86!\Instructions!LEA}
+Primeiro, o endereço da variável \TT{x} é carregado no registrador \EAX pela instrução \TT{lea eax, DWORD PTR \_x\$[ebp].}.
+
+\PTBRph{}
+
+Nós podemos dizer que nesse caso, \LEA simplesmente armazena a soma do valor em \EBP e o macro \TT{\_x\$} no registrador \EAX.
+
+É a mesma coisa que \INS{lea eax, [ebp-4]}.
+
+Então, 4 está sendo subtraido do registrador \EBP e o resultado é carregado no registrador \EAX.
+Depois, o valor em \EAX é empurrado para dentro da pilha e o \scanf é chamado.
+
+\printf é chamado depois disso com seu primeiro argumento --- um ponteiro para a string:
+\TT{You entered \%d...\textbackslash{}n}.
+
+O segundo argumento é preparado com: \TT{mov ecx, [ebp-4]}.
+A instrução armazena o valor de x e não o seu endereço, no registrador \ECX.
+
+Depois, o valor em \ECX é armazenado na pilha e o último \printf é chamado.
+
+% TODO: olly, 
+
+\myparagraph{\PTBRph{}}
+
+A propósito, esse simples exemplo é a demonstração do fato de que o compilador traduz a lista de expressões em \CCpp em uma lista sequêncial de instruções.
+Não há nada entre as expressões em \CCpp, como também no código de máquina resultante, não há nada, o controle de fluxo passa de uma expressão para a outra diretamente.
+

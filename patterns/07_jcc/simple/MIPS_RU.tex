@@ -1,0 +1,33 @@
+﻿\subsubsection{MIPS}
+
+Одна отличительная особенность MIPS это отсутствие регистра флагов.
+Очевидно, так было сделано для упрощения анализа зависимости данных (data dependency).
+
+\myindex{x86!\Instructions!SETcc}
+\myindex{MIPS!\Instructions!SLT}
+\myindex{MIPS!\Instructions!SLTU}
+Так что здесь есть инструкция, похожая на \INS{SETcc} в x86: \INS{SLT} (\q{Set on Less Than}~--- установить если
+меньше чем, знаковая версия) и \INS{SLTU} (беззнаковая версия).
+Эта инструкция устанавливает регистр-получатель в 1 если условие верно или в 0 в противном случае.
+
+\myindex{MIPS!\Instructions!BEQ}
+\myindex{MIPS!\Instructions!BNE}
+Затем регистр-получатель проверяется, используя инструкцию 
+\INS{BEQ} (\q{Branch on Equal} --- переход если равно) или \INS{BNE} (\q{Branch on Not Equal} --- переход если не равно) 
+и может произойти переход.
+Так что эта пара инструкций должна использоваться в MIPS для сравнения и перехода.
+Начнем с знаковой версии нашей функции:
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/07_jcc/simple/O0_MIPS_signed_IDA_RU.lst}
+
+\INS{SLT REG0, REG0, REG1} сокращается в IDA до более короткой формы \INS{SLT REG0, REG1}.
+\myindex{MIPS!\Pseudoinstructions!BEQZ}
+Мы также видим здесь псевдоинструкцию \INS{BEQZ} (\q{Branch if Equal to Zero}~--- переход если равно нулю), 
+которая, на самом деле, \INS{BEQ REG, \$ZERO, LABEL}.
+
+\myindex{MIPS!\Instructions!SLTU}
+Беззнаковая версия точно такая же, только здесь используется \INS{SLTU} (беззнаковая версия, 
+отсюда \q{U} в названии) вместо \INS{SLT}:
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/07_jcc/simple/O0_MIPS_unsigned_IDA.lst}
+

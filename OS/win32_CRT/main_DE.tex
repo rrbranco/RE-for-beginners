@@ -1,0 +1,123 @@
+\subsection{CRT (win32)}
+\label{sec:CRT}
+\myindex{CRT}
+
+Startet ein Programm genau bei der \main{}-Funktion?
+Nein, tut es nicht!
+
+Würden wir jede ausführbare Datei in \IDA oder HIEW öffnen können, würde wir sehen,
+dass \ac{OEP} auf einen anderen Code-Block zeigt.
+
+Dieser Code erledigt einige Vorbereitungen bevor die Ausführungskontrolle an unseren
+Code übergeben wird.
+Dies ist der sogenannte Startup- oder CRT-Code (C RunTime).
+
+Die \main{}-Funktion nimmt ein Array mit den Argumenten entgegen, die auf der Kommandozeile
+übergeben wurde, sowie eins mit den Umgebungsvariablen.
+Genaugenommen wird eine normale Zeichenkette an das Programm übergeben und der CRT-Code
+unterteilt diesen anhand der Leerzeichen in seine Bestandteile.
+Der CRT-Code bereitet auch das Array \TT{envp} vor, welches die Umgebungsvariablen enthält.
+
+Für \ac{GUI}-Programme unter Win32 wird \TT{WinMain} anstatt \main{} genutzt, welches eigene
+Argumente hat:
+
+\begin{lstlisting}
+int CALLBACK WinMain(
+  _In_  HINSTANCE hInstance,
+  _In_  HINSTANCE hPrevInstance,
+  _In_  LPSTR lpCmdLine,
+  _In_  int nCmdShow
+);
+\end{lstlisting}
+
+Der CRT-Code bereitet diese ebenfalls vor.
+
+Die Zahl die von \main{} zurückgegeben wird ist der Exit-Code.
+
+Diese kann in der CRT für die Funktion \TT{ExitProcess()} werden, die diesen Exit-Code als
+Argument entgegennimmt.
+
+In der Regel hat jeder Compiler seinen eigenen CRT-Code.
+
+Nachfolgend eine typischer CRT-Code für MSVC 2008.
+
+%TODO In german translation the customasm style can not be compiled.
+%\lstinputlisting[numbers=left,style=customasm]{OS/win32_CRT/crt_msvc_2008.asm}
+\lstinputlisting[numbers=left]{OS/win32_CRT/crt_msvc_2008.asm}
+
+Wir sehen hier die Aufrufe zu \TT{GetCommandLineA()} (Zeile 62), anschließend zu \TT{setargv()}
+(Zeile 66) und \TT{setenvp()} (Zeile 74), was offensichtlich die globalen Variablen \TT{argc},
+\TT{argv} und  \TT{envp} initialisiert.
+
+Zum Schluss wird \main{} mit diesen Argumenten aufgerufen (Zeile 97).
+
+Es sind ebenfalls Aufrufe zu Funktionen mit selbsterklärenden Namen zu finden, wie \TT{heap\_init()}
+(Zeile 35) und \TT{ioinit()} (Zeile 54).
+
+Der \glslink{heap}{heap} wird jedoch vom \ac{CRT} initialisiert.
+Wenn man versucht \TT{malloc()} in einem Programm ohne CRT zu nutzen, wird dieses mit dem folgenden
+Fehler abstürzen:
+
+\begin{lstlisting}
+runtime error R6030
+- CRT not initialized
+\end{lstlisting}
+
+Die Initialisierung von globalen Objekten in \Cpp passiert ebenfalls in der \ac{CRT} vor der
+Ausführung von \main{}:
+\myref{sec:std_string_as_global_variable}.
+
+%TODO SLN32 not knwon in german translation
+%Der Wert den \main{} zurückgibt wird an \TT{cexit()} übergeben oder in \TT{\SLN32}, welches
+%\TT{doexit()} aufruft.
+
+Ist es möglich die \ac{CRT} loszuwerden?
+Ja, wenn man genau weiß, was man tut.
+
+Der Linker von \ac{MSVC} hat die \TT{/ENTRY}-Option um den Einsprungpunkt festzulegen.
+
+\begin{lstlisting}
+#include <windows.h>
+
+int main()
+{
+	MessageBox (NULL, "hello, world", "caption", MB_OK);
+};
+\end{lstlisting}
+
+Kompilieren wir dies in MSVC 2008.
+
+\begin{lstlisting}
+cl no_crt.c user32.lib /link /entry:main
+\end{lstlisting}
+
+Wir bekommen eine lauffähige .exe-Datei mit der Größe 2560 Byte mit einem PE-Header,
+Anweisungen die \TT{MessageBox} aufrufen, zwei Zeichenketten im Datensegment, die aus
+\TT{user32.dll} importierte Funktion \TT{MessageBox} und sonst nichts.
+
+Dies funktioniert, jedoch kann nicht \TT{WinMain} mit den 4 Argumenten anstatt \main{}
+genutzt werden.
+
+Um genau zu sein, wäre dies zwar möglich, allerdings wurden die Argumente nicht vorbereitet
+um sie zu nutzen.
+
+Es ist übrigens auch möglich die .exe-Datei kleiner machen indem die \ac{PE}-Sektion
+an weniger als den standardmäßigen 4096 Byte auszurichten.
+
+\begin{lstlisting}
+cl no_crt.c user32.lib /link /entry:main /align:16
+\end{lstlisting}
+
+Der Linker gibt aus:
+
+\begin{lstlisting}
+LINK : warning LNK4108: /ALIGN specified without /DRIVER; image may not run
+\end{lstlisting}
+
+Die Ausgabe ist eine .exe-Datei mit 720 Byte.
+Sie kann unter Windows 7 x86, jedoch nicht x64 ausgeführt werden (beim Versuch wird
+eine Fehlermeldung erscheinen).
+
+Mit mehr Aufwand ist es möglich die Datei noch weiter zu verkleinern, aber wie zu
+sehen ist, bekommt man schnell Kompatibilitätsprobleme.
+

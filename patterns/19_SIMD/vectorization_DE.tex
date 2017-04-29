@@ -1,0 +1,132 @@
+\subsection{Vektorisierung}
+
+\newcommand{\URLVEC}{\href{http://go.yurichev.com/17080}{Wikipedia: vectorization}}
+Vektorisierung\footnote{\URLVEC} tritt auf, wenn man beispielsweise eine Schleife hat, die mehrere Arrays als Input und
+ein Array als Output hat. Der Rumpf der Schleife nimmt Werte aus den Eingabearrays, vearbeitet sie und legt das Ergebnis
+im Outputarray ab.
+Vektorisierung wird hier verwendet um mehrere Elemente gleichzeitig zu verarbeiten.
+
+Vektorisierung ist keine besonders neue Idee: der Autor hat sie bereits auf dem Cray Y-MP Supercomputer aus dem Jahre
+1988 ausgemacht, als er mit dessen kleinerem Brude Cray Y-MP EL spielte.
+
+Vectorization is not very fresh technology: the author of this textbook saw it at least on the Cray Y-MP 
+supercomputer line from 1988 when he played with its \q{lite} version Cray Y-MP EL
+\footnote{Er befindet sich im Museum für Supercomputer: \url{http://go.yurichev.com/17081}}.
+
+% FIXME! add assembly listing!
+Ein Beispiel:
+
+\begin{lstlisting}[style=customc]
+for (i = 0; i < 1024; i++)
+{
+    C[i] = A[i]*B[i];
+}
+\end{lstlisting}
+
+Dieses Codefragment nimmt Elemente aus A und B, multipliziert sie und speichert das Ergebnis in C.
+
+\myindex{x86!\Instructions!PLMULLD}
+\myindex{x86!\Instructions!PLMULHW}
+\newcommand{\PMULLD}{\IT{PMULLD} (\IT{Multiply Packed Signed Dword Integers and Store Low Result})}
+\newcommand{\PMULHW}{\TT{PMULHW} (\IT{Multiply Packed Signed Integers and Store High Result})}
+Wenn jedes Arrayelement ein 32-Bit \Tint ist, ist es möglich 4 Elemente aus A in ein 128-Bit-XMM-Register zu laden, 4
+weitere Elemente aus B in ein anderes, und dann durch die Befehle \PMULLD{} und \PMULHW{} 4 64-Bit-Produkte auf einmal
+zu erzeugen.
+
+Dadurch wir der Rumpf der Schleife nur $\frac{1024}{4}=256$ Mal ausgeführt. Das ist nur ein Viertel der normalen Anzahl
+an Durchläufen und geht natürlich schneller.
+
+\newcommand{\URLINTELVEC}{\href{http://go.yurichev.com/17082}{Auszug: Effektive automatische Vektorisierung}}
+
+\subsubsection{Beispiel zur Addition}
+
+\myindex{Intel C++}
+Manche Compiler können Vektorsierung in einfachen Fällen automatisch anwenden, zum Beispiel Intel C++\footnote{Mehr zur
+automatischen Vektorsierung in Intel C++ unter:\URLINTELVEC}.
+
+Hier ist eine kleine Funktion:
+
+\begin{lstlisting}[style=customc]
+int f (int sz, int *ar1, int *ar2, int *ar3)
+{
+	for (int i=0; i<sz; i++)
+		ar3[i]=ar1[i]+ar2[i];
+
+	return 0;
+};
+\end{lstlisting}
+
+\myparagraph{Intel C++}
+
+Kompilieren wir das Programm mit Intel C++ 11.1.051 win32:
+
+\begin{verbatim}
+icl intel.cpp /QaxSSE2 /Faintel.asm /Ox
+\end{verbatim}
+
+Wir erhalten (in \IDA) folgenden Code:
+
+\lstinputlisting[style=customasmx86]{patterns/19_SIMD/18_1_DE.asm}
+
+Die SSE2-Befehle sind:
+\myindex{x86!\Instructions!MOVDQA}
+\myindex{x86!\Instructions!MOVDQU}
+\myindex{x86!\Instructions!PADDD}
+\begin{itemize}
+\item
+\MOVDQU (\IT{Move Unaligned Double Quadword})---lädt 16 Byte aus dem Speicher in ein XMM-Register.
+
+\item
+\PADDD (\IT{Add Packed Integers}) addiert 4 Paare von 32-Bit-Zahlen und speichert das Ergebnis im ersten Operanden.
+Hier wird übrigens bei einem Überlauf keine Exception geworfen und auch keine Flags gesetzt, aber es werden dann nur die
+niederen 23 Bit des Ergebnisses gespeichert.
+Wenn einer der Operanden von \PADDD die Speicheradresse eines Wertes ist, muss sich die Adresse auf einer 16-Byte-Grenze
+befinden. Ist dies nicht der Fall, wird eine Exception ausgelöst\footnote{Mehr zur Anordnung von Daten im Speicher
+unter:\URLWPDA}.
+
+\item
+\MOVDQA (\IT{Move Aligned Double Quadword}) entspricht \MOVDQU, verlangt aber, dass die Adresse des Wertes im Speicher
+auf einer 16-Byte-Grenze liegt. Ist dies nicht der Fall, wird eine Exception ausgelöst. \MOVDQA ist schneller als
+\MOVDQU, hat aber die genannte zusätzliche Vorbedingung.
+
+\end{itemize}
+Diese SSE2-Befehle werden nur dann ausgeführt, wenn auf mehr als 4 Paaren gearbeitet werden muss und sich der Pointer
+\TT{ar3} auf einer 16-Byte-Grenze befindet.
+
+Wenn sich \TT{ar2} ebenfalls auf einer 16-Byte-Grenze befindet, wird das folgende Codefragment ebenfalls ausgeführt:
+
+\begin{lstlisting}[style=customasmx86]
+movdqu  xmm0, xmmword ptr [ebx+edi*4] ; ar1+i*4
+paddd   xmm0, xmmword ptr [esi+edi*4] ; ar2+i*4
+movdqa  xmmword ptr [eax+edi*4], xmm0 ; ar3+i*4
+\end{lstlisting}
+Ansonsten wird der Wert aus \TT{ar2} mit \MOVDQU nach \XMM{0} geladen. \MOVDQU benötigt keinen angeordneten Pointer,
+arbeitet aber möglicherweise langsamer:
+
+\lstinputlisting[style=customasmx86]{patterns/19_SIMD/18_1_excerpt_DE.asm}
+
+In allen anderen Fällen wird nicht-SSE2-Code ausgeführt.
+
+\myparagraph{GCC}
+
+\newcommand{\URLGCCVEC}{\url{http://go.yurichev.com/17083}}
+
+GCC kann in einfachen Fällen ebenfalls Vektorisierung durchführen\footnote{Mehr zur Unterstützung von Vektorisierung in
+GCC:
+\URLGCCVEC}, wenn die Option \Othree verwendet und SSE2 Unterstützung aktiviert ist: \TT{-msse2}.
+
+Wie erhalten den folgenden Code (GCC 4.4.1):
+
+\lstinputlisting[style=customasmx86]{patterns/19_SIMD/18_2_gcc_O3.asm}
+
+Fast der gleiche wie Intel C++, aber nicht ganz so kleinschrittig.
+
+\subsubsection{Beispiel zum Kopieren von Speicherblöcken}
+\label{vec_memcpy}
+Betrachten wir erneut das Beispiel zum einfachen \TT{memcpy}(\myref{loop_memcpy}):
+
+\lstinputlisting[style=customc]{memcpy.c}
+
+Der optimierende GCC 4.9.1 erzeugt folgenden Code:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 x64,style=customasmx86]{patterns/19_SIMD/memcpy_GCC49_x64_O3_DE.s}

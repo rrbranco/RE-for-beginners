@@ -1,0 +1,48 @@
+\subsubsection{ARM}
+
+\myparagraph{\NonOptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/13_arrays/1_simple/simple_Keil_ARM_O0_RU.asm}
+
+Тип \Tint требует 32 бита для хранения (или 4 байта),
+
+так что для хранения 20 переменных типа \Tint, нужно 80 (\TT{0x50}) байт.
+
+Поэтому инструкция \INS{SUB SP, SP, \#0x50} 
+в прологе функции выделяет в локальном стеке под массив именно столько места.
+
+И в первом и во втором цикле итератор цикла \var{i} будет постоянно находится в регистре \Reg{4}.
+
+\myindex{ARM!Optional operators!LSL}
+Число, которое нужно записать в массив, вычисляется так: $i*2$, и это эквивалентно 
+сдвигу на 1 бит влево,\\
+так что инструкция \INS{MOV R0, R4,LSL\#1} делает это.
+
+\myindex{ARM!\Instructions!STR}
+\INS{STR R0, [SP,R4,LSL\#2]} записывает содержимое \Reg{0} в массив.
+Указатель на элемент массива вычисляется так: \ac{SP} указывает на начало массива, \Reg{4} это $i$.
+
+Так что сдвигаем $i$ на 2 бита влево, что эквивалентно умножению на 4 
+(ведь каждый элемент массива занимает 4 байта) и прибавляем это к адресу начала массива.
+
+\myindex{ARM!\Instructions!LDR}
+Во втором цикле используется обратная инструкция\\
+\INS{LDR R2, [SP,R4,LSL\#2]}.
+Она загружает из массива нужное значение и указатель на него вычисляется точно так же.
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/13_arrays/1_simple/simple_Keil_thumb_O3_RU.asm}
+
+Код для Thumb очень похожий.
+\myindex{ARM!\Instructions!LSLS}
+В Thumb имеются отдельные инструкции для битовых сдвигов (как \TT{LSLS}), 
+вычисляющие и число для записи в массив и адрес каждого элемента массива.
+
+Компилятор почему-то выделил в локальном стеке немного больше места, 
+однако последние 4 байта не используются.
+
+\myparagraph{\NonOptimizing GCC 4.9.1 (ARM64)}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1 (ARM64),style=customasmARM]{patterns/13_arrays/1_simple/ARM64_GCC491_O0_RU.s}
+

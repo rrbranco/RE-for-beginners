@@ -1,0 +1,116 @@
+\section{Conditional jumps}
+\label{sec:Jcc}
+\myindex{\CLanguageElements!if}
+
+% sections
+\input{patterns/07_jcc/simple/main}
+\input{patterns/07_jcc/abs/main}
+\input{patterns/07_jcc/cond_operator/main}
+\input{patterns/07_jcc/minmax/main}
+
+\subsection{\Conclusion{}}
+
+\subsubsection{x86}
+
+Here's the rough skeleton of a conditional jump:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+CMP register, register/value
+Jcc true ; cc=condition code
+false:
+... some code to be executed if comparison result is false ...
+JMP exit 
+true:
+... some code to be executed if comparison result is true ...
+exit:
+\end{lstlisting}
+
+\subsubsection{ARM}
+
+\begin{lstlisting}[caption=ARM,style=customasmARM]
+CMP register, register/value
+Bcc true ; cc=condition code
+false:
+... some code to be executed if comparison result is false ...
+JMP exit 
+true:
+... some code to be executed if comparison result is true ...
+exit:
+\end{lstlisting}
+
+\subsubsection{MIPS}
+
+\begin{lstlisting}[caption=Check for zero,style=customasmMIPS]
+BEQZ REG, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check for less than zero using pseudoinstruction,style=customasmMIPS]
+BLTZ REG, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check for equal values,style=customasmMIPS]
+BEQ REG1, REG2, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check for non-equal values,style=customasmMIPS]
+BNE REG1, REG2, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check for less than (signed),style=customasmMIPS]
+SLT REG1, REG2, REG3
+BEQ REG1, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Check for less than (unsigned),style=customasmMIPS]
+SLTU REG1, REG2, REG3
+BEQ REG1, label
+...
+\end{lstlisting}
+
+\subsubsection{Branchless}
+
+\myindex{ARM!\Instructions!MOVcc}
+\myindex{x86!\Instructions!CMOVcc}
+\myindex{ARM!\Instructions!CSEL}
+If the body of a condition statement is very short, the conditional move instruction can be used: 
+\INS{MOVcc} in ARM (in ARM mode), \INS{CSEL} in ARM64, \INS{CMOVcc} in x86.
+
+\myparagraph{ARM}
+
+It's possible to use conditional suffixes in ARM mode for some instructions:
+
+\begin{lstlisting}[caption=ARM (\ARMMode),style=customasmARM]
+CMP register, register/value
+instr1_cc ; some instruction will be executed if condition code is true
+instr2_cc ; some other instruction will be executed if other condition code is true
+... etc...
+\end{lstlisting}
+
+Of course, there is no limit for the number of instructions with conditional code suffixes, 
+as long as the CPU flags are not modified by any of them.
+% FIXME: list of such instructions or \myref{} to it
+
+\myindex{ARM!\Instructions!IT}
+
+Thumb mode has the \INS{IT} instruction, allowing to add conditional suffixes to the next four instructions.
+Read more about it: \myref{ARM_Thumb_IT}.
+
+\begin{lstlisting}[caption=ARM (\ThumbMode),style=customasmARM]
+CMP register, register/value
+ITEEE EQ ; set these suffixes: if-then-else-else-else
+instr1   ; instruction will be executed if condition is true
+instr2   ; instruction will be executed if condition is false
+instr3   ; instruction will be executed if condition is false
+instr4   ; instruction will be executed if condition is false
+\end{lstlisting}
+
+\subsection{\Exercise}
+
+(ARM64) Try rewriting the code in \lstref{cond_ARM64} by removing all 
+conditional jump instructions and using the \TT{CSEL} instruction.
+

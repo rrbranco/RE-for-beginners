@@ -1,0 +1,39 @@
+﻿\subsection{\Conclusion{}}
+
+Примерный скелет цикла от 2 до 9 включительно:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_optimized_RU.lst}
+
+Операция инкремента может быть представлена как 3 инструкции в неоптимизированном коде:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_RU.lst}
+
+Если тело цикла короткое, под переменную счетчика можно выделить целый регистр:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_reg_RU.lst}
+
+Некоторые части цикла могут быть сгенерированы компилятором в другом порядке:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_order_RU.lst}
+
+Обычно условие проверяется \IT{перед} телом цикла, но компилятор может перестроить цикл так, 
+что условие проверяется \IT{после} тела цикла.
+
+Это происходит тогда, когда компилятор уверен, что условие всегда будет \IT{истинно} на первой итерации,
+так что тело цикла исполнится как минимум один раз:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_2_9_reorder_RU.lst}
+
+\myindex{x86!\Instructions!LOOP}
+Используя инструкцию \TT{LOOP}. Это редкость, компиляторы не используют её.
+Так что если вы её видите, это верный знак, что этот фрагмент кода написан вручную:
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/09_loops/skeleton_x86_loop_RU.lst}
+
+ARM. 
+В этом примере регистр \Reg{4} выделен для переменной счетчика:
+
+
+\lstinputlisting[caption=ARM,style=customasmARM]{patterns/09_loops/skeleton_ARM_RU.lst}
+
+% TODO MIPS

@@ -1,0 +1,49 @@
+\subsubsection{MIPS}
+
+MIPS unterstütz mehrere Koprozessoren (bis zu 4); der nullte in ein spezeiller
+Kontroll-Koprozessor und der erste Koprozessor ist die FPU.
+
+Genau wie in ARM ist der MIPS Koprozessor keine Stackmaschine, sondern hat 32
+32-bit-Register (\$F0-\$F31):
+\myref{MIPS_FPU_registers}.
+
+Muss man mit 64-bit \Tdouble Werten arbeiten, wird ein Paar 32-bit F-Register
+hierfür verwendet.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA)]{patterns/12_FPU/1_simple/MIPS_O3_IDA_DE.lst}
+
+Die neuen Befehl sind im Einzelnen:
+
+\myindex{MIPS!\Instructions!LWC1}
+\myindex{MIPS!\Instructions!DIV.D}
+\myindex{MIPS!\Instructions!MUL.D}
+\myindex{MIPS!\Instructions!ADD.D}
+\begin{itemize}
+
+\item \INS{LWC1} lädt ein 32-bit-Wort in ein Register des ersten Koprozessors
+(daher \q{1} im Namen des Befehls).
+\myindex{MIPS!\Pseudoinstructions!L.D}
+
+Ein Parr \INS{LWC1} Befehle kann zu einem \INS{L.D} Pseudobefehl zusammengefasst
+werden.
+
+\item \INS{DIV.D}, \INS{MUL.D}, \INS{ADD.D} führen Division, Multiplikation bzw.
+Addition aus (das \q{D.} im Suffix steht für doppelte Genauigkeit, \q{S.}
+bedeutet entsprechend einfache Genauigkeit).
+
+\end{itemize}
+
+\myindex{MIPS!\Instructions!LUI}
+\myindex{\CompilerAnomaly}
+\label{MIPS_FPU_LUI}
+Es gibt ein verrückte Anomalie im Compiler: die \INS{LUI} Befehle, die wir mit
+einem Fragezeichen versehen haben. 
+Es ist sehr schwer zu verstehen, warum ein Teil einer
+64-bit-Konstante vom Typ \Tdouble in das \$V0 Register geladen wird. 
+Dieser Befehl hat keine Auswirkungen. 
+
+% TODO did you try checking out compiler source code?
+Sollte jemand mehr zu dieser Anomalie wissen, bittet der Autor um eine
+Mail\footnote{\EMAIL}.
+

@@ -1,0 +1,20 @@
+\section{Compiler intrinsic}
+\myindex{Compiler intrinsic}
+\label{sec:compiler_intrinsic}
+
+\myindex{x86!\Instructions!ROL}
+\myindex{x86!\Instructions!ROR}
+
+A function specific to a compiler which is not an usual library function.
+The compiler generates a specific machine code instead of a call to it.
+It is often a pseudofunction for specific \ac{CPU} instruction. \\
+\\
+For example, there are no cyclic shift operations in \CCpp languages, but they are present in most \ac{CPU}s.
+For programmer's convenience, at least MSVC has pseudofunctions
+\IT{\_rotl()} and \IT{\_rotr()}\FNMSDNROTxURL{}
+which are translated by the compiler directly to the ROL/ROR x86 instructions. \\
+\\
+Another example are functions to generate SSE-instructions right in the code.
+
+Full list of MSVC intrinsics: \href{http://go.yurichev.com/17254}{MSDN}.
+

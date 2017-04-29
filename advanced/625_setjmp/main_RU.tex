@@ -1,0 +1,92 @@
+\section{setjmp/longjmp}
+
+\myindex{\CStandardLibrary!setjmp}
+\myindex{\CStandardLibrary!longjmp}
+
+setjmp/longjmp это механизм в Си, очень похожий на throw/catch в Си++ и других высокоуровневых \ac{PL}.
+\myindex{zlib}
+Вот пример из zlib:
+
+\begin{lstlisting}[style=customc]
+...
+
+    /* return if bits() or decode() tries to read past available input */
+    if (setjmp(s.env) != 0)             /* if came back here via longjmp(), */
+        err = 2;                        /*  then skip decomp(), return error */
+    else
+	err = decomp(&s); /* decompress */
+
+...
+
+    /* load at least need bits into val */
+    val = s->bitbuf;
+    while (s->bitcnt < need) {
+        if (s->left == 0) {
+            s->left = s->infun(s->inhow, &(s->in));
+	    if (s->left == 0) longjmp(s->env, 1); /* out of input */
+
+...
+
+        if (s->left == 0) {
+            s->left = s->infun(s->inhow, &(s->in));
+	    if (s->left == 0) longjmp(s->env, 1); /* out of input */
+\end{lstlisting}
+( zlib/contrib/blast/blast.c )
+
+Вызов \TT{setjmp()} сохраняет текущие \ac{PC}, \ac{SP} и другие регистры в структуре \TT{env}, затем возвращает 0.
+
+В слуае ошибки, \TT{longjmp()} \IT{телепортирует} вас в место точно после вызова \TT{setjmp()},
+как если бы вызов \TT{setjmp()} вернул ненулевое значение (которое было передано в \TT{longjmp()}).
+\myindex{UNIX!fork}
+Это напоминает нам сисколл \TT{fork()} в UNIX.
+
+Посмотрим в более дистиллированный пример:
+
+\lstinputlisting[style=customc]{advanced/625_setjmp/1.c}
+
+Если запустим, то увидим:
+
+\begin{lstlisting}
+f1() begin
+f2() begin
+Error 1234
+\end{lstlisting}
+
+Структура \TT{jmp\_buf} обычно недокументирована, чтобы сохранить прямую совместимость.
+
+Посмотрим, как setjmp() реализован в MSVC 2013 x64:
+
+\lstinputlisting[style=customasmx86]{advanced/625_setjmp/setjmp_VC2013_x64.asm}
+
+Она просто заполняет структуру jmp\_buf текущими значениями почти всех регистров.
+Также, текущее значение \ac{RA} берется из стека и сохраняется в jmp\_buf:
+В будущем, оно будет испоьзовано как новое значение \ac{PC}.
+
+Теперь longjmp():
+
+\lstinputlisting[style=customasmx86]{advanced/625_setjmp/longjmp_VC2013_x64.asm}
+
+Она просто восстанавливает (почти) все регистры, берет из структуры \ac{RA} и переходит туда.
+Эффект такой же, как если бы setjmp() вернула управление в вызывающую ф-цию.
+Также, \TT{RAX} выставляется такой же, как и второй аргумент longjmp().
+Это работает, как если бы setjmp() вернуло ненулевое значение в самом начале.
+
+Как побочный эффект восстановления \ac{SP}, все значения в стеке, которые были установлены и использованы между
+вызовами setjmp() и longjmp(), просто выкидываются.
+Они больше не будут использоваться.
+Следовательно, longjmp() обычно делает переход назад
+\footnote{Впрочем, существуют люди, которые используют всё это для куда более сложных вещей, включая имитацию копроцедур, итд:
+\url{https://www.embeddedrelated.com/showarticle/455.php},
+\url{http://fanf.livejournal.com/105413.html}}.
+
+Это подразумевает, что в отличии от механизма throw/catch в Си++, память не будет освобождаться,
+деструкторы не будут вызываться, итд.
+Следовательно, эта техника иногда опасна.
+Тем не менее, всё это довольно популярно, до сих пор. Это все еще используется в \oracle.
+
+Это также имеет неожиданный побочный эффект: если некий буфер был перезаписан внутри ф-ции (может даже из-за удаленной атаки),
+и ф-ция хочет сообщить об ошибке, и вызывает longjmp(), перезаписанная часть стека становится просто неиспользованной.
+
+В качестве упражнения, попробуйте понять, почему не все регистры сохраняются.
+Почему пропускаются регистры XMM0-XMM5 и другие?
+

@@ -1,0 +1,127 @@
+\subsection{Версия структуры в Си}
+
+Многие программисты под Windows видели это в MSDN:
+
+\begin{lstlisting}
+SizeOfStruct
+    The size of the structure, in bytes. This member must be set to sizeof(SYMBOL_INFO).
+\end{lstlisting}
+
+( \url{https://msdn.microsoft.com/en-us/library/windows/desktop/ms680686(v=vs.85).aspx} )
+
+Некоторые структуры вроде \IT{SYMBOL\_INFO} действительно начинаются с такого поля. Почему?
+Это что-то вроде версии структуры.
+
+Представьте, что у вас есть ф-ция, рисующая круги.
+Она берет один аргумент - указатель на структуру с двумя полями: X и Y.
+И затем цветные дисплеи наводнили рынок, где-то в 80-х. И вы хотите добавить аргумент \IT{цвет} в ф-цию.
+Но, скажем так, вы не можете добавить еще один аргумент в нее (множество ПО используют ваше \ac{API} и его нельзя
+перекомпилировать).
+И если какое-то старое ПО использует ваше \ac{API} с цветным дисплеем,
+пусть ваша ф-ция рисует круг в цветах по умолчанию (черный и белый).
+
+Позже вы добавляете еще одну возможность: круг может быть закрашен, и можно выбирать тип заливки.
+
+Вот одно из решений проблемы:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+struct ver1
+{
+	size_t SizeOfStruct;
+	int coord_X;
+	int coord_Y;
+};
+
+struct ver2
+{
+	size_t SizeOfStruct;
+	int coord_X;
+	int coord_Y;
+	int color;
+};
+
+struct ver3
+{
+	size_t SizeOfStruct;
+	int coord_X;
+	int coord_Y;
+	int color;
+	int fill_brush_type; // §0 - не заливать круг§
+};
+
+void draw_circle(struct ver3 *s) // §здесь используется самая последняя версия структуры§
+{
+	// §мы полагаем что в SizeOfStruct всегда присутствуют поля coord\_X и coord\_Y§
+	printf ("§Собираемся рисовать круг на§ %d:%d\n", s->coord_X, s->coord_Y);
+
+	if (s->SizeOfStruct>=sizeof(int)*4)
+	{
+		// §это минимум ver2, поле цвета присутствует§
+		printf ("§Собираемся установить цвет§ %d\n", s->color);
+	}
+
+	if (s->SizeOfStruct>=sizeof(int)*5)
+	{
+		// §это минимум ver3, присутствует поле с типом заливки§
+		printf ("§Мы собираемся залить его используя тип заливки§ %d\n", s->fill_brush_type);
+	}
+};
+
+// ранее ПО
+void call_as_ver1()
+{
+	struct ver1 s;
+	s.SizeOfStruct=sizeof(s);
+	s.coord_X=123;
+	s.coord_Y=456;
+	printf ("** %s()\n", __FUNCTION__);
+	draw_circle(&s);
+};
+
+// следующая версия
+void call_as_ver2()
+{
+	struct ver2 s;
+	s.SizeOfStruct=sizeof(s);
+	s.coord_X=123;
+	s.coord_Y=456;
+	s.color=1;
+	printf ("** %s()\n", __FUNCTION__);
+	draw_circle(&s);
+};
+
+// самая поздняя, наиболее продвинутая версия
+void call_as_ver3()
+{
+	struct ver3 s;
+	s.SizeOfStruct=sizeof(s);
+	s.coord_X=123;
+	s.coord_Y=456;
+	s.color=1;
+	s.fill_brush_type=3;
+	printf ("** %s()\n", __FUNCTION__);
+	draw_circle(&s);
+};
+
+int main()
+{
+	call_as_ver1();
+	call_as_ver2();
+	call_as_ver3();
+};
+\end{lstlisting}
+
+Другими словами, поле \IT{SizeOfStruct} берет на себя роль поля \IT{версия структуры}.
+Это может быть перечисляемый тип (1, 2, 3, итд.), но установка поля \IT{SizeOfStruct} равным \IT{sizeof(struct...)},
+это лучше защищено от ошибок.
+
+В Си++ эта проблема решается \IT{наследованием} (\myref{cpp_inheritance}).
+Просто расширяете ваш базовый класс (назовем его \IT{Circle}),
+и затем вам нужен \IT{ColoredCircle}, а потом \IT{FilledColoredCircle}, и так далее.
+Текущая \IT{версия} объекта (или более точно, текущий \IT{тип}) будет определяться при помощи \ac{RTTI} в Си++.
+
+Так что если вы где-то в \ac{MSDN} видите \IT{SizeOfStruct} --- вероятно, эта структура уже расширялась в прошлом,
+как минимум один раз.
+

@@ -1,0 +1,19 @@
+\subsubsection{x86}
+Schauen wir uns an, was wir in MSVC 2010 erhalten:
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/12_FPU/2_passing_floats/MSVC_DE.asm}
+
+\myindex{x86!\Instructions!FLD}
+\myindex{x86!\Instructions!FSTP}
+\FLD und \FSTP verschieben Variablen zwischen Datensegment und dem FPU
+Stack.\GTT{pow()}\footnote{eine Standard-C-Funktion, die eine Zahl potenziert}
+nimmt beide Werte vom Stack der FPU und gibt ihr Ergebnis über das \ST{0} Register zurück. 
+Die Funktion \printf nimmt 8 Byte vom lokalen Stack und interpretiert diese als
+Variable von Typ \Tdouble.
+
+Übrigens könnte hier auch ein Paar \MOV Befehle verwendet werden, um die Werte
+aus dem Speicher zu holen und auf den Stack zu legen, denn die Werte sind im
+Speicher im IEEE 754 Format abgelegt und pow() arbeitet mit diesem Format,
+sodass keine Umwandlung notwendig ist.
+Genau so wird es im folgenden Beispiel für ARM auch
+gemacht:\myref{FPU_passing_floats_ARM}

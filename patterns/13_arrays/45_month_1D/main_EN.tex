@@ -1,0 +1,196 @@
+﻿\subsection{Array of pointers to strings}
+\label{array_of_pointers_to_strings}
+
+Here is an example for an array of pointers.
+
+\lstinputlisting[caption=Get month name,label=get_month1,style=customc]{patterns/13_arrays/45_month_1D/month1_EN.c}
+
+\subsubsection{x64}
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{patterns/13_arrays/45_month_1D/month1_MSVC_2013_x64_Ox.asm}
+
+The code is very simple:
+
+\begin{itemize}
+
+\item
+\myindex{x86!\Instructions!MOVSXD}
+
+The first \INS{MOVSXD} instruction copies a 32-bit value from \ECX (where $month$ argument is passed) 
+to \RAX with sign-extension (because the $month$ argument is of type \Tint).
+
+The reason for the sign extension is that this 32-bit value is to be used in calculations
+with other 64-bit values.
+
+Hence, it has to be promoted to 64-bit%
+\footnote{It is somewhat weird, but negative array index could be passed here as $month$
+(negative array indices will have been explained later: \myref{negative_array_indices}).
+And if this happens, the negative input value of \Tint type is sign-extended correctly 
+and the corresponding element before table is picked. 
+It is not going to work correctly without sign-extension.}.
+
+\item
+Then the address of the pointer table is loaded into \RCX.
+
+\item
+Finally, the input value ($month$) is multiplied by 8 and added to the address.
+Indeed: we are in a 64-bit environment and all address (or pointers) require exactly 64 bits (or 8 bytes) 
+for storage.
+Hence, each table element is 8 bytes wide.
+And that's why to pick a specific element, $month*8$ bytes has to be skipped from the start.
+That's what \MOV does.
+In addition, this instruction also loads the element at this address.
+For 1, an element would be a pointer to a string that contains \q{February}, etc.
+
+\end{itemize}
+
+\Optimizing GCC 4.9 can do the job even better
+\footnote{\q{0+} was left in the listing because GCC assembler output is not tidy enough to eliminate it.
+It's \IT{displacement}, and it's zero here.}:
+
+\begin{lstlisting}[caption=\Optimizing GCC 4.9 x64,style=customasmx86]
+	movsx	rdi, edi
+	mov	rax, QWORD PTR month1[0+rdi*8]
+	ret
+\end{lstlisting}
+
+\myparagraph{32-bit MSVC}
+
+Let's also compile it in the 32-bit MSVC compiler:
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x86,style=customasmx86]{patterns/13_arrays/45_month_1D/month1_MSVC_2013_x86_Ox.asm}
+
+The input value does not need to be extended to 64-bit value, so it is used as is.
+
+And it's multiplied by 4, because the table elements are 32-bit (or 4 bytes) wide.
+
+% FIXME1 move to another file
+\subsubsection{32-bit ARM}
+
+\myparagraph{ARM in ARM mode}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/13_arrays/45_month_1D/month1_Keil_ARM_O3.s}
+
+% TODO Fix R1s
+
+The address of the table is loaded in R1.
+\myindex{ARM!\Instructions!LDR}
+
+All the rest is done using just one \LDR instruction.
+
+Then input value $month$ is shifted left by 2 (which is the same as multiplying by 4), then added
+to R1 (where the address of the table is) and then a table element is loaded from this address.
+
+The 32-bit table element is loaded into R0 from the table.
+
+\myparagraph{ARM in Thumb mode}
+
+The code is mostly the same, but less dense, because the \LSL suffix cannot be specified in the \LDR instruction here:
+
+\begin{lstlisting}[style=customasmARM]
+get_month1 PROC
+        LSLS     r0,r0,#2
+        LDR      r1,|L0.64|
+        LDR      r0,[r1,r0]
+        BX       lr
+        ENDP
+\end{lstlisting}
+
+\subsubsection{ARM64}
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 ARM64,style=customasmARM]{patterns/13_arrays/45_month_1D/month1_GCC49_ARM64_O3.s}
+
+\myindex{ARM!\Instructions!ADRP/ADD pair}
+
+The address of the table is loaded in X1 using \ADRP/\ADD pair.
+
+Then corresponding element is picked using just one \LDR, which takes W0 
+(the register where input argument $month$ is), shifts it 3 bits to the left (which is the same as multiplying by 8), 
+sign-extends it (this is what \q{sxtw} suffix implies) and adds to X0.
+Then the 64-bit value is loaded from the table into X0.
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/13_arrays/45_month_1D/MIPS_O3_IDA_EN.lst}
+
+\subsubsection{Array overflow}
+
+Our function accepts values in the range of 0..11, but what if 12 is passed?
+There is no element in table at this place.
+
+So the function will load some value which happens to be there, and return it.
+
+Soon after, some other function can try to get a text string from this address and may crash.
+
+Let's compile the example in MSVC for win64 and open it in \IDA to see what the linker has placed after the table:
+
+\lstinputlisting[caption=Executable file in IDA,style=customasmx86]{patterns/13_arrays/45_month_1D/MSVC2012_win64_1.lst}
+
+Month names are came right after.
+
+Our program is tiny, so there isn't much data to pack in the data segment, 
+so it just the month names.
+But it has to be noted that there might be really \IT{anything} that linker has decided to put by chance.
+
+So what if 12 is passed to the function?
+The 13th element will be returned.
+
+Let's see how the CPU treats the bytes there as a 64-bit value:
+
+\lstinputlisting[caption=Executable file in IDA,style=customasmx86]{patterns/13_arrays/45_month_1D/MSVC2012_win64_2.lst}
+
+And this is 0x797261756E614A.
+
+Soon after, some other function (presumably, one that processes strings) may try to read bytes at 
+this address, expecting a C-string there.
+
+Most likely it is about to crash, because this value doesn't look like a valid address.
+
+\myparagraph{Array overflow protection}
+
+\epigraph{If something can go wrong, it will}{Murphy's Law}
+
+It's a bit naïve to expect that every programmer who use your function or library will never pass
+an argument larger than 11.
+
+There exists the philosophy that says \q{fail early and fail loudly} or \q{fail-fast}, 
+which teaches to report problems as early as possible and halt.
+\myindex{\CStandardLibrary!assert()}
+
+One such method in \CCpp is assertions.
+
+We can modify our program to fail if an incorrect value is passed:
+
+\lstinputlisting[caption=assert() added,style=customc]{patterns/13_arrays/45_month_1D/month1_assert.c}
+
+The assertion macro checks for valid values at every function start and fails if the expression is false.
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{patterns/13_arrays/45_month_1D/MSVC2013_x64_Ox_checked.asm}
+
+In fact, assert() is not a function, but macro. It checks for a condition, then passes also the line number and file
+name to another function which reports this information to the user.
+
+Here we see that both file name and condition are encoded in UTF-16.
+The line number is also passed (it's 29).
+
+This mechanism is probably the same in all compilers.
+Here is what GCC does:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 x64,style=customasmx86]{patterns/13_arrays/45_month_1D/GCC491_x64_O3_checked.s}
+
+So the macro in GCC also passes the function name for convenience.
+
+Nothing is really free, and this is true for the sanitizing checks as well.
+
+They make your program slower, especially if the assert() macros used in small time-critical functions.
+
+So MSVC, for example, leaves the checks in debug builds, but in release builds they all disappear.
+ 
+Microsoft \gls{Windows NT} kernels come in \q{checked} and \q{free} builds
+\footnote{\href{http://go.yurichev.com/17259}{msdn.microsoft.com/en-us/library/windows/hardware/ff543450(v=vs.85).aspx}}.
+
+The first has validation checks (hence, \q{checked}), the second one doesn't (hence, \q{free} of checks).
+
+Of course, \q{checked} kernel works slower because of all these checks, so it is usually used only in debug sessions.
+
+% FIXME: ARM? MIPS?

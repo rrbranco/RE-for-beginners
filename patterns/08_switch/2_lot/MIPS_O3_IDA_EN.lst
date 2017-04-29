@@ -1,0 +1,75 @@
+f:
+                lui     $gp, (__gnu_local_gp >> 16)
+; jump to loc_24 if input value is lesser than 5:
+                sltiu   $v0, $a0, 5
+                bnez    $v0, loc_24
+                la      $gp, (__gnu_local_gp & 0xFFFF) ; branch delay slot
+; input value is greater or equal to 5.
+; print "something unknown" and finish:
+                lui     $a0, ($LC5 >> 16)  # "something unknown"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC5 & 0xFFFF)  # "something unknown" ; branch delay slot
+
+loc_24:                                  # CODE XREF: f+8
+; load address of jumptable
+; LA is pseudoinstruction, LUI and ADDIU pair are there in fact:
+                la      $v0, off_120
+; multiply input value by 4:
+                sll     $a0, 2
+; sum up multiplied value and jumptable address:
+                addu    $a0, $v0, $a0
+; load element from jumptable:
+                lw      $v0, 0($a0)
+                or      $at, $zero ; NOP
+; jump to the address we got in jumptable:
+                jr      $v0
+                or      $at, $zero ; branch delay slot, NOP
+
+sub_44:                                  # DATA XREF: .rodata:0000012C
+; print "three" and finish
+                lui     $a0, ($LC3 >> 16)  # "three"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC3 & 0xFFFF)  # "three" ; branch delay slot
+
+sub_58:                                  # DATA XREF: .rodata:00000130
+; print "four" and finish
+                lui     $a0, ($LC4 >> 16)  # "four"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC4 & 0xFFFF)  # "four" ; branch delay slot
+
+sub_6C:                                  # DATA XREF: .rodata:off_120
+; print "zero" and finish
+                lui     $a0, ($LC0 >> 16)  # "zero"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC0 & 0xFFFF)  # "zero" ; branch delay slot
+
+sub_80:                                  # DATA XREF: .rodata:00000124
+; print "one" and finish
+                lui     $a0, ($LC1 >> 16)  # "one"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC1 & 0xFFFF)  # "one" ; branch delay slot
+
+sub_94:                                  # DATA XREF: .rodata:00000128
+; print "two" and finish
+                lui     $a0, ($LC2 >> 16)  # "two"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC2 & 0xFFFF)  # "two" ; branch delay slot
+
+; may be placed in .rodata section:
+off_120:        .word sub_6C
+                .word sub_80
+                .word sub_94
+                .word sub_44
+                .word sub_58

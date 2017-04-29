@@ -1,0 +1,67 @@
+\section{Compiler Anomalien}
+\label{anomaly:Intel}
+\myindex{\CompilerAnomaly}
+
+\subsection{\oracle 11.2 und Intel C++ 10.1}
+
+\myindex{Intel C++}
+\myindex{\oracle}
+\myindex{x86!\Instructions!JZ}
+
+Der Intel C++ 10.1-Compiler, der für \oracle 11.2 für Linux 86 genutzt wurde, kann
+zwei \JZ in einer Reihe ausgeben. Es gibt keine Referenz zum zweiten \JZ. Das zweite
+ist also ohne Bedeutung.
+
+\begin{lstlisting}[caption=kdli.o from libserver11.a,style=customasmx86]
+.text:08114CF1                   loc_8114CF1: ; CODE XREF: __PGOSF539_kdlimemSer+89A
+.text:08114CF1                                ; __PGOSF539_kdlimemSer+3994
+.text:08114CF1 8B 45 08              mov     eax, [ebp+arg_0]
+.text:08114CF4 0F B6 50 14           movzx   edx, byte ptr [eax+14h]
+.text:08114CF8 F6 C2 01              test    dl, 1
+.text:08114CFB 0F 85 17 08 00 00     jnz     loc_8115518
+.text:08114D01 85 C9                 test    ecx, ecx
+.text:08114D03 0F 84 8A 00 00 00     jz      loc_8114D93
+.text:08114D09 0F 84 09 08 00 00     jz      loc_8115518
+.text:08114D0F 8B 53 08              mov     edx, [ebx+8]
+.text:08114D12 89 55 FC              mov     [ebp+var_4], edx
+.text:08114D15 31 C0                 xor     eax, eax
+.text:08114D17 89 45 F4              mov     [ebp+var_C], eax
+.text:08114D1A 50                    push    eax
+.text:08114D1B 52                    push    edx
+.text:08114D1C E8 03 54 00 00        call    len2nbytes
+.text:08114D21 83 C4 08              add     esp, 8
+\end{lstlisting}
+
+\begin{lstlisting}[caption=from the same code,style=customasmx86]
+.text:0811A2A5                   loc_811A2A5: ; CODE XREF: kdliSerLengths+11C
+.text:0811A2A5                                ; kdliSerLengths+1C1
+.text:0811A2A5 8B 7D 08              mov     edi, [ebp+arg_0]
+.text:0811A2A8 8B 7F 10              mov     edi, [edi+10h]
+.text:0811A2AB 0F B6 57 14           movzx   edx, byte ptr [edi+14h]
+.text:0811A2AF F6 C2 01              test    dl, 1
+.text:0811A2B2 75 3E                 jnz     short loc_811A2F2
+.text:0811A2B4 83 E0 01              and     eax, 1
+.text:0811A2B7 74 1F                 jz      short loc_811A2D8
+.text:0811A2B9 74 37                 jz      short loc_811A2F2
+.text:0811A2BB 6A 00                 push    0
+.text:0811A2BD FF 71 08              push    dword ptr [ecx+8]
+.text:0811A2C0 E8 5F FE FF FF        call    len2nbytes
+\end{lstlisting}
+
+Dies ist vermutlich ein Fehler im Codegenerator der während der Tests nicht
+gefunden wurde. Der resultierende Code funktioniert trotzdem.
+
+% TODO to be translated ...
+\input{other/anomaly2_DE}
+
+\subsection{Zusammenfassung}
+
+Andere Compiler-Anomalien in diesem Buch:
+\myref{anomaly:LLVM}, \myref{loops_iterators_loop_anomaly}, \myref{Keil_anomaly},
+\myref{MSVC2013_anomaly},
+\myref{MSVC_double_JMP_anomaly},
+\myref{MSVC2012_anomaly}.
+
+Diese Beispiele werden in diesem Buch gezeigt, um zu verdeutlichen, das solche Fehler
+in den Compilern möglich sind und es gelegentlich keinen Sinn ergibt sich den Kopf
+darüber zu zerbrechen warum der Compiler diesen \q{seltsamen} Code erzeugte.

@@ -1,33 +1,33 @@
 \item[Jcc] (\RU{где}\EN{where} cc\EMDASH{}condition code)
 
-\index{x86!\Instructions!JAE}
-\index{x86!\Instructions!JA}
-\index{x86!\Instructions!JBE}
-\index{x86!\Instructions!JB}
-\index{x86!\Instructions!JC}
-\index{x86!\Instructions!JE}
-\index{x86!\Instructions!JGE}
-\index{x86!\Instructions!JG}
-\index{x86!\Instructions!JLE}
-\index{x86!\Instructions!JL}
-\index{x86!\Instructions!JNAE}
-\index{x86!\Instructions!JNA}
-\index{x86!\Instructions!JNBE}
-\index{x86!\Instructions!JNB}
-\index{x86!\Instructions!JNC}
-\index{x86!\Instructions!JNE}
-\index{x86!\Instructions!JNGE}
-\index{x86!\Instructions!JNG}
-\index{x86!\Instructions!JNLE}
-\index{x86!\Instructions!JNL}
-\index{x86!\Instructions!JNO}
-\index{x86!\Instructions!JNS}
-\index{x86!\Instructions!JNZ}
-\index{x86!\Instructions!JO}
-\index{x86!\Instructions!JPO}
-\index{x86!\Instructions!JP}
-\index{x86!\Instructions!JS}
-\index{x86!\Instructions!JZ}
+\myindex{x86!\Instructions!JAE}
+\myindex{x86!\Instructions!JA}
+\myindex{x86!\Instructions!JBE}
+\myindex{x86!\Instructions!JB}
+\myindex{x86!\Instructions!JC}
+\myindex{x86!\Instructions!JE}
+\myindex{x86!\Instructions!JGE}
+\myindex{x86!\Instructions!JG}
+\myindex{x86!\Instructions!JLE}
+\myindex{x86!\Instructions!JL}
+\myindex{x86!\Instructions!JNAE}
+\myindex{x86!\Instructions!JNA}
+\myindex{x86!\Instructions!JNBE}
+\myindex{x86!\Instructions!JNB}
+\myindex{x86!\Instructions!JNC}
+\myindex{x86!\Instructions!JNE}
+\myindex{x86!\Instructions!JNGE}
+\myindex{x86!\Instructions!JNG}
+\myindex{x86!\Instructions!JNLE}
+\myindex{x86!\Instructions!JNL}
+\myindex{x86!\Instructions!JNO}
+\myindex{x86!\Instructions!JNS}
+\myindex{x86!\Instructions!JNZ}
+\myindex{x86!\Instructions!JO}
+\myindex{x86!\Instructions!JPO}
+\myindex{x86!\Instructions!JP}
+\myindex{x86!\Instructions!JS}
+\myindex{x86!\Instructions!JZ}
 
 \RU{Немало этих инструкций имеют синонимы (отмечены с AKA), это сделано для удобства}
 \EN{A lot of these instructions have synonyms (denoted with AKA), this was done for convenience}.
@@ -38,14 +38,18 @@
 \label{Jcc}
 \begin{description}
 \item[JAE] \ac{AKA} JNC: \RU{переход если больше или равно (беззнаковый)}\EN{jump if above or equal (unsigned)}: CF=0
-\item[JA] \ac{AKA} JNBE: \RU{переход если больше (беззнаковый)}\EN{jump if greater (unsigned)}: CF=0 \AndENRU ZF=0
-\item[JBE] \RU{переход если меньше или равно (беззнаковый)}\EN{jump if lesser or equal (unsigned)}: CF=1 \OrENRU ZF=1
+\EN{\item[JA] \ac{AKA} JNBE: jump if greater (unsigned): CF=0 and ZF=0}
+\RU{\item[JA] \ac{AKA} JNBE: переход если больше (беззнаковый): CF=0 и ZF=0}
+\EN{\item[JBE] jump if lesser or equal (unsigned): CF=1 or ZF=1}
+\RU{\item[JBE] переход если меньше или равно (беззнаковый): CF=1 или ZF=1}
 \item[JB] \ac{AKA} JC: \RU{переход если меньше (беззнаковый)}\EN{jump if below (unsigned)}: CF=1
 \item[JC] \ac{AKA} JB: \RU{переход если CF=1}\EN{jump if CF=1}
 \item[JE] \ac{AKA} JZ: \RU{переход если равно или ноль}\EN{jump if equal or zero}: ZF=1
 \item[JGE] \RU{переход если больше или равно (знаковый)}\EN{jump if greater or equal (signed)}: SF=OF
-\item[JG] \RU{переход если больше (знаковый)}\EN{jump if greater (signed)}: ZF=0 \AndENRU SF=OF
-\item[JLE] \RU{переход если меньше или равно (знаковый)}\EN{jump if lesser or equal (signed)}: ZF=1 \OrENRU SF$\neq$OF
+\EN{\item[JG] jump if greater (signed): ZF=0 and SF=OF}
+\RU{\item[JG] переход если больше (знаковый): ZF=0 и SF=OF}
+\EN{\item[JLE] jump if lesser or equal (signed): ZF=1 or SF$\neq$OF}
+\RU{\item[JLE] переход если меньше или равно (знаковый): ZF=1 или SF$\neq$OF}
 \item[JL] \RU{переход если меньше (знаковый)}\EN{jump if lesser (signed)}: SF$\neq$OF
 \item[JNAE] \ac{AKA} JC: \RU{переход если не больше или равно (беззнаковый)}\EN{jump if not above or equal (unsigned)} CF=1
 \item[JNA] \RU{переход если не больше (беззнаковый)}\EN{jump if not above (unsigned)} CF=1 \AndENRU ZF=1
@@ -54,7 +58,8 @@
 \item[JNC] \ac{AKA} JAE: \RU{переход если CF=0, синонимично}\EN{jump CF=0 synonymous to} JNB.
 \item[JNE] \ac{AKA} JNZ: \RU{переход если не равно или не ноль}\EN{jump if not equal or not zero}: ZF=0
 \item[JNGE] \RU{переход если не больше или равно (знаковый)}\EN{jump if not greater or equal (signed)}: SF$\neq$OF
-\item[JNG] \RU{переход если не больше (знаковый)}\EN{jump if not greater (signed)}: ZF=1 \OrENRU SF$\neq$OF
+\EN{\item[JNG] jump if not greater (signed): ZF=1 or SF$\neq$OF}
+\RU{\item[JNG] переход если не больше (знаковый): ZF=1 или SF$\neq$OF}
 \item[JNLE] \RU{переход если не меньше (знаковый)}\EN{jump if not lesser (signed)}: ZF=0 \AndENRU SF=OF
 \item[JNL] \RU{переход если не меньше (знаковый)}\EN{jump if not lesser (signed)}: SF=OF
 \item[JNO] \RU{переход если не переполнение}\EN{jump if not overflow}: OF=0

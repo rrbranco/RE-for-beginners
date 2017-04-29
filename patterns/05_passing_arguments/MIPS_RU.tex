@@ -1,0 +1,43 @@
+\subsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5,style=customasmMIPS]{patterns/05_passing_arguments/MIPS_O3_IDA_RU.lst}
+
+Первые 4 аргумента функции передаются в четырех регистрах с префиксами A-.
+
+\myindex{MIPS!\Instructions!MULT}
+В MIPS есть два специальных регистра: HI и LO, которые выставляются в 64-битный результат умножения
+во время исполнения инструкции \TT{MULT}.
+
+\myindex{MIPS!\Instructions!MFLO}
+\myindex{MIPS!\Instructions!MFHI}
+К регистрам можно обращаться только используя инструкции \TT{MFLO} и \TT{MFHI}.
+Здесь \TT{MFLO} берет младшую часть результата умножения и записывает в \$V0.
+Так что старшая 32-битная часть результата игнорируется (содержимое регистра HI не используется).
+Действительно, мы ведь работаем с 32-битным типом \Tint.
+
+
+\myindex{MIPS!\Instructions!ADDU}
+И наконец, \TT{ADDU} (\q{Add Unsigned}~--- добавить беззнаковое) прибавляет значение третьего аргумента к результату.
+
+\myindex{MIPS!\Instructions!ADD}
+\myindex{MIPS!\Instructions!ADDU}
+\myindex{Ada}
+\myindex{Integer overflow}
+В MIPS есть две разных инструкции сложения: \TT{ADD} и \TT{ADDU}.
+На самом деле, дело не в знаковых числах, а в исключениях: \TT{ADD} может вызвать исключение
+во время переполнения. Это иногда полезно\footnote{\url{http://go.yurichev.com/17326}} и поддерживается,
+например, в \ac{PL} Ada.
+
+\TT{ADDU} не вызывает исключения во время переполнения.
+А так как \CCpp не поддерживает всё это, мы видим здесь \TT{ADDU} вместо \TT{ADD}.
+
+32-битный результат оставляется в \$V0.
+
+\myindex{MIPS!\Instructions!JAL}
+\myindex{MIPS!\Instructions!JALR}
+В \main есть новая для нас инструкция: \TT{JAL} (\q{Jump and Link}). 
+Разница между \INS{JAL} и \INS{JALR} в том, что относительное смещение кодируется в первой инструкции,
+а \INS{JALR} переходит по абсолютному адресу, записанному в регистр (\q{Jump and Link Register}).
+
+Обе функции \ttf и \main расположены в одном объектном файле, так что относительный адрес \ttf известен и фиксирован.
+

@@ -1,0 +1,49 @@
+% TODO proof-reading
+\subsubsection{Первый пример}
+
+
+Строки это объекты, и конструируются так же как и другие объекты (и массивы).
+
+\begin{lstlisting}[style=customjava]
+	public static void main(String[] args)
+	{
+		System.out.println("What is your name?");
+		String input = System.console().readLine();
+		System.out.println("Hello, "+input);
+	}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=3, locals=2, args_size=1
+         0: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+         3: ldc           #3        // String What is your name?
+         5: invokevirtual #4        // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+         8: invokestatic  #5        // Method java/lang/System.console:()Ljava/io/Console;
+        11: invokevirtual #6        // Method java/io/Console.readLine:()Ljava/lang/String;
+        14: astore_1      
+        15: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+        18: new           #7        // class java/lang/StringBuilder
+        21: dup           
+        22: invokespecial #8        // Method java/lang/StringBuilder."<init>":()V
+        25: ldc           #9        // String Hello, 
+        27: invokevirtual #10       // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        30: aload_1       
+        31: invokevirtual #10       // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        34: invokevirtual #11       // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+        37: invokevirtual #4        // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+        40: return        
+\end{lstlisting}
+
+
+Метод \TT{readLine()} вызывается по смещению 11, \IT{reference} на строку (введенную пользователем) 
+остается на \ac{TOS}.
+
+По смещению 14, \IT{reference} на строку сохраняется в первом слоте \ac{LVA}.
+
+Строка введенная пользователем перезагружается по смещению 30 и складывается со строкой \q{Hello, }
+используя класс \TT{StringBuilder}.
+
+Сконструированная строка затем выводится используя метод \TT{println} по смещению 37.

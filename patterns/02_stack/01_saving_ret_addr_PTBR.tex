@@ -1,0 +1,69 @@
+\subsubsection{Salvar o endereço de retorno de uma função}
+
+\myparagraph{x86}
+
+\myindex{x86!\Instructions!CALL}
+Quando você chama outra função utilizando a instrução CALL, o endereço do ponto exato onde a 
+instrução \CALL se encontra é salvo na pilha e então um jump incondicional para o endereço no operando de \CALL é executado.
+
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!JMP}
+A instrução \CALL é equivalente a usar o par de instruções \TT{PUSH endereço\_depois\_chamada / JMP}.
+
+\myindex{x86!\Instructions!RET}
+\myindex{x86!\Instructions!POP}
+\RET pega um valor da pilha e usa um jump para ele --- isso é equivalente a usar \INS{POP tmp / JMP tmp}.
+
+\myindex{\Stack!\MLStackOverflow}
+\myindex{\Recursion}
+Estourar uma stack é fácil. Só execute alguma recursão externa:
+
+\begin{lstlisting}[style=customc]
+void f()
+{
+	f();
+};
+\end{lstlisting}
+
+O compilador MSVC 2008 informa o problema:
+
+\begin{lstlisting}
+c:\tmp6>cl ss.cpp /Fass.asm
+Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 15.00.21022.08 for 80x86
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ss.cpp
+c:\tmp6\ss.cpp(4) : warning C4717: 'f' : recursive on all control paths, function will cause runtime stack overflow
+\end{lstlisting}
+
+\dots mas gera o código de qualquer maneira:
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+	push	ebp
+	mov	ebp, esp
+; Line 3
+	call	?f@@YAXXZ	; f
+; Line 4
+	pop	ebp
+	ret	0
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+\dots também, se ativarmos a otimização do compilador (opção \TT{/Ox}) 
+o código otimizado não vai estourar a pilha e funcionará \IT{corretamente} \footnote{ironia aqui}:
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+$LL3@f:
+; Line 3
+	jmp	SHORT $LL3@f
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+\PTBRph{}
+

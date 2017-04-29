@@ -1,0 +1,23 @@
+\subsection{A lot of cases}
+
+If a \TT{switch()} statement contains a lot of cases, it is not very convenient for the compiler to emit too large code
+with a lot \JE/\JNE instructions.
+
+\lstinputlisting[label=switch_lot_c,style=customc]{patterns/08_switch/2_lot/lot.c}
+
+\input{patterns/08_switch/2_lot/lot_x86_EN}
+\input{patterns/08_switch/2_lot/lot_ARM_EN}
+\input{patterns/08_switch/2_lot/lot_MIPS_EN}
+
+\subsubsection{\Conclusion{}}
+
+Rough skeleton of \IT{switch()}:
+
+% TODO: ARM, MIPS skeleton
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/08_switch/2_lot/skel1_EN.lst}
+
+The jump to the address in the jump table may also be implemented using this instruction: \\
+\TT{JMP jump\_table[REG*4]}.
+Or \TT{JMP jump\_table[REG*8]} in x64.
+
+A \IT{jumptable} is just array of pointers, like the one described later: \myref{array_of_pointers_to_strings}.

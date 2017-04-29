@@ -1,0 +1,38 @@
+004006c0 <main>:
+; prologue de la fonction:
+  4006c0:       3c1c0042        lui     gp,0x42
+  4006c4:       27bdffe0        addiu   sp,sp,-32
+  4006c8:       279c8940        addiu   gp,gp,-30400
+  4006cc:       afbf001c        sw      ra,28(sp)
+  4006d0:       afbc0010        sw      gp,16(sp)
+; appel de puts():
+  4006d4:       8f998034        lw      t9,-32716(gp)
+  4006d8:       3c040040        lui     a0,0x40
+  4006dc:       0320f809        jalr    t9
+  4006e0:       248408f0        addiu   a0,a0,2288 ; §slot de délai de branchement§
+; appel de scanf():
+  4006e4:       8fbc0010        lw      gp,16(sp)
+  4006e8:       3c040040        lui     a0,0x40
+  4006ec:       8f998038        lw      t9,-32712(gp)
+; §préparer l'adresse de x:§
+  4006f0:       8f858044        lw      a1,-32700(gp)
+  4006f4:       0320f809        jalr    t9
+  4006f8:       248408fc        addiu   a0,a0,2300 ; §slot de délai de branchement§
+; appel de printf():
+  4006fc:       8fbc0010        lw      gp,16(sp)
+  400700:       3c040040        lui     a0,0x40
+; prendre l'adresse de x:
+  400704:       8f828044        lw      v0,-32700(gp)
+  400708:       8f99803c        lw      t9,-32708(gp)
+; §charger la valeur de la variable "x" et la passer à printf() dans§ $a1:
+  40070c:       8c450000        lw      a1,0(v0)
+  400710:       0320f809        jalr    t9
+  400714:       24840900        addiu   a0,a0,2304 ; §slot de délai de branchement§
+; §épilogue de la fonction:§
+  400718:       8fbf001c        lw      ra,28(sp)
+  40071c:       00001021        move    v0,zero
+  400720:       03e00008        jr      ra
+  400724:       27bd0020        addiu   sp,sp,32   ; §slot de délai de branchement§
+; §groupe de NOPs servant à aligner la prochaine fonction sur un bloc de 16-octet:§
+  400728:       00200825        move    at,at
+  40072c:       00200825        move    at,at

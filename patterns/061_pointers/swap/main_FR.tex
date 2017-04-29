@@ -1,0 +1,18 @@
+\subsection{Échanger les valeurs en entrée}
+
+Ceci fait ce que l'on veut:
+
+\lstinputlisting[style=customc]{patterns/061_pointers/swap/5.c}
+
+Comme on le voit, les octets sont chargés dans la partie 8-bit basse de \TT{ECX}
+et \TT{EBX} en utliisant \INS{MOVZX} (donc les parties hautes de ces registres vont
+être éffacées) et ensuite les octets échangés sont récrits.
+
+\lstinputlisting[style=customasmx86,caption=GCC 5.4 \Optimizing]{patterns/061_pointers/swap/5_GCC_O3_x86.s}
+
+Les adresses des deux octets sont lues depuis les arguments et durant l'exécution
+de la fonctions sont copiés dans \TT{EDX} et \TT{EAX}.
+
+Donc nous utilisons des pointeurs, il n'y a sans doute pas de meilleure façon de
+réaliser cette tâche sans eux.
+

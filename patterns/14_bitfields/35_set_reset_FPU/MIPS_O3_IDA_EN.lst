@@ -1,0 +1,38 @@
+my_abs:
+; move from coprocessor 1:
+                mfc1    $v1, $f12
+                li      $v0, 0x7FFFFFFF
+; $v0=0x7FFFFFFF
+; do AND:
+                and     $v0, $v1
+; move to coprocessor 1:
+                mtc1    $v0, $f0
+; return
+                jr      $ra
+                or      $at, $zero ; branch delay slot
+
+set_sign:
+; move from coprocessor 1:
+                mfc1    $v0, $f12
+                lui     $v1, 0x8000
+; $v1=0x80000000
+; do OR:
+                or      $v0, $v1, $v0
+; move to coprocessor 1:
+                mtc1    $v0, $f0
+; return
+                jr      $ra
+                or      $at, $zero ; branch delay slot
+
+negate:
+; move from coprocessor 1:
+                mfc1    $v0, $f12
+                lui     $v1, 0x8000
+; $v1=0x80000000
+; do XOR:
+                xor     $v0, $v1, $v0
+; move to coprocessor 1:
+                mtc1    $v0, $f0
+; return
+                jr      $ra
+                or      $at, $zero ; branch delay slot

@@ -1,0 +1,15 @@
+\subsubsection{Local variable storage}
+
+Eine Funktion kann platz für lokale Variablen allokieren in dem sie einfach den \glslink{stack pointer}{Stapel-Zeiger}
+verkleinert in richtung der niedrigsten Adresse des Stacks verschiebt. 
+
+% I think here, "stack bottom" means the lowest address in the stack space,
+% but the reader might also think it means towards the top of the stack space,
+% like in a pop, so you might change "towards the stack bottom" to
+% "towards the lowest address of the stack", or just take it out,
+% since "decreasing" also suggests that.
+
+Dieser Weg ist ziemlich schnell, egal wie viele Variablen deffiniert werden.
+Es ist aber keine Anforderung lokale Variablen auf dem Stack zu speichern.
+Man kann lokale Variablen speicher wo immer man will, aber traditionell speichert
+man sie auf dem Stack.

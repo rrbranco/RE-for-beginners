@@ -1,0 +1,31 @@
+\subsection{ARM}
+\label{sec:hw_ARM}
+
+\myindex{\idevices}
+\myindex{Raspberry Pi}
+\myindex{Xcode}
+\myindex{LLVM}
+\myindex{Keil}
+Для экспериментов с процессором ARM было использовано несколько компиляторов:
+
+\begin{itemize}
+\item Популярный в embedded-среде Keil Release 6/2013.
+
+\item Apple Xcode 4.6.3 с компилятором LLVM-GCC 4.2
+\footnote{Это действительно так: Apple Xcode 4.6.3 использует опен-сорсный GCC как компилятор переднего плана и кодогенератор LLVM}.
+
+\item GCC 4.9 (Linaro) (для ARM64), 
+доступный в виде исполняемого файла для win32 на \url{http://go.yurichev.com/17325}.
+
+\end{itemize}
+
+Везде в этой книге, если не указано иное, идет речь о 32-битном ARM (включая режимы Thumb и Thumb-2).
+Когда речь идет о 64-битном ARM, он называется здесь ARM64.
+
+% subsections
+\input{patterns/01_helloworld/ARM/keil_ARM_RU}
+\input{patterns/01_helloworld/ARM/keil_T_RU}
+\input{patterns/01_helloworld/ARM/xcode_ARM_RU}
+\input{patterns/01_helloworld/ARM/xcode_T2_RU}
+\input{patterns/01_helloworld/ARM/ARM64_RU}
+

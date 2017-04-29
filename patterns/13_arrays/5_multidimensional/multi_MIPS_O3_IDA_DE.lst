@@ -1,0 +1,37 @@
+insert:
+; $a0=x
+; $a1=y
+; $a2=z
+; $a3=Wert
+                sll     $v0, $a0, 5
+; $v0 = $a0<<5 = x*32
+                sll     $a0, 3
+; $a0 = $a0<<3 = x*8
+                addu    $a0, $v0
+; $a0 = $a0+$v0 = x*8+x*32 = x*40
+                sll     $v1, $a1, 5
+; $v1 = $a1<<5 = y*32
+                sll     $v0, $a0, 4
+; $v0 = $a0<<4 = x*40*16 = x*640
+                sll     $a1, 1
+; $a1 = $a1<<1 = y*2
+                subu    $a1, $v1, $a1
+; $a1 = $v1-$a1 = y*32-y*2 = y*30
+                subu    $a0, $v0, $a0
+; $a0 = $v0-$a0 = x*640-x*40 = x*600
+                la      $gp, __gnu_local_gp
+                addu    $a0, $a1, $a0
+; $a0 = $a1+$a0 = y*30+x*600
+                addu    $a0, $a2
+; $a0 = $a0+$a2 = y*30+x*600+z
+; lade Adresse der Tabelle:
+                lw      $v0, (a & 0xFFFF)($gp)
+; multipliziere Index mit 4 , um das Arrayelement zu suchen:
+                sll     $a0, 2
+; addiere multiplizierten Index und Tabellenadresse:
+                addu    $a0, $v0, $a0
+; speichere Wert in Tabelle und beende:
+                jr      $ra
+                sw      $a3, 0($a0)
+
+                .comm a:0x1770

@@ -1,0 +1,153 @@
+\subsubsection{x86}
+
+\myparagraph{x86 + MSVC}
+
+Voici à quoi ressemble la fonction  \TT{f\_signed()}:
+
+\lstinputlisting[caption=MSVC 2010 \NonOptimizing,style=customasmx86]{patterns/07_jcc/simple/signed_MSVC.asm}
+
+\myindex{x86!\Instructions!JLE}
+
+La première instruction, \JLE, représente \IT{Jump if Less or Equal} (saut si inférieur ou égal).
+En d'autres mots, si la deuxième opérande est plus grande ou égale à la première,
+le flux d'exécution est passé à l'adresse ou au label spécifié dans l'instruction.
+Si la condition ne déclenche pas le saut car seconde opérande est plus petite que
+la première, le flux d'exécution ne sera pas altéré et le premier \printf sera
+exécuté.
+\myindex{x86!\Instructions!JNE}
+Le second test est \JNE: \IT{Jump if Not Equal} (saut si non égal).
+Le flux d'exécution ne changera pas si les opérandes sont égales.
+
+\myindex{x86!\Instructions!JGE}
+Le troisième test est \JGE: \IT{Jump if Greater or Equal}---saute si la première
+opérande est supérieure ou égale à la deuxième.
+Donc, si les trois sauts conditionnels sont effectués, aucun des appels à \printf
+ne sera exécuté.
+Ceci est impossible sans intervention spéciale.
+Regardons maintenant la fonction \TT{f\_unsigned()}.
+La fonction \TT{f\_unsigned()} est la même que \TT{f\_signed()}, à la différence
+que les instructions \JBE et \JAE sont utilisées à la place de \JLE et \JGE, comme
+suit:
+
+\lstinputlisting[caption=GCC,style=customasmx86]{patterns/07_jcc/simple/unsigned_MSVC.asm}
+
+\myindex{x86!\Instructions!JBE}
+\myindex{x86!\Instructions!JAE}
+
+Comme déjà mentionné, les intructions de branchement sont différentes:
+\JBE---\IT{Jump if Below or Equal} (saut si inférieur ou égal) et \JAE---\IT{Jump if Above or Equal}
+(saut si supérieur ou égal).
+Ces instructions (\JA/\JAE/\JB/\JBE) diffèrent de \JG/\JGE/\JL/\JLE par le fait qu'elles
+travaillent avec des nombres non signés.
+
+\myindex{x86!\Instructions!JA}
+\myindex{x86!\Instructions!JB}
+\myindex{x86!\Instructions!JG}
+\myindex{x86!\Instructions!JL}
+\myindex{Signed numbers}
+
+Voir aussi la section sur la représentation des nombres signés~(\myref{sec:signednumbers}).
+C'est pourquoi si nous voyons que \JG/\JL sont utilisés à la place de \JA/\JB ou
+vice-versa, nous pouvons être presque sûr que les variables sont signées ou non
+signées, respectivement.
+Voici la fonction \main, où presque rien n'est nouveau pour nous:
+
+\lstinputlisting[caption=\main,style=customasmx86]{patterns/07_jcc/simple/main_MSVC.asm}
+
+\input{patterns/07_jcc/simple/olly_FR.tex}
+
+\clearpage
+\myparagraph{x86 + MSVC + Hiew}
+\myindex{Hiew}
+
+Nous pouvons essayer de patcher l'exécutable afin que la fonction \TT{f\_unsigned()}
+affiche toujours \q{a==b}, quelque soient les valeurs en entrée.
+Voici à quoi ça ressemble dans Hiew:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/hiew_unsigned1.png}
+\caption{Hiew: fonction \TT{f\_unsigned()}}
+\label{fig:jcc_hiew_1}
+\end{figure}
+
+Essentielleemnt, nous devons accomplir ces trois choses:
+\begin{itemize}
+\item forcer le premier saut à toujours être effectué;
+\item forcer le second saut à n'être jamais effectué;
+\item forcer le troisième saut à toujours être effectué.
+\end{itemize}
+
+Nous devons donc diriger le déroulement du code pour toujours efectuer le second \printf,
+et afficher \q{a==b}.
+
+Trois instructions (ou octets) doivent être modifiées:
+
+\begin{itemize}
+\item Le premier saut devient un \JMP, mais l'\glslink{jump offset}{offset} reste
+le même.
+
+\item
+Le second saut peut être parfois suivi, mais dans chaque cas il sautera à l'instruction
+suivante, car nous avons mis l'\glslink{jump offset}{offset} à 0.
+
+Dans cette instruction, l'\glslink{jump offset}{offset} est ajouté à l'adresse
+de l'instruction suivante. Donc si l'offset est 0, le saut va transfèrer l'exécution
+à l'instruction suivante.
+
+\item
+Le troisième saut est remplacé par \JMP comme nous l'avons fait pour le premier,
+il sera donc toujours effectué.
+
+\end{itemize}
+
+\clearpage
+Voici le code modifié:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/hiew_unsigned2.png}
+\caption{Hiew: modifions la fonction \TT{f\_unsigned()}}
+\label{fig:jcc_hiew_2}
+\end{figure}
+
+Si nous oublions de modifier une de ces sauts condtionnels, plusieurs appels à \printf
+pourraient être faits, alors que nous voulons qu'un seul soit exécuté.
+
+\myparagraph{GCC \NonOptimizing}
+
+\myindex{puts() instead of printf()}
+GCC 4.4.1 \NonOptimizing produit presque le même code, mais avec \puts~(\myref{puts})
+à la place de \printf.
+
+\myparagraph{GCC \Optimizing}
+
+Le lecteur attentif pourrait demander pourquoi exécuter \CMP plusieurs fois, si
+les flags ont les mêmes valeurs après l'exécution ?
+
+Peut-être que l'optimiseur de de MSVC ne peut pas faire cela, mais celui de GCC
+4.8.1 peut aller plus loin:
+
+\lstinputlisting[caption=GCC 4.8.1 f\_signed(),style=customasmx86]{patterns/07_jcc/simple/GCC_O3_signed.asm}
+
+% should be here instead of 'switch' section?
+Nous voyons ici \TT{JMP puts} au lieu de \TT{CALL puts / RETN}.
+
+Ce genre de truc sera expliqué plus loin: \myref{JMP_instead_of_RET}.
+
+Ce genre de code x86 est plutôt rare.
+Il semble que MSVC 2012 ne puisse pas générer un tel code.
+D'un autre côté, les programmeurs en langage d'assemblage sont parfaitement conscients
+du fait que les instructions \TT{Jcc} peuvent être empilées.
+
+Donc si vous voyez ce genre d'empilement, il est très probable que le code a été
+écrit à la main.
+
+La fonction \TT{f\_unsigned()} n'est \ae{}sthétiquement courte:
+
+\lstinputlisting[caption=GCC 4.8.1 f\_unsigned(),style=customasmx86]{patterns/07_jcc/simple/GCC_O3_unsigned_FR.asm}
+
+Néanmoins, il y a deux instructions \TT{CMP} au lieu de trois.
+
+Donc les algorithmes d'optimisation de GCC 4.8.1 ne sont probablement pas encore parfaits.
+

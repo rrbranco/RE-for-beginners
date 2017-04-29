@@ -1,0 +1,79 @@
+\subsection{x64}
+
+\myindex{x86-64}
+
+Le scénario est un peu different en x86-64. Les arguments de la fonction (les 4 ou
+6 premiers d'entre eux) sont passés dans des registres i.e. l'\glslink{callee}{appelée}
+les lit depuis des registres au lieu de les lire dans la pile.
+
+\subsubsection{MSVC}
+
+\Optimizing MSVC:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{patterns/05_passing_arguments/x64_MSVC_Ox_FR.asm}
+
+Comme on le voit, la fonction compacte \ttf prend tous ses arguments dans des registres.
+
+La fonction \LEA est utilisée ici pour l'addition,
+apparement le compilateur considère qu'elle plus rapide que \TT{ADD}.
+\myindex{x86!\Instructions!LEA}
+
+\LEA est aussi utilisée dans la fonction \main pour préparer le premier et le troisième
+argument de \ttf. Le compilateur doit avoir décidé que cela s'exécutera plus vite
+que la façon usuelle ce charger des valeurs dans les registres, qui utilise l'instruction
+\MOV.
+
+Regardons ce qu'a généré MSVC sans optimisation:
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/05_passing_arguments/x64_MSVC_IDA_FR.asm}
+
+C'est un peu déroutant, car les 3 arguments dans des registres sont sauvegardés
+sur la pile pour une certaine raison.
+\myindex{Shadow space}
+\label{shadow_space}
+Ceci est appelé \q{shadow space} % TODO dont know translation, mabe better to keep as is
+\footnote{\href{http://go.yurichev.com/17256}{MSDN}}: 
+chaque Win64 peut (mais ce n'est pas requis) y sauver les 4 regsitres. % TODO clarify Win64
+Ceci est fait pour deux raisons:
+1) c'est trop généreux d'allouer un registre complet (et même 4 registres) pour
+un argument en entrée, donc il sera accèdé par la pile;
+2) le debugger sait toujours oú trouver les arguments de la fonction lors d'un arrêt
+\footnote{\href{http://go.yurichev.com/17257}{MSDN}}.
+
+Donc, de grosses fonctions peuvent sauvegarder leurs arguments en entrée dans le \q{shadows space}
+si elle veulent les utiliser pendant l'exécution, mais quelques petites fonctions
+(comme la notre) peuvent ne pas le faire.
+
+C'est la responsabilité de l'\glslink{caller}{appelant} d'allouer le \q{shadow space}
+sur la pile.
+
+\subsubsection{GCC}
+
+GCC \Optimizing génère du code plus ou moins compréhensible:
+
+\lstinputlisting[caption=GCC 4.4.6 x64 \Optimizing,style=customasmx86]{patterns/05_passing_arguments/x64_GCC_O3_FR.s}
+
+\NonOptimizing GCC:
+
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{patterns/05_passing_arguments/x64_GCC_FR.s}
+
+\myindex{Shadow space}
+
+Il n'y a pas d'exigeance de \q{shadow space} en System V *NIX (\SysVABI), mais
+l'\glslink{callee}{appelée} peut vouloir sauvegarder ses arguments quelque part
+en cas de manque de registres.
+
+\subsubsection{GCC: uint64\_t au lieu de int}
+
+
+Notre exemple fonctionne avec des \Tint 32-bit, c'est pourquoi c'est la partie 32-bit
+des registres qui est utilisée (préfixée par \TT{E-}).
+
+Il peut être légèrement modifié pour utiliser des valeurs 64-bit:
+
+\lstinputlisting[style=customc]{patterns/05_passing_arguments/ex64.c}
+
+\lstinputlisting[caption=GCC 4.4.6 x64 \Optimizing,style=customasmx86]{patterns/05_passing_arguments/ex64_GCC_O3_IDA_FR.asm}
+
+Le code est le même, mais cette fois les registres \IT{complets} (préfixés par \TT{R-}) sont utilisés.
+

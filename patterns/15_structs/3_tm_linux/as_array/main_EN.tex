@@ -1,0 +1,121 @@
+﻿\subsubsection{Structure as a set of values}
+
+In order to illustrate that the structure is just variables laying side-by-side in one place, 
+let's rework our example while looking at the \IT{tm} structure definition again: \lstref{struct_tm}.
+
+\lstinputlisting[style=customc]{patterns/15_structs/3_tm_linux/as_array/GCC_tm2.c}
+
+\myindex{\CStandardLibrary!localtime\_r()}
+N.B. 
+The pointer to the \TT{tm\_sec} field is passed into \TT{localtime\_r}, i.e., 
+to the first element of the \q{structure}.
+
+The compiler warns us:
+
+\begin{lstlisting}[caption=GCC 4.7.3]
+GCC_tm2.c: In function 'main':
+GCC_tm2.c:11:5: warning: passing argument 2 of 'localtime_r' from incompatible pointer type [enabled by default]
+In file included from GCC_tm2.c:2:0:
+/usr/include/time.h:59:12: note: expected 'struct tm *' but argument is of type 'int *'
+\end{lstlisting}
+
+But nevertheless, it generates this:
+
+\lstinputlisting[caption=GCC 4.7.3,style=customasmx86]{patterns/15_structs/3_tm_linux/as_array/GCC_tm2.asm}
+
+This code is identical to what we saw previously and it is
+not possible to say, was it a structure in original source code or just a pack of variables.
+
+And this works. 
+However, it is not recommended to do this in practice. 
+
+Usually, non-optimizing compilers allocates variables in the local stack in the 
+same order as they were declared in the function.
+
+Nevertheless, there is no guarantee.
+
+By the way, some other compiler may warn about the \TT{tm\_year}, \TT{tm\_mon}, \TT{tm\_mday},
+\TT{tm\_hour}, \TT{tm\_min} variables, but not \TT{tm\_sec}
+ are used without being initialized.
+
+Indeed, the compiler is not aware that these are to be filled by\\
+\TT{localtime\_r()} function.
+
+We chose this example, since all structure fields are of type \Tint.%
+
+This would not work if structure fields are 16-bit (\TT{WORD}), 
+like in the case of the \TT{SYSTEMTIME} structure---\TT{GetSystemTime()} 
+will fill them incorrectly 
+(because the local variables are aligned on a 32-bit boundary).
+Read more about it in next section: 
+\q{\StructurePackingSectionName} (\myref{structure_packing}).
+
+So, a structure is just a pack of variables laying in one place, side-by-side.
+We could say that the structure is the instruction to the compiler, directing it to hold variables in one place.
+By the way, in some very early C versions (before 1972), there were no structures at all \RitchieDevC.
+
+There is no debugger example here: it is just the same as you already saw.
+
+\subsubsection{Structure as an array of 32-bit words}
+
+\lstinputlisting[style=customc]{patterns/15_structs/3_tm_linux/as_array/GCC_tm3.c}
+
+We just \IT{cast} a pointer to structure to an array of \Tint{}'s.
+And that works!
+We run the example at 23:51:45 26-July-2014.
+
+\begin{lstlisting}[label=GCC_tm3_output]
+0x0000002D (45)
+0x00000033 (51)
+0x00000017 (23)
+0x0000001A (26)
+0x00000006 (6)
+0x00000072 (114)
+0x00000006 (6)
+0x000000CE (206)
+0x00000001 (1)
+\end{lstlisting}
+
+The variables here 
+are in the same order as they are enumerated in the definition of the structure: \myref{struct_tm}.
+
+Here is how it gets compiled:
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1,style=customasmx86]{patterns/15_structs/3_tm_linux/as_array/GCC_tm3_EN.lst}
+
+Indeed: the space in the local stack is first treated as a structure, and then it's treated as an array.
+
+It's even possible to modify the fields of the structure through this pointer.
+
+And again, it's dubiously hackish way to do things, not recommended for use in production code.
+
+\mysubparagraph{\Exercise}
+
+As an exercise, try to modify (increase by 1) the current month number, treating the structure as 
+an array.
+
+\subsubsection{Structure as an array of bytes}
+
+We can go even further. Let's \IT{cast} the pointer to an array of bytes and dump it:
+
+\lstinputlisting[style=customc]{patterns/15_structs/3_tm_linux/as_array/GCC_tm4.c}
+
+\begin{lstlisting}
+0x2D 0x00 0x00 0x00 
+0x33 0x00 0x00 0x00 
+0x17 0x00 0x00 0x00 
+0x1A 0x00 0x00 0x00 
+0x06 0x00 0x00 0x00 
+0x72 0x00 0x00 0x00 
+0x06 0x00 0x00 0x00 
+0xCE 0x00 0x00 0x00 
+0x01 0x00 0x00 0x00 
+\end{lstlisting}
+
+We also run this example at 23:51:45 26-July-2014
+\footnote{The time and date are the same for demonstration purposes. Byte values are fixed up.}.
+The values are just the same as in the previous dump 
+(\myref{GCC_tm3_output}), and of course, the lowest byte goes first, because this is a little-endian architecture 
+(\myref{sec:endianness}).
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1,style=customasmx86]{patterns/15_structs/3_tm_linux/as_array/GCC_tm4_EN.lst}

@@ -1,0 +1,79 @@
+\subsection{Computing arithmetic mean}
+
+Let's imagine that we want to calculate \gls{arithmetic mean}, and for some weird reason 
+we want to specify all the values as function arguments.
+
+But it's impossible to get the number of arguments in a variadic function in \CCpp, so let's denote 
+the value of $-1$ as a terminator.
+
+\subsubsection{Using va\_arg macro}
+
+There is the standard stdarg.h header file which define macros for dealing with such arguments.
+
+The \printf and \scanf functions use them as well.
+
+\lstinputlisting[style=customc]{\CURPATH/arith_EN.c}
+
+The first argument has to be treated just like a normal argument.
+\myindex{\CStandardLibrary!va\_arg}
+
+All other arguments are loaded using the \TT{va\_arg} macro and then summed.
+
+So what is inside?
+
+\myparagraph{\IT{cdecl} calling conventions}
+
+\lstinputlisting[caption=\Optimizing MSVC 6.0,style=customasmx86]{\CURPATH/arith_MSVC60_Ox_EN.asm}
+
+The arguments, as we may see, are passed to \main one-by-one.
+
+The first argument is pushed into the local stack as first.
+
+The terminating value ($-1$) is pushed last.
+
+The \TT{arith\_mean()} function takes the value of the first argument and stores it in the $sum$ variable.
+
+Then, it sets the \EDX register to the address of the second argument, takes the value from it, adds it to $sum$,
+and does this in an infinite loop, until $-1$ is found.
+
+When it's found, the sum is divided by the number of all values (excluding $-1$) and the \gls{quotient} is returned.
+
+So, in other words, the function treats the stack fragment as an array of integer values of infinite
+length.
+
+Now we can understand why the \IT{cdecl} calling convention forces us to push the first argument 
+into the stack as last.
+
+Because otherwise, it would not be possible to find the first argument, 
+or, for printf-like functions, it would not be possible to find the address of the format-string.
+
+\myparagraph{Register-based calling conventions}
+\label{variadic_arith_registers}
+
+The observant reader may ask, what about calling conventions where the first few arguments are passed in registers?
+Let's see:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{\CURPATH/arith_MSVC_2012_Ox_x64_EN.asm}
+
+We see that the first 4 arguments are passed in the registers and two more---in the stack.
+
+The \TT{arith\_mean()} function first places these 4 arguments into the \IT{Shadow Space} and then treats
+the \IT{Shadow Space} and stack behind it as a single continuous array!
+
+What about GCC? Things are slightly clumsier here, because now the function is divided in two parts:
+the first part saves the registers into the \q{red zone}, processes that space, and the second part of the function processes 
+the stack:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 x64,style=customasmx86]{\CURPATH/arith_GCC491_x64_O3_EN.s}
+
+By the way, a similar usage of the \IT{Shadow Space} is also considered here: \myref{pointer_to_argument}.
+
+\subsubsection{Using pointer to the first function argument}
+
+The example can be rewritten without \TT{va\_arg} macro:
+
+\lstinputlisting[style=customc]{\CURPATH/arith2.c}
+
+In other words, if an argument set is array of words (32-bit or 64-bit), we just enumerate array elements starting
+at first one.
+

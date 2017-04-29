@@ -1,0 +1,83 @@
+\subsubsection{ARM64}
+
+\myparagraph{GCC (Linaro) 4.9 \Optimizing}
+
+\myindex{Multiplication-addition fusionnées} % TODO FIXME verify
+\myindex{ARM!\Instructions!MADD}
+Tout ce qu'il y a ici est simple.
+\TT{MADD} est juste une intruction qui effectue une multiplication/addition fusionnées
+(similaire à l'instruction \TT{MLA} que nous avons déjà vue).
+Tous les 3 arguments sont passés dans la partie 32-bit de registres-X.
+Effectivement, le type des arguments est 32-bit \IT{int}.
+Le résultat est renvoyé dans \TT{W0}.
+
+\lstinputlisting[caption=GCC (Linaro) 4.9 \Optimizing,style=customasmARM]{patterns/05_passing_arguments/ARM/ARM64_O3_FR.s}
+
+Étendons le type de toutes les données à 64-bit \TT{uint64\_t} et testons:
+
+\lstinputlisting[style=customc]{patterns/05_passing_arguments/ex64.c}
+
+\begin{lstlisting}[style=customasmARM]
+f:
+	madd	x0, x0, x1, x2
+	ret
+main:
+	mov	x1, 13396
+	adrp	x0, .LC8
+	stp	x29, x30, [sp, -16]!
+	movk	x1, 0x27d0, lsl 16
+	add	x0, x0, :lo12:.LC8
+	movk	x1, 0x122, lsl 32
+	add	x29, sp, 0
+	movk	x1, 0x58be, lsl 48
+	bl	printf
+	mov	w0, 0
+	ldp	x29, x30, [sp], 16
+	ret
+
+.LC8:
+	.string	"%lld\n"
+\end{lstlisting}
+
+La fonction \ttf{} est la même, seulement les registres-X 64-bit sont utilisés entièrement
+maintenant.
+Les valeurs longues sur 64-bit sont chargées dans les registres par partie, c'est
+également décrit ici: \myref{ARM_big_constants_loading}.
+
+\myparagraph{GCC (Linaro) 4.9 \NonOptimizing}
+
+Le code sans optimisation est plus redondant:
+
+\begin{lstlisting}[style=customasmARM]
+f:
+	sub	sp, sp, #16
+	str	w0, [sp,12]
+	str	w1, [sp,8]
+	str	w2, [sp,4]
+	ldr	w1, [sp,12]
+	ldr	w0, [sp,8]
+	mul	w1, w1, w0
+	ldr	w0, [sp,4]
+	add	w0, w1, w0
+	add	sp, sp, 16
+	ret
+\end{lstlisting}
+
+Le code sauve ses arguments en entrée dans la pile locale, dans le cas oú quelqu'un
+(ou quelque chose) dans cette fonction aurait besoin d'utiliser les registres \TT{W0...W2}.
+Cela évite d'écraser les arguments originels de la fonction, qui pourraient être
+de nouveau utilisés par la suite.
+
+Cela est appelé \IT{Zone de sauvegarde de registre.} (\ARMPCS).
+L'appelée, toutefois, n'est pas obligée de les sauvegarder.
+C'est un peu similaire au \q{Shadow Space}: \myref{shadow_space}.
+
+Pourquoi est-ce que GCC 4.9 avec l'option d'optimisation supprime ce code de sauvegarde?
+Parce qu'il a fait plus d'optimisation et en a conclu que les arguments de la fonction
+n'allaient pas être utilisés par la suite et donc que les registres \TT{W0...W2}
+ne vont pas être utilisés.
+
+\myindex{ARM!\Instructions!MUL}
+\myindex{ARM!\Instructions!ADD}
+
+Nous avons donc une paire d'instructions \TT{MUL}/\TT{ADD} au lieu d'un seul \TT{MADD}.

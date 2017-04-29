@@ -1,0 +1,27 @@
+\subsubsection{x64: 8 argumentos}
+
+\myindex{x86-64}
+\label{example_printf8_x64}
+Para ver como outros argumentos são passados pela pilha,
+vamos mudar nosso exemplo novamente aumentando o numero de argumentos para 9 (\printf + 8 variáveis \Tint):
+
+\lstinputlisting[style=customc]{patterns/03_printf/2.c}
+
+\myparagraph{MSVC}
+
+Como mencionado anteriormente, os primeiros 4 argumentos tem de ser passados pelos registradores \RCX, \RDX, \Reg{8}, \Reg{9} no Win64, enquanto o resto pela pilha.
+Isso é exatamente o que veremos aqui.
+Entretanto, a instrução \MOV, ao invés de \PUSH, é usada para preparar a pilha, portanto os valores são armazenados de uma maneira direta.
+
+% TODO translate
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/03_printf/x86/2_MSVC_x64_EN.asm}
+
+Um leitor observativo pode se indagar por que são alocados 8 bytes para valores int quando 4 já é suficiente?
+Sim, mas lembre-se: 8 bytes são alocados para qualquer tipo de informação menor do que 64 bits.
+Isso é estabelecido com o objetivo de ser conveniente: é mais facil calcular o endereço de um argumento arbitrário.
+Além do mais, eles são alocados em endereços de memórias alinhados. Da mesma maneira no 32-bits: 4 bytes são reservados para todos os tipos de informação.
+
+% also for local variables?
+
+\PTBRph{}
+

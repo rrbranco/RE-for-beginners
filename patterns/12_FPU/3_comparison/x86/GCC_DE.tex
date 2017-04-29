@@ -1,0 +1,83 @@
+\myparagraph{GCC 4.4.1}
+
+\lstinputlisting[caption=GCC
+4.4.1,style=customasmx86]{patterns/12_FPU/3_comparison/x86/GCC_DE.asm}
+
+\myindex{x86!\Instructions!FUCOMPP}
+\FUCOMPP{} ist fast wie like \FCOM, nimmt aber beide Werte vom Stand und
+behandelt \q{undefinierte Zahlenwerte} anders.
+
+
+\myindex{Non-a-numbers (NaNs)}
+Ein wenig über \IT{undefinierte Zahlenwerte}.
+
+\newcommand{\NANFN}{\footnote{\href{http://go.yurichev.com/17130}{wikipedia.org/wiki/NaN}}}
+Die FPU ist in der Lage mit speziellen undefinieten Werten, den sogenannten
+\IT{not-a-number}(kurz \gls{NaN})\NANFN umzugehen. Beispiele sind etwa der Wert
+unendlich, das Ergebnis einer Division durch 0, etc. Undefinierte Werte können
+entwder \q{quiet} oder \q{signaling} sein. Es ist möglich mit \q{quiet} NaNs zu
+arbeiten, aber beim Versuch einen Befehl auf \q{signaling} NaNs auszuführen,
+wird eine Exception geworfen. 
+
+\myindex{x86!\Instructions!FCOM}
+\myindex{x86!\Instructions!FUCOM}
+\FCOM erzeugt eine Exception, falls irgendein Operand ein \gls{NaN} ist.
+\FUCOM erzeugt eine Exception nur dann, wenn ein Operand eine \q{signaling}
+\gls{NaN} (SNaN) ist.
+
+\myindex{x86!\Instructions!SAHF}
+\label{SAHF}
+Der nächste Befehl ist \SAHF (\IT{Store AH into Flags})~---es handelt sich
+hierbei um einen seltenen Befehl, der nicht mit der FPU zusammenhängt.
+8 Bits aus AH werden in die niederen 8 Bit der CPU Flags in der folgenden
+Reihenfolge verschoben:
+
+\input{SAHF_LAHF}
+
+\myindex{x86!\Instructions!FNSTSW}
+Erinnern wir uns, dass \FNSTSW die für uns interessanten Bits (\CThreeBits) auf
+den Stellen 6,2,0 im AH Register setzt:
+
+\input{C3_in_AH}
+Mit anderen Worten: der Befehl \INS{fnstsw ax / sahf} verschiebt \CThreeBits
+nach \ZF, \PF und \CF. 
+
+Überlegen wir uns auch die Werte der \CThreeBits in unterschiedlichen Szenarien:
+
+\begin{itemize} 
+  \item Falls in unserem Beispiel $a$ größer als $b$ ist, dann werden die
+  \CThreeBits auf 0,0,0 gesetzt.
+  \item Falls $a$ kleiner als $b$ ist, werden die Bits auf 0,0,1 gesetzt.
+  \item Falls $a=b$, dann werden die Bits auf 1,0,0 gesetzt.
+\end{itemize}
+% TODO: table?
+Mit anderen Worten, die folgenden Zustände der CPU Flags sind nach drei
+\FUCMPP/\FNSTSW/\SAHF Befehlen möglich:
+
+\begin{itemize}
+\item Falls $a>b$, werden die CPU Flags wie folgt gesetzt \GTT{ZF=0, PF=0,
+CF=0}.
+\item Falls $a<b$, werden die CPU Flags wie folgt gesetzt: \GTT{ZF=0, PF=0,
+CF=1}.
+\item Und falls $a=b$, dann gilt: \GTT{ZF=1, PF=0, CF=0}.
+\end{itemize}
+% TODO: table?
+
+\myindex{x86!\Instructions!SETcc}
+\myindex{x86!\Instructions!JNBE}
+Abhängig von den CPU Flags und Bedingungen, speichert \SETNBE entweder 1 oder 0
+in AL.
+Es ist also quasi das Gegenstück von \JNBE mit dem Unterschied, dass \SETcc
+
+Depending on the CPU flags and conditions, \SETNBE stores 1 or 0 to AL. 
+It is almost the counterpart of \JNBE, with the exception that \SETcc
+\footnote{\IT{cc} is \IT{condition code}} eine 1 oder 0 in \AL speichert, aber
+\Jcc tatsächlich auch springt.
+\SETNBE speicher 1 nur, falls \GTT{CF=0} und \GTT{ZF=0}.
+Wenn dies nicht der Fall ist, dann wird 0 in \AL gespeichert.
+
+Nur in einem Fall sind \CF und \ZF beide 0: falls $a>b$.
+
+In diesem Fall wird 1 in \AL gespeichert, der nachfolgende \JZ Sprung wird nicht
+ausgeführt und die Funktion liefert {\_a} zurück. In allen anderen Fällen wird
+{\_b} zurückgegeben.

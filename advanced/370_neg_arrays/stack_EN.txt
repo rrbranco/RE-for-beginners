@@ -1,0 +1,10 @@
+CPU Stack
+Address   Value     
+001DFBCC  /001DFBD3 ; fakearray pointer
+001DFBD0  |11223344 ; random_value
+001DFBD4  |03020100 ; 4 bytes of array[]
+001DFBD8  |07060504 ; 4 bytes of array[]
+001DFBDC  |00CB0908 ; random garbage + 2 last bytes of array[]
+001DFBE0  |0000000A ; last i value after loop was finished
+001DFBE4  |001DFC2C ; saved EBP value
+001DFBE8  \00CB129D ; Return Address

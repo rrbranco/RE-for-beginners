@@ -1,0 +1,102 @@
+\subsection{Strings als zweidimensionales Array}
+Betrachten wir erneut die Funktion, die den Namen eines Monats zurückgibt: \lstref{get_month1}.
+
+Wie man sieht wird mindestens eine Befehl benötigt, der einen Wert aus dem Speicher lädt, um den Pointer auf den String,
+der den Monatsnamen enthält, vorzubereiten.
+
+Ist es möglich diesen Speicherzugriff loszuwerden?
+
+Die Antwort ist: ja, wenn man die Liste aus String als zweidimensionales Array darstellt:
+
+\lstinputlisting[style=customc]{patterns/13_arrays/55_month_2D/month2_DE.c}
+
+Hier ist was wir erhalten:
+
+\lstinputlisting[caption=\Optimizing MSVC 2013
+x64,style=customasmx86]{patterns/13_arrays/55_month_2D/MSVC2013_x64_Ox_DE.asm}
+
+Es gibt überhaupt keine Speicherzugriffe.
+Alles, was diese Funktion tut, ist einen Pointer zu berechnen, der auf den ersten Buchstaben des Monats
+zeigt:$pointer\_to\_the\_table + month \cdot 10$.
+
+Es gibt auch zwei \LEA Befehle, die wie mehrere \MUL und \MOV Befehle funktionieren.
+
+Die Breite des Arrays beträgt 10 Byte.
+
+Der längste String im Beispiel---\q{September}---hat eine Länge von 9 Byte zuzüglich einer terminierenden Null, also
+insgesamt 10 Byte.
+
+Die übrigen Monatsnamen werden mit Zerobytes aufgefüllt, sodass alle denselben Speicherplatz (10 Byte) benötigen.
+
+Dadurch arbeitet unsere Funktion noch schneller, denn die Startadresse jedes Strings kann so einfach berechnet werden.
+
+\Optimizing GCC 4.9 kann sogar noch kürzeren Code erzeugen:
+
+\begin{lstlisting}[caption=\Optimizing GCC 4.9 x64,style=customasmx86]
+	movsx	rdi, edi
+	lea	rax, [rdi+rdi*4]
+	lea	rax, month2[rax+rax]
+	ret
+\end{lstlisting}
+
+\LEA wird hier auch für die Multiplikation mit 10 verwendet.
+
+Nicht optimierende Compiler führen die Multiplikation anders durch.
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9
+x64,style=customasmx86]{patterns/13_arrays/55_month_2D/x64_GCC49_O0_DE.asm}
+
+\NonOptimizing MSVC verwendet nur den \IMUL Befehl:
+\myindex{x86!\Instructions!IMUL}
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2013
+x64,style=customasmx86]{patterns/13_arrays/55_month_2D/MSVC2013_x64_DE.asm}
+
+\myindex{\CompilerAnomaly}
+\label{MSVC2013_anomaly}
+Eine Sache hier ist seltsam: warum wird die Multiplikation mit null und die Addition von null zum Endergebnis
+hinzugefügt?
+
+Dies sieht wie ein Fehler im Codegenerator des Compilers aus, der nicht durch die Tests des Compilers abgefangen wurde.
+(Trotzdem funktioniert der erzeugte Code korrekt.)
+
+% класс!
+%
+Wir betrachten solche Codes ganz bewußt, damit der Leser sich klarmacht, dass man sich über solche Merkwürdigkeiten und
+Artefakte des Compilers nicht allzu sehr wundern soll.
+
+\subsubsection{32-bit ARM}
+
+\Optimizing Keil im Thumb mode verwendet zur Multiplikation den Befehl \INS{MULS}:
+
+\lstinputlisting[caption=\OptimizingKeilVI
+(\ThumbMode),style=customasmARM]{patterns/13_arrays/55_month_2D/Keil_O3_thumb_DE.asm}
+
+\Optimizing Keil für ARM mode verwendet Additions- und Schiebebefehle:
+
+\lstinputlisting[caption=\OptimizingKeilVI
+(\ARMMode),style=customasmARM]{patterns/13_arrays/55_month_2D/Keil_O3_ARM_DE.asm}
+
+\subsubsection{ARM64}
+
+\lstinputlisting[caption=\Optimizing GCC 4.9
+ARM64,style=customasmARM]{patterns/13_arrays/55_month_2D/GCC49_ARM64_DE.asm}
+
+\myindex{ARM!\Instructions!SXTW}
+\myindex{ARM!\Instructions!ADRP/ADD pair}
+\INS{SXTW} wird für Vorzeichenerweiterung und Übertragung von 32-Bit-Werten in 64-Bit-Werte und das Speichern in X0
+verwendet.
+
+Das \ADRP/\ADD Paar wird für das Laden der Adresse der Tabelle verwendet.
+
+Der \ADD Befehl trägt auch den \LSL Suffix, der bei der Multiplikation hilft.
+
+\subsubsection{MIPS}
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/13_arrays/55_month_2D/MIPS_O3_IDA_EN.lst}
+
+\subsubsection{\Conclusion{}}
+Das Gezeigte ist eine etwas altmodische Technik um Textstrings zu speichern.
+Man findet diesen Ansatz beispielsweise oft in \oracle.
+Es ist schwer zu sagen, ob es sich für moderne Computer lohnt.
+Nichtsdestotrotz ist es ein gutes Beispiel für Arrays und hat daher seine Berechtigung in diesem Buch.
+

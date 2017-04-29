@@ -1,0 +1,16 @@
+\subsection{И снова пример генератора случайных чисел}
+\label{FPU_PRNG_SIMD}
+
+Вернемся к примеру \q{пример генератора случайных чисел} \lstref{FPU_PRNG}.
+
+Если скомпилировать это в MSVC 2012, компилятор будет использовать SIMD-инструкции для FPU.
+
+\lstinputlisting[caption=\Optimizing MSVC 2012,style=customasmx86]{patterns/205_floating_SIMD/FPU_PRNG/MSVC2012_Ox_Ob0_RU.asm}
+
+% FIXME1 rewrite!
+У всех инструкций суффикс -SS, это означает \q{Scalar Single}.
+
+\q{Scalar} означает, что только одно значение хранится в регистре.
+
+\q{Single} означает, что это тип \Tfloat.
+

@@ -1,0 +1,38 @@
+\subsubsection{ARM}
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/15_structs/4_packing/packing_Keil_thumb.asm}
+
+Как мы помним, здесь передается не указатель на структуру, а сама структура, а так как в ARM первые 4 аргумента
+функции передаются через регистры, то поля структуры передаются через \TT{R0-R3}.
+
+\myindex{ARM!\Instructions!LDRB}
+\myindex{x86!\Instructions!MOVSX}
+Инструкция \TT{LDRB} загружает один байт из памяти и расширяет до 32-бит учитывая знак.
+
+Это то же что и инструкция \MOVSX в x86.
+Она здесь применяется для загрузки полей $a$ и $c$ из структуры.
+
+\myindex{Function epilogue}
+Еще что бросается в глаза, так это то что вместо эпилога функции, переход на эпилог другой функции!
+
+Действительно, то была совсем другая, не относящаяся к этой, функция, однако, она имела точно такой же эпилог 
+(видимо, тоже хранила в стеке 5 локальных переменных ($5*4=0x14$)).
+К тому же, она находится рядом (обратите внимание на адреса).
+
+Действительно, нет никакой разницы, какой эпилог исполнять, если он работает так же, как нам нужно.
+
+Keil решил использовать часть другой функции, вероятно, из-за экономии.
+
+Эпилог занимает 4 байта, а переход ~--- только 2.
+
+\myparagraph{ARM + \OptimizingXcodeIV (\ThumbTwoMode)}
+
+\lstinputlisting[caption=\OptimizingXcodeIV (\ThumbTwoMode),style=customasmARM]{patterns/15_structs/4_packing/packing_Xcode_thumb.asm}
+
+\myindex{ARM!\Instructions!SXTB}
+\myindex{x86!\Instructions!MOVSX}
+\TT{SXTB} (\IT{Signed Extend Byte}) это также аналог \MOVSX в x86.
+Всё остальное ~--- так же.
+

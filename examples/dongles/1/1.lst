@@ -1,10 +1,10 @@
 ...
 
-seg000:000C87FC 38 60 00 01                 li      %r3, 1
-seg000:000C8800 48 03 93 41                 bl      check1
-seg000:000C8804 60 00 00 00                 nop
-seg000:000C8808 54 60 06 3F                 clrlwi. %r0, %r3, 24
-seg000:000C880C 40 82 00 40                 bne     OK
-seg000:000C8810 80 62 9F D8                 lwz     %r3, TC_aInvalidSecurityDevice
+seg000:000C87FC 38 60 00 01   li      %r3, 1
+seg000:000C8800 48 03 93 41   bl      check1
+seg000:000C8804 60 00 00 00   nop
+seg000:000C8808 54 60 06 3F   clrlwi. %r0, %r3, 24
+seg000:000C880C 40 82 00 40   bne     OK
+seg000:000C8810 80 62 9F D8   lwz     %r3, TC_aInvalidSecurityDevice
 
 ...
