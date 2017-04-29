@@ -1,0 +1,45 @@
+\subsection{Выделяем место для структуры через malloc()}
+\label{struct_malloc_example}
+
+Однако, бывает и так, что проще хранить структуры не в стеке, а в \glslink{heap}{куче}:
+
+
+\lstinputlisting[style=customc]{patterns/15_structs/2_using_malloc/systemtime_malloc.c}
+
+Скомпилируем на этот раз с оптимизацией (\Ox) чтобы было проще увидеть то, что нам нужно.
+
+
+\lstinputlisting[caption=\Optimizing MSVC,style=customasmx86]{patterns/15_structs/2_using_malloc/systemtime_malloc.asm}
+
+\myindex{\CStandardLibrary!malloc()}
+Итак, \TT{sizeof(SYSTEMTIME) = 16}, именно столько байт выделяется при помощи \TT{malloc()}. 
+Она возвращает указатель на только что выделенный блок памяти в \EAX, который копируется в \ESI. 
+Win32 функция \TT{GetSystemTime()} обязуется сохранить состояние \ESI, 
+поэтому здесь оно нигде не сохраняется и продолжает использоваться после вызова \TT{GetSystemTime()}.
+
+
+\myindex{x86!\Instructions!MOVZX}
+
+Новая инструкция ~--- \MOVZX (\IT{Move with Zero eXtend}). 
+Она нужна почти там же где и \MOVSX, 
+только всегда очищает остальные биты в 0. Дело в том, что \printf требует 32-битный тип \Tint, 
+а в структуре лежит WORD ~--- это 16-битный беззнаковый тип. Поэтому копируя значение из WORD в \Tint, 
+нужно очистить биты от 16 до 31, иначе там будет просто случайный мусор, оставшийся от предыдущих действий 
+с регистрами.
+
+
+В этом примере можно также представить структуру как массив 8-и WORD-ов:
+
+
+\lstinputlisting[style=customc]{patterns/15_structs/2_using_malloc/systemtime_malloc2.c}
+
+Получим такое:
+
+\lstinputlisting[caption=\Optimizing MSVC,style=customasmx86]{patterns/15_structs/2_using_malloc/systemtime_malloc2.asm}
+
+И снова мы получаем идентичный код, неотличимый от предыдущего.
+
+Но и снова нужно отметить, что в реальности так лучше не делать, 
+если только вы не знаете точно, что вы делаете.
+
+

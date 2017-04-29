@@ -1,0 +1,38 @@
+% TODO translate to RU
+\section{strstr() example}
+\label{strstr_example}
+\myindex{\CStandardLibrary!strstr()}
+
+Let's back to the fact that GCC sometimes can use part of string: \myref{use_parts_of_C_strings}.
+
+The \IT{strstr()} \CCpp standard library function is used to find any occurrence in a string.
+This is what we will do:
+
+\begin{lstlisting}[style=customc]
+#include <string.h>
+#include <stdio.h>
+
+int main()
+{
+	char *s="Hello, world!";
+	char *w=strstr(s, "world");
+
+	printf ("%p, [%s]\n", s, s);
+	printf ("%p, [%s]\n", w, w);
+};
+\end{lstlisting}
+
+The output is:
+
+\begin{lstlisting}
+0x8048530, [Hello, world!]
+0x8048537, [world!]
+\end{lstlisting}
+
+The difference between the address of the original string and the address of the substring that \IT{strstr()} has returned is 7.
+Indeed, \q{Hello, } string has length of 7 characters.
+
+The \printf{} function during second call has no idea there are some other characters before
+the passed string and it prints characters
+from the middle of original string till the end (marked by zero byte).
+

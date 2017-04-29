@@ -1,0 +1,33 @@
+\subsubsection{\WorkingWithFloatAsWithStructSubSubSectionName}
+\label{sec:floatasstruct}
+
+Как уже ранее указывалось в секции о FPU~(\myref{sec:FPU}), 
+и \Tfloat и \Tdouble содержат в себе \IT{знак}, \IT{мантиссу} и \IT{экспоненту}. 
+Однако, можем ли мы работать с этими полями напрямую? Попробуем с \Tfloat.
+
+\input{float_IEEE754.tex}
+
+\lstinputlisting[style=customc]{patterns/15_structs/6_bitfields/float/float_RU.c}
+
+Структура \TT{float\_as\_struct} занимает в памяти столько же места сколько и \Tfloat, 
+то есть 4 байта или 32 бита.
+
+Далее мы выставляем во входящем значении отрицательный знак, 
+а также прибавляя двойку к экспоненте, мы тем 
+самым умножаем всё значение на \TT{$2^2$}, то есть на 4.
+
+Компилируем в MSVC 2008 без включенной оптимизации:
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2008,style=customasmx86]{patterns/15_structs/6_bitfields/float/float_msvc_RU.asm}
+
+Слегка избыточно. В версии скомпилированной с флагом \Ox нет вызовов \TT{memcpy()}, 
+там работа происходит сразу с переменной \TT{f}. Но по неоптимизированной версии будет проще понять.
+
+А что сделает GCC 4.4.1 с опцией \Othree?
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.1,style=customasmx86]{patterns/15_structs/6_bitfields/float/float_gcc_O3_RU.asm}
+
+Да, функция \ttf в целом понятна. Однако, что интересно, еще при компиляции, 
+не взирая на мешанину с полями структуры, GCC умудрился вычислить результат функции \TT{f(1.234)} еще
+во время компиляции и сразу подставить его в аргумент для \printf{}!
+

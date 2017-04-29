@@ -1,0 +1,44 @@
+﻿\subsection{How it works}
+
+From school-level mathematics, we can remember that division by 9 can be replaced by multiplication by $\frac{1}{9}$.
+In fact, sometimes compilers do so for floating-point arithmetics, for example, \INS{FDIV} instruction in x86 code
+can be replaced by \INS{FMUL}.
+At least MSVC 6.0 will replace division by 9 by multiplication by $0.111111...$ and sometimes it's hard to be sure,
+what operation was in original source code.
+
+But when we operate over integer values and integer CPU registers, we can't use fractions.
+However, we can rework fraction like that:
+
+% FIXME: equation size
+\begin{center}
+$result = \frac{x}{9} = x \cdot \frac{1}{9} = x \cdot \frac{1 \cdot MagicNumber}{9 \cdot MagicNumber}$
+\end{center}
+
+Given the fact that division by $2^n$ is very fast (using shifts), we now should find that $MagicNumber$,
+for which the following
+equation will be true: $2^n = 9 \cdot MagicNumber$.
+
+Division by $2^{32}$ is somewhat hidden: lower 32-bit of product in EAX is not used (dropped), only higher 32-bit of
+product (in EDX) is used and then shifted by additional 1 bit.
+
+In other words, the assembly code we have just seen multiplicates by {\Large $\frac{954437177}{2^{32+1}}$},
+or divides by {\Large $\frac{2^{32+1}}{954437177}$}.
+To find divisor we just have to divide numerator by denominator.
+Using Wolfram Alpha, we can get 8.99999999.... as result (which is close to 9).
+
+% TODO ref to https://yurichev.com/blog/signed_division_using_shifts/
+
+Read more about it in \InSqBrackets{\HenryWarren 10-3}.
+
+Couple of words about better understanding.
+Many people miss ``hidden'' division by $2^{32}$ or $2^{64}$,
+when lower 32-bit part (or 64-bit part) of product is not used.
+Also, there is misconception that modulo inverse is used here. This is close, but not the same thing.
+Extended Euclidean algorithm is usually used to find \textit{magic coefficient}, but in fact,
+this algorithm is rather used to solve the equation. You can solve it using any other method.
+For example, the author used Z3 SMT solver to find \textit{coefficient}\footnote{\url{https://yurichev.com/tmp/SAT_SMT_DRAFT.pdf}}.
+This is overkill, but it was used it for demonstration.
+Anyway, Extended Euclidean algorithm is probably the most efficient way to solve it.
+Also, needless to mention, the equation is unsolvable for some divisors, because this is diophantine equation
+(i.e., equation allowing result to be only integer), since we work on integer CPU registers, after all.
+

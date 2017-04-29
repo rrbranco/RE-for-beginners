@@ -1,0 +1,37 @@
+\section{Population count}
+\label{POPCNT}
+
+\INS{POPCNT} instruction is population count (\ac{AKA} Hamming weight).
+It just counts number of bits set in an input value.
+
+As a side effect, \INS{POPCNT} instruction (or operation) can be used to determine, if the value has $2^n$ form.
+Since, $2^n$ number always has just one single bit, \INS{POPCNT}'s result will always be just 1.
+
+\myindex{base64scanner}
+For example, I once wrote a base64 strings scanner for hunting something interesting in binary files\footnote{\url{https://github.com/dennis714/base64scanner}}.
+And there is a lot of garbage and false positives, so I add an option to filter out data blocks which has size of $2^n$ bytes
+(i.e., 256 bytes, 512, 1024, etc.).
+The size of block is checked just like this:
+
+\begin{lstlisting}[style=customc]
+if (popcnt(size)==1)
+	// OK
+...
+\end{lstlisting}
+
+The instruction is also known as \q{\ac{NSA} instruction} due to rumors:
+
+\begin{framed}
+\begin{quotation}
+  This branch of cryptography is fast-paced and very politically charged.
+  Most designs are secret; a majority of military encryptions systems in use today are 
+  based on LFSRs. 
+  In fact, most Cray computers (Cray 1, Cray X-MP, Cray Y-MP) have a rather curious 
+  instruction generally known as “population count.” It counts the 1 bits in a register 
+  and can be used both to efficiently calculate the Hamming distance between two binary 
+  words and to implement a vectorized version of a LFSR. I’ve heard this called the canonical 
+  NSA instruction, demanded by almost all computer contracts.
+\end{quotation}
+\end{framed}
+\InSqBrackets{\Schneier{}}
+

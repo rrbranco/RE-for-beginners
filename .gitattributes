@@ -1,7 +1,0 @@
-*.tex text eol=crlf
-*.s text eol=crlf
-*.asm text eol=crlf
-*.c text eol=crlf
-*.cpp text eol=crlf
-*.lst text eol=crlf
-

@@ -1,0 +1,15 @@
+﻿\subsubsection{\OptimizingKeilVI (\ARMMode)}
+
+\begin{lstlisting}[label=ARM_leaf_example1,style=customasmARM]
+.text:00000098             f
+.text:00000098 91 20 20 E0       MLA     R0, R1, R0, R2
+.text:0000009C 1E FF 2F E1       BX      LR
+\end{lstlisting}
+
+\myindex{ARM!\Instructions!MLA}
+
+And here is the \ttf function compiled by the Keil compiler in full optimization mode (\Othree).
+
+The \MOV instruction was optimized out (or reduced) and now \TT{MLA} uses all 
+input registers and also places the result right into \Reg{0},
+exactly where the calling function will read and use it.

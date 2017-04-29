@@ -1,0 +1,111 @@
+\subsubsection{\NonOptimizingKeilVI (\ARMMode)}
+
+Let's start by compiling our example in Keil:
+
+\begin{lstlisting}
+armcc.exe --arm --c90 -O0 1.c 
+\end{lstlisting}
+
+\myindex{\IntelSyntax}
+The \IT{armcc} compiler produces assembly listings in Intel-syntax, but it has high-level ARM-processor related macros
+\footnote{e.g. ARM mode lacks \PUSH/\POP instructions}, 
+but it is more important for us to see the instructions \q{as is} so let's see the compiled result in \IDA.
+
+\begin{lstlisting}[caption=\NonOptimizingKeilVI (\ARMMode) \IDA,style=customasmARM]
+.text:00000000             main
+.text:00000000 10 40 2D E9    STMFD   SP!, {R4,LR}
+.text:00000004 1E 0E 8F E2    ADR     R0, aHelloWorld ; "hello, world"
+.text:00000008 15 19 00 EB    BL      __2printf
+.text:0000000C 00 00 A0 E3    MOV     R0, #0
+.text:00000010 10 80 BD E8    LDMFD   SP!, {R4,PC}
+
+.text:000001EC 68 65 6C 6C+aHelloWorld  DCB "hello, world",0    ; DATA XREF: main+4
+\end{lstlisting}
+
+In the example, we can easily see each instruction has a size of 4 bytes.
+Indeed, we compiled our code for ARM mode, not for Thumb.
+
+\myindex{ARM!\Instructions!STMFD}
+\myindex{ARM!\Instructions!POP}
+The very first instruction, \INS{STMFD SP!, \{R4,LR\}}\footnote{\ac{STMFD}}, 
+works as an x86 \PUSH instruction, writing the values of two registers (\Reg{4} and \ac{LR}) into the stack.
+
+Indeed, in the output listing from the \IT{armcc} compiler, for the sake of simplification, 
+actually shows the \INS{PUSH \{r4,lr\}} instruction.
+But that is not quite precise. The \PUSH instruction is only available in Thumb mode.
+So, to make things less confusing, we're doing this in \IDA.
+
+This instruction first \glspl{decrement} the \ac{SP} so it points to the place in the stack
+that is free for new entries, then it saves the values of the \Reg{4} and \ac{LR} registers at the address
+stored in the modified \ac{SP}.
+
+This instruction (like the \PUSH instruction in Thumb mode) is able to save several register values at once which can be very useful.
+By the way, this has no equivalent in x86.
+It can also be noted that the \TT{STMFD} instruction is a generalization 
+of the \PUSH instruction (extending its features), since it can work with any register, not just with \ac{SP}.
+In other words, \TT{STMFD} may be used for storing a set of registers at the specified memory address.
+
+\myindex{\PICcode}
+\myindex{ARM!\Instructions!ADR}
+The \INS{ADR R0, aHelloWorld}
+instruction adds or subtracts the value in the \ac{PC} register to the offset where the \TT{hello, world} string is located.
+How is the \TT{PC} register used here, one might ask?
+This is called \q{\PICcode}\footnote{Read more about it in relevant section~(\myref{sec:PIC})}.
+
+Such code can be executed at a non-fixed address in memory.
+In other words, this is \ac{PC}-relative addressing.
+The \INS{ADR} instruction takes into account the difference between the address of this instruction and the address where the string is located.
+This difference (offset) is always to be the same, no matter at what address our code is loaded by the \ac{OS}.
+That's why all we need is to add the address of the current instruction (from \ac{PC}) in order to get the absolute memory address of our C-string.
+
+\myindex{ARM!\Registers!Link Register}
+\myindex{ARM!\Instructions!BL}
+\INS{BL \_\_2printf}\footnote{Branch with Link} instruction calls the \printf function. 
+Here's how this instruction works: 
+
+\begin{itemize}
+\item store the address following the \INS{BL} instruction (\TT{0xC}) into the \ac{LR};
+\item then pass the control to \printf by writing its address into the \ac{PC} register.
+\end{itemize}
+
+When \printf finishes its execution it must have information about where it needs to return the control to.
+That's why each function passes control to the address stored in the \ac{LR} register.
+
+That is a difference between \q{pure} \ac{RISC}-processors like ARM and \ac{CISC}-processors like x86,
+where the return address is usually stored on the stack.
+Read more about this in next section~(\myref{sec:stack}).
+
+By the way, an absolute 32-bit address or offset cannot be encoded in the 32-bit \TT{BL} instruction because
+it only has space for 24 bits.
+As we may recall, all ARM-mode instructions have a size of 4 bytes (32 bits).
+Hence, they can only be located on 4-byte boundary addresses.
+This implies that the last 2 bits of the instruction address (which are always zero bits) may be omitted.
+In summary, we have 26 bits for offset encoding. This is enough to encode $current\_PC \pm{} \approx{}32M$.
+
+\myindex{ARM!\Instructions!MOV}
+Next, the \INS{MOV R0, \#0}\footnote{Meaning MOVe} instruction just writes 0 into the \Reg{0} register.
+That's because our C-function returns 0 and the return value is to be placed in the \Reg{0} register.
+
+\myindex{ARM!\Registers!Link Register}
+\myindex{ARM!\Instructions!LDMFD}
+\myindex{ARM!\Instructions!POP}
+The last instruction \INS{LDMFD SP!, {R4,PC}}\footnote{\ac{LDMFD} is an inverse instruction of \ac{STMFD}}.
+It loads values from the stack (or any other memory place) in order to save them into \Reg{4} and \ac{PC}, and \glslink{increment}{increments} the \gls{stack pointer} \ac{SP}.
+It works like \POP here.\\
+N.B. The very first instruction \TT{STMFD} saved the \Reg{4} and \ac{LR} registers pair on the stack, but \Reg{4} and \ac{PC} are \IT{restored} during the \TT{LDMFD} execution.
+
+As we already know, the address of the place where each function must return control to is usually saved in the \ac{LR} register.
+The very first instruction saves its value in the stack because the same register will be used by our
+\main function when calling \printf.
+In the function's end, this value can be written directly to the \ac{PC} register, thus passing control to where our function has been called.
+
+Since \main is usually the primary function in \CCpp,
+the control will be returned to the \ac{OS} loader or to a point in a \ac{CRT},
+or something like that.
+
+All that allows omitting the \INS{BX LR} instruction at the end of the function.
+
+\myindex{ARM!DCB}
+\TT{DCB} is an assembly language directive defining an array of bytes or ASCII strings, akin to the DB directive 
+in the x86-assembly language.
+

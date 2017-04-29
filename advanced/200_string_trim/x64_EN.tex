@@ -1,0 +1,106 @@
+﻿\subsection{x64: \Optimizing MSVC 2013}
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{\CURPATH/MSVC2013_x64_Ox_EN.asm}
+
+First, MSVC inlined the \strlen{} function code, because it concluded this 
+is to be faster than the usual \strlen{} work + the cost of calling it and returning from it.
+This is called inlining: \myref{inline_code}.
+
+\myindex{x86!\Instructions!OR}
+\myindex{\CStandardLibrary!strlen()}
+\label{using_OR_instead_of_MOV}
+The first instruction of the inlined \strlen{} is\\
+\TT{OR RAX, 0xFFFFFFFFFFFFFFFF}. 
+
+MSVC often uses \TT{OR} instead of \TT{MOV RAX, 0xFFFFFFFFFFFFFFFF}, because resulting opcode is shorter.
+
+And of course, it is equivalent: all bits are set, and a number with all bits set is $-1$ 
+in two's complement arithmetic: \myref{sec:signednumbers}.
+
+Why would the $-1$ number be used in \strlen{}, one might ask.
+Due to optimizations, of course.
+Here is the code that MSVC generated:
+
+\lstinputlisting[caption=Inlined \strlen{} by MSVC 2013 x64,style=customasmx86]{\CURPATH/strlen_MSVC_EN.asm}
+
+Try to write shorter if you want to initialize the counter at 0!
+OK, let' try:
+
+\lstinputlisting[caption=Our version of \strlen{},style=customasmx86]{\CURPATH/my_strlen_EN.asm}
+
+We failed. We have to use additional \INS{JMP} instruction!
+
+So what the MSVC 2013 compiler did is to move the \TT{INC} instruction to the place before 
+the actual character loading.
+
+If the first character is 0, that's OK, \RAX is 0 at this moment, 
+so the resulting string length is 0.
+
+The rest in this function seems easy to understand.
+
+\subsection{x64: \NonOptimizing GCC 4.9.1}
+
+\lstinputlisting[style=customasmx86]{\CURPATH/GCC491_x64_O0_EN.asm}
+
+Comments are added by the author of the book.
+
+After the execution of \strlen{}, the control is passed to the L2 label, 
+and there two clauses are checked, one after another.
+
+The second will never be checked, if the first one (\IT{str\_len==0}) is false 
+(this is \q{short-circuit}).
+
+Now let's see this function in short form:
+
+\begin{itemize}
+\item First for() part (call to \strlen{})
+\item goto L2
+\item L5: for() body. goto exit, if needed
+\item for() third part (decrement of str\_len)
+\item L2: 
+for() second part: check first clause, then second. goto loop body begin or exit.
+\item L4: // exit
+\item return s
+\end{itemize}
+
+\subsection{x64: \Optimizing GCC 4.9.1}
+\label{string_trim_GCC_x64_O3}
+
+\lstinputlisting[style=customasmx86]{\CURPATH/GCC491_x64_O3_EN.asm}
+
+Now this is more complex.
+
+The code before the loop's body start is executed only once, but it has the \CRLF{} 
+characters check too!
+What is this code duplication for?
+
+The common way to implement the main loop is probably this:
+
+\begin{itemize}
+\item (loop start) check for 
+\CRLF{} characters, make decisions
+\item store zero character
+\end{itemize}
+
+But GCC has decided to reverse these two steps. 
+
+Of course, \IT{store zero character} cannot be first step, so another check is needed:
+
+\begin{itemize}
+\item workout first character. match it to \CRLF{}, exit if character is not \CRLF{}
+
+\item (loop begin) store zero character
+
+\item check for \CRLF{} characters, make decisions
+\end{itemize}
+
+Now the main loop is very short, which is good for latest \ac{CPU}s.
+
+The code doesn't use the str\_len variable, but str\_len-1.
+So this is more like an index in a buffer.
+
+Apparently, GCC notices that the str\_len-1 statement is used twice.
+
+So it's better to allocate a variable which always holds a value that's smaller than 
+the current string length by one, 
+and decrement it (this is the same effect as decrementing the str\_len variable).

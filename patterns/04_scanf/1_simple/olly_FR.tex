@@ -1,0 +1,59 @@
+\clearpage
+\subsubsection{MSVC + \olly}
+\myindex{\olly}
+
+% TODO look in French olly for text translation, if exists?
+Essayons cet exemple dans \olly.
+Chargeons-le et appuyons sur F8 (\stepover) jusqu'à ce que nous atteignons notre
+exécutable au lieu de \TT{ntdll.dll}.
+Défiler vers le haut jusqu'à ce que \main apparaisse.
+
+Cliquer sur la première instruction  (\TT{PUSH EBP}), appuyer sur F2 (\IT{set a
+breakpoint}), puis F9 (\IT{Run}).
+Le point d'arrêt sera déclenché lorsque \main commencera.
+
+Continuons jusqu'au point où la variable $x$ est calculée:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/1_simple/ex1_olly_1.png}
+\caption{\olly: L'adresse de la variable locale est calculée}
+\label{fig:scanf_ex1_olly_1}
+\end{figure}
+
+Cliquer droit sur \EAX dans la fenêtre des registres et choisir \q{Follow in stack}.
+
+Cette adresse va apparaître dans la fenêtre de la pile.
+La flèche rouge a été ajoutée, pointant la variable dans la pile locale.
+A ce point, cet espace contient des restes de données (\TT{0x6E494714}).
+Maintenant. avec l'aide de l'instruction \PUSH, l'adresse de cet élément de pile
+va être stockée sur la même pile à la position suivante.
+Appuyons sur F8 jusqu'à la fin de l'exécution de \scanf.
+Pendant l'exécution de \scanf, entrons, par exemple, 123, dans la fenêtre de la console:
+
+\lstinputlisting{patterns/04_scanf/1_simple/console.txt}
+
+\clearpage
+\scanf a déjà fini de s'exécuter:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/1_simple/ex1_olly_3.png}
+\caption{\olly: \scanf s'est exécutée}
+\label{fig:scanf_ex1_olly_3}
+\end{figure}
+
+\scanf renvoie 1 dans \EAX, ce qui indique qu'elle a lu avec succès une valeur.
+Si nous regardons de nouveau l'élément de la pile correspondant à la variable
+locale, il contient maintenant \TT{0x7B} (123).
+
+\clearpage
+
+Plus tard, cette valeur est copiée de la pile vers le registre \ECX et passée à \printf:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/1_simple/ex1_olly_4.png}
+\caption{\olly: préparation de la valeur pour la passer à \printf}
+\label{fig:scanf_ex1_olly_4}
+\end{figure}

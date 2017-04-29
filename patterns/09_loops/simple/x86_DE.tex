@@ -1,0 +1,200 @@
+\subsubsection{x86}
+
+\myindex{x86!\Instructions!LOOP}
+Es gibt einen speziellen \LOOP Befehl im x86 Befehlssatz, der den Wert des
+Registers \ECX prüft und falls dieser ungleich 0 ist, dekrementiert und danach
+die den control flow wieder an das Label des \LOOP Operanden übergibt.
+Vermutlich ist dieser Befehl nicht allzu geläufig und es gibt keine modernen
+Compiler, welche ihn automatisch erzeugen. Wenn man also diesen Befehl irgendwo
+im Code entdeckt, dann ist es äußerst wahrscheinlich, dass es sich um ein
+handgeschriebenes Stück Assemblercode handelt.
+
+\par
+
+In \CCpp werden Schleifen normalerweise mittels \TT{for()}-, \TT{while()}- oder
+\TT{do/while()}-Ausdrücken erzeugt.
+
+Starten wir mit \TT{for()}.
+
+\myindex{\CLanguageElements!for}
+
+Dieser Ausdruck definiert eine Schleifeninitialisierung (setzt den Zähler auf
+einen Startwert), definiert eine Schleifenbedingung (ist der Zähler größer als
+ein Grenzwert?), legt fest, was in jedem Durchlauf
+(\glslink{increment}{Inkrement}/\glslink{decrement}{Dekrement}) geschieht und umschließt einen
+Schleifenkörper.
+
+
+\lstinputlisting[style=customc]{patterns/09_loops/simple/loops_1_EN.c}
+
+Der erzeugte Code besteht ebenfalls aus vier Teilen.
+
+Beginnen wir mit einem einfachen Beispiel:
+
+
+\lstinputlisting[label=loops_src,style=customc]{patterns/09_loops/simple/loops_2.c}
+
+Ergebnis (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/09_loops/simple/1_MSVC_EN.asm}
+
+Hier gibt es nichts Besonderes zu sehen.
+
+GCC 4.4.1 erzeugt einen fast identischen Code mit nur einen kleinen Unterschied:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/09_loops/simple/1_GCC_DE.asm}
+
+Schauen wir uns nun an, was wir erhalten, wenn wir die Optimierung aktivieren
+(\TT{\Ox}):
+
+\lstinputlisting[caption=\Optimizing MSVC,style=customasmx86]{patterns/09_loops/simple/1_MSVC_Ox.asm}
+
+Was hier passiert ist, dass der Speicherplatz für die $i$ Variable nicht mehr
+auf dem lokalen Stack bereitgestellt wird, sondern das extra ein Register, \ESI,
+hierfür verwendet wird. Dies ist bei derartig kleinen Funktionen möglich, wenn
+nicht zu viele lokalen Variablen existieren.
+
+Wichtig ist, dass die \ttf Funktion den Wert im Register \ESI nicht verändern
+darf. Unser Compiler ist sich dieser Sache hier sicher. 
+Und falls der Compiler entscheidet, das \ESI auch innerhalb der Funktion \ttf zu
+verwenden, würde der Wert des Registers im Funktionsprolog gesichert und im
+Funktionsepilog wiederhergestellt werden; fast genauso wie im folgenden Listing.
+Man beachte das \TT{PUSH ESI/POP ESI} bei Funktionsbeginn und -ende. 
+ 
+Probieren wir aus, was GCC 4.4.1 mit maximaler Optimierung (\Othree option)
+liefert:
+
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.1,style=customasmx86]{patterns/09_loops/simple/1_GCC_O3.asm}
+
+\myindex{Loop unwinding}
+
+Aha, GCC hat unsere Schleife unrolled (d.h. ausgerollt).
+
+\Gls{loop unwinding} hat Vorteile in Fällen, in denen es nicht viele
+Schleifendurchläufe gibt und Ausführungszeit durch das Weglassen der
+Befehle für die Kontrollstrukturen der Schleife gewonnen werden kann. 
+Andererseits ist der erzeugte Code natürlich deutlich länger.
+
+Große Schleifen zu \textit{unrollen} ist heutzutage nicht empfehlenswert, denn
+größere Funktionen erfordern einen größeren Cache-Fußabdruck.%
+%
+\footnote{Ein hervorragender Artikel zum Thema: \DrepperMemory.
+Für weitere Empfehlungen von Intel zum Unrolling siehe hier: 
+\InSqBrackets{\IntelOptimization 3.4.1.7}.}.
+
+Gut, nun wollen wir den Höchstwert der Variable $i$ auf 100 setzen und
+kompilieren erneut. GCC liefert:
+
+\lstinputlisting[caption=GCC,style=customasmx86]{patterns/09_loops/simple/2_GCC_DE.asm}
+
+Das Ergebnis ist sehr ähnlich dem, das MSVC 2010 mit Optimierung (\Ox) erzeugt,
+mit der Ausnahme, dass das \EBX Register für die Variable $i$ verwendet wird.
+
+GCC ist sicher, dass das Register innerhalb der \ttf Funktion nicht verändert
+wird und sollte dies doch der Fall sein, dass es im Funktionsprolog gesichert
+und im Funktionsepilog wiederhergestellt werden wird, genau wie hier in der
+\main Funktion.
+
+\clearpage
+\subsubsection{x86: \olly}
+\myindex{\olly}
+
+Wir kompilieren unser Beispiel in MSVC 2010 mit den Optionen \Ox und \Obzero und
+laden es in \olly.
+
+Es scheint, dass \olly in der Lage ist, einfache Schleifen zu erkennen und in
+eckigen Klammern darzustellen, um die Übersichtlichkeit zu erhöhen:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/09_loops/simple/olly1.png}
+\caption{\olly: \main Einstieg}
+\label{fig:loops_olly_1}
+\end{figure}
+
+Verfolgen mit (F8~--- \stepover) zeigt \ESI 
+\glslink{increment}{incrementing}.
+Hier ist zum Beispiel, $ESI=i=6$:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/09_loops/simple/olly2.png}
+\caption{\olly: Schleifenkörper wird gerade ausgeführt für $i=6$}
+\label{fig:loops_olly_2}
+\end{figure}
+
+9 ist der letzte Wert in der Schleife
+Deshalb triggert \JL nach der \glslink{increment}{inkrement}-Anweisung nicht und die Funktion
+wird beendet:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/09_loops/simple/olly3.png}
+\caption{\olly: $ESI=10$, Ende der Schleife}
+\label{fig:loops_olly_3}
+\end{figure}
+
+\subsubsection{x86: tracer}
+\myindex{tracer}
+
+Wie wir bemerken ist es nicht sonderlich komfortabel, Werte im Debugger manuell
+nachzuverfolgen. Aus diesem Grund probieren wir \tracer aus.
+
+Wir öffnen das kompilierte Beispiel in \IDA, finden die Adresse mit dem Befehl
+\INS{PUSH ESI} (das einzige Argument an \ttf übergebend), welche hier
+\TT{0x401026} ist und aktivieren den \tracer:
+
+
+\begin{lstlisting}
+tracer.exe -l:loops_2.exe bpx=loops_2.exe!0x00401026
+\end{lstlisting}
+
+\TT{BPX} setzt einen Breakpoint an der Adresse und der Tracer zeigt uns den
+momentanen Status der Register an. In \TT{tracer.log} sehen wir das Folgende:
+
+\lstinputlisting{patterns/09_loops/simple/tracer.log}
+
+Wir sehen wie der Wert des \ESI Registers sich schrittweise von 2 zu 9
+verändert. 
+
+Mehr noch, der \tracer kann alle Registerwerte für alle Adressen innerhalb der
+Funktion zusammensammeln. Dies wird hier mit \IT{trace} (dt. Nachverfolgung)
+bezeichnet. Jeder Befehl wird verfolgt, alle interessanten Registerwerte werden
+aufgezeichnet.
+
+Danach die ein \IDA .idc-script erzeugt, das Kommentare hinzufügt. Wir haben
+also herausgefunden, dass die Adresse der \main Funktion \TT{0x00401020} ist und
+wir führen nun das Folgende aus:
+
+\begin{lstlisting}
+tracer.exe -l:loops_2.exe bpf=loops_2.exe!0x00401020,trace:cc
+\end{lstlisting}
+
+\TT{BPF} setzt einen Breakpoint auf eine Funktion.
+
+Als Ergebnis erahlten wir die Skripte \TT{loops\_2.exe.idc} und
+\TT{loops\_2.exe\_clear.idc}.
+
+\clearpage
+Wir laden \TT{loops\_2.exe.idc} in \IDA und erhalten:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/09_loops/simple/IDA_tracer_cc.png}
+\caption{\IDA mit geladenem .idc-script}
+\label{fig:loops_IDA_tracer}
+\end{figure}
+
+Wir sehen, dass der Wert von \ESI zu Beginn der Schleife zwischen 2 und 9 und
+nach dem Inkrement zwischen 3 und 0xA (10) liegt. Wir sehen auch, dass die
+Funktion \main mit dem Rückgabewert 0 in \EAX terminiert.
+
+\tracer erzeugt ebenfalls die Datei \TT{loops\_2.exe.txt}, welche Informationen
+darüber enthält, welcher Befehl wie oft ausgeführt wurde, sowie zugehörige
+Registerwerte:
+
+\lstinputlisting[caption=loops\_2.exe.txt]{patterns/09_loops/simple/loops_2.exe.txt}
+\myindex{\GrepUsage}
+An dieser Stelle können wir grep verwenden.
+

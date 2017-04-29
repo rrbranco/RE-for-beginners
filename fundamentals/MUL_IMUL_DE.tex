@@ -1,0 +1,52 @@
+% TODO translate
+\subsection{Nutzen von IMUL anstatt MUL}
+\label{IMUL_over_MUL}
+
+\myindex{x86!\Instructions!MUL}
+\myindex{x86!\Instructions!IMUL}
+Beispiele wie \lstref{unsigned_multiply_C} in denen zwei vorzeichenlose Werte miteinander multipliziert
+werden, werden zu \lstref{unsigned_multiply_lst} kompiliert, so dass \IMUL statt \MUL genutzt wird.
+
+Dies ist eine wichtige Eigenschaft der \MUL- und \IMUL-Anweisung.
+Zunächst produzieren beide einen 64-Bit-Wert wenn zwei 32-Bit-Werte miteinander multipliziert werden,
+oder einen 128-Bit-Wert wenn zwei 64-Bit-Werte miteinander multipliziert werden (größtes mögliches \gls{product}
+in 32-Bit-Umgebungen ist \GTT{0xffffffff*0xffffffff=0xfffffffe00000001}).
+Der \CCpp-Standard kennt keine Möglichkeit auf die höherwertige Hälfte eines Ergebnisses zuzugreifen
+und ein \gls{product} hat immer die gleiche Größe wie die Faktoren. % TODO \gls{}?
+Beide Anweisungen \MUL und \IMUL arbeiten auf die gleiche Weise wenn die höherwertige Hälfte ignoriert wird.
+Das heißt die niederwertigere Hälfte ist die gleiche.
+Dies ist eine wichtige Eigenschaft der Repräsentation von vorzeichenbehafteten Zahlen im \q{Zweierkomplements}.
+
+Somit kann der \CCpp-Compiler jede dieser Anweisungen nutzen.
+
+Die \IMUL-Anweisung ist jedoch vielseitiger als \MUL weil sie jedes Register als Quelle akzeptiert,
+während \MUL einen der Faktoren in den Registern \AX, \EAX oder \RAX erwartet.
+Des weiteren sichert \MUL das Ergebnis in dem \GTT{EDX:EAX} Paar in einer 32-Bit-Umgebung oder
+in \GTT{RDX:RAX} in einer 64-Bit-Umgebung. Die Anweisung berechnet also immer das gesamte Ergebnis.
+Im Gegensatz dazu ist es möglich beim Nutzen von \IMUL statt eines Paares von Zielregistern ein
+einzelnes Register anzugeben. Die \ac{CPU} wird dann lediglich den niederwertigen Teil berechnen,
+was zu einer höheren Geschwindigkeit führt [siehe Torborn Granlund, \IT{Instruction latencies and throughput for AMD and Intel x86 processors}\footnote{\url{http://yurichev.com/mirrors/x86-timing.pdf}]}).
+
+Aus diesen Gründen ist es möglich, dass ein \CCpp-Compilers öfter \IMUL-Anweisungen als \MUL nutzt.
+
+\myindex{Compiler intrinsic}
+Trotzdem ist es möglich mit intrinsischen Funktionen (Intrinsics) des Compilers vorzeichenlose Multiplikationen durchzuführen
+und das \IT{volle} Ergebnis zu erhalten.
+Dies wird manchmal \IT{erweiterte Multiplikation} genannt.
+MSVC hat Intrinsics zu diesem Zweck die \IT{\_\_emul}\footnote{\url{https://msdn.microsoft.com/en-us/library/d2s81xt0(v=vs.80).aspx}}
+und \IT{\_umul128}\footnote{\url{https://msdn.microsoft.com/library/3dayytw9%28v=vs.100%29.aspx}} genannt werden.
+GCC stellt einen \IT{\_\_int128}-Datentyp zur Verfügung und 64-Bit-Faktoren werden zuerst auf 128-Bit erweitert,
+Anschließend wird das \gls{product} in einem anderen \IT{\_\_int128} gesichert.
+Das Ergebnis ist um 64-Bit nach rechts geshiftet um die höherwertigen Hälfte des Ergebnisses
+zu erhalten\footnote{Example: \url{http://stackoverflow.com/a/13187798}}.
+
+\subsubsection{MulDiv()-Funktion in Windows}
+\myindex{Windows!Win32!MulDiv()}
+
+Windows hat eine MulDiv()-Funktion
+\footnote{\url{https://msdn.microsoft.com/en-us/library/windows/desktop/aa383718(v=vs.85).aspx}},
+welche die Multiplikation und Division vereint und zwei 32-Bit-Integer in einen temporären 64-Bit-Wert
+speichert. Anschließend findet eine Division durch eine dritte 32-Bit-Integerzahl statt.
+Dies ist einfacher als zwei Compiler-Intrinsics zu nutzen, weswegen die Microsoft-Entwickler diese
+spezielle Funktion dafür einführten.
+Gemessen an der Häufigkeit der Nutzung ist dies eine populäre Funktion.

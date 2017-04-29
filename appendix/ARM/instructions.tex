@@ -1,4 +1,4 @@
-\section{\RU{Инструкции}\EN{Instructions}}
+\subsection{\RU{Инструкции}\EN{Instructions}}
 
 \RU{В ARM имеется также для некоторых инструкций суффикс \IT{-S}, указывающий, 
 что эта инструкция будет модифицировать флаги.}
@@ -6,9 +6,9 @@
 indicating that the instruction sets the flags according to the result.}
 \RU{Инструкции без этого суффикса не модифицируют флаги.}
 \EN{Instructions which lacks this suffix are not modify flags.}
-\index{ARM!\Instructions!ADD}
-\index{ARM!\Instructions!ADDS}
-\index{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!ADD}
+\myindex{ARM!\Instructions!ADDS}
+\myindex{ARM!\Instructions!CMP}
 \RU{Например, инструкция}\EN{For example} \TT{ADD} \RU{в отличие от}\EN{unlike} \TT{ADDS}
 \RU{сложит два числа, но флаги не изменит}
 \EN{will add two numbers, but the flags will not be touched}.
@@ -94,24 +94,25 @@ e.g. conditional jumps, where the flags are used.}
 % VMOVGT
 % VMRS
 % VMUL
-%\index{ARM!Optional operators!ASR
-%\index{ARM!Optional operators!LSL
-%\index{ARM!Optional operators!LSR
-%\index{ARM!Optional operators!ROR
-%\index{ARM!Optional operators!RRX
+%\myindex{ARM!Optional operators!ASR
+%\myindex{ARM!Optional operators!LSL
+%\myindex{ARM!Optional operators!LSR
+%\myindex{ARM!Optional operators!ROR
+%\myindex{ARM!Optional operators!RRX
 
 % AArch64
 % RET is BR X30 or BR LR but with additional hint to CPU
 
-\subsection{\RU{Таблица условных кодов}\EN{Conditional codes table}}
+\subsubsection{\RU{Таблица условных кодов}\EN{Conditional codes table}}
 
 % TODO rework this!
+\small
 \begin{center}
 \begin{tabular}{ | l | l | l | }
 \hline
-\cellcolor{blue!25} \RU{Код}\EN{Code} & 
-\cellcolor{blue!25} \RU{Описание}\EN{Description} & 
-\cellcolor{blue!25} \RU{Флаги}\EN{Flags} \\
+\HeaderColor \RU{Код}\EN{Code} & 
+\HeaderColor \RU{Описание}\EN{Description} & 
+\HeaderColor \RU{Флаги}\EN{Flags} \\
 \hline
 EQ & \EN{Equal}\RU{равно} & Z == 1 \\
 \hline
@@ -129,19 +130,25 @@ VS & \EN{Overflow}\RU{переполнение} & V == 1 \\
 \hline
 VC & \EN{No overflow}\RU{нет переполнения} & V == 0 \\
 \hline
-HI & \EN{Unsigned higher}\RU{беззнаковое, больше чем} / \EN{Greater than} & C == 1 and Z == 0 \\
+HI & \EN{Unsigned higher}\RU{беззнаковое, больше чем} / \EN{Greater than} & C == 1 \AndENRU \\
+ & & Z == 0 \\
 \hline
-LS & \EN{Unsigned lower or same}\RU{беззнаковое, меньше или равно} / \EN{Less than or equal} & C == 0 or Z == 1 \\
+LS & \EN{Unsigned lower or same}\RU{беззнаковое, меньше или равно} / \EN{Less than or equal} & C == 0 \OrENRU \\
+ & & Z == 1 \\
 \hline
 GE & \EN{Signed greater than or equal}\RU{знаковое, больше чем или равно} / \EN{Greater than or equal} & N == V \\
 \hline
 LT & \EN{Signed less than}\RU{знаковое, меньше чем} / \EN{Less than} & N != V \\
 \hline
-GT & \EN{Signed greater than}\RU{знаковое, больше чем} / \EN{Greater than} & Z == 0 and N == V \\
+GT & \EN{Signed greater than}\RU{знаковое, больше чем} / \EN{Greater than} & Z == 0 \AndENRU \\
+ & & N == V \\
 \hline
-LE & \EN{Signed less than or equal}\RU{знаковое, меньше чем или равно} / \EN{Less than, equal} & Z == 1 or N != V \\
+LE & \EN{Signed less than or equal}\RU{знаковое, меньше чем или равно} / \EN{Less than, equal} & Z == 1 \OrENRU \\
+ & & N != V \\
 \hline
 None / AL & \RU{Всегда}\EN{Always} & \RU{Любые}\EN{Any} \\
 \hline
 \end{tabular}
 \end{center}
+\normalsize
+

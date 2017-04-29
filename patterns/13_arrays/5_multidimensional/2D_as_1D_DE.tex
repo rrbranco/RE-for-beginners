@@ -1,0 +1,15 @@
+\subsubsection{Eindimensionaler Zugriff auf zweidimensionales Array}
+Wir können uns leicht davon überzeugen, dass es auf mindestens zwei Arten möglich ist, auf ein zweidimensionales Array
+eindimensional zuzugreifen:
+
+\lstinputlisting[style=customc]{patterns/13_arrays/5_multidimensional/2D_as_1D_DE.c}
+
+Kompilieren und ausführen: es zeigt korrekte Werte an
+Was MSVC 2013 getan hat ist faszinierend: alle drei Routinen sind identisch!
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{patterns/13_arrays/5_multidimensional/2D_as_1D_MSVC_2013_Ox_x64_EN.asm}
+
+GCC erzeugt ebenfalls äquivalente Routinen, aber ein wenig anders:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 x64,style=customasmx86]{patterns/13_arrays/5_multidimensional/2D_as_1D_GCC49_x64_O3_EN.s}
+

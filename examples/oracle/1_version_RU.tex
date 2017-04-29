@@ -1,0 +1,330 @@
+\subsection{Таблица \TT{V\$VERSION} в \oracle}
+
+\myindex{\oracle}
+\myindex{Linux}
+\myindex{Windows!ntoskrnl.exe}
+\oracle 11.2 это очень большая программа, основной модуль \TT{oracle.exe} содержит около 124 тысячи функций. Для сравнения, ядро Windows 7 x64 (ntoskrnl.exe) --- около 11 тысяч функций, а ядро Linux 3.9.8 (с драйверами по умолчанию)\EMDASH{}31 тысяч функций.
+
+Начнем с одного простого вопроса. Откуда \oracle берет информацию, когда мы в SQL*Plus пишем вот такой вот простой запрос:
+
+\begin{lstlisting}
+SQL> select * from V$VERSION;
+\end{lstlisting}
+
+И получаем:
+
+\begin{lstlisting}
+BANNER
+--------------------------------------------------------
+
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - Production
+PL/SQL Release 11.2.0.1.0 - Production
+CORE    11.2.0.1.0      Production
+TNS for 32-bit Windows: Version 11.2.0.1.0 - Production
+NLSRTL Version 11.2.0.1.0 - Production
+\end{lstlisting}
+
+Начнем. Где в самом \oracle мы можем найти строку \TT{V\$VERSION}?
+
+Для win32-версии, эта строка имеется в файле \TT{oracle.exe}, это легко увидеть.
+
+Но мы также можем использовать объектные (.o) файлы от версии \oracle для Linux, потому что в них сохраняются имена функций и глобальных переменных, а в \TT{oracle.exe} для win32 этого нет.
+
+Итак, строка \TT{V\$VERSION} имеется в файле \TT{kqf.o}, в самой главной Oracle-библиотеке \TT{libserver11.a}.
+
+Ссылка на эту текстовую строку имеется в таблице \TT{kqfviw}, размещенной в этом же файле \TT{kqf.o}:
+
+\begin{lstlisting}[caption=kqf.o,style=customasmx86]
+.rodata:0800C4A0 kqfviw dd 0Bh    ; DATA XREF: kqfchk:loc_8003A6D
+.rodata:0800C4A0                  ; kqfgbn+34
+.rodata:0800C4A4        dd offset _2__STRING_10102_0 ; "GV$WAITSTAT"
+.rodata:0800C4A8        dd 4
+.rodata:0800C4AC        dd offset _2__STRING_10103_0 ; "NULL"
+.rodata:0800C4B0        dd 3
+.rodata:0800C4B4        dd 0
+.rodata:0800C4B8        dd 195h
+.rodata:0800C4BC        dd 4
+.rodata:0800C4C0        dd 0
+.rodata:0800C4C4        dd 0FFFFC1CBh
+.rodata:0800C4C8        dd 3
+.rodata:0800C4CC        dd 0
+.rodata:0800C4D0        dd 0Ah
+.rodata:0800C4D4        dd offset _2__STRING_10104_0 ; "V$WAITSTAT"
+.rodata:0800C4D8        dd 4
+.rodata:0800C4DC        dd offset _2__STRING_10103_0 ; "NULL"
+.rodata:0800C4E0        dd 3
+.rodata:0800C4E4        dd 0
+.rodata:0800C4E8        dd 4Eh
+.rodata:0800C4EC        dd 3
+.rodata:0800C4F0        dd 0
+.rodata:0800C4F4        dd 0FFFFC003h
+.rodata:0800C4F8        dd 4
+.rodata:0800C4FC        dd 0
+.rodata:0800C500        dd 5
+.rodata:0800C504        dd offset _2__STRING_10105_0 ; "GV$BH"
+.rodata:0800C508        dd 4
+.rodata:0800C50C        dd offset _2__STRING_10103_0 ; "NULL"
+.rodata:0800C510        dd 3
+.rodata:0800C514        dd 0
+.rodata:0800C518        dd 269h
+.rodata:0800C51C        dd 15h
+.rodata:0800C520        dd 0
+.rodata:0800C524        dd 0FFFFC1EDh
+.rodata:0800C528        dd 8
+.rodata:0800C52C        dd 0
+.rodata:0800C530        dd 4
+.rodata:0800C534        dd offset _2__STRING_10106_0 ; "V$BH"
+.rodata:0800C538        dd 4
+.rodata:0800C53C        dd offset _2__STRING_10103_0 ; "NULL"
+.rodata:0800C540        dd 3
+.rodata:0800C544        dd 0
+.rodata:0800C548        dd 0F5h
+.rodata:0800C54C        dd 14h
+.rodata:0800C550        dd 0
+.rodata:0800C554        dd 0FFFFC1EEh
+.rodata:0800C558        dd 5
+.rodata:0800C55C        dd 0
+\end{lstlisting}
+
+Кстати, нередко, при изучении внутренностей \oracle, появляется вопрос, почему имена функций и глобальных переменных такие странные.
+Вероятно, дело в том, что \oracle очень старый продукт сам по себе и писался на Си еще в 1980-х.
+
+А в те времена стандарт Си гарантировал поддержку имен переменных длиной только до шести символов включительно:
+<<6 significant initial characters in an external identifier>>\footnote{\href{http://go.yurichev.com/17142}{Draft ANSI C Standard (ANSI X3J11/88-090) (May 13, 1988) (yurichev.com)}}
+
+Вероятно, таблица \TT{kqfviw} содержащая в себе многие (а может даже и все) view с префиксом V\$, это служебные view (fixed views), присутствующие всегда.
+Бегло оценив цикличность данных, мы легко видим, что в каждом элементе таблицы \TT{kqfviw} 12 полей 32-битных полей.
+В \IDA легко создать структуру из 12-и элементов и применить её ко всем элементам таблицы.
+Для версии \oracle 11.2, здесь 1023 элемента в таблице, то есть, здесь описываются 1023 всех возможных \IT{fixed view}.
+Позже, мы еще вернемся к этому числу.
+
+Как видно, мы не очень много можем узнать чисел в этих полях. Самое первое число всегда равно длине строки-названия view (без терминирующего ноля).
+
+Это справедливо для всех элементов. Но эта информация не очень полезна.
+
+Мы также знаем, что информацию обо всех fixed views можно получить из \IT{fixed view} под названием
+\TT{V\$FIXED\_VIEW\_DEFINITION}
+(кстати, информация для этого view также берется из таблиц \TT{kqfviw} и \TT{kqfvip}).
+Кстати, там тоже 1023 элемента. Совпадение? Нет.
+
+\begin{lstlisting}
+SQL> select * from V$FIXED_VIEW_DEFINITION where view_name='V$VERSION';
+
+VIEW_NAME
+------------------------------
+VIEW_DEFINITION
+------------------------------
+
+V$VERSION
+select  BANNER from GV$VERSION where inst_id = USERENV('Instance')
+\end{lstlisting}
+
+Итак, \TT{V\$VERSION} это как бы \IT{thunk view} для другого, с названием \TT{GV\$VERSION}, который, в свою очередь:
+
+\begin{lstlisting}
+SQL> select * from V$FIXED_VIEW_DEFINITION where view_name='GV$VERSION';
+
+VIEW_NAME
+------------------------------
+VIEW_DEFINITION
+------------------------------
+
+GV$VERSION
+select inst_id, banner from x$version
+\end{lstlisting}
+
+Таблицы с префиксом X\$ в \oracle --- это также служебные таблицы, они не документированы,
+не могут изменятся пользователем, и обновляются динамически.
+
+Попробуем поискать текст \\
+\begin{lstlisting}
+select BANNER from GV\$VERSION where inst\_id = 
+USERENV('Instance')
+\end{lstlisting}
+... в файле \TT{kqf.o} и находим ссылку на него в таблице \TT{kqfvip}:
+
+\begin{lstlisting}[caption=kqf.o,style=customasmx86]
+.rodata:080185A0 kqfvip dd offset _2__STRING_11126_0 ; DATA XREF: kqfgvcn+18
+.rodata:080185A0                                ; kqfgvt+F
+.rodata:080185A0                                ; "select inst_id,decode(indx,1,'data bloc"...
+.rodata:080185A4        dd offset kqfv459_c_0
+.rodata:080185A8        dd 0
+.rodata:080185AC        dd 0
+
+...
+
+.rodata:08019570        dd offset _2__STRING_11378_0 ; "select  BANNER from GV$VERSION where in"...
+.rodata:08019574        dd offset kqfv133_c_0
+.rodata:08019578        dd 0
+.rodata:0801957C        dd 0
+.rodata:08019580        dd offset _2__STRING_11379_0 ; "select inst_id,decode(bitand(cfflg,1),0"...
+.rodata:08019584        dd offset kqfv403_c_0
+.rodata:08019588        dd 0
+.rodata:0801958C        dd 0
+.rodata:08019590        dd offset _2__STRING_11380_0 ; "select  STATUS , NAME, IS_RECOVERY_DEST"...
+.rodata:08019594        dd offset kqfv199_c_0
+\end{lstlisting}
+
+Таблица, по всей видимости, имеет 4 поля в каждом элементе. Кстати, здесь так же 1023 элемента, уже знакомое нам число.
+
+Второе поле указывает на другую таблицу, содержащую поля этого \IT{fixed view}.
+
+Для \TT{V\$VERSION}, эта таблица только из двух элементов, первый это 6 и второй это строка 
+\TT{BANNER} (число 6 это длина строки) и далее \IT{терминирующий} элемент содержащий 0 и \IT{нулевую} 
+Си-строку:
+
+\begin{lstlisting}[caption=kqf.o,style=customasmx86]
+.rodata:080BBAC4 kqfv133_c_0 dd 6     ; DATA XREF: .rodata:08019574
+.rodata:080BBAC8             dd offset _2__STRING_5017_0 ; "BANNER"
+.rodata:080BBACC             dd 0
+.rodata:080BBAD0             dd offset _2__STRING_0_0
+\end{lstlisting}
+
+Объединив данные из таблиц \TT{kqfviw} и \TT{kqfvip}, мы получим SQL-запросы, которые исполняются, когда пользователь хочет получить информацию из какого-либо \IT{fixed view}.
+
+Напишем программу \oracletables, которая собирает всю эту информацию из объектных файлов от \oracle под Linux.
+
+Для \TT{V\$VERSION}, мы можем найти следующее:
+
+\begin{lstlisting}[caption=Результат работы \OracleTablesName]
+kqfviw_element.viewname: [V$VERSION] ?: 0x3 0x43 0x1 0xffffc085 0x4
+kqfvip_element.statement: [select  BANNER from GV$VERSION where inst_id = USERENV('Instance')]
+kqfvip_element.params:
+[BANNER] 
+\end{lstlisting}
+
+И:
+
+\begin{lstlisting}[caption=Результат работы \OracleTablesName]
+kqfviw_element.viewname: [GV$VERSION] ?: 0x3 0x26 0x2 0xffffc192 0x1
+kqfvip_element.statement: [select inst_id, banner from x$version]
+kqfvip_element.params:
+[INST_ID] [BANNER] 
+\end{lstlisting}
+
+\IT{Fixed view} \TT{GV\$VERSION} отличается от \TT{V\$VERSION} тем, что содержит еще и поле отражающее идентификатор \IT{instance}.
+
+Но так или иначе, мы теперь упираемся в таблицу \TT{X\$VERSION}. Как и прочие X\$-таблицы, она не документирована, однако, мы можем оттуда что-то прочитать:
+
+\begin{lstlisting}
+SQL> select * from x$version;
+
+ADDR           INDX    INST_ID
+-------- ---------- ----------
+BANNER
+------------------------------
+
+0DBAF574          0          1
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - Production
+
+...
+\end{lstlisting}
+
+Эта таблица содержит дополнительные поля вроде \TT{ADDR} и \TT{INDX}.
+
+Бегло листая содержимое файла \TT{kqf.o} в \IDA мы можем увидеть еще одну таблицу где есть ссылка на строку \TT{X\$VERSION}, это \TT{kqftab}:
+
+\begin{lstlisting}[caption=kqf.o,style=customasmx86]
+.rodata:0803CAC0      dd 9                    ; element number 0x1f6
+.rodata:0803CAC4      dd offset _2__STRING_13113_0 ; "X$VERSION"
+.rodata:0803CAC8      dd 4
+.rodata:0803CACC      dd offset _2__STRING_13114_0 ; "kqvt"
+.rodata:0803CAD0      dd 4
+.rodata:0803CAD4      dd 4
+.rodata:0803CAD8      dd 0
+.rodata:0803CADC      dd 4
+.rodata:0803CAE0      dd 0Ch
+.rodata:0803CAE4      dd 0FFFFC075h
+.rodata:0803CAE8      dd 3
+.rodata:0803CAEC      dd 0
+.rodata:0803CAF0      dd 7
+.rodata:0803CAF4      dd offset _2__STRING_13115_0 ; "X$KQFSZ"
+.rodata:0803CAF8      dd 5
+.rodata:0803CAFC      dd offset _2__STRING_13116_0 ; "kqfsz"
+.rodata:0803CB00      dd 1
+.rodata:0803CB04      dd 38h
+.rodata:0803CB08      dd 0
+.rodata:0803CB0C      dd 7
+.rodata:0803CB10      dd 0
+.rodata:0803CB14      dd 0FFFFC09Dh
+.rodata:0803CB18      dd 2
+.rodata:0803CB1C      dd 0
+\end{lstlisting}
+
+Здесь очень много ссылок на названия X\$-таблиц, вероятно, на все те что имеются в \oracle этой версии.
+
+Но мы снова упираемся в то что не имеем достаточно информации.
+Не ясно, что означает строка \TT{kqvt}.
+ 
+Вообще, префикс \TT{kq} может означать \IT{kernel} и \IT{query}.
+ 
+\TT{v}, может быть, \IT{version}, а \TT{t} --- \IT{type}?
+ 
+Сказать трудно.
+
+Таблицу с очень похожим названием мы можем найти в \TT{kqf.o}:
+
+\begin{lstlisting}[caption=kqf.o]
+.rodata:0808C360 kqvt_c_0 kqftap_param <4, offset _2__STRING_19_0, 917h, 0, 0, 0, 4, 0, 0>
+.rodata:0808C360                                  ; DATA XREF: .rodata:08042680
+.rodata:0808C360                                  ; "ADDR"
+.rodata:0808C384          kqftap_param <4, offset _2__STRING_20_0, 0B02h, 0, 0, 0, 4, 0, 0> ; "INDX"
+.rodata:0808C3A8          kqftap_param <7, offset _2__STRING_21_0, 0B02h, 0, 0, 0, 4, 0, 0> ; "INST_ID"
+.rodata:0808C3CC          kqftap_param <6, offset _2__STRING_5017_0, 601h, 0, 0, 0, 50h, 0, 0> ; "BANNER"
+.rodata:0808C3F0          kqftap_param <0, offset _2__STRING_0_0, 0, 0, 0, 0, 0, 0, 0>
+\end{lstlisting}
+
+Она содержит информацию об именах полей в таблице \TT{X\$VERSION}.
+Единственная ссылка на эту таблицу имеется в таблице \TT{kqftap}:
+
+\begin{lstlisting}[caption=kqf.o]
+.rodata:08042680                 kqftap_element <0, offset kqvt_c_0, offset kqvrow, 0> ; element 0x1f6
+\end{lstlisting}
+
+Интересно что здесь этот элемент проходит так же под номером \TT{0x1f6} (502-й), как и ссылка на строку 
+\TT{X\$VERSION} в таблице \TT{kqftab}.
+
+Вероятно, таблицы \TT{kqftap} и \TT{kqftab} дополняют друг друга, как и \TT{kqfvip} и \TT{kqfviw}.
+
+Мы также видим здесь ссылку на функцию с названием \TT{kqvrow()}. А вот это уже кое-что!
+
+Сделаем так чтобы наша программа \oracletables могла дампить и эти таблицы. Для \TT{X\$VERSION} получается:
+
+\begin{lstlisting}[caption=Результат работы \OracleTablesName]
+kqftab_element.name: [X$VERSION] ?: [kqvt] 0x4 0x4 0x4 0xc 0xffffc075 0x3
+kqftap_param.name=[ADDR] ?: 0x917 0x0 0x0 0x0 0x4 0x0 0x0
+kqftap_param.name=[INDX] ?: 0xb02 0x0 0x0 0x0 0x4 0x0 0x0
+kqftap_param.name=[INST_ID] ?: 0xb02 0x0 0x0 0x0 0x4 0x0 0x0
+kqftap_param.name=[BANNER] ?: 0x601 0x0 0x0 0x0 0x50 0x0 0x0
+kqftap_element.fn1=kqvrow
+kqftap_element.fn2=NULL
+\end{lstlisting}
+
+\myindex{tracer}
+При помощи \tracer, можно легко проверить, что эта функция вызывается 6 раз кряду (из функции \TT{qerfxFetch()}) при получении строк из \TT{X\$VERSION}.
+
+Запустим \tracer в режиме \TT{cc} (он добавит комментарий к каждой исполненной инструкции):
+
+\begin{lstlisting}
+tracer -a:oracle.exe bpf=oracle.exe!_kqvrow,trace:cc
+\end{lstlisting}
+
+\lstinputlisting[style=customasmx86]{examples/oracle/VERSION_kqvrow.asm}
+
+Так можно легко увидеть, что номер строки таблицы задается извне. Сама функция возвращает строку, формируя её так:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline                        
+Строка 1	& Использует глобальные переменные \TT{vsnstr}, \TT{vsnnum}, \TT{vsnban}. \\
+                                & Вызывает \TT{sprintf()}. \\
+Строка 2	& Вызывает \TT{kkxvsn()}. \\
+Строка 3	& Вызывает \TT{lmxver()}. \\
+Строка 4	& Вызывает \TT{npinli()}, \TT{nrtnsvrs()}. \\
+Строка 5	& Вызывает \TT{lxvers()}. \\
+\hline  
+\end{tabular}
+\end{center}
+
+Так вызываются соответствующие функции для определения номеров версий отдельных модулей.
+

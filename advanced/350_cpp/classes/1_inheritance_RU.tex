@@ -1,0 +1,107 @@
+\subsubsection{Наследование классов}
+\label{cpp_inheritance}
+
+О наследованных классах можно сказать, что это та же простая структура, которую мы уже рассмотрели, 
+только расширяемая в наследуемых классах.
+
+
+Возьмем очень простой пример:
+
+\lstinputlisting[style=customc]{\CURPATH/classes/classes1_inheritance.cpp}
+
+Исследуя сгенерированный код для функций/методов \TT{dump()}, а также \TT{object::print\_color()},
+посмотрим, какая будет разметка памяти для структур-объектов (для 32-битного кода).
+
+
+\myindex{Inline code}
+Итак, методы \TT{dump()} разных классов сгенерированные MSVC 2008 с опциями \Ox и \Obzero
+
+\footnote{опция \Obzero означает отмену inline expansion, 
+ведь вставка компилятором тела функции/метода прямо в код где он вызывается, 
+может затруднить наши эксперименты
+}
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes1_1.asm}
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes1_2.asm}
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes1_3.asm}
+
+Итак, разметка полей получается следующая:
+
+(базовый класс \IT{object})
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \tableheader{} \\
+\hline
+  +0x0 & int color \\
+\hline
+\end{tabular}
+\end{center}
+
+(унаследованные классы)
+
+\IT{box}:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \tableheader{} \\
+\hline
+  +0x0 & int color \\
+\hline
+  +0x4 & int width \\
+\hline
+  +0x8 & int height \\
+\hline
+  +0xC & int depth \\
+\hline
+\end{tabular}
+\end{center}
+
+\IT{sphere}:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \tableheader{} \\
+\hline
+  +0x0 & int color \\
+\hline
+  +0x4 & int radius \\
+\hline
+\end{tabular}
+\end{center}
+
+Посмотрим тело \main:
+
+\lstinputlisting[caption=\Optimizing MSVC 2008 /Ob0,style=customasmx86]{\CURPATH/classes/classes1_4.asm}
+
+Наследованные классы всегда должны добавлять свои поля после полей базового класса для того, чтобы методы
+базового класса могли продолжать работать со своими собственными полями.
+
+
+Когда метод \TT{object::print\_color()} вызывается, ему в качестве \TT{this} передается указатель и на объект типа \IT{box} 
+и на объект типа \IT{sphere}, так как он может легко работать с классами \IT{box} и \IT{sphere}, потому что поле \IT{color} в этих
+классах всегда стоит по тому же адресу (по смещению \TT{0x0}).
+
+
+Можно также сказать, что методу \TT{object::print\_color()} даже не нужно знать,
+с каким классом он работает, до тех пор, пока будет соблюдаться условие \IT{закрепления} полей по тем же адресам,
+а это условие соблюдается всегда.
+
+
+А если вы создадите класс-наследник класса \IT{box}, например, 
+то компилятор будет добавлять новые поля уже за полем \IT{depth}, оставляя уже имеющиеся поля класса \IT{box} по тем же адресам.
+
+
+Так, метод \TT{box::dump()} будет нормально работать обращаясь к полям 
+\IT{color}, \IT{width}, \IT{height} и \IT{depth}, всегда находящимся по известным адресам.
+
+
+Код на GCC практически точно такой же, за исключением способа передачи \TT{this} (он, как уже было указано, 
+передается в первом аргументе, вместо регистра \ECX).
+
+

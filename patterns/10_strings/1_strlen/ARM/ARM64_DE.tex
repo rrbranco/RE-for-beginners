@@ -1,0 +1,36 @@
+\myparagraph{ARM64}
+
+\mysubparagraph{\Optimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[style=customasmARM]{patterns/10_strings/1_strlen/ARM/ARM64_GCC_O3_DE.lst}
+
+Der Algorithmus ist der gleiche wie in \myref{strlen_MSVC_Ox}: 
+finde ein Nullbyte, berechne die Differenz zwischen den Pointern und subtrahiere
+1 vom Ergebnis. 
+Einige Kommentare wurden vom Autor hinzugefügt.
+
+Die einzig bemerkenswerte Sache ist, dass unser Beispiel in gewisser Weise
+fehlerhaft ist:\\
+\TT{my\_strlen()} liefert einen 32-bit \Tint, obwohl es \TT{size\_t} oder
+einen anderen 64-bit Typ zurückliefern müsste.
+
+Der Grund dafür ist, dass \TT{strlen()} theoretisch für einen sehr großen
+Speicherblock, größer als 4GB, aufgerufen werden könnte und deshalb auf einer
+64-bit-Plattform in der Lage sein muss, einen 64-bit-Wert zurückzuliefern.
+
+Aufgrund meines Fehlers, arbeitet der letzte \SUB Befehl nur mit einem
+32-bit-Teil des Registers, wohingegen der vorletzte \SUB Befehl mit dem
+kompletten 64-bit-Register arbeitet (und die Differenz zwischen den Pointer
+berechnet).
+
+Es handelt sich um einen Fehler von mir, und es ist besser es so zu lassen, als
+ein Lehrbeispiel wie Code in einem derartigen Fall aussehen kann.
+
+\mysubparagraph{\NonOptimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[style=customasmARM]{patterns/10_strings/1_strlen/ARM/ARM64_GCC_O0_DE.lst}
+
+Es ist umfangreicher. 
+Die Variablen werden hier viel im Speicher (lokaler Stack) herumgeschoben.
+Der obige Fehler findet sich auch hier: das Dekrementieren geschieht nur in
+einem 32-bit-Teil des Registers.

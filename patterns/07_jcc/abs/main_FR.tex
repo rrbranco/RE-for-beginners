@@ -1,0 +1,60 @@
+\subsection{Calcul de valeur absolue}
+\label{sec:abs}
+
+Une fonction simple:
+
+\lstinputlisting[style=customc]{abs.c}
+
+\subsubsection{MSVC \Optimizing}
+
+Ceci est le code généré habituellement:
+
+\lstinputlisting[caption=MSVC 2012 x64 \Optimizing,style=customasmx86]{patterns/07_jcc/abs/abs_MSVC2012_Ox_x64_FR.asm}
+
+GCC 4.9 génère en gros le même code:
+
+\subsubsection{\OptimizingKeilVI: \ThumbMode}
+
+\lstinputlisting[caption=\OptimizingKeilVI: \ThumbMode,style=customasmARM]{patterns/07_jcc/abs/abs_Keil_thumb_O3_FR.s}
+
+\myindex{ARM!\Instructions!RSB}
+
+Il manque une instruction de négation en ARM, donc le compilateur Keil utilise l'instruction
+\q{Reverse Subtract}, qui soustrait la valeur du registre de l'opérande.
+
+\subsubsection{\OptimizingKeilVI: \ARMMode}
+
+Il est possible d'ajouter un code de condition à certaines instructions en mode
+ARM, c'est donc ce que fait le compilateur Keil:
+
+\lstinputlisting[caption=\OptimizingKeilVI: \ARMMode,style=customasmARM]{patterns/07_jcc/abs/abs_Keil_ARM_O3_FR.s}
+
+Maintenant, il n'y a plus de saut conditionnel et c'est mieux: \myref{branch_predictors}.
+
+\subsubsection{GCC 4.9 \NonOptimizing (ARM64)}
+
+\myindex{ARM!\Instructions!XOR}
+
+ARM64 possède l'instruction \INS{NEG} pour effectuer la négation:
+
+\lstinputlisting[caption=GCC 4.9 \Optimizing (ARM64),style=customasmARM]{patterns/07_jcc/abs/abs_GCC49_ARM64_O0_FR.s}
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing (IDA),style=customasmMIPS]{patterns/07_jcc/abs/MIPS_O3_IDA_FR.lst}
+
+\myindex{MIPS!\Instructions!BLTZ}
+Nous voyons ici une nouvelle instruction: \INS{BLTZ} (\q{Branch if Less Than Zero}
+branchement si plus petit que zéro).
+\myindex{MIPS!\Instructions!SUBU}
+\myindex{MIPS!\Pseudoinstructions!NEGU}
+
+Il y a aussi la pseudo-instruction \INS{NEGU}, qui effectue une soustraction à zéro.
+Le suffixe \q{U} dans les deux instructions \INS{SUBU} et \INS{NEGU} indique qu'aucune
+exception ne sera levée en cas de débordement de la taille d'un entier.
+
+\subsubsection{Version sans branchement?}
+
+Vous pouvez aussi avoir une version sans branchement de ce code. Ceci sera revu plus
+tard: \myref{chap:branchless_abs}.
+

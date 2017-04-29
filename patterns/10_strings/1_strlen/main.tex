@@ -1,21 +1,32 @@
-﻿\section{strlen()}
-\index{\CStandardLibrary!strlen()}
+﻿\subsection{strlen()}
+\myindex{\CStandardLibrary!strlen()}
 
-\RU{Ещё немного о циклах. Часто функция \TT{strlen()}\footnote{подсчет длины строки в Си} 
-реализуется при помощи \TT{while()}.}
-\EN{Let's talk about loops one more time. Often, the \TT{strlen()} 
-function\footnote{counting the characters in a string in the C language} is implemented using a \TT{while()} 
-statement.}
-\RU{Например, вот как это сделано в стандартных библиотеках MSVC:}
-\EN{Here is how it is done in the MSVC standard libraries:}
+\ifdefined\ENGLISH
+Let's talk about loops one more time. Often, the \TT{strlen()} 
+function
+\footnote{counting the characters in a string in the C language} 
+is implemented using a \TT{while()} statement.
+Here is how it is done in the MSVC standard libraries:
+\fi
 
-\lstinputlisting{patterns/10_strings/1_strlen/ex1.c}
+\ifdefined\RUSSIAN
+Ещё немного о циклах. Часто функция \TT{strlen()}
+\footnote{подсчет длины строки в Си}
+реализуется при помощи \TT{while()}.
+Например, вот как это сделано в стандартных библиотеках MSVC:
+\fi
+
+\ifdefined\GERMAN
+\DEph{}
+\fi
+
+\lstinputlisting[style=customc]{patterns/10_strings/1_strlen/ex1.c}
 
 % subsections
-\input{patterns/10_strings/1_strlen/x86}
-\ifdefined\IncludeARM
+\EN{\input{patterns/10_strings/1_strlen/x86_EN}}
+\RU{\input{patterns/10_strings/1_strlen/x86_RU}}
+\DE{\input{patterns/10_strings/1_strlen/x86_DE}}
 \input{patterns/10_strings/1_strlen/ARM/main}
-\fi
-\ifdefined\IncludeMIPS
-\input{patterns/10_strings/1_strlen/MIPS}
-\fi
+\EN{\input{patterns/10_strings/1_strlen/MIPS_EN}}
+\RU{\input{patterns/10_strings/1_strlen/MIPS_RU}}
+\DE{\input{patterns/10_strings/1_strlen/MIPS_DE}}

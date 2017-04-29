@@ -1,0 +1,54 @@
+\subsubsection{ARM}
+
+\myparagraph{\NonOptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[label=Keil_number_sign,style=customasmARM]{patterns/09_loops/simple/ARM/Keil_ARM_O0.asm}
+
+Счетчик итераций $i$ будет храниться в регистре \Reg{4}.
+Инструкция \INS{MOV R4, \#2} просто инициализирует $i$.
+Инструкции \INS{MOV R0, R4} и \INS{BL printing\_function} составляют тело цикла. 
+Первая инструкция готовит аргумент для функции, \ttf а вторая вызывает её.
+\myindex{ARM!\Instructions!ADD}
+Инструкция \INS{ADD R4, R4, \#1} прибавляет единицу к $i$ при каждой итерации.
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!BLT}
+\INS{CMP R4, \#0xA} сравнивает $i$ с \TT{0xA} (10). 
+Следующая за ней инструкция \INS{BLT} (\IT{Branch Less Than}) совершит переход, если $i$ меньше чем 10.
+В противном случае в \Reg{0} запишется 0 (потому что наша функция возвращает 0) 
+и произойдет выход из функции.
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/09_loops/simple/ARM/Keil_thumb_O3.asm}
+
+Практически всё то же самое.
+
+\myparagraph{\OptimizingXcodeIV (\ThumbTwoMode)}
+\label{ARM_unrolled_loops}
+
+\lstinputlisting[style=customasmARM]{patterns/09_loops/simple/ARM/xcode_thumb_O3.asm}
+
+На самом деле, в моей функции \ttf было такое:
+
+\begin{lstlisting}[style=customc]
+void printing_function(int i)
+{
+    printf ("%d\n", i);
+};
+\end{lstlisting}
+
+\myindex{Unrolled loop}
+\myindex{Inline code}
+Так что LLVM не только \IT{развернул} цикл, 
+но также и представил мою очень простую функцию \ttf как \IT{inline-функцию},
+и вставил её тело вместо цикла 8 раз. 
+Это возможно, когда функция очень простая (как та что у меня) и когда
+она вызывается не очень много раз, как здесь.
+
+\myparagraph{ARM64: \Optimizing GCC 4.9.1}
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1,style=customasmARM]{patterns/09_loops/simple/ARM/ARM64_GCC491_O3_RU.s}
+
+\myparagraph{ARM64: \NonOptimizing GCC 4.9.1}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1 -fno-inline,style=customasmARM]{patterns/09_loops/simple/ARM/ARM64_GCC491_O3_RU.s}

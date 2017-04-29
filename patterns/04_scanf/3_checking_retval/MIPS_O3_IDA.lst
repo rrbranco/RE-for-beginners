@@ -1,44 +1,44 @@
 .text:004006A0 main:
 .text:004006A0
-.text:004006A0 var_18          = -0x18
-.text:004006A0 var_10          = -0x10
-.text:004006A0 var_4           = -4
+.text:004006A0 var_18    = -0x18
+.text:004006A0 var_10    = -0x10
+.text:004006A0 var_4     = -4
 .text:004006A0
-.text:004006A0                 lui     $gp, 0x42
-.text:004006A4                 addiu   $sp, -0x28
-.text:004006A8                 li      $gp, 0x418960
-.text:004006AC                 sw      $ra, 0x28+var_4($sp)
-.text:004006B0                 sw      $gp, 0x28+var_18($sp)
-.text:004006B4                 la      $t9, puts
-.text:004006B8                 lui     $a0, 0x40
-.text:004006BC                 jalr    $t9 ; puts
-.text:004006C0                 la      $a0, aEnterX     # "Enter X:"
-.text:004006C4                 lw      $gp, 0x28+var_18($sp)
-.text:004006C8                 lui     $a0, 0x40
-.text:004006CC                 la      $t9, __isoc99_scanf
-.text:004006D0                 la      $a0, aD          # "%d"
-.text:004006D4                 jalr    $t9 ; __isoc99_scanf
-.text:004006D8                 addiu   $a1, $sp, 0x28+var_10  # branch delay slot
-.text:004006DC                 li      $v1, 1
-.text:004006E0                 lw      $gp, 0x28+var_18($sp)
-.text:004006E4                 beq     $v0, $v1, loc_40070C
-.text:004006E8                 or      $at, $zero       # branch delay slot, NOP
-.text:004006EC                 la      $t9, puts
-.text:004006F0                 lui     $a0, 0x40
-.text:004006F4                 jalr    $t9 ; puts
-.text:004006F8                 la      $a0, aWhatYouEntered  # "What you entered? Huh?"
-.text:004006FC                 lw      $ra, 0x28+var_4($sp)
-.text:00400700                 move    $v0, $zero
-.text:00400704                 jr      $ra
-.text:00400708                 addiu   $sp, 0x28
+.text:004006A0           lui     $gp, 0x42
+.text:004006A4           addiu   $sp, -0x28
+.text:004006A8           li      $gp, 0x418960
+.text:004006AC           sw      $ra, 0x28+var_4($sp)
+.text:004006B0           sw      $gp, 0x28+var_18($sp)
+.text:004006B4           la      $t9, puts
+.text:004006B8           lui     $a0, 0x40
+.text:004006BC           jalr    $t9 ; puts
+.text:004006C0           la      $a0, aEnterX     # "Enter X:"
+.text:004006C4           lw      $gp, 0x28+var_18($sp)
+.text:004006C8           lui     $a0, 0x40
+.text:004006CC           la      $t9, __isoc99_scanf
+.text:004006D0           la      $a0, aD          # "%d"
+.text:004006D4           jalr    $t9 ; __isoc99_scanf
+.text:004006D8           addiu   $a1, $sp, 0x28+var_10  # branch delay slot
+.text:004006DC           li      $v1, 1
+.text:004006E0           lw      $gp, 0x28+var_18($sp)
+.text:004006E4           beq     $v0, $v1, loc_40070C
+.text:004006E8           or      $at, $zero       # branch delay slot, NOP
+.text:004006EC           la      $t9, puts
+.text:004006F0           lui     $a0, 0x40
+.text:004006F4           jalr    $t9 ; puts
+.text:004006F8           la      $a0, aWhatYouEntered  # "What you entered? Huh?"
+.text:004006FC           lw      $ra, 0x28+var_4($sp)
+.text:00400700           move    $v0, $zero
+.text:00400704           jr      $ra
+.text:00400708           addiu   $sp, 0x28
 
 .text:0040070C loc_40070C:
-.text:0040070C                 la      $t9, printf
-.text:00400710                 lw      $a1, 0x28+var_10($sp)
-.text:00400714                 lui     $a0, 0x40
-.text:00400718                 jalr    $t9 ; printf
-.text:0040071C                 la      $a0, aYouEnteredD___  # "You entered %d...\n"
-.text:00400720                 lw      $ra, 0x28+var_4($sp)
-.text:00400724                 move    $v0, $zero
-.text:00400728                 jr      $ra
-.text:0040072C                 addiu   $sp, 0x28
+.text:0040070C           la      $t9, printf
+.text:00400710           lw      $a1, 0x28+var_10($sp)
+.text:00400714           lui     $a0, 0x40
+.text:00400718           jalr    $t9 ; printf
+.text:0040071C           la      $a0, aYouEnteredD___  # "You entered %d...\n"
+.text:00400720           lw      $ra, 0x28+var_4($sp)
+.text:00400724           move    $v0, $zero
+.text:00400728           jr      $ra
+.text:0040072C           addiu   $sp, 0x28

@@ -1,0 +1,12 @@
+﻿    MOV [counter], 2 ; initialization
+    JMP check
+body:
+    ; loop body
+    ; do something here
+    ; use counter variable in local stack
+    MOV REG, [counter] ; increment
+    INC REG 
+    MOV [counter], REG
+check:
+    CMP [counter], 9
+    JLE body

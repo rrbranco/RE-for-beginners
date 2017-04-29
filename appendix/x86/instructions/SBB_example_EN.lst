@@ -1,0 +1,4 @@
+; work with 64-bit values: subtract val2 from val1.
+; .lo means lowest 32 bits, .hi means highest.
+SUB val1.lo, val2.lo
+SBB val1.hi, val2.hi ; use CF set or cleared at the previous instruction

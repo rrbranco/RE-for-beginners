@@ -1,0 +1,4 @@
+; work with 64-bit values: add val1 to val2.
+; .lo means lowest 32 bits, .hi means highest.
+ADD val1.lo, val2.lo
+ADC val1.hi, val2.hi ; use CF set or cleared at the previous instruction

@@ -1,0 +1,27 @@
+\subsection{Указатель на функцию}
+
+Имя ф-ции в \CCpp{} без скобок, как ``printf'' это указатель на ф-цию типа \IT{void (*)()}.
+Попробуем прочитать содержимое ф-ции и пропатчить его:
+
+\lstinputlisting[style=customc]{advanced/450_more_ptrs/6.c}
+
+При запуске видно что первые 3 байта ф-ции это \TT{55 89 e5}.
+Действительно, это опкоды инструкций \INS{PUSH EBP} и \INS{MOV EBP, ESP} (это опкоды x86).
+Но потом процесс падает, потому что секция \IT{text} доступна только для чтения.
+
+Мы можем перекомпилировать наш пример и сделать так, чтобы секция \IT{text} была доступна для записи
+\footnote{\url{http://stackoverflow.com/questions/27581279/make-text-segment-writable-elf}}:
+
+\begin{lstlisting}
+gcc --static -g -Wl,--omagic -o example example.c
+\end{lstlisting}
+
+Это работает!
+
+\begin{lstlisting}
+we are in print_something()
+first 3 bytes: 55 89 e5...
+going to call patched print_something():
+it must exit at this point
+\end{lstlisting}
+

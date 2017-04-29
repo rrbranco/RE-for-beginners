@@ -1,0 +1,2 @@
+$ cat fortunes | grep % | wc -l
+432

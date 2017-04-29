@@ -1,0 +1,115 @@
+\subsection{Rauschen auf dem Stack}
+\label{noise_in_stack}
+
+\epigraph{When one says that something seems random, what one usually
+means in practice is that one cannot see any regularities in it.}{Stephen Wolfram, A New Kind of Science.}
+
+Oft wird in diesem Buch von \q{rauschen} oder \q{garbage} Werten im Bezug
+auf den Stack gesprochen. Woher kommen diese Werte? Das sind Überbleibsel der
+Ausführung von anderen Funktionen. Zum Beispiel: 
+
+\lstinputlisting{patterns/02_stack/08_noise/st.c}
+
+Compilieren \dots
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2010]{patterns/02_stack/08_noise/st.asm}
+
+Hier wird sich der Compiler ein bisschen beschweren\dots
+
+\begin{lstlisting}
+c:\Polygon\c>cl st.c /Fast.asm /MD
+Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+st.c
+c:\polygon\c\st.c(11) : warning C4700: uninitialized local variable 'c' used
+c:\polygon\c\st.c(11) : warning C4700: uninitialized local variable 'b' used
+c:\polygon\c\st.c(11) : warning C4700: uninitialized local variable 'a' used
+Microsoft (R) Incremental Linker Version 10.00.40219.01
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+/out:st.exe
+st.obj
+\end{lstlisting}
+
+Aber wenn wir das compilierte Programm laufen lassen\dots
+
+\begin{lstlisting}
+c:\Polygon\c>st
+1, 2, 3
+\end{lstlisting}
+
+sieh an! Wir haben keine Variablen gesetzt in \TT{f2()}.
+Das sind \q{Geister} Werte, welche noch immer auf dem Stack rumliegen.
+
+\clearpage
+Lasst uns das Beispiel in \olly laden:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/02_stack/08_noise/olly1.png}
+\caption{\olly: \TT{f1()}}
+\label{fig:stack_noise_olly1}
+\end{figure}
+
+Wenn \TT{f1()} den Variablen $a$, $b$ und $c$ ihre Werte zuordnet, wird ihre Adresse bei \TT{0x1FF860} gespeichert und so weiter. 
+
+\clearpage
+Und wenn \TT{f2()} ausgeführt wird:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/02_stack/08_noise/olly2.png}
+\caption{\olly: \TT{f2()}}
+\label{fig:stack_noise_olly2}
+\end{figure}
+
+... liegen $a$, $b$ und $c$ von \TT{f2()}  an den gleichen Adressen!
+Nichts hat bis jetzt Ihre Werte überschrieben und sie sind bisher
+unberührt geblieben. Also, damit diese seltsame Situation eintritt, müssen
+mehrere Funktionen nacheinander aufgerufen werden und \ac{SP} muss gleich 
+sein für jede Funktions Instruktion ( z.B. die Funktionen haben die 
+gleiche Anzahl an Argumenten). Dann werden die lokalen Variablen an den
+gleichen Positionen im Stack liegen. Zusammen fassend kann man sagen, alle
+Werte auf dem Stack (und Speicherzellen im allgemeinen) beinhalten Werte
+von vorhergehenden Funktions aufrufen. Diese Werte sind nicht zufällig 
+im klassischem Sinn, eher unvorhersehbar. Es wäre wahrscheinlich möglich 
+Teile des Stacks auf zu räumen vor jedem Funktions Aufruf, aber das wäre
+zu viel zusätzliche (und unnötige) Arbeit. 
+
+\subsubsection{MSVC 2013}
+
+Das Beispiel wurde compiliert mit dem MSVC 2010 Compiler.
+Allerdings haben die Leser dieses Buch auch schon geschafft das Beispiel mit MSVC 2013 zu compilieren, sie haben es geschafft es zum laufen zu bringen und alle drei Nummern zu reversen.
+
+\begin{lstlisting}
+c:\Polygon\c>st
+3, 2, 1
+\end{lstlisting}
+
+Warum? 
+Ich habe das Beispiel auch mit MSCV 2013 compiliert und habe folgendes beobachtet:
+
+\begin{lstlisting}[caption=MSVC 2013,style=customasmx86]
+_a$ = -12	; size = 4
+_b$ = -8	; size = 4
+_c$ = -4	; size = 4
+_f2	PROC
+
+...
+
+_f2	ENDP
+
+_c$ = -12	; size = 4
+_b$ = -8	; size = 4
+_a$ = -4	; size = 4
+_f1	PROC
+
+...
+
+_f1	ENDP
+\end{lstlisting}
+
+Im Gegensatz zu MSVC 2010, alloziert MSCV 2013 die Variablen in der Funktion \TT{f2()} in umgekehrter Reihenfolge.%
+Was auch vollkommen Korrekt ist, weil es im \CCpp Standard keine Vorschriften gibt, in welcher Reihenfolge Variablen auf dem Stack alloziert werden müssen. Der Grund für den Unterschied liegt daran das MSCV 2010 eine Methode genutzt hat um  die allozierung durch zu führen und in MSCV 2013 wurde scheinbar eine anpassung im Compiler inneren gemacht, so das sich MSCV 2013 leicht anders verhält.
+

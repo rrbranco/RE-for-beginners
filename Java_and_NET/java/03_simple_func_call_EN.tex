@@ -1,0 +1,144 @@
+% TODO proof-reading
+\subsection{Simple function calling}
+
+\TT{Math.random()} returns a pseudorandom number in range of [0.0 \dots 1.0), but let's say that
+for some reason we need to devise a function that returns a number in range of [0.0 \dots 0.5):
+
+
+\begin{lstlisting}[style=customjava]
+public class HalfRandom
+{ 
+	public static double f()
+	{
+		return Math.random()/2;
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Constant pool]
+...
+   #2 = Methodref          #18.#19    //  java/lang/Math.random:()D
+   #3 = Double             2.0d
+...
+  #12 = Utf8               ()D
+...
+  #18 = Class              #22        //  java/lang/Math
+  #19 = NameAndType        #23:#12    //  random:()D
+  #22 = Utf8               java/lang/Math
+  #23 = Utf8               random
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static double f();
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=4, locals=0, args_size=0
+         0: invokestatic  #2          // Method java/lang/Math.random:()D
+         3: ldc2_w        #3          // double 2.0d
+         6: ddiv          
+         7: dreturn       
+\end{lstlisting}
+
+\TT{invokestatic} calls the \TT{Math.random()} function and leaves the result at the \ac{TOS}.
+
+Then the result is divided by 2.0 and returned.
+
+But how is the function name encoded?
+
+It's encoded in the constant pool using a \TT{Methodref} expression.
+
+It defines the class and method names.
+
+The first field of \TT{Methodref} points to a \TT{Class} expression which, in turn, points to
+the usual text string (\q{java/lang/Math}).
+
+The second \TT{Methodref} expression points to a \TT{NameAndType} expression which also 
+has two links to the strings.
+
+The first string is \q{random}, which is the name of the method.
+
+The second string is \q{()D}, which encodes the function's type.
+It means that it returns a \IT{double} value (hence the \IT{D} in the string).
+
+This is the way 
+1) JVM can check data for type correctness; 
+2) Java decompilers can restore data types from a compiled class file.
+
+
+Now let's try the \q{Hello, world!} example:
+
+
+\begin{lstlisting}[style=customjava]
+public class HelloWorld
+{
+	public static void main(String[] args)
+	{
+		System.out.println("Hello, World");
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Constant pool]
+...
+   #2 = Fieldref           #16.#17        //  java/lang/System.out:Ljava/io/PrintStream;
+   #3 = String             #18            //  Hello, World
+   #4 = Methodref          #19.#20        //  java/io/PrintStream.println:(Ljava/lang/String;)V
+...
+  #16 = Class              #23            //  java/lang/System
+  #17 = NameAndType        #24:#25        //  out:Ljava/io/PrintStream;
+  #18 = Utf8               Hello, World
+  #19 = Class              #26            //  java/io/PrintStream
+  #20 = NameAndType        #27:#28        //  println:(Ljava/lang/String;)V
+...
+  #23 = Utf8               java/lang/System
+  #24 = Utf8               out
+  #25 = Utf8               Ljava/io/PrintStream;
+  #26 = Utf8               java/io/PrintStream
+  #27 = Utf8               println
+  #28 = Utf8               (Ljava/lang/String;)V
+...
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+         3: ldc           #3        // String Hello, World
+         5: invokevirtual #4        // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+         8: return        
+\end{lstlisting}
+
+\TT{ldc} at offset 3 takes a pointer to the \q{Hello, World} string in the constant pool
+and pushes in the stack.
+
+It's called a \IT{reference} in the Java world, but it's rather a pointer, or an address
+
+\footnote{About difference in pointers and \IT{reference}'s in C++ see: \myref{cpp_references}.}.
+
+The familiar \TT{invokevirtual} instruction takes the information about the \TT{println} 
+function (or method) from the constant pool and calls it.
+
+As we may know, there are several \TT{println} methods, one for each data type.
+
+Our case is the version of \TT{println} intended for the \IT{String} data type.
+
+
+But what about the first \TT{getstatic} instruction?
+
+This instruction takes a \IT{reference} (or address of) a field of the object \TT{System.out} 
+and pushes it in the stack.
+
+This value is acts like the \IT{this} pointer for the \TT{println} method.
+
+Thus, internally, the \TT{println} method takes two arguments for input:
+1) \IT{this}, i.e., a pointer to an object; 
+2) the address of the \q{Hello, World} string.
+
+
+Indeed, \TT{println()} is called as a method within an initialized \TT{System.out} object.
+
+
+For convenience, the \TT{javap} utility writes all this information in the comments.
+

@@ -1,0 +1,75 @@
+% TODO proof-reading
+\subsubsection{Двухмерные массивы}
+
+
+Двухмерные массивы в Java это просто одномерные массивы \IT{reference}-в на другие одномерные 
+массивы.
+
+Создадим двухмерный массив:
+
+\begin{lstlisting}[style=customjava]
+	public static void main(String[] args)
+	{
+		int[][] a = new int[5][10];
+		a[1][2]=3;
+	}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=3, locals=2, args_size=1
+         0: iconst_5      
+         1: bipush        10
+         3: multianewarray #2,  2      // class "[[I"
+         7: astore_1      
+         8: aload_1       
+         9: iconst_1      
+        10: aaload        
+        11: iconst_2      
+        12: iconst_3      
+        13: iastore       
+        14: return        
+\end{lstlisting}
+
+
+Он создается при помощи инструкции \TT{multianewarray}: тип объекта и размерность передаются
+в операндах.
+
+Размер массива (10*5) остается в стеке (используя инструкции \TT{iconst\_5} и \TT{bipush}).
+
+
+\IT{Reference} на строку \#1 загружается по смещению 10 (\TT{iconst\_1} и \TT{aaload}).
+
+Выборка столбца происходит используя инструкцию \TT{iconst\_2} по смещению 11.
+
+Значение для записи устанавливается по смещению 12.
+
+\TT{iastore} на 13 записывает элемент массива.
+
+Как его прочитать?
+
+\begin{lstlisting}[style=customjava]
+	public static int get12 (int[][] in)
+	{
+		return in[1][2];
+	}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static int get12(int[][]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: aload_0       
+         1: iconst_1      
+         2: aaload        
+         3: iconst_2      
+         4: iaload        
+         5: ireturn       
+\end{lstlisting}
+
+
+\IT{Reference} на строку массива загружается по смещению 2, 
+столбец устанавливается по смещению 3, \TT{iaload} загружает элемент массива.

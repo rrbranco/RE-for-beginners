@@ -1,0 +1,35 @@
+\section{\ESph{}}
+
+Cuando el autor de este libro comenzó a aprender C y, más tarde, \Cpp, él solía escribir pequeños trozos de código, compilarlos, 
+y luego ver los resultados en lenguaje assembly. Esto lo hizo muy fácil para él entender lo que estaba pasando en el código que había escrito.
+\footnote{De hecho, todavia lo hace cuando no puede entender lo que hace una determinada pieza de código.}. 
+Él lo hizo tantas veces que la relación entre el código \CCpp y lo que el compilador producido se imprimió profundamente en su mente. 
+És fácil imaginar al instante un esbozo de la aparencia y función del código C. 
+Quizás esta técnica podría ser útil para otra persona.
+
+%Hay una serie de ejemplos, tanto para x86/x64 y ARM.
+%Los que ya están familiarizados con alguna de las arquitecturas, pueden leer superficialmente las páginas siguientes.
+
+En ciertas partes, se han empleado aquí compiladores muy antiguas, con el fin de obtener lo mas corta (o simple) posible snippet.
+\ac{TBT}.
+\section*{\Exercises}
+
+Cuando el autor de este libro estudió la lenguaje assembly, también con frecuencia compilaba pequeñas funciones en C, y reescribia gradualmente en assembly, tratando de hacer el código lo más pequeño posible.
+Probablemente no vale la pena hacer esto en escenarios reales actualmente, 
+porque es dificil competir con los compiladores modernos en términos de eficiencia. Es, sin embargo, una muy buena manera de obtener una mejor compreensión de la assembly.
+Siéntase libre, por lo tanto, para tomar cualquier código de este libro y tratar de hacerlo más pequeño.
+Sin embargo, no se olvide de probar lo que has escrito.
+
+\section*{Níveles de optimización y la información de depuración}
+El código fuente puede ser compilado por diferentes compiladores com varios niveles de optimización.
+Un compilador típico tiene alredor de tres de esos niveles, donde el nivel cero significa desactivar la optimización.
+La optimización también puede dirigirse hacia el tamaño del código o la velocidad de código.
+Un compilador sin optimización es más rápido y produce código más inteligible (aunque más grande), 
+mientras un compilador con optimización es más lento y trata de producir un código que corre más rápido (pero no necesariamente más compacto).
+Además de los niveles y dirección de la otimización, el compilador puede incluir informaciones de depuración en el archivo resultante, produciendo así código para fácil depuración.
+Una de los características importantes del código de ´debug' és que puede contener enlaces entre
+cada línea del código fuente y las direcciones de código de máquina respectivos.
+Compiladores con optimización, por otro lado, tienden a producir una salida donde líneas enteras de código fuente pueden ser optimizados al punto de ser eliminados y por consiguiente no estar presentes en el código de máquina resultante.
+Ingenieros Inversos pueden encontrar ambas versiones, simplesmente porque alguns desarrolladores activan los flags de optimización del compilador, y otros no activan. 
+Debido a esto, vamos a tratar de trabajar con ejemplos de ambas versiones de debug y release del código resaltado en este libro, cuando sea posible.
+

@@ -1,0 +1,360 @@
+% TODO proof-reading
+\subsection{Rückgabe eines Wertes}
+
+Die vermutlich einfachste Java-Funktion ist eine, die einen Wert zurück gibt.
+
+Es sollte hier noch beachtet werden, dass es keine \q{freien} Funktionen im
+allgemeinen Sinne in Java gibt sondern \q{Methoden}. 
+
+Jede Methode gehört zu einer Klasse, somit ist es nicht möglich eine Methode
+außerhalb einer Klasse zu definieren.
+
+Wir werden die Methoden hier trotzdem der Einfachheit halber \q{Funktionen} nennen.
+
+\begin{lstlisting}[style=customjava]
+public class ret
+{
+	public static int main(String[] args) 
+	{
+		return 0;
+	}
+}
+\end{lstlisting}
+
+Kompilieren wir diesen Code:
+
+\begin{lstlisting}
+javac ret.java
+\end{lstlisting}
+
+\dots und dekompilieren ihn mit dem Standard-Java-Tool:
+
+\begin{lstlisting}
+javap -c -verbose ret.class
+\end{lstlisting}
+
+Und wir bekommen:
+
+\begin{lstlisting}[caption=JDK 1.7 (excerpt)]
+  public static int main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=1, locals=1, args_size=1
+         0: iconst_0      
+         1: ireturn       
+\end{lstlisting}
+
+Die Java-Entwickler entschieden, dass 0 eine der beliebteste Konstanten in der
+Programmierung ist, also gibt es eine separate, kurze Ein-Byte-Anweisung die
+0 pushed.
+
+%\footnote{Just like in MIPS, where a separate register for zero constant exists: \myref{MIPS_zero_register}.}.
+%There are also \GTT{iconst\_1} (which pushes 1), \GTT{iconst\_2}, etc., up to \GTT{iconst\_5}.
+%
+%There is also \GTT{iconst\_m1} which pushes -1.
+%
+%The stack is used in JVM for passing data to called functions and also for returning values.
+%So \GTT{iconst\_0} pushes 0 into the stack.
+%\GTT{ireturn} returns an integer value (\IT{i} in name means \IT{integer}) from the \ac{TOS}.
+%
+%Let's rewrite our example slightly, now we return 1234:
+%
+%\begin{lstlisting}[style=customjava]
+%public class ret
+%{
+%	public static int main(String[] args)
+%	{
+%		return 1234;
+%	}
+%}
+%\end{lstlisting}
+%
+%\dots we get:
+%
+%\begin{lstlisting}[caption=JDK 1.7 (excerpt)]
+%  public static int main(java.lang.String[]);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=1, locals=1, args_size=1
+%         0: sipush        1234
+%         3: ireturn       
+%\end{lstlisting}
+%
+%\GTT{sipush} (\IT{short integer}) pushes 1234 into the stack.
+%\IT{short} in name implies a 16-bit value is to be pushed. 
+%The number 1234 indeed fits well in a 16-bit value.
+%
+%What about larger values?
+%
+%\begin{lstlisting}[style=customjava]
+%public class ret
+%{
+%	public static int main(String[] args) 
+%	{
+%		return 12345678;
+%	}
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}[caption=Constant pool]
+%...
+%   #2 = Integer            12345678
+%...
+%\end{lstlisting}
+%
+%\begin{lstlisting}
+%  public static int main(java.lang.String[]);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=1, locals=1, args_size=1
+%         0: ldc           #2                  // int 12345678
+%         2: ireturn       
+%\end{lstlisting}
+%
+%It's not possible to encode a 32-bit number in a JVM instruction opcode, 
+%the developers didn't leave such possibility.
+%
+%So the 32-bit number 12345678 is stored in so called \q{constant pool} which is, let's say,
+%the library of most used constants (including strings, objects, etc.).
+%
+%This way of passing constants is not unique to JVM.
+%
+%MIPS, ARM and other RISC CPUs also can't encode a 32-bit number
+%in a 32-bit opcode, so the RISC CPU code (including MIPS and ARM) has to construct the value 
+%in several steps, or to keep it in the data segment:
+%\myref{ARM_big_constants}, \myref{MIPS_big_constants}.
+%
+%MIPS code also traditionally has a constant pool, named \q{literal pool}, the segments
+%are called \q{.lit4} (for 32-bit single precision floating point number constants) and \q{.lit8}
+%(for 64-bit double precision floating point number constants).
+%
+%Let's try some other data types!
+%
+%Boolean:
+%
+%\begin{lstlisting}[style=customjava]
+%public class ret
+%{
+%	public static boolean main(String[] args) 
+%	{
+%		return true;
+%	}
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}
+%  public static boolean main(java.lang.String[]);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=1, locals=1, args_size=1
+%         0: iconst_1      
+%         1: ireturn       
+%\end{lstlisting}
+%
+%This JVM bytecode is no different from one returning integer 1.
+%
+%32-bit data slots in the stack are also used here for boolean values, like in \CCpp.
+%
+%But one could not use returned boolean value as integer or vice versa --- type information is stored in the class file and checked at runtime.
+%
+%It's the same story with a 16-bit \IT{short}:
+%
+%\begin{lstlisting}[style=customjava]
+%public class ret
+%{
+%	public static short main(String[] args) 
+%	{
+%		return 1234;
+%	}
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}
+%  public static short main(java.lang.String[]);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=1, locals=1, args_size=1
+%         0: sipush        1234
+%         3: ireturn       
+%\end{lstlisting}
+%
+%\dots and \IT{char}!
+%
+%\begin{lstlisting}[style=customjava]
+%public class ret
+%{
+%	public static char main(String[] args) 
+%	{
+%		return 'A';
+%	}
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}
+%  public static char main(java.lang.String[]);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=1, locals=1, args_size=1
+%         0: bipush        65
+%         2: ireturn       
+%\end{lstlisting}
+%
+%\INS{bipush} means \q{push byte}.
+%Needless to say that a \IT{char} in Java is 16-bit UTF-16 character, 
+%and it's equivalent to \IT{short}, but the ASCII code of the \q{A} character is 65, and it's possible
+%to use the instruction for pushing a byte in the stack.
+%
+%Let's also try a \IT{byte}:
+%
+%\begin{lstlisting}[style=customjava]
+%public class retc
+%{
+%	public static byte main(String[] args) 
+%	{
+%		return 123;
+%	}
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}
+%  public static byte main(java.lang.String[]);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=1, locals=1, args_size=1
+%         0: bipush        123
+%         2: ireturn       
+%\end{lstlisting}
+%
+%One may ask, why bother with a 16-bit \IT{short} data type which internally works
+%as a 32-bit integer?
+%
+%Why use a \IT{char} data type if it is the same as a \IT{short} data type?
+%
+%The answer is simple: for data type control and source code readability.
+%
+%A \IT{char} may essentially be the same as a \IT{short}, but we quickly grasp that it's a placeholder for
+%an UTF-16 character, and not for some other integer value.
+%
+%When using \IT{short}, we show everyone that the variable's range is limited by 16 bits.
+%
+%It's a very good idea to use the \IT{boolean} type where needed to, 
+%instead of the C-style \IT{int}.
+%
+%There is also a 64-bit integer data type in Java:
+%
+%\begin{lstlisting}[style=customjava]
+%public class ret3
+%{
+%	public static long main(String[] args)
+%	{
+%		return 1234567890123456789L;
+%	}
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}[caption=Constant pool]
+%...
+%   #2 = Long               1234567890123456789l
+%...
+%\end{lstlisting}
+%
+%\begin{lstlisting}
+%  public static long main(java.lang.String[]);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=2, locals=1, args_size=1
+%         0: ldc2_w        #2                  // long 1234567890123456789l
+%         3: lreturn       
+%\end{lstlisting}
+%
+%The 64-bit number is also stored in a constant pool, \INS{ldc2\_w} loads it and \INS{lreturn} 
+%(\IT{long return}) returns it.
+%
+%The \INS{ldc2\_w} instruction is also used to load double precision floating point numbers 
+%(which also occupy 64 bits) from a constant pool:
+%
+%\begin{lstlisting}[style=customjava]
+%public class ret
+%{
+%	public static double main(String[] args)
+%	{
+%		return 123.456d;
+%	}
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}[caption=Constant pool]
+%...
+%   #2 = Double             123.456d
+%...
+%\end{lstlisting}
+%
+%\begin{lstlisting}
+%  public static double main(java.lang.String[]);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=2, locals=1, args_size=1
+%         0: ldc2_w        #2                  // double 123.456d
+%         3: dreturn       
+%\end{lstlisting}
+%
+%\INS{dreturn} stands for \q{return double}.
+%
+%And finally, a single precision floating point number:
+%
+%\begin{lstlisting}[style=customjava]
+%public class ret
+%{
+%	public static float main(String[] args)
+%	{
+%		return 123.456f;
+%	}
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}[caption=Constant pool]
+%...
+%   #2 = Float              123.456f
+%...
+%\end{lstlisting}
+%
+%\begin{lstlisting}
+%  public static float main(java.lang.String[]);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=1, locals=1, args_size=1
+%         0: ldc           #2                  // float 123.456f
+%         2: freturn       
+%\end{lstlisting}
+%
+%The \INS{ldc} instruction used here is the same one as for loading 32-bit integer numbers
+%from a constant pool.
+%
+%\INS{freturn} stands for \q{return float}.
+%
+%Now what about function that return nothing?
+%
+%\begin{lstlisting}[style=customjava]
+%public class ret
+%{
+%	public static void main(String[] args) 
+%	{
+%		return;
+%	}
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}
+%  public static void main(java.lang.String[]);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=0, locals=1, args_size=1
+%         0: return        
+%\end{lstlisting}
+%
+%This means that the \INS{return} instruction is used to return control without returning 
+%an actual value.
+%
+%Knowing all this, it's very easy to deduce the function's (or method's) returning type 
+%from the last instruction.
+%

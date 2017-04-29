@@ -1,0 +1,137 @@
+﻿\subsection{Векторизация}
+
+\newcommand{\URLVEC}{\href{http://go.yurichev.com/17080}{Wikipedia: vectorization}}
+
+Векторизация\footnote{\URLVEC} это когда у вас есть цикл, который берет на вход несколько массивов и выдает, 
+например, один массив данных. 
+Тело цикла берет некоторые элементы из входных массивов, что-то делает с ними и помещает в выходной. 
+%Важно, что операция, применяемая ко всем элементам одна и та же. 
+Векторизация ~--- это обрабатывать несколько элементов одновременно.
+
+Векторизация ~--- это не самая новая технология: автор сих строк видел её по крайней мере на 
+линейке суперкомпьютеров Cray Y-MP от 1988, когда работал на его версии-\q{лайт} Cray Y-MP EL
+\footnote{Удаленно. Он находится в музее суперкомпьютеров: \url{http://go.yurichev.com/17081}}.
+
+% FIXME! add assembly listing!
+Например:
+
+\begin{lstlisting}[style=customc]
+for (i = 0; i < 1024; i++)
+{
+    C[i] = A[i]*B[i];
+}
+\end{lstlisting}
+
+Этот фрагмент кода берет элементы из A и B, перемножает и сохраняет результат в C.
+
+\myindex{x86!\Instructions!PLMULLD}
+\myindex{x86!\Instructions!PLMULHW}
+\newcommand{\PMULLD}{\IT{PMULLD} (\IT{Перемножить запакованные знаковые DWORD и сохранить младшую часть результата})}
+\newcommand{\PMULHW}{\TT{PMULHW} (\IT{Перемножить запакованные знаковые DWORD и сохранить старшую часть результата})}
+
+Если представить, что каждый элемент массива ~--- это 32-битный \Tint, то их можно загружать сразу 
+по 4 из А в 128-битный XMM-регистр, 
+из B в другой XMM-регистр и выполнив инструкцию \PMULLD{} и \PMULHW{}, можно получить 4 64-битных 
+\glslink{product}{произведения} сразу.
+
+Таким образом, тело цикла исполняется $1024/4$ раза вместо 1024, что в 4 раза меньше, и, конечно, быстрее.
+
+\newcommand{\URLINTELVEC}{\href{http://go.yurichev.com/17082}{Excerpt: Effective Automatic Vectorization}}
+
+\subsubsection{Пример сложения}
+
+\myindex{Intel C++}
+Некоторые компиляторы умеют делать автоматическую векторизацию в простых случаях, 
+например, Intel C++\footnote{Еще о том, как Intel C++ умеет автоматически векторизовать циклы: \URLINTELVEC}.
+
+Вот очень простая функция:
+
+\begin{lstlisting}[style=customc]
+int f (int sz, int *ar1, int *ar2, int *ar3)
+{
+	for (int i=0; i<sz; i++)
+		ar3[i]=ar1[i]+ar2[i];
+
+	return 0;
+};
+\end{lstlisting}
+
+\myparagraph{Intel C++}
+
+Компилируем её при помощи Intel C++ 11.1.051 win32:
+
+\begin{verbatim}
+icl intel.cpp /QaxSSE2 /Faintel.asm /Ox
+\end{verbatim}
+
+Имеем такое (в \IDA):
+
+\lstinputlisting[style=customasmx86]{patterns/19_SIMD/18_1_RU.asm}
+
+Инструкции, имеющие отношение к SSE2 это:
+\myindex{x86!\Instructions!MOVDQA}
+\myindex{x86!\Instructions!MOVDQU}
+\myindex{x86!\Instructions!PADDD}
+\begin{itemize}
+\item
+\MOVDQU (\IT{Move Unaligned Double Quadword}) --- она просто загружает 16 байт из памяти в XMM-регистр.
+
+\item
+\PADDD (\IT{Add Packed Integers}) --- складывает сразу 4 пары 32-битных чисел и оставляет в первом операнде результат. 
+Кстати, если произойдет переполнение, то исключения не произойдет и никакие флаги не установятся, 
+запишутся просто младшие 32 бита результата. 
+Если один из операндов \PADDD ~--- адрес значения в памяти, 
+то требуется чтобы адрес был выровнен по 16-байтной границе. Если он не выровнен, произойдет исключение
+\footnote{О выравнивании данных см. также: \URLWPDA}.
+
+\item
+\MOVDQA (\IT{Move Aligned Double Quadword}) --- тоже что и \MOVDQU, только подразумевает 
+что адрес в памяти выровнен по 16-байтной границе. 
+Если он не выровнен, произойдет исключение. 
+\MOVDQA работает быстрее чем \MOVDQU, но требует вышеозначенного.
+
+\end{itemize}
+
+Итак, эти SSE2-инструкции исполнятся только в том случае если еще осталось просуммировать 
+4 пары переменных типа \Tint плюс если указатель \TT{ar3} выровнен по 16-байтной границе.
+
+Более того, если еще и \TT{ar2} выровнен по 16-байтной границе, 
+то будет выполняться этот фрагмент кода:
+
+\begin{lstlisting}[style=customasmx86]
+movdqu  xmm0, xmmword ptr [ebx+edi*4] ; ar1+i*4
+paddd   xmm0, xmmword ptr [esi+edi*4] ; ar2+i*4
+movdqa  xmmword ptr [eax+edi*4], xmm0 ; ar3+i*4
+\end{lstlisting}
+
+А иначе, значение из \TT{ar2} загрузится в \XMM{0} используя инструкцию \MOVDQU, 
+которая не требует выровненного указателя, зато может работать чуть медленнее:
+
+\lstinputlisting[style=customasmx86]{patterns/19_SIMD/18_1_excerpt_RU.asm}
+
+А во всех остальных случаях, будет исполняться код, который был бы, как если бы не была 
+включена поддержка SSE2.
+
+\myparagraph{GCC}
+
+\newcommand{\URLGCCVEC}{\url{http://go.yurichev.com/17083}}
+
+Но и GCC умеет кое-что векторизировать\footnote{Подробнее о векторизации в GCC: \URLGCCVEC}, 
+если компилировать с опциями \Othree и включить поддержку SSE2: \TT{-msse2}.
+
+Вот что вышло (GCC 4.4.1):
+
+\lstinputlisting[style=customasmx86]{patterns/19_SIMD/18_2_gcc_O3.asm}
+
+Почти то же самое, хотя и не так дотошно, как Intel C++.
+
+\subsubsection{Пример копирования блоков}
+\label{vec_memcpy}
+
+Вернемся к простому примеру memcpy() (\myref{loop_memcpy}):
+
+\lstinputlisting[style=customc]{memcpy.c}
+
+И вот что делает оптимизирующий GCC 4.9.1:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9.1 x64,style=customasmx86]{patterns/19_SIMD/memcpy_GCC49_x64_O3_RU.s}

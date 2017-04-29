@@ -1,21 +1,30 @@
-\section{\RU{Глобальные переменные}\EN{Global variables}}
-\index{\RU{Глобальные переменные}\EN{Global variables}}
+
+\EN{\input{patterns/04_scanf/2_global/main_EN}}
+\RU{\input{patterns/04_scanf/2_global/main_RU}}
+\ITA{\input{patterns/04_scanf/2_global/main_ITA}}
+\PTBR{\input{patterns/04_scanf/2_global/main_PTBR}}
+\FR{\input{patterns/04_scanf/2_global/main_FR}}
+
+\ifdefined\GERMAN
+\newcommand{\GlobalVarsSectionName}{\DEph{}}
+\subsection{\GlobalVarsSectionName}
+\myindex{\GlobalVarsSectionName}
 \label{scanf_global_variable}
 
-\RU{А что если переменная \TT{x} из предыдущего примера будет глобальной переменной, а не локальной? 
-Тогда к ней смогут обращаться из любого другого места, а не только из тела функции. 
-Глобальные переменные считаются \glslink{anti-pattern}{анти-паттерном},
-но ради примера мы можем себе это позволить.}
-\EN{What if the \TT{x} variable from the previous example was not local but a global one? 
-Then it would have been accessible from any point, not only from the function body. 
-Global variables are considered \gls{anti-pattern}, but for the sake of the experiment, we could do this.}
+\DEph{}
 
-\lstinputlisting{patterns/04_scanf/2_global/ex2.c.\LANG}
-
-\input{patterns/04_scanf/2_global/ex2_global_vars_x86}
-\ifdefined\IncludeARM
-\input{patterns/04_scanf/2_global/ex2_global_vars_ARM}
+\lstinputlisting[style=customc]{patterns/04_scanf/2_global/ex2_EN.c}
 \fi
-\ifdefined\IncludeMIPS
+
+\EN{\input{patterns/04_scanf/2_global/ex2_global_vars_x86_EN}}
+\RU{\input{patterns/04_scanf/2_global/ex2_global_vars_x86_RU}}
+\PTBR{\input{patterns/04_scanf/2_global/ex2_global_vars_x86_PTBR}}
+\DE{\input{patterns/04_scanf/2_global/ex2_global_vars_x86_DE}}
+\FR{\input{patterns/04_scanf/2_global/ex2_global_vars_x86_FR}}
+
+\EN{\input{patterns/04_scanf/2_global/ex2_global_vars_ARM_EN}}
+\RU{\input{patterns/04_scanf/2_global/ex2_global_vars_ARM_RU}}
+\DE{\input{patterns/04_scanf/2_global/ex2_global_vars_ARM_DE}}
+\FR{\input{patterns/04_scanf/2_global/ex2_global_vars_ARM_FR}}
+
 \input{patterns/04_scanf/2_global/MIPS/main}
-\fi

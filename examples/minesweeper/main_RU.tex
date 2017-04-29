@@ -1,0 +1,210 @@
+\section{\MinesweeperWinXPExampleChapterName}
+\label{minesweeper_winxp}
+\myindex{Windows!Windows XP}
+
+Для тех, кто не очень хорошо играет в Сапёра (Minesweeper), можно попробовать найти все скрытые мины в отладчике.
+
+\myindex{\CStandardLibrary!rand()}
+\myindex{Windows!PDB}
+Как мы знаем, Сапёр располагает мины случайным образом, так что там должен быть генератор случайных чисел
+или вызов стандартной функции Си \TT{rand()}.
+
+Вот что хорошо в реверсинге продуктов от Microsoft, так это то что часто есть \gls{PDB}-файл со всеми
+символами (имена функций, \etc{}.).
+
+Когда мы загружаем \TT{winmine.exe} в \IDA, она скачивает 
+\gls{PDB} файл именно для этого исполняемого файла и добавляет все имена.
+
+И вот оно, только один вызов \TT{rand()} в этой функции:
+
+\begin{lstlisting}[style=customasmx86]
+.text:01003940 ; __stdcall Rnd(x)
+.text:01003940 _Rnd@4          proc near               ; CODE XREF: StartGame()+53
+.text:01003940                                         ; StartGame()+61
+.text:01003940
+.text:01003940 arg_0           = dword ptr  4
+.text:01003940
+.text:01003940                 call    ds:__imp__rand
+.text:01003946                 cdq
+.text:01003947                 idiv    [esp+arg_0]
+.text:0100394B                 mov     eax, edx
+.text:0100394D                 retn    4
+.text:0100394D _Rnd@4          endp
+\end{lstlisting}
+
+Так её назвала \IDA и это было имя данное ей разработчиками Сапёра.
+
+Функция очень простая:
+
+\begin{lstlisting}[style=customc]
+int Rnd(int limit)
+{
+    return rand() % limit;
+};
+\end{lstlisting}
+
+(В \gls{PDB}-файле не было имени \q{limit}; это мы назвали этот аргумент так, вручную.)
+
+Так что она возвращает случайное число в пределах от нуля до заданного предела.
+
+\TT{Rnd()} вызывается только из одного места, это функция с названием \TT{StartGame()}, 
+и как видно, это именно тот код, что расставляет мины:
+
+\begin{lstlisting}[style=customasmx86]
+.text:010036C7                 push    _xBoxMac
+.text:010036CD                 call    _Rnd@4          ; Rnd(x)
+.text:010036D2                 push    _yBoxMac
+.text:010036D8                 mov     esi, eax
+.text:010036DA                 inc     esi
+.text:010036DB                 call    _Rnd@4          ; Rnd(x)
+.text:010036E0                 inc     eax
+.text:010036E1                 mov     ecx, eax
+.text:010036E3                 shl     ecx, 5          ; ECX=ECX*32
+.text:010036E6                 test    _rgBlk[ecx+esi], 80h
+.text:010036EE                 jnz     short loc_10036C7
+.text:010036F0                 shl     eax, 5          ; EAX=EAX*32
+.text:010036F3                 lea     eax, _rgBlk[eax+esi]
+.text:010036FA                 or      byte ptr [eax], 80h
+.text:010036FD                 dec     _cBombStart
+.text:01003703                 jnz     short loc_10036C7
+\end{lstlisting}
+
+Сапёр позволяет задать размеры доски, так что X (xBoxMac) и Y (yBoxMac) это глобальные переменные.
+
+Они передаются в \TT{Rnd()} и генерируются случайные координаты.
+Мина устанавливается инструкцией \TT{OR} на \TT{0x010036FA}. 
+И если она уже была установлена до этого 
+(это возможно, если пара функций \TT{Rnd()} 
+сгенерирует пару, которая уже была сгенерирована), 
+тогда \TT{TEST} и \TT{JNZ} на \TT{0x010036E6} 
+перейдет на повторную генерацию пары.
+
+\TT{cBombStart} это глобальная переменная, содержащая количество мин. Так что это цикл.
+
+Ширина двухмерного массива это 32 (мы можем это вывести, глядя на инструкцию \TT{SHL}, которая умножает
+одну из координат на 32).
+
+Размер глобального массива \TT{rgBlk} 
+можно легко узнать по разнице между меткой \TT{rgBlk} 
+в сегменте данных и следующей известной меткой. 
+Это 0x360 (864):
+
+\begin{lstlisting}[style=customasmx86]
+.data:01005340 _rgBlk          db 360h dup(?)          ; DATA XREF: MainWndProc(x,x,x,x)+574
+.data:01005340                                         ; DisplayBlk(x,x)+23
+.data:010056A0 _Preferences    dd ?                    ; DATA XREF: FixMenus()+2
+...
+\end{lstlisting}
+
+$864/32=27$.
+
+Так что размер массива $27*32$?
+Это близко к тому что мы знаем: если попытаемся установить размер доски в установках Сапёра на $100*100$, то он установит размер $24*30$.
+Так что это максимальный размер доски здесь.
+И размер массива фиксирован для доски любого размера.
+
+Посмотрим на всё это в \olly.
+Запустим Сапёр, присоединим (attach) \olly к нему и увидим содержимое памяти по адресу где массив \TT{rgBlk} (\TT{0x01005340})%
+
+\footnote{Все адреса здесь для Сапёра под Windows XP SP3 English. 
+Они могут отличаться для других сервис-паков.}.
+
+Так что у нас выходит такой дамп памяти массива:
+
+\lstinputlisting[style=customasmx86]{examples/minesweeper/1.lst}
+
+\olly, как и любой другой шестнадцатеричный редактор, показывает 16 байт на строку.
+Так что каждая 32-байтная строка массива занимает ровно 2 строки.
+
+Это уровень для начинающих (доска 9*9).
+
+Тут еще какая-то квадратная структура, заметная визуально (байты 0x10).
+
+Нажмем \q{Run} в \olly чтобы разморозить процесс Сапёра, потом нажмем в случайное место окна Сапёра, попадаемся на мине, но теперь
+видны все мины:
+
+\begin{figure}[H]
+\centering
+\myincludegraphicsSmall{examples/minesweeper/1.png}
+\caption{Мины}
+\label{fig:minesweeper1}
+\end{figure}
+
+Сравнивая места с минами и дамп, мы можем обнаружить что 0x10 это граница, 0x0F --- пустой блок, 
+0x8F --- мина.
+
+Теперь добавим комментариев и также заключим все байты 0x8F в квадратные скобки:%
+
+\lstinputlisting[style=customasmx86]{examples/minesweeper/2.lst}
+
+Теперь уберем все байты связанные с границами (0x10) и всё что за ними:%
+
+\lstinputlisting[style=customasmx86]{examples/minesweeper/3.lst}
+
+Да, это всё мины, теперь это очень хорошо видно, в сравнении со скриншотом.
+
+\clearpage
+Вот что интересно, это то что мы можем модифицировать массив прямо в \olly.%
+
+Уберем все мины заменив все байты 0x8F на 0x0F, и вот что получится в Сапёре:
+
+\begin{figure}[H]
+\centering
+\myincludegraphicsSmall{examples/minesweeper/3.png}
+\caption{Все мины убраны в отладчике}
+\label{fig:minesweeper3}
+\end{figure}
+
+Также уберем их все и добавим их в первом ряду: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphicsSmall{examples/minesweeper/2.png}
+\caption{Мины, установленные в отладчике}
+\label{fig:minesweeper2}
+\end{figure}
+
+Отладчик не очень удобен для подсматривания (а это была наша изначальная цель), так что напишем маленькую
+утилиту для показа содержимого доски:
+
+\lstinputlisting[style=customc]{examples/minesweeper/minesweeper_cheater.c}
+
+Просто установите \ac{PID}
+\footnote{PID можно увидеть в Task Manager 
+(это можно включить в \q{View $\rightarrow$ Select Columns})} 
+и адрес массива (\TT{0x01005340} для Windows XP SP3 English) 
+и она покажет его
+\footnote{Скомпилированная версия здесь: 
+\href{http://go.yurichev.com/17165}{beginners.re}}.
+
+Она подключается к win32-процессу по \ac{PID}-у и просто читает из памяти процесса по этому адресу.
+
+\subsection{Автоматический поиск массива}
+
+Здавать адрес каждый раз при запуске нашей утилиты, это неудобно.
+К тому же, разные версии ``Сапёра'' могут иметь этот массив по разным адресам.
+Зная, что всегда есть рамка (байты 0x10), массив легко найти в памяти:
+
+\lstinputlisting[style=customc]{examples/minesweeper/cheater2_fragment.c}
+
+Полный исходный код: \url{https://github.com/dennis714/RE-for-beginners/blob/master/examples/minesweeper/minesweeper_cheater2.c}.
+
+\subsection{\Exercises}
+
+\begin{itemize}
+
+\item
+Почему байты описывающие границы (0x10) присутствуют вообще?
+Зачем они нужны, если они вообще не видимы в интерфейсе Сапёра?
+Как можно обойтись без них?
+
+\item
+Как выясняется, здесь больше возможных значений (для открытых блоков, для тех на которых игрок установил
+флажок, \etc{}.).
+	
+Попробуйте найти значение каждого.
+
+\item Измените мою утилиту так, чтобы она в запущенном процессе Сапёра убирала все мины, 
+или расставляла их в соответствии с каким-то заданным шаблоном.
+
+\end{itemize}

@@ -1,0 +1,31 @@
+\subsection{\StructurePackingSectionName}
+\label{structure_packing}
+
+One important thing is fields packing in structures\footnote{See also: \URLWPDA}.
+
+Let's take a simple example:
+
+\lstinputlisting[style=customc]{patterns/15_structs/4_packing/packing.c}
+
+As we see, we have two \Tchar fields (each is exactly one byte) and two more~---\Tint (each --- 4 bytes).
+
+% subsections:
+\input{patterns/15_structs/4_packing/x86_EN}
+\input{patterns/15_structs/4_packing/ARM_EN}
+\input{patterns/15_structs/4_packing/MIPS_EN}
+
+\subsubsection{One more word}
+
+Passing a structure as a function argument (instead of a passing pointer to structure) is the same
+as passing all structure fields one by one.
+
+If the structure fields are packed by default, the f() function can be rewritten as:
+
+\begin{lstlisting}[style=customc]
+void f(char a, int b, char c, int d)
+{
+    printf ("a=%d; b=%d; c=%d; d=%d\n", a, b, c, d);
+};
+\end{lstlisting}
+
+And that leads to the same code.

@@ -1,0 +1,54 @@
+\subsection{Betrag berechnen}
+\label{sec:abs}
+
+Eine einfache Funktion:
+
+\lstinputlisting[style=customc]{abs.c}
+
+\subsubsection{\Optimizing MSVC}
+
+Normalerweise wird folgender Code erzeugt:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{patterns/07_jcc/abs/abs_MSVC2012_Ox_x64_DE.asm}
+
+GCC 4.9 macht ungefähr das gleiche.
+
+\subsubsection{\OptimizingKeilVI: \ThumbMode}
+
+\lstinputlisting[caption=\OptimizingKeilVI: \ThumbMode,style=customasmARM]{patterns/07_jcc/abs/abs_Keil_thumb_O3_DE.s}
+
+\myindex{ARM!\Instructions!RSB}
+ARM fehlt ein Befehl zur Negation, sodass der Keil Compiler den \q{Reverse
+Subtract} Befehl verwendet, der mit umgekehrten Operanden subtrahiert.
+
+\subsubsection{\OptimizingKeilVI: \ARMMode}
+Es ist im ARM mode möglich, einigen Befehlen condition codes hinzuzufügen und genau das tut der Keil Compiler:
+
+
+\lstinputlisting[caption=\OptimizingKeilVI: \ARMMode,style=customasmARM]{patterns/07_jcc/abs/abs_Keil_ARM_O3_DE.s}
+Jetzt sind keine bedingten Sprünge mehr übrig und das ist vorteilhaft: \myref{branch_predictors}.
+
+
+\subsubsection{\NonOptimizing GCC 4.9 (ARM64)}
+
+\myindex{ARM!\Instructions!XOR}
+
+ARM64 kennt den Befehl \INS{NEG} zum Negieren:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 (ARM64),style=customasmARM]{patterns/07_jcc/abs/abs_GCC49_ARM64_O0_DE.s}
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/07_jcc/abs/MIPS_O3_IDA_DE.lst}
+
+\myindex{MIPS!\Instructions!BLTZ}
+Hier finden wir einen neuen Befehl: \INS{BLTZ} (\q{Branch if Less Than Zero}).
+\myindex{MIPS!\Instructions!SUBU}
+\myindex{MIPS!\Pseudoinstructions!NEGU}
+Es gibt zusätzlich noch den \INS{NEGU} Pseudo-Befehl, der eine Subtraktion von Null durchführt. Der Suffix \q{U} bei
+\INS{SUBU} und \INS{NEGU} zeigt an, dass keine Exception für den Fall eines Integer Overflows geworfen wird.
+
+
+\subsubsection{Verzweigungslose Version?}
+Man kann auch eine verzweigungslose Version dieses Codes erzeugen. Dies werden wir später betrachten:
+\myref{chap:branchless_abs}. 

@@ -1,0 +1,142 @@
+\subsection{Multiplikation}
+
+\subsubsection{Multiplikation durch Addition}
+
+Hier ist ein einfaches Beispiel:
+
+\begin{lstlisting}[style=customc]
+unsigned int f(unsigned int a)
+{
+	return a*8;
+};
+\end{lstlisting}
+
+Die Multiplikation mit 8 wird durch 3 Additionsbefehle ersetzt, welche das
+gleiche Ergebnis erzielen. Offenbar hat der MSVC Optimierer entschieden, dass
+der Code so schneller sein kann.
+
+\begin{lstlisting}[caption=\Optimizing MSVC 2010,style=customasmx86]
+_TEXT	SEGMENT
+_a$ = 8		; size = 4
+_f	PROC
+; File c:\polygon\c\2.c
+	mov	eax, DWORD PTR _a$[esp-4]
+	add	eax, eax
+	add	eax, eax
+	add	eax, eax
+	ret	0
+_f	ENDP
+_TEXT	ENDS
+END
+\end{lstlisting}
+
+\subsubsection{Multiplikation durch Verschieben}
+\label{subsec:mult_using_shifts}
+Multiplikation mit und Divisionen durch Zahlen, die Potenzen von 2 sind, werden
+oft durch Schiebebefehle (oft auch Shifting genannt) ersetzt.
+
+\begin{lstlisting}[style=customc]
+unsigned int f(unsigned int a)
+{
+	return a*4;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[caption=\NonOptimizing MSVC 2010,style=customasmx86]
+_a$ = 8		; size = 4
+_f	PROC
+	push	ebp
+	mov	ebp, esp
+	mov	eax, DWORD PTR _a$[ebp]
+	shl	eax, 2
+	pop	ebp
+	ret	0
+_f	ENDP
+\end{lstlisting}
+
+Die Multiplikation mit 4 entspricht einer Linksverschiebung der Zahl um 2 Bit
+und Einfügen zweier Nullen an der rechten Seite (an den niederwertigsten beiden
+Bits). Das Prinzip ist das gleiche wie bei der dezimalen Multiplikation von 3
+mit 100~--wir schreiben einfach zwei Nullen rechts an die Zahl.
+
+Der Befehl für Linksverschiebung funktioniert wie folgt:
+
+\myindex{x86!\Instructions!SHL}
+\input{shift_left}
+
+Die beiden rechts angefügten Bits sind stets Nullen.
+
+Multiplikation mit 4 in ARM:
+
+\begin{lstlisting}[caption=\NonOptimizingKeilVI (\ARMMode),style=customasmARM]
+f PROC
+        LSL      r0,r0,#2
+        BX       lr
+        ENDP
+\end{lstlisting}
+
+Multiplikation mit 4 in MIPS:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/11_arith_optimizations/MIPS_SLL.lst}
+
+\myindex{MIPS!\Instructions!SLL}
+\INS{SLL} bedeutet \q{Shift Left Logical}.
+
+\subsubsection{Multiplikation durch Verschieben, Subtrahieren und Addieren}
+\label{multiplication_using_shifts_adds_subs}
+Es ist auch möglich die Multiplikation zu ersetzen, wenn man mit Zahlen wie 7
+oder 17 multipliziert, wenn Verschiebung verwendet wird.
+Die zugrundeliegende Mathematik ist relativ einfach.
+
+\myparagraph{32-bit}
+
+\lstinputlisting[style=customc]{patterns/11_arith_optimizations/mult_shifts.c}
+
+\mysubparagraph{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012,style=customasmx86]{patterns/11_arith_optimizations/mult_shifts_MSVC_2012_Ox.asm}
+
+\mysubparagraph{ARM}
+
+Keil im ARM mode benutzt den Umwandler zur Verschiebung im zweiten Operanden:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/11_arith_optimizations/mult_shifts_Keil_ARM_O3.s}
+
+Da es im Thumb mode keine solchen Umwandler gibt, kann folglich \TT{f2()} nicht
+optimiert werden:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/11_arith_optimizations/mult_shifts_Keil_thumb_O3.s}
+
+\mysubparagraph{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/11_arith_optimizations/mult_shifts_MIPS_O3_IDA.lst}
+
+\myparagraph{64-bit}
+
+\lstinputlisting[style=customc]{patterns/11_arith_optimizations/mult_shifts_64.c}
+
+\mysubparagraph{x64}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012,style=customasmx86]{patterns/11_arith_optimizations/mult_shifts_64_GCC49_x64_O3.s}
+
+\mysubparagraph{ARM64}
+
+GCC 4.9 für ARM64 fasst sich dank der Verschiebe-Umwandler ebenfalls kurz:
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.9 ARM64,style=customasmARM]{patterns/11_arith_optimizations/mult_shifts_64_GCC49_ARM64.s}
+
+\myparagraph{Booths Multiplikationsalgorithmus}
+
+\myindex{Data general Nova}
+\myindex{Booth's multiplication algorithm}
+Es gab Zeiten, in denen Computer groß und so teuer waren, dass einige von ihnen
+keinen Hardwaresupport für die Multiplikation in der \ac{CPU} besaßen, so zum
+Beispiel der Data General Nova. 
+Wenn dort eine Multiplikation benötigt wurde, musste diese softwareseitig
+abgebildet werden, zum Beispiel durch Booths Multiplikationsalgorithmus. 
+Dabei handelt es sich um einen Algorithmus zur Multiplikation, welcher lediglich
+Addtionen und Verschiebeoperationen verwendet. 
+
+Zwar gehen moderne optimierende Compiler hier anders vor, aber das Ziel (die
+Multiplikation) und die Ressourcenfrage (schnellere Operationen) sind gleich.
+

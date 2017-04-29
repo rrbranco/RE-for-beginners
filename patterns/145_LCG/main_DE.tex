@@ -1,0 +1,70 @@
+\section[Linear congruential generator]{Linearer Kongruenzgenerator als Pseudozufallszahlengenerator}
+\myindex{\CStandardLibrary!rand()}
+\label{LCG_simple}
+Ein linearer Kongruenzgenerator ist die wohl einfachste Form der Zufallszahlenerzeugung.
+
+Er wird heutzutage nicht mehr so häufig eingesetzt\footnote{Der Mersenne-Twister ist besser}, kann aber, weil er so
+einfach ist (nur eine Multiplikation, eine Addition und eine AND-Operation), dennoch gut als Beispiel dienen.
+
+\lstinputlisting[style=customc]{patterns/145_LCG/rand_DE.c}
+Es gibt hier zwei Funktionen: die erste wird verwendet und den internen Zustand zu initialisieren und die zweite wird
+zum Erzeugen der Pseudozufallszahlen aufgerufen.
+
+Wir sehen, dass im Algorithmus zwei Konstanten verwendet werden.
+Sie stamen aus [William H. Press and Saul A. Teukolsky and William T. Vetterling and Brian P. Flannery, \IT{Numerical Recipes}, (2007)].
+
+Definieren wir sie über den \TT{\#define} \CCpp Ausdruck. Es handelt sich um ein Makro.
+
+Der Unterschied zwischen einem \CCpp Makro und einer Konstanten ist, dass alle Makros durch den \CCpp Präprozessor durch
+mit ihrem Wert ersetzt werden und dadurch im Gegensatz zu Variablen keinen Speicherplatz verbrauchen.
+
+Eine Konstante ist im Gegensatz dazu eine nur lesbare Variable.
+
+Es ist möglich einen Pointer (oder eine Adresse) einer Konstanten zu verwenden; das ist mit einem Makro nicht möglich.
+
+Die letzte AND-Operation wird benötigt, da \TT{my\_rand()} gemäß C-Standard einen Wert zwischen 0 und 32767 zurückgeben
+muss.
+
+Wenn man 32-Bit-Pseudozufallszahlen benötigt, kann die AND-Operation einfach weggelassen werden.
+
+\subsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2013,style=customasmx86]{patterns/145_LCG/rand_MSVC_2013_x86_Ox.asm}
+Hier sehen wir, dass beide Konstanten in den Code eingebettet wurden. Es wurde kein Speicher für sie reserviert.
+
+Die Funktion \TT{my\_srand()} kopiert ihren Eingabewert in die interne Variable \TT{rand\_state}.
+
+\TT{my\_rand()} nimmt diese, berechnet den nächsten \TT{rand\_state}, schneidet ihn ab und belässt ihn im \EAX Register.
+
+Die nicht optimierte Version ist umfangreicher:
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2013,style=customasmx86]{patterns/145_LCG/rand_MSVC_2013_x86.asm}
+
+\subsection{x64}
+Die x64 Version ist größtenteils identisch und verwendet 32-Bit-Register anstelle der 64-Bit-Register (wir arbeiten
+hier mit \Tint Werten).
+
+Die Funktion \TT{my\_srand()} nimmt seinen Eingabewert aus dem Register \ECX und nicht vom Stack:
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{patterns/145_LCG/rand_MSVC_2013_x64_Ox_DE.asm}
+
+GCC erzeugt fast den gleichen Code.
+
+\subsection{32-bit ARM}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/145_LCG/rand.s_Keil_ARM_O3_DE.s}
+Es ist nicht möglich 32-Bit-Konstanten in ARM Befehle einzubetten, sodass Keil diese extern speichern und dann
+zusätzlich laden muss. Eine interessante Sache ist, dass es ebenfalls nicth möglich ist, die Konstante 0x7FFF
+einzubetten.
+Was Keil dann tut, ist \IT{rand\_state} um 17 Bits nach links zu verschieben und dann um 17 Bits nach rechts zu
+Verchieben.
+Die entspricht Ausdruck $(rand\_state \ll 17) \gg 17$ in \CCpp.
+Es scheint eine nutzlose Operation zu sein, löscht aber die oberen 17 Bits und lässt die 15 niederen Bits intakt und das
+ist genau was wir wollen.\\\\
+
+\Optimizing Keil für Thumb mode erzeugt fast den gleichen Code.
+
+\input{patterns/145_LCG/MIPS_DE.tex}
+
+\subsection{Threadsichere Version des Beispiels}
+Eine threadsichere Version des Beispiels wird später hier gezeigt:\myref{LCG_TLS}. 

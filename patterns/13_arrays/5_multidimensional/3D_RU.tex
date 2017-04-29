@@ -1,0 +1,69 @@
+\subsubsection{Пример с трехмерным массивом}
+
+То же самое и для многомерных массивов.
+На этот раз будем работать с массивом типа \Tint: каждый элемент требует 4 байта в памяти.
+
+Попробуем:
+
+\lstinputlisting[caption=простой пример,style=customc]{patterns/13_arrays/5_multidimensional/multi.c}
+
+\myparagraph{x86}
+
+В итоге (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/13_arrays/5_multidimensional/multi_msvc_RU.asm}
+
+В принципе, ничего удивительного. В \TT{insert()} для вычисления адреса нужного элемента массива 
+три входных аргумента перемножаются по формуле $address=600 \cdot 4 \cdot x + 30 \cdot 4 \cdot y + 4z$, 
+чтобы представить массив трехмерным.
+Не забывайте также, что тип \Tint 32-битный (4 байта), поэтому все коэффициенты нужно умножить на 4.
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/13_arrays/5_multidimensional/multi_gcc_RU.asm}
+
+Компилятор GCC решил всё сделать немного иначе.
+Для вычисления одной из операций ($30y$), GCC создал код, где нет самой операции умножения.
+
+Происходит это так: 
+$(y+y) \ll 4 - (y+y) = (2y) \ll 4 - 2y = 2 \cdot 16 \cdot y - 2y = 32y - 2y = 30y$. 
+Таким образом, для вычисления $30y$ используется только операция сложения, 
+операция битового сдвига и операция вычитания.
+Это работает быстрее.
+
+\myparagraph{ARM + \NonOptimizingXcodeIV (\ThumbMode)}
+
+\lstinputlisting[caption=\NonOptimizingXcodeIV (\ThumbMode),style=customasmARM]{patterns/13_arrays/5_multidimensional/multi_Xcode_thumb_O0_RU.asm}
+
+\NonOptimizing LLVM сохраняет все переменные в локальном стеке, хотя это и избыточно.
+
+Адрес элемента массива вычисляется по уже рассмотренной формуле.
+
+\myparagraph{ARM + \OptimizingXcodeIV (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingXcodeIV (\ThumbMode),style=customasmARM]{patterns/13_arrays/5_multidimensional/multi_Xcode_thumb_O3_RU.asm}
+
+Тут используются уже описанные трюки для замены умножения на операции сдвига, сложения и вычитания.
+
+\myindex{ARM!\Instructions!RSB}
+\myindex{ARM!\Instructions!SUB}
+Также мы видим новую для себя инструкцию \RSB (\IT{Reverse Subtract}).
+Она работает так же, как и \SUB, только меняет операнды местами.
+
+Зачем?
+\myindex{ARM!Optional operators!LSL}
+\SUB и \RSB это те инструкции, ко второму операнду которых можно применить коэффициент сдвига, как мы видим и здесь: (\INS{LSL\#4}). 
+Но этот коэффициент можно применить только ко второму операнду.
+
+Для коммутативных операций, таких как сложение или умножение, 
+операнды можно менять местами и это не влияет на результат.
+
+Но вычитание~--- операция некоммутативная, так что для этих случаев существует инструкция \RSB.
+
+\myparagraph{MIPS}
+
+\myindex{MIPS!Global Pointer}
+
+Мой пример такой крошечный, что компилятор GCC решил разместить массив $a$ в 64KiB-области,
+адресуемой при помощи Global Pointer.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/13_arrays/5_multidimensional/multi_MIPS_O3_IDA_RU.lst}
+

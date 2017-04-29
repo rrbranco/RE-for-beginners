@@ -1,0 +1,238 @@
+\subsubsection{ARM: 8 аргументов}
+
+Снова воспользуемся примером с 9-ю аргументами из предыдущей секции: \myref{example_printf8_x64}.
+
+\lstinputlisting[style=customc]{patterns/03_printf/2.c}
+
+\myparagraph{\OptimizingKeilVI: \ARMMode}
+
+\begin{lstlisting}[style=customasmARM]
+.text:00000028             main
+.text:00000028
+.text:00000028             var_18 = -0x18
+.text:00000028             var_14 = -0x14
+.text:00000028             var_4  = -4
+.text:00000028
+.text:00000028 04 E0 2D E5  STR    LR, [SP,#var_4]!
+.text:0000002C 14 D0 4D E2  SUB    SP, SP, #0x14
+.text:00000030 08 30 A0 E3  MOV    R3, #8
+.text:00000034 07 20 A0 E3  MOV    R2, #7
+.text:00000038 06 10 A0 E3  MOV    R1, #6
+.text:0000003C 05 00 A0 E3  MOV    R0, #5
+.text:00000040 04 C0 8D E2  ADD    R12, SP, #0x18+var_14
+.text:00000044 0F 00 8C E8  STMIA  R12, {R0-R3}
+.text:00000048 04 00 A0 E3  MOV    R0, #4
+.text:0000004C 00 00 8D E5  STR    R0, [SP,#0x18+var_18]
+.text:00000050 03 30 A0 E3  MOV    R3, #3
+.text:00000054 02 20 A0 E3  MOV    R2, #2
+.text:00000058 01 10 A0 E3  MOV    R1, #1
+.text:0000005C 6E 0F 8F E2  ADR    R0, aADBDCDDDEDFDGD ; "a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%"...
+.text:00000060 BC 18 00 EB  BL     __2printf
+.text:00000064 14 D0 8D E2  ADD    SP, SP, #0x14
+.text:00000068 04 F0 9D E4  LDR    PC, [SP+4+var_4],#4
+\end{lstlisting}
+
+Этот код можно условно разделить на несколько частей:
+
+\myindex{Function prologue}
+\begin{itemize}
+\item Пролог функции:
+
+\myindex{ARM!\Instructions!STR}
+Самая первая инструкция \INS{STR LR, [SP,\#var\_4]!} 
+сохраняет в стеке \ac{LR}, ведь нам придется использовать этот регистр для вызова \printf.
+Восклицательный знак в конце означает \IT{pre-index}.
+Это значит, что в начале \ac{SP} должно быть уменьшено на 4, затем по адресу в \ac{SP} должно быть записано значение \ac{LR}.
+
+Это аналог знакомой в x86 инструкции \PUSH. Читайте больше об этом: \myref{ARM_postindex_vs_preindex}.
+
+\myindex{ARM!\Instructions!SUB}
+Вторая инструкция \INS{SUB SP, SP, \#0x14} уменьшает \glslink{stack pointer}{указатель стека} \ac{SP}, но, на самом деле, эта процедура нужна для выделения в локальном стеке места размером \GTT{0x14} (20) байт.
+Действительно, нам нужно передать 5 32-битных значений через стек в \printf. Каждое значение занимает 4 байта, все вместе~--- $5*4=20$.
+Остальные 4 32-битных значения будут переданы через регистры.
+
+\item Передача 5, 6, 7 и 8 через стек:
+они записываются в регистры \Reg{0}, \Reg{1}, \Reg{2} и \Reg{3} соответственно.\\
+Затем инструкция \INS{ADD R12, SP, \#0x18+var\_14} 
+записывает в регистр \Reg{12} адрес места в стеке, куда будут помещены эти 4 значения.
+\myindex{IDA!var\_?}
+\IT{var\_14}~--- это макрос ассемблера, равный -0x14.
+Такие макросы создает \IDA, чтобы удобнее было показывать, как код обращается к стеку.
+
+Макросы \IT{var\_?}, создаваемые \IDA, отражают локальные переменные в стеке. Так что в \Reg{12} будет записано \GTT{SP+4}.
+
+\myindex{ARM!\Instructions!STMIA}
+Следующая инструкция \INS{STMIA R12, {R0-R3}} записывает содержимое регистров \Reg{0}-\Reg{3} по адресу в памяти, на который указывает \Reg{12}.
+
+Инструкция \INS{STMIA} означает \IT{Store Multiple Increment After}.\\
+\IT{Increment After} означает, что \Reg{12} будет увеличиваться на 4 после записи каждого значения регистра.
+
+\item Передача 4 через стек:
+4 записывается в \Reg{0}, затем инструкция \INS{STR R0, [SP,\#0x18+var\_18]} записывает его в стек.
+\IT{var\_18} равен -0x18, смещение будет 0, 
+так что значение из регистра \Reg{0} (4) запишется туда, куда указывает \ac{SP}.
+
+\item Передача 1, 2 и 3 через регистры:
+
+Значения для первых трех чисел (a, b, c) (1, 2, 3 соответственно) передаются в регистрах 
+\Reg{1}, \Reg{2} и \Reg{3} перед самим вызовом \printf, а остальные 5 значений передаются через стек, и вот как:
+
+\item Вызов \printf.
+
+\myindex{Function epilogue}
+\item Эпилог функции:
+
+Инструкция \INS{ADD SP, SP, \#0x14} возвращает \ac{SP} на прежнее место, 
+аннулируя таким образом всё, что было записано в стек.
+Конечно, то что было записано в стек, там пока и останется, но всё это будет многократно 
+перезаписано во время исполнения последующих функций.
+
+\myindex{ARM!\Instructions!LDR}
+Инструкция \INS{LDR PC, [SP+4+var\_4],\#4} загружает в \ac{PC} 
+сохраненное значение \ac{LR} из стека, обеспечивая таким образом выход из функции.
+
+Здесь нет восклицательного знака~--- действительно, сначала \ac{PC} загружается из места, куда указывает \ac{SP}
+($4+var\_4=4+(-4)=0$, так что эта инструкция аналогична \INS{LDR PC, [SP],\#4}), затем \ac{SP} увеличивается 
+на 4.
+Это называется \IT{post-index}\footnote{Читайте больше об этом: \myref{ARM_postindex_vs_preindex}.}.
+Почему \IDA показывает инструкцию именно так?
+Потому что она хочет показать разметку стека и тот факт, что \GTT{var\_4} выделена в локальном стеке именно для сохраненного
+значения \ac{LR}.
+Эта инструкция в каком-то смысле аналогична \INS{POP PC} в x86
+\footnote{В x86 невозможно установить значение \GTT{IP/EIP/RIP} используя \POP, но будем надеяться, вы поняли аналогию.}.
+
+\end{itemize}
+
+\myparagraph{\OptimizingKeilVI: \ThumbMode}
+
+\begin{lstlisting}[style=customasmARM]
+.text:0000001C             printf_main2
+.text:0000001C
+.text:0000001C             var_18 = -0x18
+.text:0000001C             var_14 = -0x14
+.text:0000001C             var_8  = -8
+.text:0000001C
+.text:0000001C 00 B5        PUSH    {LR}
+.text:0000001E 08 23        MOVS    R3, #8
+.text:00000020 85 B0        SUB     SP, SP, #0x14
+.text:00000022 04 93        STR     R3, [SP,#0x18+var_8]
+.text:00000024 07 22        MOVS    R2, #7
+.text:00000026 06 21        MOVS    R1, #6
+.text:00000028 05 20        MOVS    R0, #5
+.text:0000002A 01 AB        ADD     R3, SP, #0x18+var_14
+.text:0000002C 07 C3        STMIA   R3!, {R0-R2}
+.text:0000002E 04 20        MOVS    R0, #4
+.text:00000030 00 90        STR     R0, [SP,#0x18+var_18]
+.text:00000032 03 23        MOVS    R3, #3
+.text:00000034 02 22        MOVS    R2, #2
+.text:00000036 01 21        MOVS    R1, #1
+.text:00000038 A0 A0        ADR     R0, aADBDCDDDEDFDGD ; "a=%d; b=%d; c=%d; d=%d; e=%d; f=%d; g=%"...
+.text:0000003A 06 F0 D9 F8  BL      __2printf
+.text:0000003E
+.text:0000003E             loc_3E   ; CODE XREF: example13_f+16
+.text:0000003E 05 B0        ADD     SP, SP, #0x14
+.text:00000040 00 BD        POP     {PC}
+\end{lstlisting}
+
+Это почти то же самое что и в предыдущем примере, только код для Thumb и значения помещаются в 
+стек немного иначе: сначала 8 за первый раз, затем 5, 6, 7 за второй раз и 4 за третий раз.
+
+\myparagraph{\OptimizingXcodeIV: \ARMMode}
+
+\begin{lstlisting}[style=customasmARM]
+__text:0000290C             _printf_main2
+__text:0000290C
+__text:0000290C             var_1C = -0x1C
+__text:0000290C             var_C  = -0xC
+__text:0000290C
+__text:0000290C 80 40 2D E9   STMFD  SP!, {R7,LR}
+__text:00002910 0D 70 A0 E1   MOV    R7, SP
+__text:00002914 14 D0 4D E2   SUB    SP, SP, #0x14
+__text:00002918 70 05 01 E3   MOV    R0, #0x1570
+__text:0000291C 07 C0 A0 E3   MOV    R12, #7
+__text:00002920 00 00 40 E3   MOVT   R0, #0
+__text:00002924 04 20 A0 E3   MOV    R2, #4
+__text:00002928 00 00 8F E0   ADD    R0, PC, R0
+__text:0000292C 06 30 A0 E3   MOV    R3, #6
+__text:00002930 05 10 A0 E3   MOV    R1, #5
+__text:00002934 00 20 8D E5   STR    R2, [SP,#0x1C+var_1C]
+__text:00002938 0A 10 8D E9   STMFA  SP, {R1,R3,R12}
+__text:0000293C 08 90 A0 E3   MOV    R9, #8
+__text:00002940 01 10 A0 E3   MOV    R1, #1
+__text:00002944 02 20 A0 E3   MOV    R2, #2
+__text:00002948 03 30 A0 E3   MOV    R3, #3
+__text:0000294C 10 90 8D E5   STR    R9, [SP,#0x1C+var_C]
+__text:00002950 A4 05 00 EB   BL     _printf
+__text:00002954 07 D0 A0 E1   MOV    SP, R7
+__text:00002958 80 80 BD E8   LDMFD  SP!, {R7,PC}
+\end{lstlisting}
+
+\myindex{ARM!\Instructions!STMFA}
+\myindex{ARM!\Instructions!STMIB}
+Почти то же самое, что мы уже видели, за исключением того, что \INS{STMFA} (Store Multiple Full Ascending)~--- 
+это синоним инструкции \INS{STMIB} (Store Multiple Increment Before). 
+Эта инструкция увеличивает \ac{SP} и только затем записывает в память значение очередного регистра, но не наоборот.
+
+Далее бросается в глаза то, что инструкции как будто бы расположены случайно.
+Например, значение в регистре \Reg{0} подготавливается в трех местах, по адресам \GTT{0x2918}, \GTT{0x2920} и \GTT{0x2928}, 
+когда это можно было бы сделать в одном месте.
+Однако, у оптимизирующего компилятора могут быть свои доводы о том, как лучше составлять инструкции 
+друг с другом для лучшей эффективности исполнения.
+Процессор обычно пытается исполнять одновременно идущие друг за другом инструкции.
+К примеру, инструкции \INS{MOVT R0, \#0} и \INS{ADD R0, PC, R0} не могут быть исполнены одновременно,
+потому что обе инструкции модифицируют регистр \Reg{0}. 
+А вот инструкции \INS{MOVT R0, \#0} и \INS{MOV R2, \#4} легко можно исполнить одновременно, 
+потому что эффекты от их исполнения никак не конфликтуют друг с другом.
+Вероятно, компилятор старается генерировать код именно таким образом там, где это возможно.
+ 
+\myparagraph{\OptimizingXcodeIV: \ThumbTwoMode}
+
+\begin{lstlisting}[style=customasmARM]
+__text:00002BA0               _printf_main2
+__text:00002BA0
+__text:00002BA0               var_1C = -0x1C
+__text:00002BA0               var_18 = -0x18
+__text:00002BA0               var_C  = -0xC
+__text:00002BA0
+__text:00002BA0 80 B5          PUSH     {R7,LR}
+__text:00002BA2 6F 46          MOV      R7, SP
+__text:00002BA4 85 B0          SUB      SP, SP, #0x14
+__text:00002BA6 41 F2 D8 20    MOVW     R0, #0x12D8
+__text:00002BAA 4F F0 07 0C    MOV.W    R12, #7
+__text:00002BAE C0 F2 00 00    MOVT.W   R0, #0
+__text:00002BB2 04 22          MOVS     R2, #4
+__text:00002BB4 78 44          ADD      R0, PC  ; char *
+__text:00002BB6 06 23          MOVS     R3, #6
+__text:00002BB8 05 21          MOVS     R1, #5
+__text:00002BBA 0D F1 04 0E    ADD.W    LR, SP, #0x1C+var_18
+__text:00002BBE 00 92          STR      R2, [SP,#0x1C+var_1C]
+__text:00002BC0 4F F0 08 09    MOV.W    R9, #8
+__text:00002BC4 8E E8 0A 10    STMIA.W  LR, {R1,R3,R12}
+__text:00002BC8 01 21          MOVS     R1, #1
+__text:00002BCA 02 22          MOVS     R2, #2
+__text:00002BCC 03 23          MOVS     R3, #3
+__text:00002BCE CD F8 10 90    STR.W    R9, [SP,#0x1C+var_C]
+__text:00002BD2 01 F0 0A EA    BLX      _printf
+__text:00002BD6 05 B0          ADD      SP, SP, #0x14
+__text:00002BD8 80 BD          POP      {R7,PC}
+\end{lstlisting}
+
+Почти то же самое, что и в предыдущем примере,
+лишь за тем исключением, что здесь используются Thumb-инструкции.
+
+% FIXME: also STMIA is used instead of STMIB,
+% which is why it uses LR, which is 4 bytes ahead of SP
+
+\myparagraph{ARM64}
+
+\mysubparagraph{\NonOptimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[caption=\NonOptimizing GCC (Linaro) 4.9,style=customasmARM]{patterns/03_printf/ARM/ARM8_O0_RU.lst}
+
+Первые 8 аргументов передаются в X- или W-регистрах: \ARMPCS.
+Указатель на строку требует 64-битного регистра, так что он передается в \RegX{0}.
+Все остальные значения имеют 32-битный тип \Tint, так что они записываются в 32-битные части регистров (W-).
+Девятый аргумент (8) передается через стек.
+Действительно, невозможно передать большое количество аргументов в регистрах, потому что количество регистров ограничено.
+
+\Optimizing GCC (Linaro) 4.9 генерирует почти такой же код.

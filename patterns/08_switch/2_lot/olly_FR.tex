@@ -1,0 +1,55 @@
+﻿\clearpage
+\mysubparagraph{\olly}
+\myindex{\olly}
+
+Essayons cet exemple dans \olly.
+La valeur d'entrée de la fonction (2) est chargée dans \EAX:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/2_lot/olly1.png}
+\caption{\olly: la valeur d'entrée de la fonction est chargée dans \EAX}
+\label{fig:switch_lot_olly1}
+\end{figure}
+
+\clearpage
+La valeur entrée est testée, est-elle plus grande que 4?
+Si non, le saut par \q{défaut} n'est pas pris:
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/2_lot/olly2.png}
+\caption{\olly: 2 n'est pas plus grand que 4: le saut n'est pas pris}
+\label{fig:switch_lot_olly2}
+\end{figure}
+
+\clearpage
+Ici, nous voyons une table des sauts:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/2_lot/olly3.png}
+\caption{\olly: calcul de l'adresse de destination en utilisant la table des sauts}
+\label{fig:switch_lot_olly3}
+\end{figure}
+
+Ici, nous avons cliqué \q{Follow in Dump} $\rightarrow$ \q{Address constant}, donc
+nous voyons maintenant la \IT{jumptable} dans la fenêtre des données.
+Il y a 5 valeurs 32-bit\footnote{Elles sont soulignées par \olly car ce sont aussi
+des FIXUPs: \myref{subsec:relocs}, nous y reviendrons plus tard}.
+\ECX contient maintenant 2, donc le troisième élément (peut être indexé par 2\footnote{Á
+propos des index de tableaux, lire aussi: \ref{arrays_at_one}}) de la table va être
+utilisé.
+Il est également possible de cliquer sur \q{Follow in Dump} $\rightarrow$ \q{Memory
+address} et \olly va montrer l'élément adressé par l'instruction \JMP.
+Il s'agit de \TT{0x010B103A}.
+
+\clearpage
+Après le saut, nous sommes en \TT{0x010B103A}: le code qui affiche \q{two} va être
+exécuté:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/2_lot/olly4.png}
+\caption{\olly: maintenant nous sommes au \IT{cas:} label}
+\label{fig:switch_lot_olly4}
+\end{figure}

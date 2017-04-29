@@ -1,0 +1,275 @@
+\subsection{Нулевые указатели}
+
+\subsubsection{Ошибка ``Null pointer assignment'' во времена MS-DOS}
+
+\myindex{MS-DOS}
+Некоторые люди постарше могут помнить очень странную ошибку эпохи MS-DOS: ``Null pointer assignment''.
+Что она означает?
+
+В *NIX и Windows нельзя записывать в память по нулевому адресу, но это было возможно в MS-DOS, из-за отсутствия
+защиты памяти как таковой.
+
+\myindex{Turbo C++}
+\myindex{Borland C++}
+Так что я могу найти древний Turbo C++ 3.0 (позже он был переименован в C++) из начала 1990-х и попытаться
+скомпилировать это:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+	int *ptr=NULL;
+	*ptr=1234;
+	printf ("Now let's read at NULL\n");
+	printf ("%d\n", *ptr);
+};
+\end{lstlisting}
+
+Трудно поверить, но это работает, но с ошибкой при выходе:
+
+\begin{lstlisting}[caption=Древний Turbo C++ 3.0]
+C:\TC30\BIN\1
+Now let's read at NULL
+1234
+Null pointer assignment
+
+C:\TC30\BIN>_
+\end{lstlisting}
+
+Посмотрим внутри исходного кода \ac{CRT} компилятора Borland C++ 3.1, файл \IT{c0.asm}:
+
+\begin{lstlisting}[style=customasmx86]
+;       _checknull()    check for null pointer zapping copyright message
+
+...
+
+;       Check for null pointers before exit
+
+__checknull     PROC    DIST
+                PUBLIC  __checknull
+
+IF      LDATA  EQ  false
+  IFNDEF  __TINY__
+                push    si
+                push    di
+                mov     es, cs:DGROUP@@
+                xor     ax, ax
+                mov     si, ax
+                mov     cx, lgth_CopyRight
+ComputeChecksum label   near
+                add     al, es:[si]
+                adc     ah, 0
+                inc     si
+                loop    ComputeChecksum
+                sub     ax, CheckSum
+                jz      @@SumOK
+                mov     cx, lgth_NullCheck
+                mov     dx, offset DGROUP: NullCheck
+                call    ErrorDisplay
+@@SumOK:        pop     di
+                pop     si
+  ENDIF
+ENDIF
+
+_DATA           SEGMENT
+
+;       Magic symbol used by the debug info to locate the data segment
+                public DATASEG@
+DATASEG@        label   byte
+
+;       The CopyRight string must NOT be moved or changed without
+;       changing the null pointer check logic
+
+CopyRight       db      4 dup(0)
+                db      'Borland C++ - Copyright 1991 Borland Intl.',0
+lgth_CopyRight  equ     $ - CopyRight
+
+IF      LDATA  EQ  false
+IFNDEF  __TINY__
+CheckSum        equ     00D5Ch
+NullCheck       db      'Null pointer assignment', 13, 10
+lgth_NullCheck  equ     $ - NullCheck
+ENDIF
+ENDIF
+
+...
+
+\end{lstlisting}
+
+Модель памяти в MS-DOS крайне странная (\ref{8086_memory_model}), и, вероятно, её и не нужно изучать, если только вы не фанат ретрокомпьютинга
+или ретрогейминга.
+Одну только вещь можно держать в памяти, это то, что сегмент памяти (включая сегмент данных) в MS-DOS это место где
+хранится код или данные, но в отличие от ``серьезных'' \ac{OS}, он начинается с нулевого адреса.
+
+И в Borland C++ \ac{CRT}, сегмент данных начинается с 4-х нулевых байт и строки копирайта
+``Borland C++ - Copyright 1991 Borland Intl.''.
+Целостность 4-х нулевых байт и текстовой строки проверяется в конце, и если что-то нарушено, выводится сообщение об ошибке.
+
+Но зачем? Запись по нулевому указателю это распространенная ошибка в \CCpp, и если вы делаете это в *NIX или Windows,
+ваше приложение упадет.
+В MS-DOS нет защиты памяти, так что это приходится проверять в \ac{CRT} во время выхода, пост-фактум.
+Если вы видите это сообщение, значит ваша программа в каком-то месте что-то записала по нулевому адресу.
+
+Наша программа это сделала. И вот почему число 1234 было прочитано корректно: потому что оно было записано на месте
+первых 4-х байт.
+Контрольная сумма во время выхода неверна (потому что наше число там осталось), так что сообщение было выведено.
+
+Прав ли я?
+Я переписал программу для проверки моих предположений:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+	int *ptr=NULL;
+	*ptr=1234;
+	printf ("Now let's read at NULL\n");
+	printf ("%d\n", *ptr);
+	*ptr=0; // psst, cover our tracks!
+};
+\end{lstlisting}
+
+Программа исполняется без ошибки во время выхода.
+
+Хотя и метод предупреждать о записи по нулевому указателю имел смысл в MS-DOS,
+вероятно, это всё может использоваться и сегодня, на маломощных \ac{MCU} без защиты памяти и/или \ac{MMU}.
+
+\subsubsection{Почему кому-то может понадобиться писать по нулевому адресу?}
+
+Но почему трезвомыслящему программисту может понадобиться записывать что-то по нулевому адресу?
+Это может быть сделано случайно, например, указатель должен быть инициализирован и указывать на только что выделенный
+блок в памяти, а затем должен быть передан в какую-то ф-цию, возвращающую данные через указатель.
+
+\begin{lstlisting}[style=customc]
+int *ptr=NULL;
+
+... мы забыли выделить память и инициализировать ptr
+
+strcpy (ptr, buf); // strcpy() завершает работу молча, потому что в MS-DOS нет защиты памяти
+\end{lstlisting}
+
+И даже хуже:
+
+\begin{lstlisting}[style=customc]
+int *ptr=malloc(1000);
+
+... мы забыли проверить, действительно ли память была выделена: это же MS-DOS и у тогдащних компьютеров было мало памяти,
+... и нехватка памяти была обычной ситуацией.
+... если malloc() вернул NULL, тогда ptr будет тоже NULL.
+
+strcpy (ptr, buf); // strcpy() завершает работу молча, потому что в MS-DOS нет защиты памяти
+\end{lstlisting}
+
+\subsubsection{NULL в \CCpp}
+
+NULL в C/C++ это просто макрос, который часто определяют так:
+
+\begin{lstlisting}[style=customc]
+#define NULL  ((void*)0)
+\end{lstlisting}
+( \href{https://github.com/wzhy90/linaro_toolchains/blob/8ff8ae680bac04558d10cc9626e12c4c2f6c1348/arm-cortex_a15-linux-gnueabihf/libc/usr/include/libio.h#L70}{libio.h file} )
+
+\IT{void*} это тип данных, отражающий тот факт, что это указатель, но на значение неизвестного типа (\IT{void}).
+
+NULL обычно используется чтобы показать отсутствие объекта.
+Например, у вас есть односвязный список, и каждый узел имеет значение (или указатель на значение) и указатель вроде \IT{next}.
+Чтобы показать, что следующего узла нет, в поле \IT{next} записывается 0.
+Другие решения просто хуже.
+Вероятно, вы можете использовать какую-то крайне экзотическую среду, где можно выделить память по нулевому адресу.
+Как вы будете показывать отсутствие следующего узла?
+Какой-нибудь \IT{magic number}? Может быть -1? Или дополнительным битом?
+
+В Википедии мы можем найти это:
+
+\begin{framed}
+\begin{quotation}
+In fact, quite contrary to the zero page's original preferential use, some modern operating systems such as FreeBSD, Linux and Microsoft Windows[2] actually make the zero page inaccessible to trap uses of NULL pointers. 
+\end{quotation}
+\end{framed}
+( \url{https://en.wikipedia.org/wiki/Zero_page} )
+
+\subsubsection{Нулевой указатель на ф-цию}
+
+Можно вызывать ф-ции по их адресу.
+Например, я компилирую это при помощи MSVC 2010 и запускаю в Windows 7:
+
+\begin{lstlisting}[style=customc]
+#include <windows.h>
+#include <stdio.h>
+
+int main()
+{
+	printf ("0x%x\n", &MessageBoxA);
+};
+\end{lstlisting}
+
+Результат \IT{0x7578feae}, и он не меняется и после того, как я запустил это несколько раз, потому что
+user32.dll (где находится ф-ция MessageBoxA) всегда загружается по одному и тому же адресу.
+И потому что \ac{ASLR} не включено (тогда результат был бы всё время разным).
+
+Вызовем ф-цию \IT{MessageBoxA()} по адресу:
+
+\begin{lstlisting}[style=customc]
+#include <windows.h>
+#include <stdio.h>
+
+typedef int (*msgboxtype)(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption,  UINT uType);
+
+int main()
+{
+	msgboxtype msgboxaddr=0x7578feae;
+
+	// заставить загрузиться DLL в память процесса,
+	// т.к., наш код не использует никакую ф-цию из user32.dll, 
+	// и DLL не импортируется
+	LoadLibrary ("user32.dll");
+
+	msgboxaddr(NULL, "Hello, world!", "hello", MB_OK);
+};
+\end{lstlisting}
+
+Странно выглядит, но работает в Windows 7 x86.
+
+Это часто используется в шеллкода, потому что оттуда трудно вызывать ф-ции из DLL по их именам.
+А \ac{ASLR} это контрмера.
+
+И вот теперь что по-настоящему странно выглядит, некоторые программисты на Си для встраиваемых (embedded) систем, могут быть
+знакомы с таким кодом:
+
+\begin{lstlisting}[style=customc]
+int reset()
+{
+	void (*foo)(void) = 0;
+	foo();
+};
+\end{lstlisting}
+
+Кому понадобится вызывать ф-цию по адресу 0?
+Это портабельный способ перейти на нулевой адрес.
+Множество маломощных микроконтроллеров не имеют защиты памяти или \ac{MMU}, и после сброса, они просто начинают
+исполнять код по нулевому адресу, где может быть записан инициализирующий код.
+Так что переход по нулевому адресу это способ сброса.
+Можно использовать и inline-ассемблер, но если это неудобно, тогда можно использовать этот портабельный метод.
+
+Это даже корректно компилируется при помощи GCC 4.8.4 на Linux x64:
+
+\begin{lstlisting}[style=customasmx86]
+reset:
+        sub     rsp, 8
+        xor     eax, eax
+        call    rax
+        add     rsp, 8
+        ret
+\end{lstlisting}
+
+То обстоятельство, что указатель стека сдвинут, это не проблема: инициализирующий код в микроконтроллерах обычно
+полностью игнорирует состояние регистров и памяти и загружает всё ``с чистого листа''.
+
+И конечно, этот код упадет в *NIX или Windows, из-за защиты памяти, и даже если бы её не было, по нулевому адресу
+нет никакого кода.
+
+В GCC даже есть нестандартное расширение, позволяющее перейти по определенному адресу, вместо того чтобы вызывать ф-цию:
+\url{http://gcc.gnu.org/onlinedocs/gcc/Labels-as-Values.html}.
+

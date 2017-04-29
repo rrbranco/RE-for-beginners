@@ -1,0 +1,75 @@
+% TODO proof-reading
+\subsubsection{Two-dimensional arrays}
+
+Two-dimensional arrays in Java are just one-dimensional arrays of \IT{references} to another 
+one-dimensional arrays.
+
+
+Let's create a two-dimensional array:
+
+\begin{lstlisting}[style=customjava]
+	public static void main(String[] args)
+	{
+		int[][] a = new int[5][10];
+		a[1][2]=3;
+	}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=3, locals=2, args_size=1
+         0: iconst_5      
+         1: bipush        10
+         3: multianewarray #2,  2      // class "[[I"
+         7: astore_1      
+         8: aload_1       
+         9: iconst_1      
+        10: aaload        
+        11: iconst_2      
+        12: iconst_3      
+        13: iastore       
+        14: return        
+\end{lstlisting}
+
+It's created using the \TT{multianewarray} instruction: the object's type and dimensionality are passed
+as operands.
+
+The array's size (10*5) is left in stack (using the instructions \TT{iconst\_5} and \TT{bipush}).
+
+
+A \IT{reference} to row \#1 is loaded at offset 10 (\TT{iconst\_1} and \TT{aaload}).
+
+The column is chosen using \TT{iconst\_2} at offset 11.
+
+The value to be written is set at offset 12.
+
+\TT{iastore} at 13 writes the array's element.
+
+
+How it is an element accessed?
+
+\begin{lstlisting}[style=customjava]
+	public static int get12 (int[][] in)
+	{
+		return in[1][2];
+	}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static int get12(int[][]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: aload_0       
+         1: iconst_1      
+         2: aaload        
+         3: iconst_2      
+         4: iaload        
+         5: ireturn       
+\end{lstlisting}
+
+A \IT{Reference} to the array's row is loaded at offset 2, the column is set at offset 3, 
+then \TT{iaload} loads the array's element.
+

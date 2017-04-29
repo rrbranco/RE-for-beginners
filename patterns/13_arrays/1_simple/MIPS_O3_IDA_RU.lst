@@ -1,0 +1,67 @@
+main:
+
+var_70          = -0x70
+var_68          = -0x68
+var_14          = -0x14
+var_10          = -0x10
+var_C           = -0xC
+var_8           = -8
+var_4           = -4
+; пролог функции:
+                lui     $gp, (__gnu_local_gp >> 16)
+                addiu   $sp, -0x80
+                la      $gp, (__gnu_local_gp & 0xFFFF)
+                sw      $ra, 0x80+var_4($sp)
+                sw      $s3, 0x80+var_8($sp)
+                sw      $s2, 0x80+var_C($sp)
+                sw      $s1, 0x80+var_10($sp)
+                sw      $s0, 0x80+var_14($sp)
+                sw      $gp, 0x80+var_70($sp)
+                addiu   $s1, $sp, 0x80+var_68
+                move    $v1, $s1
+                move    $v0, $zero
+; это значение используется как терминатор цикла.
+; оно было вычислено компилятором GCC на стадии компиляции:
+                li      $a0, 0x28  # '('
+
+loc_34:                                  # CODE XREF: main+3C
+; сохранить значение в памяти:
+                sw      $v0, 0($v1)
+; увеличивать значение (§которое§ §будет§ §записано§) на 2 на каждой итерации:
+                addiu   $v0, 2
+; дошли до терминатора цикла?
+                bne     $v0, $a0, loc_34
+; в любом случае, добавляем 4 к адресу:
+                addiu   $v1, 4
+; цикл заполнения массива закончился
+; начало второго цикла
+                la      $s3, $LC0        # "a[%d]=%d\n"
+; переменная "i" будет находится в $s0:
+                move    $s0, $zero
+                li      $s2, 0x14
+
+loc_54:                                  # CODE XREF: main+70
+; вызов printf():
+                lw      $t9, (printf & 0xFFFF)($gp)
+                lw      $a2, 0($s1)
+                move    $a1, $s0
+                move    $a0, $s3
+                jalr    $t9
+; инкремент "i":
+                addiu   $s0, 1
+                lw      $gp, 0x80+var_70($sp)
+; перейти на начало тела цикла, если конец еще не достигнут:
+                bne     $s0, $s2, loc_54
+; передвинуть указатель на следующее §32-битное§ слово:
+                addiu   $s1, 4
+; эпилог функции
+                lw      $ra, 0x80+var_4($sp)
+                move    $v0, $zero
+                lw      $s3, 0x80+var_8($sp)
+                lw      $s2, 0x80+var_C($sp)
+                lw      $s1, 0x80+var_10($sp)
+                lw      $s0, 0x80+var_14($sp)
+                jr      $ra
+                addiu   $sp, 0x80
+
+$LC0:           .ascii "a[%d]=%d\n"<0>   # DATA XREF: main+44

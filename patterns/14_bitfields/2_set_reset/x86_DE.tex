@@ -1,0 +1,135 @@
+\subsubsection{x86}
+
+\myparagraph{\NonOptimizing MSVC}
+
+Wir erhalten folgenden Code: (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/14_bitfields/2_set_reset/set_reset_msvc.asm}
+
+\myindex{x86!\Instructions!OR}
+Der \OR Befehl setzt ein Bit auf einen Wert, während die übrigen ignoriert
+werden.
+
+\myindex{x86!\Instructions!AND}
+\AND resettet ein Bit. Man kann sagen, dass \AND einfach alle Bits bis auf eines
+kopiert. Tatsächlich werden im zweiten Operanden von \AND nur die Bits gesetzt,
+die auch gespeichert werden müssen, lediglich das eine, das nicht kopiert werden
+soll (die 0 in der Bitmaske), wird nicht gesetzt.
+Auf diese Weise kann man sich die Logik des Befehls leichter merken.
+
+\clearpage
+\mysubparagraph{\olly}
+
+Untersuchen wir dieses Beispiel in \olly.
+Schauen wir zunächst die binäre Form der zu verwendenden Konstanten an:
+
+\TT{0x200} (0b0000000000000000000{\color{red}1}000000000) (d.h. das 10. Bit
+(vom ersten aus gezählt)).
+
+\TT{0x200} ist invertiert \TT{0xFFFFFDFF}
+(0b1111111111111111111{\color{red}0}111111111).
+
+\TT{0x4000} (0b00000000000000{\color{red}1}00000000000000) (d.h. das 15. Bit).
+
+Der Eingabewert ist: \TT{0x12340678} (0b10010001101000000011001111000).
+Wir beobachten, wie der Wert geladen wird:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/14_bitfields/2_set_reset/olly1.png}
+\caption{\olly: der Wert wird nach \ECX geladen}
+\label{fig:set_reset_olly1}
+\end{figure}
+
+\clearpage
+\OR wurde ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/14_bitfields/2_set_reset/olly2.png}
+\caption{\olly: \OR wurde ausgeführt}
+\label{fig:set_reset_olly2}
+\end{figure}
+
+Das 15. Bit ist gesetzt: \TT{0x1234{\color{red}4}678} 
+(0b10010001101000{\color{red}1}00011001111000).
+
+\clearpage
+Der Wert wird erneut geladen (da der Compiler nicht optimiert hat):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/14_bitfields/2_set_reset/olly3.png}
+\caption{\olly: der Wert wird erneut nach \EDX geladen}
+\label{fig:set_reset_olly3}
+\end{figure}
+
+\clearpage
+\AND wurde ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/14_bitfields/2_set_reset/olly4.png}
+\caption{\olly: \AND wurde ausgeführt}
+\label{fig:set_reset_olly4}
+\end{figure}
+Das 10. Bit wurde gelöscht (oder, mit anderen Worten: alle Bite außer dem 10.
+wurden stehengelassen) und das Endergebnis ist\\
+\TT{0x12344{\color{red}4}78} (0b1001000110100010001{\color{red}0}001111000).
+
+
+\myparagraph{\Optimizing MSVC}
+Wenn wir das Beispiel mit MSVC mit Optimierung (\Ox) kompilieren, ist der Code
+noch kürzer:
+
+\lstinputlisting[caption=\Optimizing MSVC,style=customasmx86]{patterns/14_bitfields/2_set_reset/set_reset_msvc_Ox.asm}
+
+\myparagraph{\NonOptimizing GCC}
+
+Untersuchen wir GCC 4.4.1 ohne Optimierung:
+
+\lstinputlisting[caption=\NonOptimizing GCC,style=customasmx86]{patterns/14_bitfields/2_set_reset/set_reset_gcc.asm}
+Obwohl es hier redundanten Code gibt, ist das Ergebnis kürzer als die MSVC
+Version ohne Optimierung.
+
+Jetzt aktivieren wir die Optimierung von GCC mit \Othree: 
+
+\myparagraph{\Optimizing GCC}
+
+\lstinputlisting[caption=\Optimizing GCC,style=customasmx86]{patterns/14_bitfields/2_set_reset/set_reset_gcc_O3.asm}
+
+Das Ergebnis ist noch kürzer.
+Man beachte, dass der Compiler mit dem \EAX Regsiter über das Teilregister \AH
+arbeitet---das ist der Teil vom 8. bis zum 15. Bit (jeweils einschließlich).
+
+\RegTableOne{RAX}{EAX}{AX}{AH}{AL}
+
+\myindex{Intel!8086}
+\myindex{Intel!80386}
+Der 16-Bit CPU 8086 Akkumulator wurde \AX getauft und bestand aus zwei
+8-Bit-Hälften---\AL (niederes Byte) und \AH (höheres Byte).
+In 80386 wurden fast alle Register auf 32 Bit erweitert und der Akkumulator
+wurde fortan \EAX genannt, aber aus Kompatibilitätsgründen ist es immernoch
+möglich gezielt \AX/\AH/\AL anzusprechen.
+
+Da alle x86 CPUs Nachfolger der 16-Bit 8086 CPU sind, sind die älteren 16-Bit
+Opcodes kürzer als die neueren 32-Bit Opcodes.
+Aus diesem Gründ benötigt der Befehl \INS{or ah, 40h} nur 3 Bytes. Logischer
+wäre es zwar, hier \INS{or eax, 04000h} zu verwenden, aber dieser Befehl würde 5
+oder sogar 6 Byte (falls das Register im ersten Operanden nicht \EAX ist)
+verbrauchen.
+
+\myparagraph{\Optimizing GCC und regparm}
+Es wäre noch kürzer, wenn man die Optimierung mit \Othree anschaltet und
+\TT{regparm=3} setzt.
+
+\lstinputlisting[caption=\Optimizing GCC,style=customasmx86]{patterns/14_bitfields/2_set_reset/set_reset_gcc_O3_regparm3.asm}
+
+\myindex{Inline code}
+Das erste Argument ist schon nach \EAX geladen worden, sodass es möglich ist,
+damit direkt weiterzuarbeiten. Bemerkenswert ist, dass sowohl der
+Funktionsprolog (\INS{push ebp / mov ebp,esp}) als auch der Funktionsepilog
+(\INS{pop ebp}) hier wegfallen können. GCC ist aber möglicherweise nicht gut
+genug um eine solche Code Optimierung hier durchzuführen. Auf jeden Fall sind
+solche kurzen Funktion am besten als \IT{inline functions}
+(\myref{inline_code}) zu kennzeichnen.

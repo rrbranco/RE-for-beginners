@@ -1,0 +1,69 @@
+\subsubsection{MIPS}
+
+\myparagraph{Nicht initialisierte globale Variable}
+Nun ist $x$ eine globale Variable.
+Wir kompilieren zu einer ausführbaren Datei anstelle eines Objectfiles und laden diese in \IDA.
+\IDA stellt die Variable $x$ in der ELF Section \IT{.sbss} dar (erinnern Sie sich an \q{Global
+Pointer}?\myref{MIPS_GP}), denn die Variable ist zu Beginn nicht initialisiert.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/04_scanf/2_global/MIPS/O3_IDA_DE.lst}
+\IDA reduziert die Anzahl der Informationen; also erzeugen wir auch ein Listing mit objdump und kommentieren es:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(objdump),numbers=left,style=customasmMIPS]{patterns/04_scanf/2_global/MIPS/O3_objdump_DE.txt}
+Wir erkennen, dass die Adresse der Variablen $x$ mit GP aus einem 64KiB Datenpuffer gelesen wird und ein negativer
+Offset hinzugefügt wird (Zeile 18). 
+Mehr noch, die Adressen der drei externen Funktionen, die in unserem Beispiel verwendet werden (\puts, \scanf, \printf)
+wwerden auch mithilfe von GP aus einem 64KiB globalen Datenpuffer gelesen (Zeile 9, 16 und 26).
+GP zeigt auf die Mitte des Puffers und ein solches Offset gibt an, dass die Adressen aller drei Funktionen genau wie die
+Adresse von $x$ irgendwo am Anfang des Puffers gespeichert werden. 
+Das ergibt Sinn, denn unser Beispiel ist winzig.
+
+\myindex{MIPS!\Pseudoinstructions!MOVE}
+\myindex{MIPS!\Pseudoinstructions!NOP}
+Eine andere bemerkenswerte Sache ist, dass die Funktion mit zwei \ac{NOP}s (\TT{MOVE \$AT,\$AT} --- Befehle ohne
+Auswirking) schließt, damit der Beginn der nächsten Funktion auf eine 16-Byte-Grenze gelegt wird.
+
+\myparagraph{Initialisierte globale Variable}
+
+Verändern wir unser Beispiel dadurch, dass wir $x$ einen Defaultwert geben:
+
+\lstinputlisting[style=customc]{patterns/04_scanf/2_global/default_value_DE.c}
+
+\IDA zeigt hier, dass die Variable $x$ im .data Segment liegt:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA),style=customasmMIPS]{patterns/04_scanf/2_global/MIPS/O3_IDA_init_DE.lst}
+Warum nicht .sdata? Vielleicht hängt es mit einer Option von GCC zusammen?
+
+Nichtsdestotrotz befindet sich $x$ jetzt in .data, also dem allgemeinen Speicherbereich, und wir können uns anschauen
+wie hier mit den Variablen gearbeitet wird.
+
+
+\myindex{MIPS!\Instructions!LUI}
+\myindex{MIPS!\Instructions!ADDIU}
+Die Adresse der Variablen muss mithilfe eines Instruktionspaares gebildet werden.
+In unserem Fall sind dies \INS{LUI} (\q{Load Upper Immediate}) und \INS{ADDIU} (\q{Add Immediate Unsigned Word}).
+
+Hier ist also das objdump Listing für eine genaue Untersuchung:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(objdump),style=customasmMIPS]{patterns/04_scanf/2_global/MIPS/O3_objdump_init_DE.txt}
+
+\myindex{MIPS!\Instructions!LUI}
+\myindex{MIPS!\Instructions!ADDIU}
+\myindex{MIPS!\Instructions!LW}
+Wir erkennen, dass die Adresse mit \INS{LUI} und \INS{ADDIU} gebildet wird, aber der höherwertige Teil der Adresse sich
+immer noch im \$S0 Register befindet und es möglich ist, den Offset durch einen \INS{LW} (\q{Load Word}) Befehl
+anzugeben, sodass ein einzelnes \INS{LW} ausreicht um den Wert aus der Variablen zu lesen und an \printf zu übergeben.
+
+Register, die temporäre Daten halten, beginnen mit T-, aber wir sehen hier auch einige, die mit dem Präfix S- beginnen.
+Die Inhalte dieser Register müssen gespeichert werden, bevor sie in anderen Funktionen verwendet werden können.
+
+% FIXME:
+% This needs to be clarified a bit, e.g. "the registers need to be preserved if a function is called and it wants to use them
+Das ist der Grund warum der Wert von \$S0 an der Adresse 0x4006cc gesetzt und dann wieder an der Adresse 0x4006e8
+verwendet wurde, nachdem \scanf aufgerufen wurde. Die Funktion \scanf verändert den Wert nicht.
+
+
+% TODO non-optimized example?

@@ -1,0 +1,87 @@
+% !TEX program = XeLaTeX
+% !TEX encoding = UTF-8
+\documentclass[UTF8,nofonts]{ctexart}
+\setCJKmainfont[BoldFont=STHeiti,ItalicFont=STKaiti]{STSong}
+\setCJKsansfont[BoldFont=STHeiti]{STXihei}
+\setCJKmonofont{STFangsong}
+
+\begin{document}
+
+%daveti: translated on Dec 28, 2016
+%NOTE: above is needed for MacTex.
+
+\chapter{值得一看的书和博客 Books/blogs worth reading}
+
+\section{书和其他材料 Books and other materials}
+
+\subsection{逆向工程 Reverse Engineering}
+
+\input{RE_books}
+
+\subsection{Windows}
+
+\input{Win_reading}
+
+\subsection{\CCpp}
+
+\input{CCppBooks}
+
+\subsection{x86 / x86-64}
+
+\label{x86_manuals}
+\begin{itemize}
+\item Intel手册\footnote{\AlsoAvailableAs \url{http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html}}
+
+\item AMD手册\footnote{\AlsoAvailableAs \url{http://developer.amd.com/resources/developer-guides-manuals/}}
+
+\item \AgnerFog{}\footnote{\AlsoAvailableAs \url{http://agner.org/optimize/microarchitecture.pdf}}
+
+\item \AgnerFogCC{}\footnote{\AlsoAvailableAs \url{http://www.agner.org/optimize/calling_conventions.pdf}}
+
+\item \IntelOptimization
+
+\item \AMDOptimization
+\end{itemize}
+
+虽然有点过时担任值得一读:
+
+\MAbrash\footnote{\AlsoAvailableAs \url{https://github.com/jagregory/abrash-black-book}}
+(这个哥们以针对Windows NT 3.1和id Quake的底层优化而出名)。
+
+\subsection{ARM}
+
+\begin{itemize}
+\item ARM手册\footnote{\AlsoAvailableAs \url{http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.subset.architecture.reference/index.html}}
+
+\item \ARMSevenRef
+
+\item \ARMSixFourRefURL
+
+\item \ARMCookBook\footnote{\AlsoAvailableAs \url{http://go.yurichev.com/17273}}
+\end{itemize}
+
+\subsection{Java}
+
+\JavaBook.
+
+\subsection{UNIX}
+
+\TAOUP
+
+\subsection{编程相关 Programming in general}
+
+\begin{itemize}
+
+\item \RobPikePractice
+
+\item \HenryWarren.
+
+\item (仅献给具有计算机科学和数学背景的硬壳(hard-core)geek) Donald E. Knuth, \IT{计算机编程艺术 The Art of Computer Programming}.
+
+\end{itemize}
+
+% subsection:
+\input{crypto_reading}
+
+\end{document}
+

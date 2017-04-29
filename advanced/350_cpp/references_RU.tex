@@ -1,0 +1,49 @@
+\subsection{References}
+\myindex{\Cpp!References}
+\label{cpp_references}
+
+References в \Cpp это тоже указатели (\myref{label_pointers}), но их называют \IT{безопасными} (safe), потому что работая с ними, труднее сделать ошибку (C++11 8.3.2). % FIXME link
+Например, reference всегда должен указывать объект того же типа и не может быть NULL
+\InSqBrackets{\ParashiftCPPFAQ 8.6}.
+
+Более того, reference нельзя менять, нельзя его заставить указывать на другой объект (reseat)
+\InSqBrackets{\ParashiftCPPFAQ 8.5}.
+
+Если мы попробуем изменить пример с указателями (\myref{label_pointers}) 
+чтобы он использовал reference вместо указателей \dots
+
+\begin{lstlisting}[style=customc]
+void f2 (int x, int y, int & sum, int & product)
+{
+	sum=x+y;
+	product=x*y;
+};
+\end{lstlisting}
+
+\dots то выяснится, что скомпилированный код абсолютно такой 
+же как и в примере с указателями (\myref{label_pointers}):
+
+\begin{lstlisting}[caption=\Optimizing MSVC 2010,style=customasmx86]
+_x$ = 8		; size = 4
+_y$ = 12	; size = 4
+_sum$ = 16	; size = 4
+_product$ = 20	; size = 4
+?f2@@YAXHHAAH0@Z PROC	; f2
+	mov	ecx, DWORD PTR _y$[esp-4]
+	mov	eax, DWORD PTR _x$[esp-4]
+	lea	edx, DWORD PTR [eax+ecx]
+	imul eax, ecx
+	mov ecx, DWORD PTR _product$[esp-4]
+	push esi
+	mov	esi, DWORD PTR _sum$[esp]
+	mov	DWORD PTR [esi], edx
+	mov	DWORD PTR [ecx], eax
+	pop	esi
+	ret	0
+?f2@@YAXHHAAH0@Z ENDP	; f2
+\end{lstlisting}
+
+(Почему у функций в \Cpp такие странные имена, описано здесь: \myref{namemangling}.)
+
+Следовательно, references в С++ эффективны настолько, насколько и обычные указатели.
+

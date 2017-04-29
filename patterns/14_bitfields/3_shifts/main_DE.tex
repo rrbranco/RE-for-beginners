@@ -1,0 +1,13 @@
+\subsection{\ShiftsSectionName}
+Bitverschiebungen sind in \CCpp mit den Befehlen $\ll$ und $\gg$ implementiert.
+Die x86 \ac{ISA} verwendet die Befehle SHL (SHift Left) und SHR (SHift Right) zu
+diesem Zweck.
+Schiebebefehle werden oft bei der Division und Multiplikation mit Potenzen von 2
+$2^n$ (d.h. 1,2,4,8, etc.) verwendet:
+\myref{subsec:mult_using_shifts},
+\myref{division_by_shifting}.
+
+% FIXME: rework this
+Schiebebefehle sind auch wichtig, da sie oft für die Isolation einzelnes Bits
+oder für die Konstruktion von Werten aus mehreren einzelnen Bits verwendet
+werden.

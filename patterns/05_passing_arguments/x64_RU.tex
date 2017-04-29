@@ -1,0 +1,71 @@
+\subsection{x64}
+
+\myindex{x86-64}
+В x86-64 всё немного иначе, здесь аргументы функции (4 или 6) передаются через регистры, 
+а \gls{callee} из читает их из регистров, а не из стека.
+
+\subsubsection{MSVC}
+
+\Optimizing MSVC:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{patterns/05_passing_arguments/x64_MSVC_Ox_RU.asm}
+
+Как видно, очень компактная функция \ttf берет аргументы прямо из регистров.
+
+Инструкция \LEA используется здесь для сложения чисел. 
+Должно быть компилятор посчитал, что это будет эффективнее использования \TT{ADD}.
+
+\myindex{x86!\Instructions!LEA}
+В самой \main{} \LEA{} также используется для подготовки первого и третьего аргумента: должно быть,
+компилятор решил, что \LEA{} будет работать здесь быстрее, чем загрузка значения в регистр при помощи \MOV.
+
+Попробуем посмотреть вывод неоптимизирующего MSVC:
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/05_passing_arguments/x64_MSVC_IDA_RU.asm}
+
+Немного путанее: все 3 аргумента из регистров зачем-то сохраняются в стеке.
+
+\myindex{Shadow space}
+\label{shadow_space}
+Это называется \q{shadow space} \footnote{\href{http://go.yurichev.com/17256}{MSDN}}: 
+каждая функция в Win64 может (хотя и не обязана) сохранять значения 4-х регистров там.
+
+Это делается по крайней мере из-за двух причин: 
+1) в большой функции отвести целый регистр (а тем более 4 регистра) для входного аргумента 
+слишком расточительно, так что к нему будет обращение через стек;
+
+2) отладчик всегда знает, где найти аргументы функции в момент останова
+\footnote{\href{http://go.yurichev.com/17257}{MSDN}}.
+
+Так что, какие-то большие функции могут сохранять входные аргументы в \q{shadows space} 
+для использования в будущем, а небольшие функции, как наша, могут этого и не делать.
+
+Место в стеке для \q{shadow space} выделяет именно \gls{caller}.
+
+\subsubsection{GCC}
+
+\Optimizing GCC также делает понятный код:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.6 x64,style=customasmx86]{patterns/05_passing_arguments/x64_GCC_O3_RU.s}
+
+\NonOptimizing GCC:
+
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{patterns/05_passing_arguments/x64_GCC_RU.s}
+
+\myindex{Shadow space}
+В соглашении о вызовах System V *NIX (\SysVABI) нет \q{shadow space}, но \gls{callee} тоже иногда
+должен сохранять где-то аргументы, потому что, опять же, регистров может и не хватить на все действия.
+Что мы здесь и видим.
+
+\subsubsection{GCC: uint64\_t вместо int}
+
+Наш пример работал с 32-битным \Tint, поэтому использовались 32-битные части регистров с префиксом \TT{E-}.
+
+Его можно немного переделать, чтобы он заработал с 64-битными значениями:
+
+\lstinputlisting[style=customc]{patterns/05_passing_arguments/ex64.c}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.6 x64,style=customasmx86]{patterns/05_passing_arguments/ex64_GCC_O3_IDA_RU.asm}
+
+Собствено, всё то же самое, только используются регистры \IT{целиком}, с префиксом \TT{R-}.
+

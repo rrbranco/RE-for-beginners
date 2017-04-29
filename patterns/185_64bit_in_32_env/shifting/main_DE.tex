@@ -1,0 +1,34 @@
+\subsection{Verschiebung nach rechts}
+
+\lstinputlisting[style=customc]{patterns/185_64bit_in_32_env/shifting/3.c}
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 /Ob1,style=customasmx86]{patterns/185_64bit_in_32_env/shifting/3_MSVC.asm}
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1 -fno-inline,style=customasmx86]{patterns/185_64bit_in_32_env/shifting/3_GCC.asm}
+
+\myindex{x86!\Instructions!SHRD}
+Das Verschieben geschieht ebenfalls zweigeteilt: zunächst wird der niedere Teil verschoben, danach der höhere.
+Der niedere Teil wird mithilfe des Befehls \INS{SHRD} verschoben; er verschiebt den Wert in \EAX um 7 Bits, holt aber
+die nachrutschenden Bits aus \EDX, d.h. aus dem höheren Teil.
+Mit anderen Worten: der 64-Bit-Wert aus \TT{EDX:EAX} wird als ganzes um 7 Bits verschoben und die niederen 32 Bits des
+Ergebnisses werden in \EAX abgelegt. Der höhere Teil wird mit dem häufig verwendeten \SHR Befehl verschoben, da die frei
+werdenden Bits im höheren Teil mit Nullen aufgefüllt werden müssen.
+
+\subsubsection{ARM}
+ARM verfügt im Gegensatz zu x86 nicht über einen \INS{SHRD} Befehl, sodass der Keil Compiler die Aufgabe mit einer
+Kombination aus einfachen Schiebebefehlen und \OR-Operationen durchführen muss:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/185_64bit_in_32_env/shifting/Keil_ARM_O3.s}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/185_64bit_in_32_env/shifting/Keil_thumb_O3.s}
+% TODO add explanation
+
+\subsubsection{MIPS}
+GCC für MIPS folgt dem gleichen Algorithmus wie Keil für Thumb mode:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/185_64bit_in_32_env/shifting/MIPS_O3_IDA.lst}
+
+% TODO add explanation
+

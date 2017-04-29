@@ -1,0 +1,53 @@
+﻿\subsection{Routine de copie de blocs de mémoire}
+\label{loop_memcpy}
+
+Les routines réelles de copie de mémoire copient 4 ou 8 octets à chaque itération,
+utilisent \ac{SIMD}, la vectorisation, etc.
+Mais dans un but didactique, cet exemple est le plus simple possible.
+
+\lstinputlisting[style=customc]{memcpy.c}
+
+\subsubsection{Implémentation simple}
+
+\lstinputlisting[caption=GCC 4.9 x64 optimisé pour la taille (-Os),style=customasmx86]{patterns/09_loops/memcpy/memcpy_GCC49_x64_Os_FR.s}
+
+\lstinputlisting[caption=GCC 4.9 ARM64 optimisé pour la taille (-Os),style=customasmARM]{patterns/09_loops/memcpy/memcpy_GCC49_ARM64_Os_FR.s}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/09_loops/memcpy/memcpy_Keil_Thumb_O3_FR.s}
+
+\subsubsection{ARM en mode ARM}
+
+Keil en mode ARM tire pleinement avantage des suffixes conditionnels:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/09_loops/memcpy/memcpy_Keil_ARM_O3_FR.s}
+
+C'est pourquoi il y a seulement une instruction de branchement au lieu de 2.
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=GCC 4.4.5 optimisé pour la taille (-Os) (IDA),style=customasmMIPS]{patterns/09_loops/memcpy/memcpy_MIPS_Os_IDA_FR.lst}
+
+\myindex{MIPS!\Instructions!LBU}
+\myindex{MIPS!\Instructions!SB}
+
+Nous avons ici deux nouvelles instructions: \INS{LBU} (\q{Load Byte Unsigned} charger
+un octet non signé) et \INS{SB} (\q{Store Byte} stocker un octet).
+
+Tout comme en ARM, tous les registres MIPS ont une taille de 32-bit, il n'y en a
+pas d'un octet de large comme en x86.
+
+Donc, lorsque l'on travaille avec des octets seuls, nous devons utiliser un registre
+de 32-bit pour chacun d'entre eux.
+
+\INS{LBU} charge un octet et met les autres bits à zéro (\q{Unsigned}).
+\myindex{MIPS!\Instructions!LB}
+
+En revanche, l'instruction \INS{LB} (\q{Load Byte}) étend le signe de l'octet chargé
+sur 32-bit.
+
+\INS{SB} écrit simplement un octet depuis les 8 bits de poids faible d'un registre
+dans la mémoire.
+
+\subsubsection{Vectorisation}
+
+GCC \Optimizing peut faire beaucoup mieux avec cet exemple: \myref{vec_memcpy}.

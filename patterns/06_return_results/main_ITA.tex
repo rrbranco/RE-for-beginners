@@ -1,0 +1,150 @@
+% TODO resync with EN version
+\section{Ulteriori considerazioni sulla restituzione dei risultati}
+
+\myindex{x86!\Registers!EAX}
+
+In x86, il risultato dell'esecuzione dei una funzione e' generalmente restituito
+\footnote{\Seealso: MSDN: Return Values (C++): \href{http://go.yurichev.com/17258}{MSDN}}
+nel registor \EAX. 
+Se e' il tipo del risultato e' un byte o un \Tchar, viene utilizzata la parte bassa del registro \EAX (\AL). 
+Se una funzione restituisce un numero di tipo \Tfloat, viene invece utilizzato il registro FPU \ST{0}.
+\myindex{ARM!\Registers!R0}
+In ARM, il risultato e' solitamente restituito nel registro \Reg{0}.
+
+\subsection{Tentativo di utilizzare il risultato di una funzione che resituisce \Tvoid}
+
+Che succederebbe se la funzione main dichiarasse il valore di ritorno di tipo \Tvoid invece di \Tint?
+Il cosiddetto startup-code chiama \main piu' o meno cosi':
+
+\begin{lstlisting}[style=customasmx86]
+push envp
+push argv
+push argc
+call main
+push eax
+call exit
+\end{lstlisting}
+
+In altre parole:
+
+\begin{lstlisting}[style=customc]
+exit(main(argc,argv,envp));
+\end{lstlisting}
+
+Se dichiariamo \main come \Tvoid, non viene esplicitamente restituito nulla  (usando lo statement \IT{return}),
+e quindi qualche valore random, che si trova memorizzato nel registro \EAX alla fine di \main, diventa argomento della funzione exit().
+Molto probabilmente si trattera' di un valore randomico, resido dell'esecuzione della nostra funzione, quindi l'exit code del programma 
+e' pseudorandom.
+\par
+Illustriamo meglio questo fatto. 
+La funzione \main ha ora un valore di ritorno di tipo \Tvoid:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+void main()
+{
+	printf ("Hello, world!\n");
+};
+\end{lstlisting}
+
+Compiliamo il programma su Linux.
+
+\myindex{puts() instead of printf()}
+GCC 4.8.1 ha sostituito \printf con \puts 
+(abbiamo gia' visto questo caso: \myref{puts}), e va del tutto bene, poiche' \puts restituisce il numero di caratteri stampati proprio come \printf.
+Notiamo che \EAX non viene azzerato prima della fine di \main.
+
+Cio' implica che il valore di \EAX alla fine di \main conterra' il valore lasciato li' da \puts.
+
+\begin{lstlisting}[caption=GCC 4.8.1,style=customasmx86]
+.LC0:
+	.string	"Hello, world!"
+main:
+	push	ebp
+	mov	ebp, esp
+	and	esp, -16
+	sub	esp, 16
+	mov	DWORD PTR [esp], OFFSET FLAT:.LC0
+	call	puts
+	leave
+	ret
+\end{lstlisting}
+
+\myindex{bash}
+
+Scriviamo uno script bash che mostra l'exit status:
+
+\begin{lstlisting}[caption=tst.sh]
+#!/bin/sh
+./hello_world
+echo $?
+\end{lstlisting}
+
+And run it:
+
+\begin{lstlisting}
+$ tst.sh 
+Hello, world!
+14
+\end{lstlisting}
+
+14 e' il numero di caratteri stampati.
+\ac{TBT}
+
+\subsection{Che ssucede se il risultato della funzione non viene usato?}
+
+\printf restituisce il numero di caratteri mandati in output con successo, ma il risultato di questa funzione
+e' usato molto raramente in pratica.
+
+E' possibile anche chiamare una funzione la cui essenza risiede nel restituire un valore e non usarlo del tutto:
+
+\begin{lstlisting}[style=customc]
+int f()
+{
+    // skip first 3 random values:
+    rand();
+    rand();
+    rand();
+    // and use 4th:
+    return rand();
+};
+\end{lstlisting}
+
+Il risultato della funzione rand() e' lasciato in \EAX in tutti e quattro i casi.
+Nei primi 3 pero' il valore in \EAX non viene usato.
+
+\subsection{Restituire una struttura}
+
+\myindex{\CLanguageElements!return}
+
+Torniamo al fatto che il valore di ritorno e' lasciato nel registro \EAX.
+Questo e' il motivo per cui i vecchi compilatori C non possono creare funzioni in grado di restituire qualcosa che non entri perfettamente in un 
+registro (solitamente un \Tint). Se lo si vuole fare, e' necessario restituire l'informazione attraverso puntatori passati come argomenti alla funzione.
+
+Quindi, generalmente, se una funzione deve restituire piu' valori, ne restituisce (realmente) soltanto uno, ed il resto---tramite puntatori.
+
+Oggi e' possibile restituire anche un'intera struttura, ma non e' ancora una pratica molto diffusa.
+Se una funzione deve restituire una struttura grande, il chiamante (\gls{caller}) deve allocarla e passare come primo argomento della funzione un puntatore alla struttura, il tutto in modo trasparente per il programmatore.
+E' pressoche' la stessa cosa di passare un puntatore manualmente come primo argomento, ma il compilatore "nasconde" questo passaggio.
+
+Un piccolo esempio:
+
+\lstinputlisting[style=customc]{patterns/06_return_results/6_1.c}
+
+\dots otteniamo (MSVC 2010 \Ox):
+
+\lstinputlisting[style=customasmx86]{patterns/06_return_results/6_1.asm}
+
+Il nome della macro per il passaggio interno del puntatore alla struttura e' in questo caso \GTT{\$T3853}.
+
+\myindex{\CLanguageElements!C99}
+Questo stesso esempio puo' essere riscritto utilizzando l'estensione del linguaggio C99:
+
+\lstinputlisting[style=customc]{patterns/06_return_results/6_1_C99.c}
+
+\lstinputlisting[caption=GCC 4.8.1,style=customasmx86]{patterns/06_return_results/6_1_C99.asm}
+
+Come possiamo vedere, la funzione chiamata non fa altro che riempire i campi della struttura allocata dalla funzione chiamante,
+come se un puntatore alla struttura fosse stato passato.
+Pertanto non ci sono neanche impatti negativi sulla performance.

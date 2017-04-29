@@ -1,7 +1,24 @@
-﻿\subsection{MIPS}
+﻿\subsubsection{MIPS}
 
-\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA)]{patterns/09_loops/simple/MIPS_O0_IDA.lst.\LANG}
+\ifdefined\RUSSIAN
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/09_loops/simple/MIPS_O0_IDA_RU.lst}
 
-\index{MIPS!\Pseudoinstructions!B}
-\RU{Новая для нас инструкция это}\EN{The instruction that's new to us is} \q{B}. 
-\RU{Вернее, это псевдоинструкция}\EN{It is actually the pseudoinstruction} (BEQ).
+\myindex{MIPS!\Pseudoinstructions!B}
+Новая для нас инструкция это \INS{B}. Вернее, это псевдоинструкция (\INS{BEQ}).
+\fi
+
+\ifdefined\ENGLISH
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/09_loops/simple/MIPS_O0_IDA_EN.lst}
+
+\myindex{MIPS!\Pseudoinstructions!B}
+The instruction that's new to us is \TT{B}. It is actually the pseudo instruction (\INS{BEQ}).
+\fi
+
+\ifdefined\FRENCH
+\lstinputlisting[caption=\NonOptimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/09_loops/simple/MIPS_O0_IDA_FR.lst}
+
+\myindex{MIPS!\Pseudoinstructions!B}
+The instruction that's new to us is \TT{B}. It is actually the pseudo instruction (\INS{BEQ}).
+L'instruction qui est nouvelle pour nous est \TT{B}. C'est une pseudo instruction (\INS{BEQ}).
+\fi
+

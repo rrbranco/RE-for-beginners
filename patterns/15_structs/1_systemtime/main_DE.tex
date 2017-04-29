@@ -1,0 +1,68 @@
+\subsection{MSVC: SYSTEMTIME Beispiel}
+\label{sec:SYSTEMTIME}
+
+\newcommand{\FNSYSTEMTIME}{\footnote{\href{http://go.yurichev.com/17260}{MSDN: SYSTEMTIME structure}}}
+Betrachten wir das SYSTEMTIME\FNSYSTEMTIME{} struct in win32, das die Systemzeit beschreibt.
+
+Das struct ist folgendermaßen definiert:
+
+\begin{lstlisting}[caption=WinBase.h,style=customc]
+typedef struct _SYSTEMTIME {
+  WORD wYear;
+  WORD wMonth;
+  WORD wDayOfWeek;
+  WORD wDay;
+  WORD wHour;
+  WORD wMinute;
+  WORD wSecond;
+  WORD wMilliseconds;
+} SYSTEMTIME, *PSYSTEMTIME;
+\end{lstlisting}
+Schreiben wir eine C-Funktion, um die aktuelle Zeit auszugeben:
+
+\lstinputlisting[style=customc]{patterns/15_structs/1_systemtime/systemtime.c}
+
+Wir erhalten das Folgende (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010 /GS-,style=customasmx86]{patterns/15_structs/1_systemtime/systemtime.asm}
+Für dieses struct werden 16 Byte im lokalen Stack reserviert~---das entspricht genau \TT{sizeof(WORD)*8} (es gibt 8
+WORD Variablen in diesem struct).
+
+\newcommand{\FNMSDNGST}{\footnote{\href{http://go.yurichev.com/17261}{MSDN: GetSystemTime function}}}
+Man beachte, dass dieses struct mit dem \TT{wYear} Feld beginnt.
+Man kann sagen, dass ein Pointer auf das SYSTEMTIME struct an die Funktion \TT{GetSystemTime()}\FNSYSTEMTIME übergeben
+wird, aber man könnte auch sagen, dass ein Pointer auf das Feld \TT{wYear} übergeben wird, denn dabei handelt es sich um
+dasselbe!
+\TT{GetSystemTime()} schreibt das aktuelle Jahr in den WORD Pointer, verschiebt um 2 Byte, schreibt den aktuellen Monat,
+usw. usf. 
+
+\input{patterns/15_structs/1_systemtime/olly_DE.tex}
+
+\subsubsection{Ein struct durch ein Array ersetzen}
+Die Tatsache, dass die Felder eines structs Variablen sind, die nebeneinander angeordnet sind, kann leicht durch
+folgendes Beispiel belegt werden. Wir erinnern uns an die Beschreibung des \TT{SYSTEMTIME} structs und schreiben unser
+Beispiel wie folgt um: 
+
+\lstinputlisting[style=customc]{patterns/15_structs/1_systemtime/systemtime2.c}
+Der Compiler meckert ein wenig:
+
+\begin{lstlisting}
+systemtime2.c(7) : warning C4133: 'function' : incompatible types - from 'WORD [8]' to 'LPSYSTEMTIME'
+\end{lstlisting}
+
+Trotzdem erzeugt er den folgenden Code:
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2010,style=customasmx86]{patterns/15_structs/1_systemtime/systemtime2.asm}
+Dieses Programm funktioniert genau wie das erste!
+
+Sehr interessant ist, dass dieser Assemblercode nicht vom entsprechenden Code des ersten Beispiels unterschieden werden
+kann.
+
+Beim bloßen Ansehen des Codes kann man also nicht feststellen, ob ein struct oder ein Array deklariert wurde.
+
+Trotzdem würde man letzteres nicht annehmen, da es sehr ungebräuchlich ist.
+
+DIe Felder des structs können durch den Entwickler ausgetauscht oder verändert werden, etc.
+
+Wir untersuchen dieses Beispiel nicht in \olly, da es mit dem Beispiel mit dem struct identisch ist.
+

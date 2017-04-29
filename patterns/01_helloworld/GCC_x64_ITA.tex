@@ -1,0 +1,33 @@
+\subsubsection{GCC: x86-64}
+
+\myindex{x86-64}
+\ITAph{}:
+
+% TODO: translate:
+\lstinputlisting[caption=GCC 4.4.6 x64,,style=customasmx86]{patterns/01_helloworld/GCC_x64_EN.s}
+
+Un metodo per passare argomenti di funzione nei registri usato anche in Linux, *BSD and \MacOSX è \SysVABI.
+
+I primi 6 argomenti sono passati nei registri \RDI, \RSI, \RDX, \RCX, \Reg{8}, \Reg{9}  , ed il resto---tramite lo stack.
+
+Quindi il puntatore alla stringa viene passato in \EDI (la parte a 32-bit del registro).
+Ma perchè no nusare la parte a 64-bit \RDI?
+
+E' importante ricordare che tutte le istruzioni \MOV in modalità 64-bit che scrivono qualcosa nella parte bassa a 32-bit di un registro, azzera anche la parte alta a 32-bits.
+Ad esempio, \INS{MOV EAX, 011223344h} scrive un valore in \RAX correttamente, poichè i bit della parte alta saranno azzerati.
+
+Se apriamo il file oggetto compilato (.o), possiamo anche vedere gli opcode di tutte le istruzioni
+\footnote{Deve essere abilitato in \textbf{Options $\rightarrow$ Disassembly $\rightarrow$ Number of opcode bytes}}:
+
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{patterns/01_helloworld/GCC_x64.lst}
+
+\label{hw_EDI_instead_of_RDI}
+Come possiamo notare, l'istruzione che scrive dentro \EDI a \TT{0x4004D4} occupa 5 byte.
+La stessa istruzione che scrive un valore a 64-bit dentro \RDI occupa 7 bytes.
+Apparentemente, GCC sta cercando di risparmiare un po' di spazio.
+Inoltre, può essere sicuro che il segmento dati contenente la stringa non sarà allocato ad indirizzi maggiori di 4\gls{GiB}.
+
+\label{SysVABI_input_EAX}
+Notiamo anche che il registro \EAX è stato azzerato prima della chiamata alla funzione \printf .
+Ciò avviene perché il numbero dei registri vettore usati viene passato in \EAX nei sistemi *NIX x86-64.
+

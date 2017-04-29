@@ -1,0 +1,145 @@
+% TODO proof-reading
+\subsubsection{Pre-initialized array of strings}
+\label{Java_2D_array_month}
+
+\begin{lstlisting}[style=customjava]
+class Month
+{
+	public static String[] months = 
+	{
+		"January", 
+		"February", 
+		"March", 
+		"April",
+		"May",
+		"June",
+		"July",
+		"August",
+		"September",
+		"October",
+		"November",
+		"December"
+	};
+
+	public String get_month (int i)
+	{
+		return months[i];
+	};
+} 
+\end{lstlisting}
+
+The \TT{get\_month()} function is simple:
+Функция \TT{get\_month()} проста:
+
+\begin{lstlisting}
+  public java.lang.String get_month(int);
+    flags: ACC_PUBLIC
+    Code:
+      stack=2, locals=2, args_size=2
+         0: getstatic     #2         // Field months:[Ljava/lang/String;
+         3: iload_1       
+         4: aaload        
+         5: areturn       
+\end{lstlisting}
+
+\TT{aaload} operates on an array of \IT{references}.
+
+Java String are objects, so the \IT{a}-instructions are used to operate on them.
+
+\TT{areturn} returns a \IT{reference} to a \TT{String} object.
+
+
+How is the \TT{months[]} array initialized?
+
+
+\begin{lstlisting}
+  static {};
+    flags: ACC_STATIC
+    Code:
+      stack=4, locals=0, args_size=0
+         0: bipush        12
+         2: anewarray     #3         // class java/lang/String
+         5: dup           
+         6: iconst_0      
+         7: ldc           #4         // String January
+         9: aastore       
+        10: dup           
+        11: iconst_1      
+        12: ldc           #5         // String February
+        14: aastore       
+        15: dup           
+        16: iconst_2      
+        17: ldc           #6         // String March
+        19: aastore       
+        20: dup           
+        21: iconst_3      
+        22: ldc           #7         // String April
+        24: aastore       
+        25: dup           
+        26: iconst_4      
+        27: ldc           #8         // String May
+        29: aastore       
+        30: dup           
+        31: iconst_5      
+        32: ldc           #9         // String June
+        34: aastore       
+        35: dup           
+        36: bipush        6
+        38: ldc           #10        // String July
+        40: aastore       
+        41: dup           
+        42: bipush        7
+        44: ldc           #11        // String August
+        46: aastore       
+        47: dup           
+        48: bipush        8
+        50: ldc           #12        // String September
+        52: aastore       
+        53: dup           
+        54: bipush        9
+        56: ldc           #13        // String October
+        58: aastore       
+        59: dup           
+        60: bipush        10
+        62: ldc           #14        // String November
+        64: aastore       
+        65: dup           
+        66: bipush        11
+        68: ldc           #15        // String December
+        70: aastore       
+        71: putstatic     #2         // Field months:[Ljava/lang/String;
+        74: return        
+\end{lstlisting}
+
+\TT{anewarray} creates a new array of \IT{references} (hence \IT{a} prefix).
+
+The object's type is defined in the \TT{anewarray}'s operand, it is the \\
+\q{java/lang/String} string.
+
+The \TT{bipush 12} before \TT{anewarray} sets the array's size.
+
+We see here a new instruction for us: \TT{dup}.
+
+
+\myindex{Forth}
+It's a standard instruction in stack computers (including the Forth programming language) 
+which just duplicates the value at \ac{TOS}.
+
+\myindex{x86!\Instructions!FDUP}
+By the way, FPU 80x87 is also a stack computer and it has similar instruction -- \INS{FDUP}.
+
+
+It is used here to duplicate a \IT{reference} to an array, because the \TT{aastore} instruction pops
+the \IT{reference} to array from the stack, but subsequent \TT{aastore} will need it again.
+
+The Java compiler concluded that it's better to generate a \TT{dup} instead of generating 
+a \TT{getstatic} instruction before each array store operation (i.e., 11 times).
+
+
+\TT{aastore} puts a \IT{reference} (to string) into the array at an index which is 
+taken from \ac{TOS}.
+
+
+Finally, \TT{putstatic} puts \IT{reference} to the newly created array into the second field 
+of our object, i.e., \IT{months} field.
+

@@ -1,0 +1,69 @@
+\subsubsection{MSVC: x86}
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/2_global/ex2_MSVC.asm}
+
+In this case the \TT{x} variable is defined in the \TT{\_DATA} segment and no memory is allocated in the local stack. It is accessed directly, not through the stack. 
+Uninitialized global variables take no space in the executable file
+(indeed, why one needs to allocate space for variables initially set to zero?), 
+but when someone accesses their address, 
+the \ac{OS} will allocate a block of zeros there\footnote{That is how a \ac{VM} behaves}.
+
+Now let's explicitly assign a value to the variable:
+
+\lstinputlisting[style=customc]{patterns/04_scanf/2_global/default_value_EN.c}
+
+We got:
+
+\begin{lstlisting}[style=customasmx86]
+_DATA	SEGMENT
+_x	DD	0aH
+
+...
+\end{lstlisting}
+
+Here we see a value \TT{0xA} of DWORD type (DD stands for DWORD = 32 bit) for this variable.
+
+If you open the compiled .exe in \IDA, you can see the \IT{x} variable placed at the beginning of 
+the \TT{\_DATA} segment, and after it you can see text strings.
+
+If you open the compiled .exe from the previous example in \IDA, where the value of \IT{x} hasn't been set, you would see something like this:
+
+\lstinputlisting[caption=\IDA,style=customasmx86]{patterns/04_scanf/2_global/IDA.lst}
+
+\TT{\_x} is marked with \TT{?} with the rest of the variables that do not need to be initialized. 
+This implies that after loading the .exe to the memory, a space for all these variables is to be 
+allocated and filled with zeros \InSqBrackets{\CNineNineStd 6.7.8p10}.
+But in the .exe file these uninitialized variables do not occupy anything.
+This is convenient for large arrays, for example.
+
+\input{patterns/04_scanf/2_global/olly.tex}
+
+\subsubsection{GCC: x86}
+
+\myindex{ELF}
+The picture in Linux is near the same, with the difference that the uninitialized variables are located in the \TT{\_bss} segment. 
+In \ac{ELF} file this segment has the following attributes:
+
+\begin{lstlisting}
+; Segment type: Uninitialized
+; Segment permissions: Read/Write
+\end{lstlisting}
+
+If you, however, initialize the variable with some value e.g. 10, 
+it is to be placed in the \TT{\_data} segment, which has the following attributes:
+
+\begin{lstlisting}
+; Segment type: Pure data
+; Segment permissions: Read/Write
+\end{lstlisting}
+
+\subsubsection{MSVC: x64}
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/04_scanf/2_global/ex2_MSVC_x64_EN.asm}
+
+The code is almost the same as in x86.
+Please note that the address of the $x$ variable is passed to \TT{scanf()} using a \LEA instruction,
+while the variable's value is passed to the second \printf using a \MOV instruction.
+\TT{DWORD PTR}---is a part of the assembly language (no relation to the machine code),
+indicating that the variable data size is 32-bit and the \MOV instruction has to be encoded accordingly.
+

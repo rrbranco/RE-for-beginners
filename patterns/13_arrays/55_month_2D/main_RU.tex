@@ -1,0 +1,93 @@
+\subsection{Набор строк как двухмерный массив}
+
+Снова вернемся к примеру, который возвращает название месяца: \lstref{get_month1}.
+Как видно, нужна как минимум одна операция загрузки из памяти для подготовки указателя на строку,
+состоящую из имени месяца.
+
+Возможно ли избавиться от операции загрузки из памяти?
+
+Да, если представить список строк как двумерный массив:
+
+\lstinputlisting[style=customc]{patterns/13_arrays/55_month_2D/month2_RU.c}
+
+Вот что получаем:
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{patterns/13_arrays/55_month_2D/MSVC2013_x64_Ox_RU.asm}
+
+Здесь нет обращений к памяти вообще.
+Эта функция только вычисляет место, где находится первый символ названия месяца:
+ 
+$pointer\_to\_the\_table + month * 10$.
+Там также две инструкции \LEA, которые работают как несколько инструкций \MUL и \MOV.
+
+Ширина массива~--- 10 байт. 
+Действительно, самая длинная строка это \q{September} (9 байт) плюс оконечивающий ноль, получается 10 байт.
+
+Остальные названия месяцев дополнены нулевыми байтами, чтобы они занимали столько же места (10 байт).
+
+Таким образом, наша функция и работает быстрее, потому что все строки начинаются с тех адресов, 
+которые легко вычислить.
+
+\Optimizing GCC 4.9 может ещё короче:
+
+\begin{lstlisting}[caption=\Optimizing GCC 4.9 x64,style=customasmx86]
+	movsx	rdi, edi
+	lea	rax, [rdi+rdi*4]
+	lea	rax, month2[rax+rax]
+	ret
+\end{lstlisting}
+
+\LEA здесь также используется для умножения на 10.
+
+Неоптимизирующие компиляторы делают умножение по-разному.
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9 x64,style=customasmx86]{patterns/13_arrays/55_month_2D/x64_GCC49_O0_RU.asm}
+
+\NonOptimizing MSVC просто использует инструкцию \IMUL:
+\myindex{x86!\Instructions!IMUL}
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2013 x64,style=customasmx86]{patterns/13_arrays/55_month_2D/MSVC2013_x64_RU.asm}
+
+\myindex{\CompilerAnomaly}
+\label{MSVC2013_anomaly}
+Но вот что странно: зачем добавлять умножение на ноль и добавлять ноль к конечному результату?
+
+Это выглядит как странность кодегенератора компилятора, который не был покрыт тестами
+компилятора. Но так или иначе, итоговый код работает корректно.
+% класс! ЩИТО?
+Мы сознательно рассматриваем такие фрагменты кода, чтобы читатель понимал, что иногда не нужно
+ломать себе голову над подобными артефактами компиляторов.
+
+\subsubsection{32-bit ARM}
+
+\Optimizing Keil для режима Thumb использует инструкцию умножения \INS{MULS}:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/13_arrays/55_month_2D/Keil_O3_thumb_RU.asm}
+
+\Optimizing Keil для режима ARM использует операции сложения и сдвига:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/13_arrays/55_month_2D/Keil_O3_ARM_RU.asm}
+
+\subsubsection{ARM64}
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 ARM64,style=customasmARM]{patterns/13_arrays/55_month_2D/GCC49_ARM64_RU.asm}
+
+\myindex{ARM!\Instructions!SXTW}
+\myindex{ARM!\Instructions!ADRP/ADD pair}
+\INS{SXTW} используется для знакового расширения и расширения
+входного 32-битного значения в 64-битное и сохранения его в X0.
+
+Пара \ADRP/\ADD используется для загрузки адреса таблицы.
+
+У инструкции \ADD также есть суффикс \LSL, что помогает с умножением.
+
+\subsubsection{MIPS}
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/13_arrays/55_month_2D/MIPS_O3_IDA_RU.lst}
+
+\subsubsection{\Conclusion{}}
+
+Это немного олд-скульная техника для хранения текстовых строк.
+Много такого можно найти в \oracle, например.
+Трудно сказать, стоит ли оно того на современных компьютерах.
+Так или иначе, это был хороший пример массивов, поэтому он был добавлен в эту книгу.
+

@@ -1,0 +1,148 @@
+% TODO proof-reading
+\subsection{Циклы}
+
+\begin{lstlisting}[style=customjava]
+public class Loop
+{
+	public static void main(String[] args)
+	{ 
+		for (int i = 1; i <= 10; i++)
+		{
+			System.out.println(i); 
+		}               
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=2, args_size=1
+         0: iconst_1      
+         1: istore_1      
+         2: iload_1       
+         3: bipush        10
+         5: if_icmpgt     21
+         8: getstatic     #2         // Field java/lang/System.out:Ljava/io/PrintStream;
+        11: iload_1       
+        12: invokevirtual #3         // Method java/io/PrintStream.println:(I)V
+        15: iinc          1, 1
+        18: goto          2
+        21: return        
+\end{lstlisting}
+
+
+\TT{iconst\_1} загружает 1 в \ac{TOS}, \TT{istore\_1} сохраняет её в первом слоте \ac{LVA}.
+Почему не нулевой слот?
+
+Потому что функция \main имеет один аргумент (массив \TT{String}),
+и указатель на него (или \IT{reference}) сейчас в нулевом слоте.
+
+
+Так что локальная переменная \IT{i} всегда будет в первом слоте.
+
+
+Инструкции по смещениями 3 и 5 сравнивают \IT{i} с 10.
+
+Если \IT{i} больше, управление передается на смещение 21, где функция заканчивает работу.
+
+Если нет, вызывается \TT{println}.
+
+\IT{i} перезагружается по смещению 11, для \TT{println}.
+
+Кстати, мы вызываем метод \TT{println} для типа данных \IT{integer}, 
+и мы видим это в комментариях: \q{(I)V}
+(\IT{I} означает \IT{integer} и \IT{V} означает, что возвращаемое значение имеет тип \IT{void}).
+
+
+Когда \TT{println} заканчивается, \IT{i} увеличивается на 1 по смещению 15.
+
+Первый операнд инструкции это номер слота (1), 
+второй это число (1) для прибавления.
+
+
+\TT{goto} это просто GOTO, она переходит на начало цикла по смещению 2.
+
+
+Перейдем к более сложному примеру:
+
+\begin{lstlisting}[style=customjava]
+public class Fibonacci
+{
+	public static void main(String[] args)
+	{ 
+		int limit = 20, f = 0, g = 1;
+
+		for (int i = 1; i <= limit; i++)
+		{
+			f = f + g;
+			g = f - g;
+			System.out.println(f); 
+		}
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=5, args_size=1
+         0: bipush        20
+         2: istore_1      
+         3: iconst_0      
+         4: istore_2      
+         5: iconst_1      
+         6: istore_3      
+         7: iconst_1      
+         8: istore        4
+        10: iload         4
+        12: iload_1       
+        13: if_icmpgt     37
+        16: iload_2       
+        17: iload_3       
+        18: iadd          
+        19: istore_2      
+        20: iload_2       
+        21: iload_3       
+        22: isub          
+        23: istore_3      
+        24: getstatic     #2         // Field java/lang/System.out:Ljava/io/PrintStream;
+        27: iload_2       
+        28: invokevirtual #3         // Method java/io/PrintStream.println:(I)V
+        31: iinc          4, 1
+        34: goto          10
+        37: return        
+\end{lstlisting}
+        
+
+Вот карта слотов в \ac{LVA}:
+
+\begin{itemize}
+\item 0 --- единственный аргумент функции \main
+\item 1 --- \IT{limit}, всегда содержит 20
+\item 2 --- \IT{f}
+\item 3 --- \IT{g}
+\item 4 --- \IT{i}
+\end{itemize}
+
+
+Мы видим, что компилятор Java расположил переменные в слотах \ac{LVA} в точно таком же порядке,
+в котором переменные были определены в исходном коде.
+
+
+Существуют отдельные инструкции \TT{istore} для слотов 0, 1, 2, 3, но не 4 и более, 
+так что здесь есть \TT{istore} с дополнительным операндом по смещению 8, 
+которая имеет номер слота в операнде.
+
+Та же история с \TT{iload} по смещению 10.
+
+
+Но не слишком ли это сомнительно, выделить целый слот для переменной \IT{limit},
+которая всегда содержит 20 (так что это по сути константа), и перезагружать её так часто?
+
+\ac{JIT}-компилятор в \ac{JVM} обычно достаточно хорош, чтобы всё это оптимизировать.
+
+Самостоятельное вмешательство в код, наверное, того не стоит.
+

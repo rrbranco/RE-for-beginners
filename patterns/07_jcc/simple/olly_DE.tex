@@ -1,0 +1,87 @@
+\clearpage
+\myparagraph{x86 + MSVC + \olly}
+\myindex{\olly}
+\myindex{x86!\Registers!\Flags}
+Wir sehen wie die Flags gesetzt werden, indem wir das Beispiel in \olly laufen lassen.
+Beginnen wir mit \TT{f\_unsigned()}; diese Funtion arbeitet mit vorzeichenlosen Zahlen.
+
+\CMP wird hier dreimal ausgeführt, aber das die Argumente jeweils identisch sind, sind die Flags jedes Mal die gleichen.
+
+Ergebnis des ersten Vergleichs:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_unsigned1.png}
+\caption{\olly: \TT{f\_unsigned()}: erster bedingter Sprung}
+\label{fig:jcc_olly_unsigned_1}
+\end{figure}
+
+Die Flags sind also: C=1, P=1, A=1, Z=0, S=1, T=0, D=0, O=0.
+Ihre Namen werden in \olly mit einem Buchstaben abgekürzt.
+
+\olly zeigt an, dass der (\JBE) Sprung jetzt ausgeführt werden wird.
+Und tatsächlich, wenn wir in das Intel-Handbuch (\myref{x86_manuals}) schauen, finden wir, dass \JBE ausgeführt wird,
+falls CF=1 oder ZF=1.
+Da diese Bedingung hier wahr ist, wird der Sprung ausgeführt.
+
+
+\clearpage
+Der nächste bedingte Sprung:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_unsigned2.png}
+\caption{\olly: \TT{f\_unsigned()}: zweiter bedingter Sprung}
+\label{fig:jcc_olly_unsigned_2}
+\end{figure}
+
+\olly zeigt an, dass \JNZ jetzt ausgeführt werden wird.
+Tatsächlich wird \JNZ ausgeführt, falls ZF=0 (Zero Flag).
+
+\clearpage
+Der dritte bedingte Sprung (\JNB):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_unsigned3.png}
+\caption{\olly: \TT{f\_unsigned()}: dritter bedingter Sprung}
+\label{fig:jcc_olly_unsigned_3}
+\end{figure}
+Im Intel-Handbuch (\myref{x86_manuals}) können wir nachlesen, dass \JNB ausgeführt wird, falls CF=0 (Carry Flag).
+Das ist in unserem Beispiel nicht der Falls, sodass das dritte \printf ausgeführt wird.
+
+\clearpage
+Schauen wir uns nun in \olly die \TT{f\_signed()} Funtion an, die mit vorzeichenbehafteten Werte arbeitet.
+Die Flags werden auf die gleiche Weise gesetzt: C=1, P=1, A=1, Z=0, S=1, T=0, D=0, O=0.
+Der erste bedingte Sprung \JLE wird danach ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_signed1.png}
+\caption{\olly: \TT{f\_signed()}: erster bedingter Sprung}
+\label{fig:jcc_olly_signed_1}
+\end{figure}
+Im Intel-Handbuch (\myref{x86_manuals}) können wir nachlesen, dass dieser Befehl ausgeführt wird, falls ZF=1 oder
+SF$\neq$OF. In userem Fall gilt SF$\neq$OF, sodass der Sprung ausgeführt wird.
+
+
+\clearpage
+Der zweite \JNZ bedingte Sprung wird ausgeführt, falls ZF=0 (Zero Flag):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_signed2.png}
+\caption{\olly: \TT{f\_signed()}: zweiter bedingter Sprung}
+\label{fig:jcc_olly_signed_2}
+\end{figure}
+
+\clearpage
+Der dritter bedingte Sprung \JBE wird nicht ausgeführt, da dies nur geschieht, falls SF=OF, und dies in unserem Beispiel
+nicht der Fall ist:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/07_jcc/simple/olly_signed3.png}
+\caption{\olly: \TT{f\_signed()}: dritter bedingter Sprung}
+\label{fig:jcc_olly_signed_3}
+\end{figure}

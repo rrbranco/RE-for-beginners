@@ -1,0 +1,169 @@
+% TODO proof-reading
+\subsection{Bedingte Sprünge}
+
+%Now let's proceed to conditional jumps.
+%
+%\begin{lstlisting}[style=customjava]
+%public class abs
+%{
+%	public static int abs(int a)
+%	{
+%		if (a<0)
+%			return -a;
+%		return a;
+%	}
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}
+%  public static int abs(int);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=1, locals=1, args_size=1
+%         0: iload_0       
+%         1: ifge          7
+%         4: iload_0       
+%         5: ineg          
+%         6: ireturn       
+%         7: iload_0       
+%         8: ireturn       
+%\end{lstlisting}
+%
+%\TT{ifge} jumps to offset 7 if the value at \ac{TOS} is greater or equal to 0.
+%
+%Don't forget, any \TT{ifXX} instruction pops the value (to be compared) from the stack.
+%
+%
+%\TT{ineg} just negates value at \ac{TOS}.
+%
+%
+%Another example:
+%
+%\begin{lstlisting}[style=customjava]
+%	public static int min (int a, int b)
+%	{
+%		if (a>b)
+%			return b;
+%		return a;
+%	}
+%\end{lstlisting}
+%
+%We get:
+%
+%\begin{lstlisting}
+%  public static int min(int, int);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=2, locals=2, args_size=2
+%         0: iload_0       
+%         1: iload_1       
+%         2: if_icmple     7
+%         5: iload_1       
+%         6: ireturn       
+%         7: iload_0       
+%         8: ireturn       
+%\end{lstlisting}
+%
+%\TT{if\_icmple} pops two values and compares them.
+%If the second one is lesser than (or equal to) the first, a jump to offset 7 is performed.
+%
+%
+%When we define \TT{max()} function \dots
+%
+%
+%\begin{lstlisting}[style=customjava]
+%	public static int max (int a, int b)
+%	{
+%		if (a>b)
+%			return a;
+%		return b;
+%	}
+%\end{lstlisting}
+%
+%\dots the resulting code is the same, but the last two \TT{iload} instructions 
+%(at offsets 5 and 7) are swapped:
+%
+%
+%\begin{lstlisting}
+%  public static int max(int, int);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=2, locals=2, args_size=2
+%         0: iload_0       
+%         1: iload_1       
+%         2: if_icmple     7
+%         5: iload_0       
+%         6: ireturn       
+%         7: iload_1       
+%         8: ireturn       
+%\end{lstlisting}
+%
+%A more advanced example:
+%
+%\begin{lstlisting}[style=customjava]
+%public class cond
+%{
+%	public static void f(int i)
+%	{
+%		if (i<100)
+%			System.out.print("<100");
+%		if (i==100)
+%			System.out.print("==100");
+%		if (i>100)
+%			System.out.print(">100");
+%		if (i==0)
+%			System.out.print("==0");
+%	}
+%}
+%\end{lstlisting}
+%
+%\begin{lstlisting}
+%  public static void f(int);
+%    flags: ACC_PUBLIC, ACC_STATIC
+%    Code:
+%      stack=2, locals=1, args_size=1
+%         0: iload_0       
+%         1: bipush        100
+%         3: if_icmpge     14
+%         6: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+%         9: ldc           #3        // String <100
+%        11: invokevirtual #4        // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+%        14: iload_0       
+%        15: bipush        100
+%        17: if_icmpne     28
+%        20: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+%        23: ldc           #5        // String ==100
+%        25: invokevirtual #4        // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+%        28: iload_0       
+%        29: bipush        100
+%        31: if_icmple     42
+%        34: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+%        37: ldc           #6        // String >100
+%        39: invokevirtual #4        // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+%        42: iload_0       
+%        43: ifne          54
+%        46: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+%        49: ldc           #7        // String ==0
+%        51: invokevirtual #4        // Method java/io/PrintStream.print:(Ljava/lang/String;)V
+%        54: return        
+%\end{lstlisting}
+%
+%\TT{if\_icmpge} pops two values and compares them.
+%If the second one is larger than the first, a jump to offset 14 is performed.
+%
+%\TT{if\_icmpne} and \TT{if\_icmple} work just the same, but implement different conditions.
+%
+%
+%There is also a \TT{ifne} instruction at offset 43.
+%
+%Its name is misnomer, it would've be better to name it \TT{ifnz} 
+%(jump if the value at \ac{TOS} is not zero).
+%
+%And that is what it does: it jumps to offset 54 if the input value is not zero.
+%
+%If zero,the  execution flow proceeds to offset 46, where the \q{==0} string is printed.
+%
+%
+%N.B.: \ac{JVM} has no unsigned data types, so the comparison instructions operate 
+%only on signed integer values.
+%

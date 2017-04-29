@@ -1,0 +1,37 @@
+my_atoi PROC
+        PUSH     {r4-r6,lr}
+        MOV      r4,r0
+        LDRB     r0,[r0,#0]
+        MOV      r6,#0
+        MOV      r5,r6
+        CMP      r0,#0x2d '-'
+; R6 будет содержать 1 если минус был встречен, или 0 в противном случае
+        MOVEQ    r6,#1
+        ADDEQ    r4,r4,#1
+        B        |L0.80|
+|L0.36|
+        SUB      r0,r1,#0x30
+        CMP      r0,#0xa
+        BCC      |L0.64|
+        ADR      r0,|L0.220|
+        BL       __2printf
+        MOV      r0,#0
+        BL       exit
+|L0.64|
+        LDRB     r0,[r4],#1
+        ADD      r1,r5,r5,LSL #2
+        ADD      r0,r0,r1,LSL #1
+        SUB      r5,r0,#0x30
+|L0.80|
+        LDRB     r1,[r4,#0]
+        CMP      r1,#0
+        BNE      |L0.36|
+        CMP      r6,#0
+; поменять знак в переменной результата
+        RSBNE    r0,r5,#0
+        MOVEQ    r0,r5
+        POP      {r4-r6,pc}
+        ENDP
+
+|L0.220|
+        DCB      "Error! Unexpected char: '%c'\n",0

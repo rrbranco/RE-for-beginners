@@ -1,0 +1,20 @@
+\myparagraph{GCC}
+
+GCC 4.4.1 (with \Othree option) emits the same code, just slightly different:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.1,style=customasmx86]{patterns/12_FPU/1_simple/GCC_EN.asm}
+
+The difference is that, first of all, 3.14 is pushed to the stack (into \ST{0}), and then the value 
+in \GTT{arg\_0} is divided by the value in \ST{0}.
+
+\myindex{x86!\Instructions!FDIVR}
+
+\FDIVR stands for \IT{Reverse Divide}~---to divide with divisor and dividend swapped with each other. 
+There is no likewise instruction for multiplication since it is 
+a commutative operation, so we just have \FMUL without its \GTT{-R} counterpart.
+
+\myindex{x86!\Instructions!FADDP}
+
+\FADDP adds the two values but also pops one value from the stack. 
+After that operation, \ST{0} holds the sum.
+

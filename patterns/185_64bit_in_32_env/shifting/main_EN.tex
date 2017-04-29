@@ -1,0 +1,36 @@
+﻿\subsection{Shifting right}
+
+\lstinputlisting[style=customc]{patterns/185_64bit_in_32_env/shifting/3.c}
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 /Ob1,style=customasmx86]{patterns/185_64bit_in_32_env/shifting/3_MSVC.asm}
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1 -fno-inline,style=customasmx86]{patterns/185_64bit_in_32_env/shifting/3_GCC.asm}
+
+\myindex{x86!\Instructions!SHRD}
+
+Shifting also occurs in two passes: first the lower part is shifted, then the higher part.
+But the lower part is shifted with the help of the \INS{SHRD} instruction, it shifts the value of \EAX{} by 7 bits, but pulls new bits
+from \EDX{}, i.e., from the higher part.
+In other words, 64-bit value from \TT{EDX:EAX} register's pair, as a whole, is shifted by 7 bits and lowest 32 bits of result are placed into \EAX{}.
+The higher part is shifted using the much more popular \SHR{} instruction: indeed, the freed bits in the higher part
+must be filled with zeros.
+
+\subsubsection{ARM}
+
+ARM doesn't have such instruction as \INS{SHRD} in x86, so the Keil compiler ought to do this using simple shifts and \INS{OR} operations:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/185_64bit_in_32_env/shifting/Keil_ARM_O3.s}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/185_64bit_in_32_env/shifting/Keil_thumb_O3.s}
+% TODO add explanation
+
+\subsubsection{MIPS}
+
+GCC for MIPS follows the same algorithm as Keil does for Thumb mode:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/185_64bit_in_32_env/shifting/MIPS_O3_IDA.lst}
+
+% TODO add explanation
+

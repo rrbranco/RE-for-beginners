@@ -1,0 +1,88 @@
+\section{More about pointers}
+\myindex{\CLanguageElements!\Pointers}
+\label{label_pointers}
+
+\epigraph{The way C handles pointers, for example, was a brilliant innovation;
+it solved a lot of problems that we had before in data structuring and
+made the programs look good afterwards.}{Donald Knuth, interview (1993)}
+
+For those, who still have hard time understanding \CCpp pointers, here are more examples.
+Some of them are weird and serves only demonstration purpose:
+use them in production code only if you really know what you're doing.
+
+\input{advanced/450_more_ptrs/1_EN}
+\input{advanced/450_more_ptrs/2_EN}
+\input{advanced/450_more_ptrs/3_EN}
+\input{advanced/450_more_ptrs/4_EN}
+\input{advanced/450_more_ptrs/5_EN}
+\input{advanced/450_more_ptrs/6_EN}
+
+\subsection{Pointer as object identificator}
+
+Both assembly language and C has no \ac{OOP} features, but it's possible to write a code in \ac{OOP} style
+(just treat structure as an object).
+
+It's interesting, that sometimes, pointer to an object (or its address) is called as ID
+(in sense of data hiding/encapsulation).
+
+\myindex{win32!LoadLibrary()}
+\myindex{win32!GetProcAddress()}
+For example, LoadLibrary(), according to \ac{MSDN}, returns ``handle to the module''
+\footnote{\url{https://msdn.microsoft.com/ru-ru/library/windows/desktop/ms684175(v=vs.85).aspx}}.
+Then you pass this ``handle'' to other functions like GetProcAddress().
+But in fact, LoadLibrary() returns pointer to DLL file mapped into memory
+\footnote{\url{https://blogs.msdn.microsoft.com/oldnewthing/20041025-00/?p=37483}}.
+You can read two bytes from the address LoadLibrary() returns, and that would be ``MZ'' (first two bytes of any
+.EXE/.DLL file in Windows).
+
+\myindex{win32!HMODULE}
+\myindex{win32!HINSTANCE}
+Apparently, Microsoft ``hides'' that fact to provide better forward compatibility.
+Also, HMODULE and HINSTANCE data types had another meaning in 16-bit Windows.
+
+Probably, this is reason why \printf has ``\%p'' modifier, which is used for printing pointers (32-bit integers
+on 32-bit architectures, 64-bit on 64-bit, etc) in hexadecimal form.
+Address of a structure dumped into debug log may help in finding it in another place of log.
+
+\myindex{SQLite}
+Here is also from SQLite source code:
+
+\begin{lstlisting}
+
+...
+
+struct Pager {
+  sqlite3_vfs *pVfs;          /* OS functions to use for IO */
+  u8 exclusiveMode;           /* Boolean. True if locking_mode==EXCLUSIVE */
+  u8 journalMode;             /* One of the PAGER_JOURNALMODE_* values */
+  u8 useJournal;              /* Use a rollback journal on this file */
+  u8 noSync;                  /* Do not sync the journal if true */
+
+....
+
+static int pagerLockDb(Pager *pPager, int eLock){
+  int rc = SQLITE_OK;
+
+  assert( eLock==SHARED_LOCK || eLock==RESERVED_LOCK || eLock==EXCLUSIVE_LOCK );
+  if( pPager->eLock<eLock || pPager->eLock==UNKNOWN_LOCK ){
+    rc = sqlite3OsLock(pPager->fd, eLock);
+    if( rc==SQLITE_OK && (pPager->eLock!=UNKNOWN_LOCK||eLock==EXCLUSIVE_LOCK) ){
+      pPager->eLock = (u8)eLock;
+      IOTRACE(("LOCK %p %d\n", pPager, eLock))
+    }
+  }
+  return rc;
+}
+
+...
+
+  PAGER_INCR(sqlite3_pager_readdb_count);
+  PAGER_INCR(pPager->nRead);
+  IOTRACE(("PGIN %p %d\n", pPager, pgno));
+  PAGERTRACE(("FETCH %d page %d hash(%08x)\n",
+               PAGERID(pPager), pgno, pager_pagehash(pPg)));
+
+...
+
+\end{lstlisting}
+

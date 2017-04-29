@@ -1,6 +1,6 @@
 f:
-                sll     $v0, $a0, 25
-                srl     $v1, $a1, 7
-                or      $v1, $v0, $v1
-                jr      $ra
-                srl     $v0, $a0, 7
+       sll     $v0, $a0, 25
+       srl     $v1, $a1, 7
+       or      $v1, $v0, $v1
+       jr      $ra
+       srl     $v0, $a0, 7

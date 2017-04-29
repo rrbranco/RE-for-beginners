@@ -1,0 +1,29 @@
+\myparagraph{\Optimizing GCC 4.4.1}
+
+\lstinputlisting[caption=\Optimizing GCC
+4.4.1,style=customasmx86]{patterns/12_FPU/3_comparison/x86/GCC_O3_DE.asm}
+
+\myindex{x86!\Instructions!JA}
+Dies ist fast das gleiche, außer dass \JA nach \SAHF verwendet wird.
+Tatsächlich prüfen die bedingte Sprungbefehle, die vorzeichenlose Zahlen auf
+\q{größer}, \q{kleiner} oder \q{gleich} prüfen (das sind \JA, \JAE, \JB, \JBE,
+\JE/\JZ, \JNA, \JNAE, \JNB, \JNBE, \JNE/\JNZ) lediglich die Flags \CF und
+\ZF.\\\\
+Erinnern wir uns, an welchen Stellen die \CThreeBits sich im \GTT{AH} Register
+befinden, nachdem der Befehl \INS{FSTSW}/\FNSTSW ausgeführt wurde:
+
+\input{C3_in_AH}
+Halten wir uns auch vor Augen wie die Bits aus \GTT{AH} in den CPU Flags nach
+der Ausführung von \SAHF abgelegt werden:
+
+\input{SAHF_LAHF}
+Nach dem Vergleich werden die \Cthree und \Czero Bits nach \ZF und \CF
+verschoben, sodass der bedingte Sprung danach funktionieren kann. \JA wird
+ausgeüführt, falls sowohl \CF als auch \ZF gleich 0 sind.
+
+Hierbei können alle hier aufgelisteten Sprungbefehle nach einem \FNSTSW/\SAHF
+Befehlspaar verwendet werden. 
+
+Offenbar wurden die \CThreeBits Status Bits der CPU dort bewusst platziert,
+sodass diese leicht auf die CPU Flags übertragen werden können, ohne dass
+zusätzliche Vertauschungen notwendig sind.

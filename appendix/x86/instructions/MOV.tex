@@ -1,4 +1,4 @@
-\index{x86!\Instructions!MOV}
+\myindex{x86!\Instructions!MOV}
 \item[MOV] \RU{загрузить значение}\EN{load value}. \RU{эта инструкция была названа неудачно 
 (данные не перемещаются, а копируются), 
 что является результатом путаницы: 
@@ -16,4 +16,9 @@ the high 32 bits of the register will be cleared.}
 
 \RU{Вероятно, это сделано для упрощения портирования кода под x86-64.}
 \EN{Supposedly, it was done to simplify porting code to x86-64.}
- 
+
+\ifdefined\BRAZILIAN
+% TODO to be resynced:
+Como curiosidade, vale ressaltar que \MOV é um nome equivocado para a instrução em ambos conjuntos de intruções do x86 e ARM, pois a informação não é de fato movida e sim copiada para o registrador ou variável de destino.
+\fi % BRAZILIAN
+

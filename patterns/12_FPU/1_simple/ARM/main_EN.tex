@@ -1,0 +1,114 @@
+\subsubsection{ARM: \OptimizingXcodeIV (\ARMMode)}
+
+Until ARM got standardized floating point support, several processor manufacturers added their own 
+instructions extensions.
+Then, VFP (\IT{Vector Floating Point}) was standardized.
+
+One important difference from x86 is that in ARM, there
+is no stack, you work just with registers.
+
+\lstinputlisting[label=ARM_leaf_example10,caption=\OptimizingXcodeIV (\ARMMode),style=customasmARM]{patterns/12_FPU/1_simple/ARM/Xcode_ARM_O3_EN.asm}
+
+\myindex{ARM!D-\registers{}}
+\myindex{ARM!S-\registers{}}
+
+So, we see here new some registers used, with D prefix.
+
+These are 64-bit registers, there are 32 of them, and they can be used both for floating-point numbers 
+(double) but also for SIMD (it is called NEON here in ARM).
+
+There are also 32 32-bit S-registers, intended to be used for single precision 
+floating pointer numbers (float).
+
+It is easy to memorize: D-registers are for double precision numbers, while
+S-registers---for single precision numbers.
+More about it: \myref{ARM_VFP_registers}.
+
+Both constants (3.14 and 4.1) are stored in memory in IEEE 754 format.
+
+\myindex{ARM!\Instructions!VLDR}
+\myindex{ARM!\Instructions!VMOV}
+\INS{VLDR} and \INS{VMOV}, as it can be easily deduced, are analogous to the \INS{LDR} and \MOV instructions,
+but they work with D-registers.
+
+It has to be noted that these instructions, just like the D-registers, are intended not only for
+floating point numbers, 
+but can be also used for SIMD (NEON) operations and this will also be shown soon.
+
+The arguments are passed to the function in a common way, via the R-registers, however
+each number that has double precision has a size of 64 bits, so two R-registers are needed to pass each one.
+
+\INS{VMOV D17, R0, R1} at the start, composes two 32-bit values from \Reg{0} and \Reg{1} into one 64-bit value
+and saves it to \GTT{D17}.
+
+\INS{VMOV R0, R1, D16} is the inverse operation: what has been in \GTT{D16} 
+is split in two registers, \Reg{0} and \Reg{1}, because a double-precision number 
+that needs 64 bits for storage, is returned in \Reg{0} and \Reg{1}.
+
+\myindex{ARM!\Instructions!VDIV}
+\myindex{ARM!\Instructions!VMUL}
+\myindex{ARM!\Instructions!VADD}
+\INS{VDIV}, \INS{VMUL} and \INS{VADD}, 
+are instruction for processing floating point numbers that compute \gls{quotient}, 
+\gls{product} and sum, respectively.
+
+The code for Thumb-2 is same.
+
+\subsubsection{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/12_FPU/1_simple/ARM/Keil_O3_thumb_EN.asm}
+
+Keil generated code for a processor without FPU or NEON support.
+
+The double-precision floating-point numbers are passed via generic R-registers,
+and instead of FPU-instructions, service library functions are called\\
+(like \GTT{\_\_aeabi\_dmul}, \GTT{\_\_aeabi\_ddiv}, \GTT{\_\_aeabi\_dadd})
+which emulate multiplication, division and addition for floating-point numbers.
+
+Of course, that is slower than FPU-coprocessor, but it's still better than nothing.
+
+By the way, similar FPU-emulating libraries were very popular in the x86 world when coprocessors were rare
+and expensive, and were installed only on expensive computers.
+
+\myindex{ARM!soft float}
+\myindex{ARM!armel}
+\myindex{ARM!armhf}
+\myindex{ARM!hard float}
+
+The FPU-coprocessor emulation is called \IT{soft float} or \IT{armel} (\IT{emulation}) in the ARM world, 
+while using the coprocessor's FPU-instructions is called \IT{hard float} or \IT{armhf}.
+
+\iffalse
+% TODO разобраться...
+\myindex{Raspberry Pi}
+
+For example, the Linux kernel for Raspberry Pi is compiled in two variants.
+
+In the \IT{soft float} case, arguments are passed via R-registers, and in the \IT{hard float} case---via D-registers.
+
+And that is what stops you from using armhf-libraries from armel-code or vice versa,
+and that is why all the code in Linux distributions must be compiled according to a single convention.
+\fi
+
+\subsubsection{ARM64: \Optimizing GCC (Linaro) 4.9}
+
+Very compact code:
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.9,style=customasmARM]{patterns/12_FPU/1_simple/ARM/ARM64_GCC_O3_EN.s}
+
+\subsubsection{ARM64: \NonOptimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[caption=\NonOptimizing GCC (Linaro) 4.9,style=customasmARM]{patterns/12_FPU/1_simple/ARM/ARM64_GCC_O0_EN.s}
+
+\NonOptimizing GCC is more verbose.
+
+There is a lot of unnecessary value shuffling, including some clearly redundant code 
+(the last two \INS{FMOV} instructions). Probably, GCC 4.9 is not yet good in generating ARM64 code.
+
+What is worth noting is that ARM64 has 64-bit registers, and the D-registers are 64-bit ones as well.
+
+So the compiler is free to save values of type \Tdouble in \ac{GPR}s instead of the local stack.
+This isn't possible on 32-bit CPUs.
+
+And again, as an exercise, you can try to optimize this function manually, without introducing
+new instructions like \INS{FMADD}.

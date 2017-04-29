@@ -1,0 +1,126 @@
+﻿% TODO: add ROL/ROR
+\subsection{\Conclusion{}}
+
+\myindex{x86!\Instructions!SHR}
+\myindex{x86!\Instructions!SHL}
+\myindex{x86!\Instructions!SAR}
+Инструкции сдвига, аналогичные операторам \CCpp \TT{$\ll$} и \TT{$\gg$}, в x86 это \SHR/\SHL (для беззнаковых значений), \SAR/\SHL (для знаковых значений).
+
+\myindex{ARM!\Instructions!LSR}
+\myindex{ARM!\Instructions!LSL}
+\myindex{ARM!\Instructions!ASR}
+Инструкции сдвига в ARM это \LSR/\LSL (для беззнаковых значений), \ASR/\LSL (для знаковых значений).
+
+Можно также добавлять суффикс сдвига для некоторых инструкций 
+(которые называются \q{data processing instructions}).
+
+% FIXME: which instructions?
+
+\subsubsection{Проверка определенного бита (известного на стадии компиляции)}
+
+Проверить, присутствует ли бит 0b1000000 (0x40) в значении в регистре:
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet0.c}
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/14_bitfields/TEST_JNZ_RU.lst}
+
+\lstinputlisting[caption=x86,style=customasmx86]{patterns/14_bitfields/TEST_JZ_RU.lst}
+
+\lstinputlisting[caption=ARM (\ARMMode),style=customasmARM]{patterns/14_bitfields/TST_BNE_RU.lst}
+
+\myindex{x86!\Instructions!AND}
+\myindex{x86!\Instructions!TEST}
+Иногда \AND используется вместо \TEST, но флаги выставляются точно также.
+
+\subsubsection{Проверка определенного бита (заданного во время исполнения)}
+
+Это обычно происходит при помощи вот такого фрагмента на \CCpp (сдвинуть значение на $n$ бит вправо,
+затем отрезать самый младший бит):
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet1.c}
+
+Это обычно реализуется в x86-коде так:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; REG=input_value
+; CL=n
+SHR REG, CL
+AND REG, 1
+\end{lstlisting}
+
+Или (сдвинуть 1 $n$ раз влево, изолировать этот же бит во входном значении и проверить, не ноль ли он):
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet2.c}
+
+Это обычно так реализуется в x86-коде:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; CL=n
+MOV REG, 1
+SHL REG, CL
+AND input_value, REG
+\end{lstlisting}
+
+\subsubsection{Установка определенного бита (известного во время компиляции)}
+
+\begin{lstlisting}[caption=\CCpp,style=customc]
+value=value|0x40;
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+OR REG, 40h
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ARM (\ARMMode) и ARM64,style=customasmARM]
+ORR R0, R0, #0x40
+\end{lstlisting}
+
+\subsubsection{Установка определенного бита (заданного во время исполнения)}
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet3.c}
+
+Это обычно так реализуется в x86-коде:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; CL=n
+MOV REG, 1
+SHL REG, CL
+OR input_value, REG
+\end{lstlisting}
+
+\subsubsection{Сброс определенного бита (известного во время компиляции)}
+
+Просто исполните операцию логического \q{И} (\AND) с инвертированным значением:
+
+\begin{lstlisting}[caption=\CCpp,style=customc]
+value=value&(~0x40);
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+AND REG, 0FFFFFFBFh
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x64,style=customasmx86]
+AND REG, 0FFFFFFFFFFFFFFBFh
+\end{lstlisting}
+
+Это на самом деле сохранение всех бит кроме одного.
+
+\myindex{ARM!\Instructions!BIC}
+В ARM в режиме ARM есть инструкция \BIC, работающая как две инструкции \NOT+\AND:
+
+\begin{lstlisting}[caption=ARM (\ARMMode),style=customasmARM]
+BIC R0, R0, #0x40
+\end{lstlisting}
+
+\subsubsection{Сброс определенного бита (заданного во время исполнения)}
+
+\lstinputlisting[caption=\CCpp,style=customc]{patterns/14_bitfields/c_snippet4.c}
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+; CL=n
+MOV REG, 1
+SHL REG, CL
+NOT REG
+AND input_value, REG
+\end{lstlisting}

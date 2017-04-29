@@ -1,0 +1,16 @@
+﻿\subsubsection{Access two-dimensional array as one-dimensional}
+
+We can be easily assured that it's possible to access a two-dimensional array as one-dimensional array in at least two ways:
+
+\lstinputlisting[style=customc]{patterns/13_arrays/5_multidimensional/2D_as_1D_EN.c}
+
+Compile and run it: it shows correct values.
+
+What MSVC 2013 did is fascinating, all three routines are just the same!
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{patterns/13_arrays/5_multidimensional/2D_as_1D_MSVC_2013_Ox_x64_EN.asm}
+
+GCC also generates equivalent routines, but slightly different:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 x64,style=customasmx86]{patterns/13_arrays/5_multidimensional/2D_as_1D_GCC49_x64_O3_EN.s}
+

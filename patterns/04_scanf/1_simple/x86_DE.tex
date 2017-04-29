@@ -1,0 +1,108 @@
+\subsubsection{x86}
+
+\myparagraph{MSVC}
+Den folgenden Code erhalten wie nach dem Kompilieren mit MSVC 2010:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/1_simple/ex1_MSVC_DE.asm}
+
+\TT{x} ist eine lokale Variable.
+
+Gemäß dem \CCpp-Standard darf diese nur innerhalb dieser Funktion sichtbar sein und nicht aus einem anderen, äußeren Scope.
+Traditionell werden lokale Variablen auf dem Stack gespeichert.
+Es gibt möglicherweise andere Wege sie anzulegen, aber in x86 geschieht es auf diese Weise.
+
+
+\myindex{x86!\Instructions!PUSH}
+Das Ziel des Befehls direkt nach dem Funktionsprolog, \TT{PUSH ECX}), ist es nicht, den Status von \ECX zu sichern
+(man beachte, dass Fehlen eines entsprechenden \TT{POP ECX} im Funktionsepilog).
+Tatsächlich reserviert der Befehl 4 Byte auf dem Stack, um die Variable $x$ speichern zu können.
+
+\label{stack_frame}
+\myindex{\Stack!Stack frame}
+\myindex{x86!\Registers!EBP}
+Auf \TT{x} wird mithilfe des \TT{\_x\$} Makros (es entspricht -4) und des \EBP Registers, das auf den aktuellen Stack Frame zeigt, zugegriffen. 
+Während der Dauer der Funktionsausführung zeigt \EBP auf den aktuellen \glslink{stack frame}{Stack Frame}, wodurch mittels \TT{EBP+offset} auf lokalen Variablen und Funktionsargumente zugegriffen werden kann.
+
+\TT{x} is to be accessed with the assistance of the \TT{\_x\$} macro (it equals to -4) and the \EBP register pointing to the current frame.
+
+\myindex{x86!\Registers!ESP}
+Es ist auch möglich, das \ESP Register zu diesem Zweck zu verwenden, aber dies ist ungebräuchlich, da es sich häufig verändert.
+Der Wert von \EBP kann als eingefrorener Wert des Wertes von \ESP zu Beginn der Funktionsausführung verstanden werden.
+
+It is also possible to use \ESP for the same purpose, although that is not very convenient since it changes frequently.
+The value of the \EBP could be perceived as a \IT{frozen state} of the value in \ESP at the start of the function's execution.
+
+% FIXME1 это уже было в 02_stack?
+Hier ist ein typisches Layour eines Stack Frames in einer 32-Bit-Umgebung:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\dots & \dots \\
+\hline
+EBP-8 & local variable \#2, \MarkedInIDAAs{} \TT{var\_8} \\
+\hline
+EBP-4 & local variable \#1, \MarkedInIDAAs{} \TT{var\_4} \\
+\hline
+EBP & saved value of \EBP \\
+\hline
+EBP+4 & return address \\
+\hline
+EBP+8 & \argument \#1, \MarkedInIDAAs{} \TT{arg\_0} \\
+\hline
+EBP+0xC & \argument \#2, \MarkedInIDAAs{} \TT{arg\_4} \\
+\hline
+EBP+0x10 & \argument \#3, \MarkedInIDAAs{} \TT{arg\_8} \\
+\hline
+\dots & \dots \\
+\hline
+\end{tabular}
+\end{center}
+Die Funktion \scanf in unserem Beispiel hat zwei Argumente.
+
+Das erste ist ein Pointer auf den String \TT{\%d} und das zweite ist die Adresse der Variablen \TT{x}.
+
+\myindex{x86!\Instructions!LEA}
+Zunächst wird die Adresse der Variablen $x$ durch den Befehl \\
+\TT{lea eax, DWORD PTR \_x\$[ebp]} in das \EAX Register geladen.
+
+\LEA steht für \IT{load effective address} und wird häufig benutzt, um eine Adresse zu erstellen ~(\myref{sec:LEA}).
+In diesem Fall speichert \LEA einfach die Summe des \EBP Registers und des \TT{\_\$} Makros im Register \EAX.
+Dies entspricht dem Befehl \INS{lea eax, [ebp-4]}.
+
+Es wird also 4 von Wert in \EBP abgezogen und das Ergebnis in das Register \EAX geladen.
+Danach wird der Wert in \EAX auf dem Stack abgelegt und \scanf wird aufgerufen.
+
+Anschließend wird \printf mit einem Argument aufgerufen--einen Pointer auf den String:
+\TT{You entered \%d...\textbackslash{}n}.
+
+Das zweite Argument wird mit \TT{mov ecx, [ebp-4]} vorbereitet.
+Dieser Befehl speichert den Wert der Variablen $x$ (nicht seine Adresse) im Register \ECX.
+
+Schließlich wird der Wert in \ECX auf dem Stack gespeichert und das letzte \printf wird aufgerufen.
+
+\input{patterns/04_scanf/1_simple/olly.tex}
+
+\myparagraph{GCC}
+
+Kompilieren wir diesen Code mit GCC 4.4.1 unter Linux:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/1_simple/ex1_GCC.asm}
+
+\myindex{puts() instead of printf()}
+GCC ersetzt den Aufruf von \printf durch einen Aufruf von \puts. Der Grund hierfür wurde bereits in ~(\myref{puts}) erklärt.
+
+% TODO: rewrite
+%\RU{Почему \scanf переименовали в \TT{\_\_\_isoc99\_scanf}, я честно говоря, пока не знаю.}
+%\EN{Why \scanf is renamed to \TT{\_\_\_isoc99\_scanf}, I do not know yet.}
+% 
+% Apparently it has to do with the ISO c99 standard compliance. By default GCC allows specifying a standard to adhere to.
+% For example if you compile with -std=c89 the outputted assmebly file will contain scanf and not __isoc99__scanf. I guess current GCC version adhares to c99 by default.
+% According to my understanding the two implementations differ in the set of suported modifyers (See printf man page)
+Genau wie im MSVC Beispiel werden die Argumente mithilfe des Befehls \MOV auf dem Stack abgelegt.
+
+\myparagraph{By the way}
+Dieses einfache Beispiel ist übrigens eine Demonstration der Tatsache, dass der Compiler eine Liste von Ausdrücken in einem
+\CCpp-Block in eine sequentielle Liste von Befehlen übersetzt.
+Es gibt nichts zwischen zwei \CCpp-Anweisungen und genauso verhält es sich auch im Maschinencode.
+Der Control Flow geht von einem Ausdruck direkt an den folgenden über.

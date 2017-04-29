@@ -1,0 +1,380 @@
+wcl -i=C:\WATCOM\h\win\ -s -os -ml -bt=windows -bcl=windows ex8.c
+
+cseg01:0000 collect_stat    proc far                ; CODE XREF: WinMain+C9p
+cseg01:0000
+cseg01:0000 var_4           = word ptr -4
+cseg01:0000 var_2           = word ptr -2
+cseg01:0000 arg_0           = word ptr  8
+cseg01:0000
+cseg01:0000                 push    si
+cseg01:0001                 push    bp
+cseg01:0002                 mov     bp, sp
+cseg01:0004                 push    ax
+cseg01:0005
+cseg01:0005 loc_5:                                  ; CODE XREF: sub_4129+5CP
+cseg01:0005                                         ; DATA XREF: dseg02:off_61F4o
+cseg01:0005                 push    ax
+cseg01:0006                 mov     si, ax
+cseg01:0008                 mov     [bp+var_4], dx
+cseg01:000B                 mov     [bp+var_2], bx
+cseg01:000E                 mov     dx, cx
+cseg01:0010                 xor     ax, ax
+cseg01:0012                 mov     cl, 3
+cseg01:0014
+cseg01:0014 loc_14:                                 ; CODE XREF: collect_stat+40j
+cseg01:0014                 cmp     ax, [bp+arg_0]
+cseg01:0017                 jnb     short loc_42
+cseg01:0019                 mov     es, dx
+cseg01:001B                 mov     bx, [bp+var_2]
+cseg01:001E                 add     bx, ax
+cseg01:0020                 mov     bl, es:[bx]
+cseg01:0023                 xor     bh, bh
+cseg01:0025                 shl     bx, cl
+cseg01:0027                 mov     es, [bp+var_4]
+cseg01:002A                 add     bx, si
+cseg01:002C                 add     word ptr es:[bx], 1
+cseg01:0030                 adc     word ptr es:[bx+2], 0
+cseg01:0035                 adc     word ptr es:[bx+4], 0
+cseg01:003A                 adc     word ptr es:[bx+6], 0
+cseg01:003F                 inc     ax
+cseg01:0040                 jmp     short loc_14
+cseg01:0042
+cseg01:0042 loc_42:                                 ; CODE XREF: collect_stat+17j
+cseg01:0042                 mov     sp, bp
+cseg01:0044                 pop     bp
+cseg01:0045                 pop     si
+cseg01:0046                 retf    2
+cseg01:0046 collect_stat    endp
+cseg01:0046
+cseg01:0049
+cseg01:0049 ; =============== S U B R O U T I N E =======================================
+cseg01:0049
+cseg01:0049 ; Attributes: bp-based frame
+cseg01:0049
+cseg01:0049 output_stat     proc far                ; CODE XREF: WinMain+D9p
+cseg01:0049
+cseg01:0049 var_8C          = word ptr -8Ch
+cseg01:0049 var_8A          = byte ptr -8Ah
+cseg01:0049 var_A           = word ptr -0Ah
+cseg01:0049
+cseg01:0049                 inc     bp
+cseg01:004A                 push    bp
+cseg01:004B                 mov     bp, sp
+cseg01:004D                 push    bx
+cseg01:004E                 push    cx
+cseg01:004F                 push    si
+cseg01:0050                 push    di
+cseg01:0051                 sub     sp, 82h
+cseg01:0055                 push    ax
+cseg01:0056                 mov     si, dx
+cseg01:0058                 mov     [bp+var_A], 0
+cseg01:005D                 jmp     short loc_99
+cseg01:005F
+cseg01:005F loc_5F:                                 ; CODE XREF: output_stat+84j
+cseg01:005F                 push    word ptr es:[bx+6]
+cseg01:0063                 push    word ptr es:[bx+4]
+cseg01:0067                 push    word ptr es:[bx+2]
+cseg01:006B                 push    word ptr es:[bx]
+cseg01:006E                 push    [bp+var_A]
+cseg01:0071                 push    ds
+cseg01:0072                 mov     bx, offset a03d06d ; "%03d: %06d\n"
+cseg01:0075                 push    bx
+cseg01:0076
+cseg01:0076 loc_76:                                 ; CODE XREF: output_stat+9Dj
+cseg01:0076                 lea     ax, [bp+var_8A]
+cseg01:007A                 push    ds
+cseg01:007B                 push    ax
+cseg01:007C                 push    cs
+cseg01:007D                 call    near ptr sprintf
+cseg01:0080                 nop
+cseg01:0081                 add     sp, 12h
+cseg01:0084                 lea     ax, [bp+var_8A]
+cseg01:0088                 push    ds
+cseg01:0089                 push    ax
+cseg01:008A                 call    OUTPUTDEBUGSTRING
+cseg01:008F
+cseg01:008F loc_8F:                                 ; CODE XREF: output_stat+76j
+cseg01:008F                 inc     [bp+var_A]
+cseg01:0092                 cmp     [bp+var_A], 256
+cseg01:0097                 jge     short loc_E8
+cseg01:0099
+cseg01:0099 loc_99:                                 ; CODE XREF: output_stat+14j
+cseg01:0099                 mov     cl, 3
+cseg01:009B                 mov     bx, [bp+var_A]
+cseg01:009E                 shl     bx, cl
+cseg01:00A0                 mov     es, si
+cseg01:00A2                 add     bx, [bp+var_8C]
+cseg01:00A6                 cmp     word ptr es:[bx+6], 0
+cseg01:00AB                 jnz     short loc_C1
+cseg01:00AD                 cmp     word ptr es:[bx+4], 0
+cseg01:00B2                 jnz     short loc_C1
+cseg01:00B4                 cmp     word ptr es:[bx+2], 0
+cseg01:00B9                 jnz     short loc_C1
+cseg01:00BB                 cmp     word ptr es:[bx], 0
+cseg01:00BF                 jz      short loc_8F
+cseg01:00C1
+cseg01:00C1 loc_C1:                                 ; CODE XREF: output_stat+62j
+cseg01:00C1                                         ; output_stat+69j ...
+cseg01:00C1                 mov     al, byte ptr [bp+var_A]
+cseg01:00C4                 xor     ah, ah
+cseg01:00C6                 mov     di, ax
+cseg01:00C8                 test    byte_6381[di], 8
+cseg01:00CD                 jz      short loc_5F
+cseg01:00CF                 push    word ptr es:[bx+6]
+cseg01:00D3                 push    word ptr es:[bx+4]
+cseg01:00D7                 push    word ptr es:[bx+2]
+cseg01:00DB                 push    word ptr es:[bx]
+cseg01:00DE                 push    [bp+var_A]
+cseg01:00E1                 push    ds
+cseg01:00E2                 mov     ax, offset aC06d ; "  %c: %06d\n"
+cseg01:00E5                 push    ax
+cseg01:00E6                 jmp     short loc_76
+cseg01:00E8
+cseg01:00E8 loc_E8:                                 ; CODE XREF: output_stat+4Ej
+cseg01:00E8                                         ; output_file_info+31j ...
+cseg01:00E8                 lea     sp, [bp-8]
+cseg01:00EB                 pop     di
+cseg01:00EC                 pop     si
+cseg01:00ED                 pop     cx
+cseg01:00EE                 pop     bx
+cseg01:00EF                 pop     bp
+cseg01:00F0                 dec     bp
+cseg01:00F1                 retf
+cseg01:00F1 output_stat     endp
+cseg01:00F1
+cseg01:00F2
+cseg01:00F2 ; =============== S U B R O U T I N E =======================================
+cseg01:00F2
+cseg01:00F2 ; Attributes: bp-based frame
+cseg01:00F2
+cseg01:00F2 output_file_info proc far               ; CODE XREF: WinMain+72p
+cseg01:00F2
+cseg01:00F2 var_BC          = byte ptr -0BCh
+cseg01:00F2 var_3C          = byte ptr -3Ch
+cseg01:00F2 var_2C          = word ptr -2Ch
+cseg01:00F2 var_2A          = word ptr -2Ah
+cseg01:00F2 var_24          = byte ptr -24h
+cseg01:00F2
+cseg01:00F2                 inc     bp
+cseg01:00F3                 push    bp
+cseg01:00F4                 mov     bp, sp
+cseg01:00F6                 push    bx
+cseg01:00F7                 push    cx
+cseg01:00F8                 push    si
+cseg01:00F9                 push    di
+cseg01:00FA                 sub     sp, 0B4h
+cseg01:00FE                 mov     di, ax
+cseg01:0100                 mov     si, dx
+cseg01:0102                 mov     cx, ds
+cseg01:0104                 lea     bx, [bp+var_3C]
+cseg01:0107                 push    cs
+cseg01:0108                 db      3Eh
+cseg01:0108                 call    near ptr stat
+cseg01:010C                 test    ax, ax
+cseg01:010E                 jz      short loc_125
+cseg01:0110                 push    ds
+cseg01:0111                 mov     ax, offset aCannotStatFile ; "cannot stat file:\n"
+cseg01:0114                 push    ax
+cseg01:0115                 call    OUTPUTDEBUGSTRING
+cseg01:011A                 push    si
+cseg01:011B                 push    di
+cseg01:011C                 call    OUTPUTDEBUGSTRING
+cseg01:0121                 xor     ax, ax
+cseg01:0123                 jmp     short loc_E8
+cseg01:0125
+cseg01:0125 loc_125:                                ; CODE XREF: output_file_info+1Cj
+cseg01:0125                 push    [bp+var_2A]
+cseg01:0128                 push    [bp+var_2C]
+cseg01:012B                 push    ds
+cseg01:012C                 mov     ax, offset aFileSizeD ; "file size: %d\n"
+cseg01:012F                 push    ax
+cseg01:0130                 lea     dx, [bp+var_BC]
+cseg01:0134                 push    ds
+cseg01:0135                 push    dx
+cseg01:0136                 push    cs
+cseg01:0137                 call    near ptr sprintf
+cseg01:013A                 nop
+cseg01:013B                 add     sp, 0Ch
+cseg01:013E                 lea     dx, [bp+var_BC]
+cseg01:0142                 push    ds
+cseg01:0143                 push    dx
+cseg01:0144                 call    OUTPUTDEBUGSTRING
+cseg01:0149                 mov     dx, ds
+cseg01:014B                 lea     ax, [bp+var_24]
+cseg01:014E                 push    cs
+cseg01:014F                 call    near ptr localtime
+cseg01:0152                 nop
+cseg01:0153                 mov     bx, ax
+cseg01:0155                 mov     es, dx
+cseg01:0157                 push    word ptr es:[bx]
+cseg01:015A                 push    word ptr es:[bx+2]
+cseg01:015E                 push    word ptr es:[bx+4]
+cseg01:0162                 push    word ptr es:[bx+6]
+cseg01:0166                 push    word ptr es:[bx+8]
+cseg01:016A                 mov     ax, es:[bx+0Ah]
+cseg01:016E                 add     ax, 1900
+cseg01:0171                 push    ax
+cseg01:0172                 push    ds
+cseg01:0173                 mov     ax, offset aFileModificati ; "File modification date/time: %04d-%02d-"...
+cseg01:0176                 push    ax
+cseg01:0177                 lea     dx, [bp+var_BC]
+cseg01:017B                 push    ds
+cseg01:017C                 push    dx
+cseg01:017D                 push    cs
+cseg01:017E                 db      3Eh
+cseg01:017E                 call    near ptr sprintf
+cseg01:0182                 add     sp, 14h
+cseg01:0185                 lea     dx, [bp+var_BC]
+cseg01:0189                 push    ds
+cseg01:018A                 push    dx
+cseg01:018B                 call    OUTPUTDEBUGSTRING
+cseg01:0190                 mov     ax, 1
+cseg01:0193                 jmp     loc_E8
+cseg01:0193 output_file_info endp
+cseg01:0193
+cseg01:0196
+cseg01:0196 ; =============== S U B R O U T I N E =======================================
+cseg01:0196
+cseg01:0196 ; Attributes: bp-based frame
+cseg01:0196
+cseg01:0196 WinMain         proc far                ; CODE XREF: start+D8p
+cseg01:0196
+cseg01:0196 var_80C         = word ptr -80Ch
+cseg01:0196 var_80A         = word ptr -80Ah
+cseg01:0196 var_808         = word ptr -808h
+cseg01:0196 var_806         = word ptr -806h
+cseg01:0196 var_C           = word ptr -0Ch
+cseg01:0196 var_A           = word ptr -0Ah
+cseg01:0196 var_8           = word ptr -8
+cseg01:0196 arg_4           = word ptr  8
+cseg01:0196 arg_6           = word ptr  0Ah
+cseg01:0196
+cseg01:0196                 push    ds
+cseg01:0197                 pop     ax
+cseg01:0198                 nop
+cseg01:0199                 inc     bp
+cseg01:019A                 push    bp
+cseg01:019B                 mov     bp, sp
+cseg01:019D                 push    ds
+cseg01:019E                 mov     ds, ax
+cseg01:01A0                 push    si
+cseg01:01A1                 push    di
+cseg01:01A2                 sub     sp, 806h
+cseg01:01A6                 xor     ax, ax
+cseg01:01A8                 mov     [bp+var_8], ax
+cseg01:01AB                 xor     di, di
+cseg01:01AD                 mov     cl, 3
+cseg01:01AF
+cseg01:01AF loc_1AF:                                ; CODE XREF: WinMain+39j
+cseg01:01AF                 mov     si, ax
+cseg01:01B1                 shl     si, cl
+cseg01:01B3                 mov     [bp+si+var_806], 0
+cseg01:01B9                 mov     [bp+si+var_808], 0
+cseg01:01BF                 mov     [bp+si+var_80A], 0
+cseg01:01C5                 mov     [bp+si+var_80C], 0
+cseg01:01CB                 inc     ax
+cseg01:01CC                 cmp     ax, 256
+cseg01:01CF                 jl      short loc_1AF
+cseg01:01D1                 mov     bx, offset aRb  ; "rb"
+cseg01:01D4                 mov     cx, ds
+cseg01:01D6                 mov     ax, [bp+arg_4]
+cseg01:01D9                 mov     dx, [bp+arg_6]
+cseg01:01DC                 push    cs
+cseg01:01DD                 call    near ptr fopen
+cseg01:01E0                 nop
+cseg01:01E1                 mov     [bp+var_C], ax
+cseg01:01E4                 mov     [bp+var_A], dx
+cseg01:01E7                 test    dx, dx
+cseg01:01E9                 jnz     short loc_201
+cseg01:01EB                 test    ax, ax
+cseg01:01ED                 jnz     short loc_201
+cseg01:01EF                 push    ds
+cseg01:01F0                 mov     ax, offset aCannotOpenFile ; "cannot open file:\n"
+cseg01:01F3                 push    ax
+cseg01:01F4                 call    OUTPUTDEBUGSTRING
+cseg01:01F9                 push    [bp+arg_6]
+cseg01:01FC                 push    [bp+arg_4]
+cseg01:01FF                 jmp     short loc_229
+cseg01:0201
+cseg01:0201 loc_201:                                ; CODE XREF: WinMain+53j
+cseg01:0201                                         ; WinMain+57j
+cseg01:0201                 mov     ax, [bp+arg_4]
+cseg01:0204                 mov     dx, [bp+arg_6]
+cseg01:0207                 push    cs
+cseg01:0208                 call    near ptr output_file_info
+cseg01:020B                 test    ax, ax
+cseg01:020D                 jz      short loc_272
+cseg01:020F                 mov     ax, 8000h
+cseg01:0212                 push    cs
+cseg01:0213                 call    near ptr malloc
+cseg01:0216                 nop
+cseg01:0217                 mov     [bp+var_8], ax
+cseg01:021A                 mov     di, dx
+cseg01:021C                 test    dx, dx
+cseg01:021E                 jnz     short loc_230
+cseg01:0220                 test    ax, ax
+cseg01:0222                 jnz     short loc_230
+cseg01:0224                 push    ds
+cseg01:0225                 mov     ax, offset aCannotAllocate ; "cannot allocate buffer\n"
+cseg01:0228
+cseg01:0228 loc_228:                                ; CODE XREF: WinMain+BAj
+cseg01:0228                 push    ax
+cseg01:0229
+cseg01:0229 loc_229:                                ; CODE XREF: WinMain+69j
+cseg01:0229                 call    OUTPUTDEBUGSTRING
+cseg01:022E                 jmp     short loc_272
+cseg01:0230
+cseg01:0230 loc_230:                                ; CODE XREF: WinMain+88j
+cseg01:0230                                         ; WinMain+8Cj ...
+cseg01:0230                 push    [bp+var_A]
+cseg01:0233                 push    [bp+var_C]
+cseg01:0236                 mov     cx, 8000h
+cseg01:0239                 mov     bx, 1
+cseg01:023C                 mov     ax, [bp+var_8]
+cseg01:023F                 mov     dx, di
+cseg01:0241                 push    cs
+cseg01:0242                 db      3Eh
+cseg01:0242                 call    near ptr fread
+cseg01:0246                 mov     si, ax
+cseg01:0248                 test    ax, ax
+cseg01:024A                 jnz     short loc_252
+cseg01:024C                 push    ds
+cseg01:024D                 mov     ax, offset aReadFileFailed ; "read file failed\n"
+cseg01:0250                 jmp     short loc_228
+cseg01:0252
+cseg01:0252 loc_252:                                ; CODE XREF: WinMain+B4j
+cseg01:0252                 push    ax
+cseg01:0253                 mov     bx, [bp+var_8]
+cseg01:0256                 mov     cx, di
+cseg01:0258                 mov     dx, ds
+cseg01:025A                 lea     ax, [bp+var_80C]
+cseg01:025E                 push    cs
+cseg01:025F                 call    near ptr collect_stat
+cseg01:0262                 cmp     si, 8000h
+cseg01:0266                 jz      short loc_230
+cseg01:0268                 mov     dx, ds
+cseg01:026A                 lea     ax, [bp+var_80C]
+cseg01:026E                 push    cs
+cseg01:026F                 call    near ptr output_stat
+cseg01:0272
+cseg01:0272 loc_272:                                ; CODE XREF: WinMain+77j
+cseg01:0272                                         ; WinMain+98j
+cseg01:0272                 mov     ax, [bp+var_C]
+cseg01:0275                 mov     dx, [bp+var_A]
+cseg01:0278                 push    cs
+cseg01:0279                 call    near ptr fclose
+cseg01:027C                 nop
+cseg01:027D                 mov     ax, [bp+var_8]
+cseg01:0280                 mov     dx, di
+cseg01:0282                 push    cs
+cseg01:0283                 call    near ptr free
+cseg01:0286                 nop
+cseg01:0287                 xor     ax, ax
+cseg01:0289                 lea     sp, [bp-6]
+cseg01:028C                 pop     di
+cseg01:028D                 pop     si
+cseg01:028E                 pop     ds
+cseg01:028F                 pop     bp
+cseg01:0290                 dec     bp
+cseg01:0291                 retf    0Ah
+cseg01:0291 WinMain         endp

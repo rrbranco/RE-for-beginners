@@ -1,0 +1,89 @@
+\section{8086-Speichermodell}
+\myindex{Intel!8086!Memory model}
+\myindex{MS-DOS}
+\label{8086_memory_model}
+
+Wenn es um 16-Bit-Programme für MS-DOS oder Win16 geht (\myref{dongle_16bit_dos}
+oder \myref{win16_near_far_pointers}), kann man sehen, dass die Zeiger aus zwei
+16-Bit-Werten bestehen.
+Was bedeutet das? Ja, das ist wieder ein weiteres sonderbares Artefakt von MS-DOS
+und 8086.
+
+8086/8088 war eine 16-Bit-CPU, war aber in der Lage 20-Bit-Adressen im RAM anzusprechen
+(und somit externen Speicher bis 1MB zu adressieren).
+
+Der Adressbereich für externen Speicher ist aufgeteilt zwischen \ac{RAM} (maximal 640KB),
+\ac{ROM}, Fenster für Videospeicher, EMS-Karten, \etc{}.
+
+Erinnern wir uns auch nochmal daran, dass der 8086/8088 der Nachfolger der 8-Bit-CPU
+8080 war.
+
+Der 8080 hat einen 16-Bit-Adressspeicher, kann also lediglich 64KB Speicher adressieren.
+
+Möglicherweise aus Gründen der Portierung alter Software\footnote{Der Autor ist sich hier jedoch nicht 100\% sicher.},
+kann der 8086 viele 64KB-Fenster gleichzeitig unterstützen, die sich im 1MB-Adressbereich
+befinden.
+
+Dies ist eine Art Top-Level-Virtualisierung.
+\myindex{x86!\Registers!CS}
+\myindex{x86!\Registers!DS}
+\myindex{x86!\Registers!ES}
+\myindex{x86!\Registers!SS}
+
+Alle 8086-Register sind 16-Bit breit. Um einen größeren Bereich adressieren zu können,
+wurden spezielle Segment-Register (CS, DS, ES, SS)  eingeführt.
+
+Jeder 20-Bit-Zeiger wird aus den Werten eines Segment-Registers und einem
+Adressregister-Paar (z.B. DS:BX) berechnet.
+
+\begin{center}
+$reale\_adresse = (segment\_register \ll 4) + adress\_register$
+\end{center}
+
+Zum Beispiel: das Grafik-Video-Speicher-Fenster (\ac{EGA}, \ac{VGA}) auf alten zu
+IBM PC kompatiblen Rechnern hat eine Größe von 64KB.
+
+Um darauf zuzugreifen muss der Wert 0xA000 in eines der Segment-Register geschrieben
+werden, zum Beispiel in DS.
+
+Anschließend wird DS:0 das erste Byte des Video-RAM und DS:0xFFFF das letzte
+Byte adressieren.
+
+Die echte Adresse auf dem 20-Bit-Adressbus ist in dem Bereich zwischen 0xA0000
+und 0xAFFFF.
+
+Das Programm kann hart-kodierte Adressen wie 0x1234 beinhalten, das \ac{OS} lädt
+das Programm aber bei Bedarf an eine beliebige Adresse. Dazu werden die Segment-Registerwerte
+derart neu berechnet, dass das Programm sich nicht darum kümmern muss an welcher
+Stelle im RAM es sich befindet.
+
+Jeder Zeiger in der alten MS-DOS-Umgebung besteht aus der Segmentadresse und der
+Adresse innerhalb des Segment, also zwei 16-Bit-Werten. 20 Bit sind hierfür genug,
+allerdings muss die Adresse recht oft neu berechnet werden. Mehr Informationen auf
+dem Stack zu übergeben schien eine bessere Speicher- / Komfort-Balance zu haben.
+
+Übrigens: aufgrund all der vorherigen Überlegungen war es nicht mögliche Speicherblöcke
+zu allozieren die größer 64KB waren.
+
+\myindex{Intel!80286}
+\myindex{Intel!80386}
+
+Die Segmentregister wurde beim 80286 als \q{Selektoren} wieder genutzt, jedoch mit
+einer anderen Funktion.
+
+\myindex{MS-DOS!DOS extenders}
+
+Als die 80386-CPU mit größerem \ac{RAM} eingeführt wurde, war MS-DOS immer noch
+weit verbreite, so das die DOS-Extender auftraten. Diese waren eigentlich ein
+Schritt zu einem \q{seriösen} \ac{OS} indem die CPU in den Protected Mode geschaltet
+wurde und sehr viel bessere Speicher-\ac{API}s für die Programme angeboten wurden,
+die noch unter MS-DOS liefen.
+
+Sehr populäre Beispiele waren DOS/4GW (das Spiel DOOM wurde hierfür kompiliert),
+Phar Lap und PMODE.
+\par
+\myindex{Windows!Windows 3.x}
+\myindex{Windows!Win32}
+
+Übrigens wurde das gleiche Adressierungsmodel für Speicher in der 16-Bit-Reihe von
+Windows 3.x genutzt, bevor Win32 aufkam.

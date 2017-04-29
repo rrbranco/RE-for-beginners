@@ -1,4 +1,4 @@
-\index{x86!\Instructions!LEA}
+\myindex{x86!\Instructions!LEA}
 \item[LEA] (\IT{Load Effective Address}) \RU{сформировать адрес}\EN{form an address}
 
 \label{sec:LEA}
@@ -12,31 +12,34 @@
 \EN{This instruction was intended not for summing values and multiplication 
 but for forming an address, 
 e.g., for calculating the address of an array element by adding the array address, element index, with 
-multiplication of element size\footnote{See also: \URLAM}.}\ESph{}\PTBRph{}\PLph{}\ITAph{}\DEph{} \\
-\\
+multiplication of element size\footnote{See also: \URLAM}.}
+\par
 \RU{То есть, разница между \MOV и \LEA в том, что \MOV формирует адрес в памяти 
 и загружает значение из памяти, либо записывает его туда, а \LEA только формирует адрес.}
 \EN{So, the difference between \MOV and \LEA is that \MOV forms a memory address and loads a value
-from memory or stores it there, but \LEA just forms an address.}\ESph{}\PTBRph{}\PLph{}\ITAph{}\DEph{} \\
-\\
+from memory or stores it there, but \LEA just forms an address.}
+\par
 \RU{Тем не менее, её можно использовать для любых других вычислений}
-\EN{But nevertheless, it is can be used for any other calculations}\ESph{}\PTBRph{}\PLph{}\ITAph{}\DEph{}. \\
-\\
+\EN{But nevertheless, it is can be used for any other calculations}.
+\par
 \RU{\LEA удобна тем, что производимые ею вычисления не модифицируют флаги \ac{CPU}. 
 Это может быть очень важно для \ac{OOE} процессоров (чтобы было меньше зависимостей между данными).}
 \EN{\LEA is convenient because the computations performed by it does not alter \ac{CPU} flags.
 This may be very important for \ac{OOE} processors (to create less data dependencies).}
 
-\begin{lstlisting}
+\RU{Помимо всего прочего, начиная минимум с Pentium, инструкция LEA исполняется за 1 такт.}%
+\EN{Aside from this, starting at least at Pentium, LEA instruction is executed in 1 cycle.}
+
+\begin{lstlisting}[style=customc]
 int f(int a, int b)
 {
 	return a*8+b;
 };
 \end{lstlisting}
 
-\begin{lstlisting}[caption=\Optimizing MSVC 2010]
-_a$ = 8							; size = 4
-_b$ = 12						; size = 4
+\begin{lstlisting}[caption=\Optimizing MSVC 2010,style=customasmx86]
+_a$ = 8		; size = 4
+_b$ = 12	; size = 4
 _f	PROC
 	mov	eax, DWORD PTR _b$[esp-4]
 	mov	ecx, DWORD PTR _a$[esp-4]
@@ -45,17 +48,17 @@ _f	PROC
 _f	ENDP
 \end{lstlisting}
 
-\index{Intel C++}
+\myindex{Intel C++}
 Intel C++ \RU{использует LEA даже больше}\EN{uses LEA even more}:
 
-\begin{lstlisting}
+\begin{lstlisting}[style=customc]
 int f1(int a)
 {
 	return a*13;
 };
 \end{lstlisting}
 
-\begin{lstlisting}[caption=Intel C++ 2011]
+\begin{lstlisting}[caption=Intel C++ 2011,style=customasmx86]
 _f1	PROC NEAR 
         mov       ecx, DWORD PTR [4+esp]      ; ecx = a
 	lea       edx, DWORD PTR [ecx+ecx*8]  ; edx = a*9

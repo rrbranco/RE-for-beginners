@@ -1,0 +1,52 @@
+﻿\section{Memory}
+
+There are 3 main types of memory:
+
+\begin{itemize}
+\item
+Global memory \ac{AKA} \q{static memory allocation}.
+No need to allocate explicitly, the allocation is performed just by declaring variables/arrays 
+globally.
+These are global variables, residing in the data or constant segments.
+They are available globally (hence, considered as an \gls{anti-pattern}).
+Not convenient for buffers/arrays, because they must have a fixed size.
+Buffer overflows that occur here usually overwrite variables or buffers residing next to them in memory.
+There's an example in this book: \myref{scanf_global_variable}.
+
+\item
+Stack \ac{AKA} \q{allocate on stack}.
+The allocation is performed just by declaring variables/arrays locally in the function.
+These are usually local variables for the function.
+Sometimes these local variable are also available to descending functions 
+(to \gls{callee} functions, if caller passes a pointer to a variable to the \gls{callee} to be executed).
+Allocation and deallocation are very fast, it just \ac{SP} needs to be shifted.
+\myindex{\CStandardLibrary!alloca()}
+
+But they're also not convenient for buffers/arrays, because the buffer size has to be fixed,
+unless \TT{alloca()} (\myref{alloca}) (or a variable-length array) is used.
+Buffer overflows usually overwrite important stack structures: \myref{subsec:bufferoverflow}.
+
+\myindex{\CStandardLibrary!malloc()}
+\myindex{\CStandardLibrary!free()}
+\item
+Heap \ac{AKA} \q{dynamic memory allocation}.
+Allocation/deallocation is performed by calling \\
+\TT{malloc()/free()} or \TT{new/delete} in \Cpp.
+This is the most convenient method: the block size may be set at runtime.
+\myindex{\CStandardLibrary!realloc()}
+
+Resizing is possible (using \TT{realloc()}), but can be slow.
+This is the slowest way to allocate memory: 
+the memory allocator must support and update all control structures while
+allocating and deallocating.
+Buffer overflows usually overwrite these structures.
+Heap allocations are also source of memory leak problems: each memory block has to be deallocated
+explicitly, but one may forget about it, or do it incorrectly.
+\myindex{\CStandardLibrary!free()}
+
+Another problem is the \q{use after free}---using a memory block after \TT{free()} has been called on it,
+which is very dangerous.
+
+Example in this book: \myref{struct_malloc_example}.
+
+\end{itemize}

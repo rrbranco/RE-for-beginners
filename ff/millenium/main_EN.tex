@@ -1,0 +1,148 @@
+﻿\section{Millenium game save file}
+\label{Millenium_DOS_game}
+\myindex{MS-DOS}
+
+The \q{Millenium Return to Earth} 
+is an ancient DOS game (1991), that allows you to mine resources, build ships,
+equip them on other planets, and so on\footnote{It can be downloaded for free
+\href{http://go.yurichev.com/17316}{here}}.
+
+Like many other games, it allows you to save all game state into a file.
+
+Let's see if we can find something in it.
+
+\clearpage
+So there is a mine in the game.
+Mines at some planets 
+work faster, or slower on others. 
+The set of resources is also different.
+
+Here we can see what resources are mined at the time: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/millenium/1.png}
+\caption{Mine: state 1}
+\label{fig:mill_1}
+\end{figure}
+
+Let's save a game state.
+This is a file of size 9538 bytes.
+
+Let's wait some \q{days} here in the game, and now we've got more resources from the mine:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/millenium/2.png}
+\caption{Mine: state 2}
+\label{fig:mill_2}
+\end{figure}
+
+Let's save game state again.
+
+Now let's try to just do binary comparison of the save files using the simple DOS/Windows FC utility:
+
+\lstinputlisting{ff/millenium/fc_result.txt}
+
+The output is incomplete here, there are more differences, but we will cut result to show the most interesting.
+
+In the first state, we have 14 \q{units} of hydrogen and 102 \q{units} of oxygen.
+
+We have 22 and 155 \q{units} respectively in the second state.
+If these values are saved into 
+the save file, we would see this in the difference.
+And indeed we do. 
+There is 0x0E (14) at position 0xBDA and this value is 
+0x16 (22) in the new version of the file.
+This is probably hydrogen.
+There is 0x66 (102) at position 0xBDC in the old 
+version and 0x9B (155) in the new version of the file. 
+This seems to be the oxygen.
+
+Both files are available on the website for those who wants to inspect them (or experiment) more: 
+\href{http://go.yurichev.com/17212}{beginners.re}.
+
+\clearpage
+Here is the new version of file opened in Hiew, we marked the values related to the resources mined in the game: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/millenium/hiew3.png}
+\caption{Hiew: state 1}
+\label{fig:mill_hiew3}
+\end{figure}
+
+Let's check each, and these are.
+
+These are clearly 16-bit values: not a strange thing for 16-bit DOS software where the \Tint type has 16-bit width.
+
+\clearpage
+Let's check our assumptions.
+We will write the 1234 (0x4D2) value at the first position (this must be hydrogen):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/millenium/hiew4.png}
+\caption{Hiew: let's write 1234 (0x4D2) there}
+\label{fig:mill_hiew4}
+\end{figure}
+
+Then we will load the changed file in the game and took a look at mine statistics:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/millenium/5.png}
+\caption{Let's check for hydrogen value}
+\label{fig:mill_5}
+\end{figure}
+
+So yes, this is it.
+
+\clearpage
+Now let's try to 
+finish the game as soon as possible, set the maximal values everywhere:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/millenium/hiew7.png}
+\caption{Hiew: let's set maximal values}
+\label{fig:mill_hiew7}
+\end{figure}
+
+0xFFFF is 65535, so yes, we now have a 
+lot of resources:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/millenium/6.png}
+\caption{All resources are 65535 (0xFFFF) indeed}
+\label{fig:mill_6}
+\end{figure}
+
+\clearpage
+Let's skip some \q{days} in the game and oops! 
+We have a lower amount of some resources:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/millenium/8.png}
+\caption{Resource variables overflow}
+\label{fig:mill_8}
+\end{figure}
+
+That's just overflow. 
+
+The game's developer supposedly didn't think about such high amounts of resources,
+so there are probably no overflow checks, but the mine is \q{working} in the game, resources are added,
+hence the overflows.
+Apparently, it is a bad idea to be that greedy.
+
+There are probably a lot of more values 
+saved in this file.
+
+So this is very simple method of cheating in games.
+High score files often can be easily 
+patched like that.
+
+More about files and memory snapshots comparing: 
+\myref{snapshots_comparing}.

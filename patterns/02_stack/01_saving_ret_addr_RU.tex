@@ -1,0 +1,103 @@
+\subsubsection{Сохранение адреса возврата управления}
+
+\myparagraph{x86}
+
+\myindex{x86!\Instructions!CALL}
+При вызове другой функции через \CALL сначала в стек записывается адрес, указывающий на место после 
+инструкции \CALL, затем делается безусловный переход (почти как \TT{JMP}) на адрес, указанный в операнде.
+
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!JMP}
+\CALL~--- это аналог пары инструкций \INS{PUSH address\_after\_call / JMP}.
+
+\myindex{x86!\Instructions!RET}
+\myindex{x86!\Instructions!POP}
+\RET вытаскивает из стека значение и передает управление по этому адресу~--- 
+это аналог пары инструкций \TT{POP tmp / JMP tmp}.
+
+\myindex{\Stack!\MLStackOverflow}
+\myindex{\Recursion}
+Крайне легко устроить переполнение стека, запустив бесконечную рекурсию:
+
+\begin{lstlisting}[style=customc]
+void f()
+{
+	f();
+};
+\end{lstlisting}
+
+MSVC 2008 предупреждает о проблеме:
+
+\begin{lstlisting}
+c:\tmp6>cl ss.cpp /Fass.asm
+Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 15.00.21022.08 for 80x86
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ss.cpp
+c:\tmp6\ss.cpp(4) : warning C4717: 'f' : recursive on all control paths, function will cause runtime stack overflow
+\end{lstlisting}
+
+\dots но, тем не менее, создает нужный код:
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+	push	ebp
+	mov	ebp, esp
+; Line 3
+	call	?f@@YAXXZ	; f
+; Line 4
+	pop	ebp
+	ret	0
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+\dots причем, если включить оптимизацию (\TT{\Ox}), то будет даже интереснее, без переполнения стека, 
+но работать будет \IT{корректно}\footnote{здесь ирония}:
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+$LL3@f:
+; Line 3
+	jmp	SHORT $LL3@f
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+GCC 4.4.1 генерирует точно такой же код в обоих случаях, хотя и не предупреждает о проблеме.
+
+\myparagraph{ARM}
+
+\myindex{ARM!\Registers!Link Register}
+Программы для ARM также используют стек для сохранения \ac{RA}, куда нужно вернуться, но несколько иначе.
+Как уже упоминалось в секции \q{\HelloWorldSectionName}~(\myref{sec:hw_ARM}),
+\ac{RA} записывается в регистр \ac{LR} (\gls{link register}).
+Но если есть необходимость вызывать какую-то другую функцию и использовать регистр \ac{LR} ещё
+раз, его значение желательно сохранить.
+\myindex{Function prologue}
+\myindex{ARM!\Instructions!PUSH}
+\myindex{ARM!\Instructions!POP}
+
+Обычно это происходит в прологе функции, часто мы видим там инструкцию вроде \INS{PUSH \{R4-R7,LR\}}, а в эпилоге
+\INS{POP \{R4-R7,PC\}}~--- так сохраняются регистры, которые будут использоваться в текущей функции, в том числе \ac{LR}.
+
+\myindex{ARM!Leaf function}
+Тем не менее, если некая функция не вызывает никаких более функций, в терминологии \ac{RISC} она называется
+\IT{\gls{leaf function}}\footnote{\href{http://go.yurichev.com/17064}{infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.faqs/ka13785.html}}. 
+Как следствие, \q{leaf}-функция не сохраняет регистр \ac{LR} (потому что не изменяет его).
+А если эта функция небольшая, использует мало регистров, она может не использовать стек вообще.
+Таким образом, в ARM возможен вызов небольших leaf-функций не используя стек.
+Это может быть быстрее чем в старых x86, ведь внешняя память для стека не используется
+\footnote{Когда-то, очень давно, на PDP-11 и VAX на инструкцию CALL (вызов других функций) могло тратиться
+вплоть до 50\% времени (возможно из-за работы с памятью),
+поэтому считалось, что много небольших функций это \glslink{anti-pattern}{анти-паттерн}
+\InSqBrackets{\TAOUP Chapter 4, Part II}.}.
+Либо это может быть полезным для тех ситуаций, когда память для стека ещё не выделена, либо недоступна,
+
+Некоторые примеры таких функций:
+\myref{ARM_leaf_example1}, \myref{ARM_leaf_example2}, 
+\myref{ARM_leaf_example3}, \myref{ARM_leaf_example4}, \myref{ARM_leaf_example5},
+\myref{ARM_leaf_example6}, \myref{ARM_leaf_example7}, \myref{ARM_leaf_example10}.
+

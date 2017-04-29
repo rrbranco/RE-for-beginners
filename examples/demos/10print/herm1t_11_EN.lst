@@ -1,0 +1,8 @@
+00000000: B05C       mov         al,05C    ;'\'
+; read AL byte from random place of memory
+00000002: AE         scasb
+; PF = parity (AL - random_memory_byte) = parity (5Ch - random_memory_byte)
+00000003: 7A02       jp          000000007
+00000005: B02F       mov         al,02F    ;'/'
+00000007: CD29       int         029       ; output AL to screen
+00000009: EBF5       jmp         000000000 ; loop endlessly

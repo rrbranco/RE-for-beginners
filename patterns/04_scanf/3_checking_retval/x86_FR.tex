@@ -1,0 +1,181 @@
+\subsubsection{MSVC: x86}
+
+Voici ce que nous obtenons dans la sortie assembleur (MSVC 2010):
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/3_checking_retval/ex3_MSVC_x86.asm}
+
+\myindex{x86!\Registers!EAX}
+La fonction \glslink{caller}{appelante} (\main) à besoin du résultat de la fonction
+\glslink{callee}{appelée}, donc la fonction \glslink{callee}{appelée} le renvoie
+dans la registre \EAX.
+
+\myindex{x86!\Instructions!CMP}
+Nous le vérifions avec l'aide de l'instruction \TT{CMP EAX, 1} (\IT{CoMPare}).
+En d'autres mots, nous comparons la valeur dans le registre \EAX avec 1.
+
+\myindex{x86!\Instructions!JNE}
+Une instruction de saut conditonnelle \JNE suit l'instruction \CMP. \JNE signifie
+\IT{Jump if Not Equal} (saut si non égal).
+
+Donc, si la valeur dans le registre \EAX n'est pas égale à 1, le \ac{CPU} va poursuivre
+l'exécution à l'adresse mentionnée dans l'opérande \JNE, dans notre cas \TT{\$LN2@main}.
+Passez le contrôle à cette adresse résulte en l'exécution par le \ac{CPU} de
+\printf avec l'argument \TT{What you entered? Huh?}.
+Mais si tout est bon, le saut conditionnel n'est pas pris, et un autre appel à \printf
+est exécuté, avec deux arguments:\\
+\TT{'You entered \%d...'} et la valeur de \TT{x}.
+
+\myindex{x86!\Instructions!XOR}
+\myindex{\CLanguageElements!return}
+Puisque dans ce cas le second \printf n'a pas été exécuté, il y a un \JMP qui le précède (saut inconditionnel).
+Il passe le contrôle au point après le second \printf et juste avant l'instruction \TT{XOR EAX, EAX}, qui implémente \TT{return 0}.
+
+% FIXME internal \ref{} to x86 flags instead of wikipedia
+\myindex{x86!\Registers!\Flags}
+Donc, on peut dire que comparer une valeur avec une autre est \IT{usuellement} implémenté
+par la paire d'instructions \CMP/\Jcc, oú \IT{cc} est un \IT{code de condition}.
+\CMP compare deux valeurs et met les flags\footnote{flags x86, voir aussi: \href{http://go.yurichev.com/17120}{wikipedia}.}
+du processeur.
+\Jcc vérifie ces flags et décide de passer le contrôle à l'adresse spécifiée ou non.
+
+\myindex{x86!\Instructions!CMP}
+\myindex{x86!\Instructions!SUB}
+\myindex{x86!\Instructions!JNE}
+\myindex{x86!\Registers!ZF}
+\label{CMPandSUB} 
+Cela peut sembler paradoxal, mais l'instruction \CMP est en fait un \SUB (soustraction).
+Toutes les instructions arithmétiques mettent les flags du processeur, pas seulement \CMP.
+Si nous comparons 1 et 1, $1-1$ donne 0 donc le flag \ZF va être mis (signifiant
+que le dernier résultat est 0).
+Dans aucune autre circonstance \ZF ne sera mis, à l'exception que les opérandes
+ne soient égales.
+\JNE vérifie seulement le flag \ZF et saute seulement si il n'est pas mis. \JNE
+est un synonyme pour \JNZ (\IT{Jump if Not Zero} (saut si non zéro)).
+L'assembleur génère le même opcode pour les instructions \JNE et \JNZ.
+Donc, l'instruction \CMP peut être remplacée par une instruction \SUB et presque
+tout ira bien, à la différence que \SUB altère la valeur de la première opérande.
+\CMP est un \IT{SUB sans sauver le résultat, mais modifiant les flags}.
+
+\subsubsection{MSVC: x86: IDA}
+
+\myindex{IDA}
+C'est le moment de lancer \IDA et d'essayer de faire quelque chose avec.
+Á propos, pour les débutants, c'est une bonne idée d'utiliser l'option \TT{/MD}
+de MSVC, qui signifie que toutes les fonctions standards ne vont pas être liées
+avec le fichier exécutable, mais vont à la place être importées depuis le fichier
+\TT{MSVCR*.DLL}.
+Ainsi il est plus facile de voir quelles fonctions standards sont utilisées et oú.
+
+En analysant du code dans \IDA, il est très utile de laisser des notes pour soi-même
+(et les autres).
+En la circonstance, analysons cet exemple, nous voyons que \TT{JNZ} sera déclenché
+en cas d'erreur.
+Donc il est possible de déplacer le curseur sur le label, de presser \q{n} et de
+lui donner le nom \q{error}.
+Créons un autre label---dans \q{exit}.
+Voici mon résultat:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/3_checking_retval/ex3.lst}
+
+Maintenant, il est légèrement plus facile de comprendre le code.
+Toutefois, ce n'est pas une bonne idée de commenter chaque instruction.
+
+% FIXME draw button?
+Vous pouvez aussi cacher(replier) des parties d'une fonction dans \IDA.
+Pour faire cela, marquez le bloc, puis appueaz sur \q{--} sur le pavé numérique et
+entrez le texte qui doit être affiché à la place.
+
+Cachons deux blocs et donnons leurs un nom:
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/3_checking_retval/ex3_2.lst}
+
+% FIXME draw button?
+Pour étendre les parties de code précédemment cachées. utilisez \q{+} sur le
+pavé numérique.
+
+\clearpage
+En appuyant sur \q{space}, nous voyons comment \IDA représente une fonction sous
+forme de graphe:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/IDA.png}
+\caption{IDA en mode graphe}
+\label{fig:ex3_IDA_1}
+\end{figure}
+
+Il y a deux flèches après chaque saut conditionnel: une verte et une rouge.
+La flèche verte pointe vers le bloc qui sera exécuté si le saut est déclenché,
+et la rouge sinon.
+
+\clearpage
+Il est possible de replier des noeuds dans ce mode et de leurs donner aussi un nom (\q{group nodes}).
+Essayons avec 3 blocs:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/IDA2.png}
+\caption{IDA en mode graphe avec 3 noeuds repliés}
+\label{fig:ex3_IDA_2}
+\end{figure}
+
+C'est très pratique.
+%%It could be said that a very important part of the reverse engineers' job (and any other researcher as well) is to reduce the amount of information they deal with.
+On peut dire qu'une part importante du travail des rétro-ingénieurs (et de tout
+autre chercheur également) est de réduire la quantité d'information avec laquelle
+travailler.
+
+\input{patterns/04_scanf/3_checking_retval/olly_FR.tex}
+
+\clearpage
+\subsubsection{MSVC: x86 + Hiew}
+\myindex{Hiew}
+
+Cela peut également être utilisé comme un exemple simple de modification de fichier
+exécutable.
+Nous pouvons essayer de modifier l'exécutable de telle sorte que le programme va
+toujours afficher notre entrée, quelle quelle soit.
+
+En supposant que l'exécutable est compilé avec la bibliothèque externe \TT{MSVCR*.DLL}
+(i.e., avec l'option \TT{/MD}) \footnote{c'est aussi appelé \q{dynamic linking}},
+nous voyons la fonction \main au début de la section \TT{.text}.
+Ouvrons l'exécutable dans Hiew et cherchons le début de la section \TT{.text} (Enter,
+F8, F6, Enter, Enter).
+
+Nous pouvons voir cela:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/hiew_1.png}
+\caption{Hiew: fonction \main}
+\label{fig:scanf_ex3_hiew_1}
+\end{figure}
+
+Hiew trouve les chaîne \ac{ASCIIZ} et les affiche, comme il le fait avec le nom
+des fonctions importées.
+
+\clearpage
+Déplacez le curseur à l'adresse \TT{.00401027} (oú se trouve l'instruction \TT{JNZ},
+que l'on doit sauter), appuyez sur F3, et ensuite tapez \q{9090} (qui signifie deux
+\ac{NOP}s):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/hiew_2.png}
+\caption{Hiew: remplacement de \TT{JNZ} par deux \ac{NOP}s}
+\label{fig:scanf_ex3_hiew_2}
+\end{figure}
+
+Appuyez sur F9 (update). Maintenant, l'exécutable est sauvé sur le disque. Il va
+se comporter comme nous le voulions.
+
+Deux \ac{NOP}s ne constitue probablement pas l'approche la plus \ae{}sthétique.
+Une autre façon de modifier cette instruction est d'écrire simplement 0 dans le
+second octet de l'opcode ((\gls{jump offset}), donc ce \TT{JNZ} va toujours sauter
+à l'instruction suivante.
+
+Nous pouvons également faire le contraire: remplacer le premier octet avec \TT{EB}
+sans modifier le second octet (\gls{jump offset}).
+Nous obtiendrions un saut inconditionnel qui est toujours déclenché.
+Dans ce cas le message d'erreur sera affiché à chaque fois, peu importe l'entrée.
+

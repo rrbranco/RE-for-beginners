@@ -1,0 +1,30 @@
+.text:00000000 main:
+.text:00000000
+.text:00000000 var_10          = -0x10
+.text:00000000 var_4           = -4
+.text:00000000
+; prologue de la fonction:
+.text:00000000                 lui     $gp, (__gnu_local_gp >> 16)
+.text:00000004                 addiu   $sp, -0x20
+.text:00000008                 la      $gp, (__gnu_local_gp & 0xFFFF)
+.text:0000000C                 sw      $ra, 0x20+var_4($sp)
+.text:00000010                 sw      $gp, 0x20+var_10($sp)
+; charger l'adresse de printf():
+.text:00000014                 lw      $t9, (printf & 0xFFFF)($gp)
+; §charger l'adresse de la chaîne de texte et mettre le 1er argument de printf():§
+.text:00000018                 la      $a0, $LC0        # "a=%d; b=%d; c=%d"
+; mettre le 2nd argument de printf():
+.text:00000020                 li      $a1, 1
+; §mettre le 3ème argument de printf():§
+.text:00000024                 li      $a2, 2
+; appeler printf():
+.text:00000028                 jalr    $t9
+; §mettre le 4ème argument de printf(): (slot de délai de branchement)§
+.text:0000002C                 li      $a3, 3
+; §épilogue de la fonction:§
+.text:00000030                 lw      $ra, 0x20+var_4($sp)
+; §mettre la valeur de retour à 0:§
+.text:00000034                 move    $v0, $zero
+; retourner
+.text:00000038                 jr      $ra
+.text:0000003C                 addiu   $sp, 0x20 ; §slot de délai de branchement§

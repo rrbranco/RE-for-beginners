@@ -1,0 +1,58 @@
+\clearpage
+\subsubsection{MSVC + \olly}
+\myindex{\olly}
+
+Vamos fazer este exemplo no \olly.
+Carregue o programa e pressione F8 (\stepover) até que cheguemos no nosso executável ao invés do \TT{ntdll.dll}.
+Role o scroll para cima até chegar no \main.
+
+Click na primeira instrução (\TT{PUSH EBP}), pressione F2 (\IT{para setar um breakpoint}), e pressione F9 (\IT{Executar}).
+A execução irá parar quando atingir o breakpoint no começo da \main.
+
+Vamos até o trecho onde o endereço da variável $x$ é calculado:
+
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/1_simple/ex1_olly_1.png}
+\caption{\olly: O endereço da variável local é calculado}
+\label{fig:scanf_ex1_olly_1}
+\end{figure}
+
+Na janela de registradores, clique com o botão direito do mouse em \EAX e selecione \q{Seguir na pilha}.
+
+O endereço irá aparecer na janela de pilha.
+A seta vermelha está apontando para a variável na pilha local.
+
+Neste momento, esse local contém apenas lixo(\TT{0x6E494714}).Agora,  a instrução \PUSH irá armazenar na pilha o endereço deste elemento na pilha será armazendo na próxima posição.
+
+Vamos rastrear com F8 até terminar a execução do \scanf.
+
+Durante a execução do \scanf, digite, por exemplo, 123, na janela do console:
+
+\lstinputlisting{patterns/04_scanf/1_simple/console.txt}
+
+\clearpage
+\scanf terminou sua execução:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/1_simple/ex1_olly_3.png}
+\caption{\olly: \scanf executado}
+\label{fig:scanf_ex1_olly_3}
+\end{figure}
+
+\scanf retorna 1 no registrador \EAX, o que significa que leu com sucesso o valor.
+Se olharmos novamente no endereço da pilha correspondente a variável local, ela agora contém \TT{0x7B} (123).
+
+\clearpage
+
+Depois este valor é copiado da pilha para o registrador \ECX e então passado como argumento para \printf:
+
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/1_simple/ex1_olly_4.png}
+\caption{\olly: Preparando o valor para o \printf}
+\label{fig:scanf_ex1_olly_4}
+\end{figure}

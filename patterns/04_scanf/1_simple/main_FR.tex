@@ -1,0 +1,56 @@
+\subsection{Exemple simple}
+
+\lstinputlisting[style=customc]{patterns/04_scanf/1_simple/ex1.c}
+
+Il n'est pas astucieux d'utiliser \scanf pour les interactions utilisateurs de nos jours.
+Mais nous pouvons, toutefois, illustrer le passage d'un pointeur sur une variable
+de type \Tint.
+
+\subsubsection{Á propos des pointeurs}
+\myindex{\CLanguageElements!\Pointers}
+
+Les pointeurs sont l'un des concepts fondamentaux de l'informatique.
+Souvent, passer un gros tableau, structure ou objet comme argument à une autre fonction
+est trop couteux, tandis que passer leur adresse l'est très peu.
+Par exemple, si vous voulez afficher une chaîne de texte sur la console, il est
+plus facile de passer son adresse au noyau de l'\ac{OS}.
+
+En plus, si la fonction \glslink{callee}{appelée} doit modifier quelque chose dans
+un gros tableau ou structure reçu comme paramètre et renvoyer le tout, la situation
+est proche de l'absurde.
+Donc, la chose la plus simple est de passer l'adresse du tableau ou de la structure
+à la fonction \glslink{callee}{appelée}, et de la laisser changer ce qui doit l'être.
+
+Un pointeur en \CCpp---est simplement une adresse d'un emplacement mémoire quelconque.
+
+\myindex{x86-64}
+En x86, l'adresse est représentée par un nombre de 32-bit (i.e., il occupe 4 octets),
+tandis qu'en x86-64 c'est un nombre de 64-bit (occupant 8 octets).
+Á propos, c'est la cause de l'indignation de certaines personnes concernant le
+changement vers x86-64---tous les pointeurs en architecture x64 ont besoin de deux
+fois plus de place, incluant la mémoire cache, qui est de la mémoire ``coûteuse''.
+
+\myindex{\CStandardLibrary!memcpy()}
+Il est possible de travailler seulement avec des pointeurs non typés, moyennant
+quelques efforts; e.g. la fonction C standard \TT{memcpy()}, qui copie un bloc de
+mémoire d'un endroit à un autre, prend 2 pointeurs de type \TT{void*} comme arguments,
+puisqu'il est impossible de prévoir le type de données qu'il faudra copier. Les types
+de données ne sont pas importants, seule la taille du block compte.
+
+Les pointeurs sont aussi couramment utilisés lorsqu'une fonction doit renvoyer plus
+d'une valeur (nous reviendrons là-dessus plus tard~(\myref{label_pointers})).
+
+La fonction \IT{scanf()}---en est une telle.
+
+Hormis le fait que la fonction doit indiquer combien de valeurs ont été lues avec
+succès, elle doit aussi renvoyer toutes ces valeurs.
+
+En \CCpp le type du pointeur est seulement nécessaire pour la vérification de type
+lors de la compilation.
+
+Il n'y a aucune information du tout sur le type des pointeurs à l'intérieur du code compilé.
+
+\input{patterns/04_scanf/1_simple/x86}
+\input{patterns/04_scanf/1_simple/x64}
+\input{patterns/04_scanf/1_simple/ARM}
+\input{patterns/04_scanf/1_simple/MIPS/main}

@@ -1,0 +1,69 @@
+\section{Returning value}
+\label{ret_val_func}
+
+Another simple function is the one that simply returns a constant value:
+
+\lstinputlisting[caption=\EN{\CCpp Code},style=customc]{patterns/011_ret/1.c}
+
+Lets compile it.
+
+\subsection{x86}
+
+Here's what both the optimizing GCC and MSVC compilers produce on the x86 platform:
+
+\lstinputlisting[caption=\Optimizing GCC/MSVC (\assemblyOutput),style=customasmx86]{patterns/011_ret/1.s}
+
+\myindex{x86!\Instructions!RET}
+There are just two instructions: the first places the value 123 into the \EAX register, 
+which is used by convention for storing the return
+value and the second one is \RET, which returns execution to the \gls{caller}.
+
+The caller will take the result from the \EAX register.
+
+\subsection{ARM}
+
+There are a few differences on the ARM platform:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) ASM Output,style=customasmARM]{patterns/011_ret/1_Keil_ARM_O3.s}
+
+ARM uses the register \Reg{0} for returning the results of functions, so 123 is copied into \Reg{0}.
+
+\myindex{ARM!\Instructions!MOV}
+\myindex{x86!\Instructions!MOV}
+It is worth noting that \MOV is a misleading name for the instruction in both x86 and ARM \ac{ISA}s.
+
+The data is not in fact \IT{moved}, but \IT{copied}.
+
+\subsection{MIPS}
+
+\label{MIPS_leaf_function_ex1}
+
+The GCC assembly output below lists registers by number:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/011_ret/MIPS.s}
+
+\dots while \IDA does it by their pseudo names:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/011_ret/MIPS_IDA.lst}
+
+The \$2 (or \$V0) register is used to store the function's return value.
+\myindex{MIPS!\Pseudoinstructions!LI}
+\INS{LI} stands for ``Load Immediate'' and is the MIPS equivalent to \MOV.
+
+\myindex{MIPS!\Instructions!J}
+The other instruction is the jump instruction (J or JR) which returns the execution flow to the \gls{caller}.
+
+\myindex{MIPS!Branch delay slot}
+You might be wondering why positions of the load instruction (LI) and the jump instruction (J or JR) are swapped. This is due to a \ac{RISC} feature called ``branch delay slot''.
+
+The reason this happens is a quirk in the architecture of some RISC \ac{ISA}s and isn't important for our purposes---we just must keep in mind that in MIPS, the instruction following a jump or branch instruction
+is executed \IT{before} the jump/branch instruction itself.
+
+As a consequence, branch instructions always swap places with the instruction which must be executed beforehand.
+% A footnote/link to http://en.wikipedia.org/wiki/Delay_slot#Branch_delay_slots or
+% something similar might be useful for the people more interested in it.
+
+\subsection{In practice}
+
+Functions which merely returns 1 (\IT{true}) or 0 (\IT{false}) are very frequent in practice.
+

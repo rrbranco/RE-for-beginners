@@ -1,0 +1,18 @@
+\section{ARM-spezifische Details}
+
+\subsection{Zeichen (\#) vor einer Zahl}
+Der Keil-Compiler, \IDA und objdump versehen alle Zahlen mit dem Präfix \q{\#}, siehe hier:
+\lstref{Keil_number_sign}.
+
+Wenn GCC 4.9 Output in Assemblersprache erzeugt, tut er dies jedoch ohne den Präfix:
+\lstref{GCC_no_number_sign}.
+
+Die ARM-Listings in diesem Buch sind gemischt.
+
+Es ist schwer zu sagen, welche Methode die richtige ist.
+Am einfachsten ist es, die Regeln, die in der Umgebung, mit der man arbeitet, vorherrschen, zu akzeptieren.
+
+% sections
+\input{patterns/ARM/post_pre_index_DE.tex}
+\input{patterns/ARM/big_constants_DE.tex}
+\input{patterns/ARM/relocs_DE.tex}

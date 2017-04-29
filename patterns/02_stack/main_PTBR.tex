@@ -1,0 +1,79 @@
+\section{\Stack}
+\label{sec:stack}
+\myindex{\Stack}
+
+A pilha é uma das estruturas mais fundamentais na ciência da computação.
+\footnote{\href{http://go.yurichev.com/17119}{wikipedia.org/wiki/Call\_stack}}.
+\ac{AKA} \ac{LIFO}.
+
+Tecnicamente, é só um bloco de memória junto com os registradores \ESP ou \RSP em x86 e x64, ou o \ac{SP} no ARM, como um ponteiro para aquele bloco.
+
+\myindex{ARM!\Instructions!PUSH}
+\myindex{ARM!\Instructions!POP}
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!POP}
+As instruções mais frequente para o acesso da pilha são \PUSH e \POP (em ambos x86 e x64).
+\PUSH subtrai de \ESP/\RSP/\ac{SP} 4 no modo 32-bits (ou 8 no modo 64-bits) e então escreve o conteúdo desse operando único para o endereço de memória apontado por \ESP/\RSP/\ac{SP}.
+
+\POP é a operação reversa: recupera a informação da localização de memória que é apontada por \ac{SP}, 
+carrega a mesma no operando da instrução (geralmente um registrador) e então adiciona 4 (ou 8) para o ponteiro da pilha.
+
+Depois da alocação da pilha, o ponteiro aponta para o fundo da pilha.
+\PUSH decrementa o ponteiro da pilha e \POP incrementa. O fundo da pilha está na verdade no começo do bloco de memória alocado para ela.
+Pode parecer estranho, mas é a maneira como é feita.
+
+ARM: \PTBRph{}
+
+\subsection{Por que a pilha ``cresce'' para trás?}
+\label{stack_grow_backwards}
+
+Intuitivamente, nós podemos pensar que a pilha cresce para frente, em direção a endereços mais altos, como qualquer outra estrutura de informação.
+
+O motivo da pilha crescer para trás é provavelmente histórico. Quando os computadores era grandes e ocupavam um cômodo todo, era mais fácil dividir a memória em duas partes, uma para a ‘heap’ e outra para a pilha.
+Logicamente, era desconhecido o quão grande a heap e a pilha seriam durante a execução do programa, então essa solução era a mais simples possível.
+
+\input{patterns/02_stack/stack_and_heap}
+
+No \RitchieThompsonUNIX nós podemos ler:
+
+\begin{framed}
+\begin{quotation}
+A parte relacionada ao usuário é dividida em três segmentos lógicos. O segmento de texto do programa começa na localização 0 no espaço virtual de endereçamento.
+Durante a execução, esse segmento é protegido para não ser reescrito e uma única cópia dele é compartilhado entre
+todos os processos executando o mesmo programa.
+Começando no limite de 8Kbytes acima do segmento de texto do programa no espaço de endereçamento virtual começa um segmento de informação gravável,
+não compartilhável e de um tamanho que pode ser extendido por uma chamada do sistema.
+Começando no endereço mais alto no espaço de endereçamento virtual está a pilha, que automaticamente cresce para trás conforme o ponteiro da pilha do hardware se altera.
+\end{quotation}
+\end{framed}
+
+Isso pode ser análogo a como um estudante escreve notas de duas matérias diferentes em um caderno só:
+as notas para a primeira matéria são escritas como de costume e as notas para a segunda são escritas do final do caderno,
+virando o mesmo. As anotações de uma matéria podem encontrar as da outra no meio, no caso de haver falta de espaço.
+
+\subsection{Para que a pilha é usada?}
+
+% subsections
+\input{patterns/02_stack/01_saving_ret_addr}
+\input{patterns/02_stack/02_args_passing}
+\EN{\input{patterns/02_stack/03_local_vars_EN}}
+\RU{\input{patterns/02_stack/03_local_vars_RU}}
+\PTBR{\input{patterns/02_stack/03_local_vars_PTBR}}
+\input{patterns/02_stack/04_alloca/main}
+\input{patterns/02_stack/05_SEH}
+\input{patterns/02_stack/06_BO_protection}
+
+\subsubsection{\PTBRph{}}
+
+Talvez, o motivo para armazenar variáveis locais e registros SEH na pilha é que eles são desvinculados automaticamente depois do fim da função,
+usando somente uma instrução para corrigir o ponteiro da pilha (geralmente é \ADD). Argumentos de funções, como podemos dizer, são
+também desalocados automaticamente com o fim da função.
+Como contraste, tudo armazenado na memória heap tem de ser desalocado explicitamente.
+
+% sections
+\EN{\input{patterns/02_stack/07_layout_EN}}
+\RU{\input{patterns/02_stack/07_layout_RU}}
+\PTBR{\input{patterns/02_stack/07_layout_PTBR}}
+\input{patterns/02_stack/08_noise/main}
+\input{patterns/02_stack/exercises}
+

@@ -8,7 +8,7 @@ CcCopyReadExceptionFilter(
 
 Routine Description:
 
-    This routine serves as a exception filter and has the special job of
+    This routine serves as an exception filter and has the special job of
     extracting the "real" I/O error when Mm raises STATUS_IN_PAGE_ERROR
     beneath us.
 

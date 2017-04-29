@@ -1,0 +1,54 @@
+\subsection{Berechnung der Maschinengenauigkeit}
+Die Maschinengenauigkeit ist der kleinstmögliche Wert, mit dem die \ac{FPU} arbeiten kann.
+Je mehr Bits für eine Fließkommazahl verwendet werden, desto kleiner ist die Maschinengenauigkeit.
+Sie beträgt $2^{-23} = 1.19e-07$ für \Tfloat und $2^{-52} = 2.22e-16$ für \Tdouble.
+Siehe auch:\href{http://link.yurichev.com/17367}{Wikipedia article}.
+
+% TODO recheck values
+Interessant ist, wie einfach die Maschinengenauigkeit berechnet werden kann:
+
+\lstinputlisting[style=customc]{patterns/17_unions/epsilon/float.c}
+Was wir hier machen ist, den Bruch in der IEEE 754 Zahl als Integer zu behandeln und 1 hinzuzuaddieren.
+Die resultierende Fließkommazahl ist gleich $starting\_value+machine\_epsilon$, sodass wir nur den Startwert (in der
+Fließkommaarithmetik) abziehen müssen um zu messen, welchen Unterschied ein Bit in der einfachen Genauigkeit (\Tfloat)
+ausmacht.
+Die \IT{union} dient hier als Mittel, um auf die IEEE 754 Zahl als regulären Integer zuzugreifen.
+Die Addition von 1 entspricht hier einer Addition von 1 zum Bruch in der Zahl, aber natürlich kann hier ein Overflow
+auftreten, was eine Addition von 1 zum Exponenten nach sich zieht.
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{patterns/17_unions/epsilon/float_MSVC_2010_Ox_DE.asm}
+Der zweite \INS{FST} Befehl ist redundant: es besteht keine Notwendigkeit, den Eingabewert an derselben Stelle zu
+speichern (der Compiler hat entschieden, die Variable $v$ an der gleichen Stelle im lokalen Stack anzulegen wie den
+Eingabewert).
+Der Wert wird mit \INS{INC} um 1 erhöht als wäre es einen normale Integervariable.
+Danach wir der Wert als 32-Bit IEEE 754 Zahl in die FPU geladen, \INS{FSUBR} erledigt den Rest und das Ergebnis wird in
+\TT{ST0} gespeichert.
+Das letzte \INS{FSTP}/\INS{FLD} Befehlspaar ist redundant, aber der Compiler hat es hier nicht wegoptimiert.
+
+\subsubsection{ARM64}
+
+Erweitern wir unser Beispiel auf 64 Bit:
+
+\lstinputlisting[label=machine_epsilon_double_c,style=customc]{patterns/17_unions/epsilon/double.c}
+ARM64 kennt keinen Befehl, der eine Zahl zu einem FPU D-Register addieren kann, sodass der Eingabewert (in \TT{D0})
+zunächst nach \ac{GPR} kopiert wird, dann inkrementiert wird und schließlich in das FPU Register \TT{D1} kopiert wird,
+bevor die Subtraktion ausgeführt wird.
+
+\lstinputlisting[caption=\Optimizing GCC 4.9
+ARM64,style=customasmARM]{patterns/17_unions/epsilon/double_GCC49_ARM64_O3_DE.s}
+Schauen Sie sich dieses Beispiel auch für x64 kompiliert mit SIMB Befehlen an:\myref{machine_epsilon_x64_and_SIMD}.
+
+\subsubsection{MIPS}
+
+\myindex{MIPS!\Instructions!MTC1}
+Der neue Befehl ist hier \INS{MTC1} (\q{Move To Coprocessor 1}): er überträgt Daten von \ac{GPR} in die Register der
+FPU.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/17_unions/epsilon/MIPS_O3_IDA.lst}
+
+\subsubsection{\Conclusion}
+Es ist schwer zu sagen, ob jemand eine solche Trickserei in echtem Produktivcode benötigt, aber wie bereits mehrfach
+erwähnt, ist dieses Beispiel gut geeignet, um das IEEE 754 Format und \IT{unions} in \CCpp zu erklären.
+

@@ -1,62 +1,87 @@
-﻿\part{\EN{Slightly more advanced examples}\RU{Более сложные примеры}}
+\chapter{\EN{Slightly more advanced examples}\RU{Более сложные примеры}\DE{Fortgeschrittenere Beispiele}\FR{Exemples un peu plus avancés}}
 
-\newcommand{\CURPATH}{advanced/100_fahrenheit}
-\input{\CURPATH/main}
+% sections here:
+
+\newcommand{\CURPATH}{advanced/030_dbl_neg}
+\EN{\input{\CURPATH/main_EN}}
+\RU{\input{\CURPATH/main_RU}}
+
+\renewcommand{\CURPATH}{advanced/050_strstr}
+\EN{\input{\CURPATH/main_EN}}\DE{\input{\CURPATH/main_DE}}\RU{\input{\CURPATH/main_RU}}
+
+\renewcommand{\CURPATH}{advanced/100_fahrenheit}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}\FR{\input{\CURPATH/main_FR}}
 
 \renewcommand{\CURPATH}{advanced/102_fib}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main}}\RU{\input{\CURPATH/main}}
 
 \renewcommand{\CURPATH}{advanced/110_CRC32}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
 \renewcommand{\CURPATH}{advanced/111_netmask}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
 \renewcommand{\CURPATH}{advanced/115_loop_iterators}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
 \renewcommand{\CURPATH}{advanced/117_duff_device}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
-\renewcommand{\CURPATH}{advanced/120_division_by_9}
-\input{\CURPATH/main}
+\renewcommand{\CURPATH}{advanced/120_division_by_mult}
+\EN{\input{\CURPATH/main}}\RU{\input{\CURPATH/main}}
 
 \renewcommand{\CURPATH}{advanced/125_atoi}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
 \renewcommand{\CURPATH}{advanced/127_inline_function}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
 \renewcommand{\CURPATH}{advanced/130_C99_restrict}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
 \renewcommand{\CURPATH}{advanced/135_abs_branchless}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
 \renewcommand{\CURPATH}{advanced/170_variadic_functions}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
 \renewcommand{\CURPATH}{advanced/200_string_trim}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
 \renewcommand{\CURPATH}{advanced/250_toupper}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
 \renewcommand{\CURPATH}{advanced/300_incorrect_disassembly}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
 \renewcommand{\CURPATH}{advanced/310_obfuscation}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
-\ifdefined\IncludeCPP
 \renewcommand{\CURPATH}{advanced/350_cpp}
-\input{\CURPATH/main}
-\fi
+\EN{\input{\CURPATH/main}}\RU{\input{\CURPATH/main}}
 
 \renewcommand{\CURPATH}{advanced/370_neg_arrays}
-\input{\CURPATH/main}
+\EN{\input{\CURPATH/main_EN}}\RU{\input{\CURPATH/main_RU}}
 
-\ifdefined\IncludeWinSixteen
-\renewcommand{\CURPATH}{advanced/400_win16}
-\input{\CURPATH/main}
-\fi
+\renewcommand{\CURPATH}{advanced/380_FAT12}
+\EN{\input{\CURPATH/main_EN}}
+
+\EN{\input{advanced/450_more_ptrs/main_EN}}\RU{\input{advanced/450_more_ptrs/main_RU}}
+
+\EN{\input{advanced/500_loop_optimizations/main_EN}}\RU{\input{advanced/500_loop_optimizations/main_RU}}
+
+\EN{\input{advanced/550_more_structs/main_EN}}\RU{\input{advanced/550_more_structs/main_RU}}
+
+\EN{\input{advanced/600_memmove/main_EN}}\RU{\input{advanced/600_memmove/main_RU}}
+
+\EN{\input{advanced/625_setjmp/main_EN}}\RU{\input{advanced/625_setjmp/main_RU}}
+
+\EN{\input{advanced/650_stack/main}}\RU{\input{advanced/650_stack/main}}
+
+\EN{\input{advanced/700_openmp/main_EN}}\RU{\input{advanced/700_openmp/main_RU}}
+
+\EN{\input{advanced/750_heisenbug/main_EN}}
+
+\renewcommand{\CURPATH}{advanced/800_win16}
+\EN{\input{\CURPATH/main}}\RU{\input{\CURPATH/main}}
+

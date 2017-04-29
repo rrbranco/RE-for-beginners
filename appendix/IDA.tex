@@ -1,5 +1,5 @@
-\section{IDA}
-\index{IDA}
+\subsection{IDA}
+\myindex{IDA}
 \label{sec:IDA_cheatsheet}
 
 \ShortHotKeyCheatsheet:
@@ -7,38 +7,44 @@
 \begin{center}
 \begin{tabular}{ | l | l | }
 \hline
-\cellcolor{blue!25} \RU{клавиша}\EN{key} & \cellcolor{blue!25} \RU{значение}\EN{meaning} \\
+\HeaderColor \RU{клавиша}\EN{key}\DE{Taste} & \HeaderColor \RU{значение}\EN{meaning}\DE{Bedeutung} \\
 \hline
-Space 	& \RU{переключать между листингом и просмотром кода в виде графа}\EN{switch listing and graph view} \\
-C 	& \RU{конвертировать в код}\EN{convert to code} \\
-D 	& \RU{конвертировать в данные}\EN{convert to data} \\
-A 	& \RU{конвертировать в строку}\EN{convert to string} \\
-* 	& \RU{конвертировать в массив}\EN{convert to array} \\
-U 	& \RU{сделать неопределенным}\EN{undefine} \\
-O 	& \RU{сделать смещение из операнда}\EN{make offset of operand} \\
-H 	& \RU{сделать десятичное число}\EN{make decimal number} \\
-R 	& \RU{сделать символ}\EN{make char} \\
-B 	& \RU{сделать двоичное число}\EN{make binary number} \\
-Q 	& \RU{сделать шестнадцатеричное число}\EN{make hexadecimal number} \\
-N 	& \RU{переименовать идентификатор}\EN{rename identificator} \\
-? 	& \RU{калькулятор}\EN{calculator} \\
-G 	& \RU{переход на адрес}\EN{jump to address} \\
-: 	& \RU{добавить комментарий}\EN{add comment} \\
-Ctrl-X 	& \RU{показать ссылки на текущую функцию, метку, переменную (в т.ч., в стеке)}
-		\EN{show references to the current function, label, variable (incl. in local stack)} \\
-X 	& \RU{показать ссылки на функцию, метку, переменную,}\EN{show references to the function, label, variable,}\etc{}. \\
-Alt-I 	& \RU{искать константу}\EN{search for constant} \\
-Ctrl-I 	& \RU{искать следующее вхождение константы}\EN{search for the next occurrence of constant} \\
-Alt-B 	& \RU{искать последовательность байт}\EN{search for byte sequence} \\
+Space 	& \RU{переключать между листингом и просмотром кода в виде графа}
+            \EN{switch listing and graph view}
+            \DE{Zwischen Quellcode und grafischer Ansicht wechseln}\\
+C 	& \RU{конвертировать в код}\EN{convert to code}\DE{zu Code konvertieren} \\
+D 	& \RU{конвертировать в данные}\EN{convert to data}\DE{zu Daten konvertieren} \\
+A 	& \RU{конвертировать в строку}\EN{convert to string}\DE{zu Zeichenkette konvertieren} \\
+* 	& \RU{конвертировать в массив}\EN{convert to array}\DE{zu Array konvertieren} \\
+U 	& \RU{сделать неопределенным}\EN{undefine}\DE{undefinieren}\\
+O 	& \RU{сделать смещение из операнда}\EN{make offset of operand}\DE{Offset von Operanden}\\
+H 	& \RU{сделать десятичное число}\EN{make decimal number}\DE{Dezimalzahl erstellen} \\
+R 	& \RU{сделать символ}\EN{make char}\DE{Zeichen erstellen} \\
+B 	& \RU{сделать двоичное число}\EN{make binary number}\DE{Binärzahl erstellen} \\
+Q 	& \RU{сделать шестнадцатеричное число}\EN{make hexadecimal number}\DE{Hexadezimalzahl erstellen} \\
+N 	& \RU{переименовать идентификатор}\EN{rename identifier}\DE{Identifikator umbenennen} \\
+? 	& \RU{калькулятор}\EN{calculator}\DE{Rechner} \\
+G 	& \RU{переход на адрес}\EN{jump to address}\DE{zu Adresse springen} \\
+: 	& \RU{добавить комментарий}\EN{add comment}\DE{Kommentar einfügen} \\
+Ctrl-X 	& \RU{показать ссылки на текущую функцию, метку, переменную}
+		\EN{show references to the current function, label, variable }
+        \DE{Referenz zu aktueller Funktion, Variable, ... zeigen}\\
+	& \RU{(в т.ч., в стеке)}\EN{(incl. in local stack)}\DE{(inkl. lokalem Stack)} \\
+X 	& \RU{показать ссылки на функцию, метку, переменную, итд}\EN{show references to the function, label, variable, etc.}
+        \DE{Referenz zu Funktion, Variable, ... zeigen}\\
+Alt-I 	& \RU{искать константу}\EN{search for constant}\DE{Konstante suchen} \\
+Ctrl-I 	& \RU{искать следующее вхождение константы}\EN{search for the next occurrence of constant}\DE{Nächstes Auftreten der Konstante suchen} \\
+Alt-B 	& \RU{искать последовательность байт}\EN{search for byte sequence}\DE{Byte-Sequenz suchen} \\
 Ctrl-B 	& \RU{искать следующее вхождение последовательности байт}
-		\EN{search for the next occurrence of byte sequence} \\
-		Alt-T 	& \RU{искать текст (включая инструкции, \etc{}.)}\EN{search for text (including instructions, \etc{})} \\
-Ctrl-T 	& \RU{искать следующее вхождение текста}\EN{search for the next occurrence of text} \\
-Alt-P 	& \RU{редактировать текущую функцию}\EN{edit current function} \\
-		Enter 	& \RU{перейти к функции, переменной, \etc{}.}\EN{jump to function, variable, \etc{}} \\
-Esc 	& \RU{вернуться назад}\EN{get back} \\
-Num -   & \RU{свернуть функцию или отмеченную область}\EN{fold function or selected area} \\
-Num + 	& \RU{снова показать функцию или область}\EN{unhide function or area}\\
+		\EN{search for the next occurrence of byte sequence}
+        \DE{Nächstes Auftreten der Byte-Sequenz suchen} \\
+Alt-T 	& \RU{искать текст (включая инструкции, итд.)}\EN{search for text (including instructions, etc.)}\EN{Text suchen (inkl. Anweisungen, usw.)} \\
+Ctrl-T 	& \RU{искать следующее вхождение текста}\EN{search for the next occurrence of text}\DE{nächstes Aufreten des Textes suchen} \\
+Alt-P 	& \RU{редактировать текущую функцию}\EN{edit current function}\DE{akutelle Funktion editieren} \\
+		Enter 	& \RU{перейти к функции, переменной, итд.}\EN{jump to function, variable, etc.}\DE{zu Funktion, Variable, ... springen} \\
+Esc 	& \RU{вернуться назад}\EN{get back}\DE{zurückgehen} \\
+Num -   & \RU{свернуть функцию или отмеченную область}\EN{fold function or selected area}\DE{Funktion oder markierten Bereich einklappen} \\
+Num + 	& \RU{снова показать функцию или область}\EN{unhide function or area}\DE{Funktion oder Bereich anzeigen}\\
 \hline
 \end{tabular}
 \end{center}
@@ -46,7 +52,9 @@ Num + 	& \RU{снова показать функцию или область}\E
 \RU{Сворачивание функции или области может быть удобно чтобы прятать те части функции,
 чья функция вам стала уже ясна}
 \EN{Function/area folding may be useful for hiding function parts when you realize what they do}.
-\RU{это используется в моем скрипте\footnote{\href{\YurichevIDAIDCScripts}{GitHub}}}\EN{this is used in my}
+\DE{Das Einklappen ist nützlich um Teile von Funktionen zu verstecken, wenn bekannt ist was sie tun}.
+\RU{это используется в моем скрипте\footnote{\href{\YurichevIDAIDCScripts}{GitHub}}}\EN{this is used in my}\DE{dies wird genutzt im}
 \RU{для сворачивания некоторых очень часто используемых фрагментов inline-кода}
 \EN{script\footnote{\href{\YurichevIDAIDCScripts}{GitHub}} for hiding some often used patterns of inline code}.
+\DE{Script\footnote{\href{\YurichevIDAIDCScripts}{GitHub}} um häufig genutzte Inline-Code-Stellen zu verstecken}.
 

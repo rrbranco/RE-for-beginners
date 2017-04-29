@@ -1,0 +1,53 @@
+\subsubsection{x86: alloca() function}
+\label{alloca}
+\myindex{\CStandardLibrary!alloca()}
+
+\newcommand{\AllocaSrcPath}{C:\textbackslash{}Program Files (x86)\textbackslash{}Microsoft Visual Studio 10.0\textbackslash{}VC\textbackslash{}crt\textbackslash{}src\textbackslash{}intel}
+
+Intéressons-nous à la fonction \TT{alloca()}
+\footnote{Avec MSVC, l'implémentation de cette fonction peut être trouvée dans les fichiers \TT{alloca16.asm} et \TT{chkstk.asm} dans \\
+\TT{\AllocaSrcPath{}}}
+
+Cette fonction fonctionne comme \TT{malloc()}, mais alloue de la mémoire directement sur la pile.
+% page break added to prevent "\vref on page boundary" error. it may be dropped in future.
+Le bout de mémoire ne doit pas être libéré via un appel à la fonction \TT{free()}, \\
+puisque l'épilogue de fonction (\myref{sec:prologepilog}) retourne \ESP à son état initial précédant ce qui va automatiquement désallouer ce bout de mémoire.
+
+Intéressons-nous à l'implémentation d'\TT{alloca()}.
+Cette fonction décale simplement \ESP du nombre d'octets demandé vers le bas et vers le fond de la pile et définit \ESP en tant que pointeur vers la mémoire \IT{allouée}.
+
+Essayons :
+
+\lstinputlisting[style=customc]{patterns/02_stack/04_alloca/2_1.c}
+
+La fonction \TT{\_snprintf()} fonctionne comme \printf, mais au lieu d'afficher le résultat sur \gls{stdout} (ex., dans un terminal ou une console), il l'écrit dans le buffer \TT{buf}. La fonction \puts copie le contenu de \TT{buf} dans \gls{stdout}. Évidemment, ces deux appels de fonctions peuvent être remplacés par un seul appel à la fonction \printf, mais nous devons illustrer l'utilisation de petit buffer.
+
+\myparagraph{MSVC}
+
+Compilons (MSVC 2010) :
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/02_stack/04_alloca/2_2_msvc.asm}
+
+\myindex{Compiler intrinsic}
+Le seul argument d'\TT{alloca()} est passé via \EAX (au lieu de le mettre sur la pile )
+\footnote{C'est parce que alloca() est plutôt une fonctionnalité intrinsèque du compilateur (\myref{sec:compiler_intrinsic}) qu'une fonction normale. Une des raisons pour lequelle nous avons besoin d'une fonction séparée au lieu de quelques instructions dans le code, est parce que l'implementation d'alloca() par \ac{MSVC} à également du code qui lit depuis la mémoire récemment allouée pour laisser l'\ac{OS} mapper la memoire physique vers la \ac{mémoire virtuelle}. Aprés l'appel à la fonction \TT{alloca()}, \ESP pointe sur un bloc de 600 octets que nous pouvons utiliser pour le tableau \TT{buf}.}
+
+\myparagraph{GCC + \IntelSyntax}
+
+GCC 4.4.1 fait la même chose sans effectuer d'appel à des fonctions externes :
+
+\lstinputlisting[caption=GCC 4.7.3,style=customasmx86]{patterns/02_stack/04_alloca/2_1_gcc_intel_O3_FR.asm}
+
+\myparagraph{GCC + \ATTSyntax}
+
+Voyons le même code mais avec la syntaxe AT\&T :
+
+\lstinputlisting[caption=GCC 4.7.3,style=customasmx86]{patterns/02_stack/04_alloca/2_1_gcc_ATT_O3.s}
+
+\myindex{\ATTSyntax}
+Le code est le même que le précédent.
+
+Au fait, \INS{movl \$3, 20(\%esp)} correspond à
+\INS{mov DWORD PTR [esp+20], 3} avec la syntaxe intel.
+Dans la syntaxe AT\&T, le format registre+offset pour l'adressage mémoire
+ressemble à \TT{offset(\%{register})}.

@@ -1,0 +1,29 @@
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5
+(IDA)]{patterns/10_strings/1_strlen/MIPS_O3_IDA_DE.lst}
+
+\myindex{MIPS!\Instructions!NOR}
+\myindex{MIPS!\Pseudoinstructions!NOT}
+
+MIPS besitzt keinen \NOT Befehl, dafür aber den Befehl \NOT, welcher der
+Funktion \TT{OR~+~NOT} entspricht.
+
+Diese Funktion wird häufig in der Digitaltechnik verwendet\footnote{NOR wird
+ \q{universelles Gatter} genannt}.
+
+\index{Apollo Guidance Computer}
+Der Apollo Guidance Computer, der im Apollo Programm der NASA verwendet wurde,
+bestand beispielsweise ausschließlich aus 5600 \NOR Gattern:
+[Jens Eickhoff, \IT{Onboard Computers, Onboard Software and Satellite
+Operations: An Introduction}, (2011)].
+In der Programmierung ist die Funktion \NOT nicht besonders beliebt. 
+
+Die \NOT Funktion ist hier also durch \TT{NOR~DST,~\$ZERO,~SRC} implementiert.
+
+Aus dem Grundlagenteil \myref{sec:signednumbers} wissen wir, dass das bitweise
+invertieren einer vorzeichenbehafteten Zahl gerade einem Wechsel des Vorzeichens
+mit anschließender Subtraktion von 1 entspricht. 
+
+Was \NOT hier also tut, ist, den Wert von $str$ in $-str-1$ umzuwandeln. 
+Die folgende Addition bereitet das Ergebnis vor.

@@ -1,0 +1,16 @@
+\subsection{Um modelo típico de pilha}
+
+Um modelo típico de pilha em um ambiente 32-bits no início de uma função,
+antes da execução da primeira instrução, se parece com isso:
+
+\input{patterns/02_stack/stack_layout}
+
+% I think this only applies to RISC architectures
+% that don't have a POP instruction that only lets you read one value
+% (ie. ARM and MIPS).
+% In x86, the return address is saved before entering the function,
+% and the function does not have the chance to save the frame pointer.
+% Also, you should mention that this is how the stack looks like
+% right after the function prologue,
+% which some readers might think is the first instruction,
+% but is needed to save the frame pointer.

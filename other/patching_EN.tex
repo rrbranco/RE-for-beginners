@@ -1,0 +1,82 @@
+\section{Executable files patching}
+
+\subsection{Text strings}
+
+The C strings are the thing that is the easiest to patch (unless they are encrypted) in any hex editor.
+This technique is available even for those who are not aware of machine code and executable file formats.
+The new string has not to be bigger than the old one, because there's a risk of overwriting another value or code
+there.
+\myindex{MS-DOS}
+
+Using this method, a lot of software was \IT{localized} in the MS-DOS era, at least in the ex-USSR countries in 80's
+and 90's.
+It was the reason why some weird abbreviations were present in the \IT{localized} software: there was no room for
+longer strings.
+
+\myindex{Borland Delphi}
+
+As for Delphi strings, the string's size must also be corrected, if needed.
+
+\subsection{x86 code}
+\label{x86_patching}
+
+Frequent patching tasks are:
+
+\myindex{x86!\Instructions!NOP}
+\begin{itemize}
+
+\item 
+One of the most frequent jobs is to disable some instruction.
+It is often done by filling it using byte 
+\TT{0x90} (\ac{NOP}).
+
+\item Conditional jumps, which have an opcode like \TT{74 xx} (\JZ), 
+can be filled with two \ac{NOP}s.
+
+It is also possible to disable a conditional jump by writing 0 at the second byte (\IT{jump offset}).
+
+\myindex{x86!\Instructions!JMP}
+\item 
+Another frequent job is to make a conditional jump to always trigger: 
+this can be done by writing \TT{0xEB} 
+instead of the opcode, which stands for \JMP.
+
+\myindex{x86!\Instructions!RET}
+\myindex{stdcall}
+\item A function's execution can be disabled by writing \RETN (0xC3) at its beginning.
+This is true for all functions excluding \TT{stdcall} (\myref{sec:stdcall}).
+While patching \TT{stdcall} functions, one has to determine the number of arguments (for example, 
+by finding \RETN in this function), 
+and use \RETN with a 16-bit argument (0xC2).
+
+\myindex{x86!\Instructions!MOV}
+\myindex{x86!\Instructions!XOR}
+\myindex{x86!\Instructions!INC}
+\item Sometimes, a disabled functions has to return 0 or 1.
+This can be done by \TT{MOV EAX, 0} or \TT{MOV EAX, 1}, 
+but it's slightly verbose.\\
+A better way is \TT{XOR EAX, EAX} (2 bytes \TT{0x31 0xC0}) or \TT{XOR EAX, EAX / INC EAX} (3 bytes \TT{0x31 0xC0 0x40}).
+
+\end{itemize}
+
+A software may be protected against modifications.
+
+This protection is often done by reading the executable code and calculating a checksum.
+Therefore, 
+the code must be read before protection is triggered.
+
+This can be determined by setting a breakpoint on reading memory.
+
+\myindex{tracer}
+\tracer has the BPM option for this.
+
+PE executable file relocs (\myref{subsec:relocs}) 
+must not to be touched while patching, 
+because the Windows loader may overwrite your new code.
+\myindex{Hiew}
+(They are grayed in Hiew, for example:
+\figref{fig:scanf_ex3_hiew_1}).
+
+As a last resort, it is possible to write jumps that circumvent the relocs, 
+or you will have to edit the relocs table.
+

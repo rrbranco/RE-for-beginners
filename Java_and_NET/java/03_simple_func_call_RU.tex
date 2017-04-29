@@ -1,0 +1,146 @@
+% TODO proof-reading
+\subsection{Простой вызов функций}
+
+
+\TT{Math.random()} возвращает псевдослучайное число в пределах [0.0 \dots 1.0), но представим,
+по какой-то причине, нам нужна функция, возвращающая число в пределах [0.0 \dots 0.5):
+
+\begin{lstlisting}[style=customjava]
+public class HalfRandom
+{ 
+	public static double f()
+	{
+		return Math.random()/2;
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Constant pool]
+...
+   #2 = Methodref          #18.#19    //  java/lang/Math.random:()D
+   #3 = Double             2.0d
+...
+  #12 = Utf8               ()D
+...
+  #18 = Class              #22        //  java/lang/Math
+  #19 = NameAndType        #23:#12    //  random:()D
+  #22 = Utf8               java/lang/Math
+  #23 = Utf8               random
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static double f();
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=4, locals=0, args_size=0
+         0: invokestatic  #2          // Method java/lang/Math.random:()D
+         3: ldc2_w        #3          // double 2.0d
+         6: ddiv          
+         7: dreturn       
+\end{lstlisting}
+
+
+\TT{invokestatic} вызывает функцию \TT{Math.random()} и оставляет результат на \ac{TOS}.
+
+Затем результат делится на 2.0 и возвращается.
+
+Но как закодировано имя функции?
+
+Оно закодировано в пуле констант используя выражение \TT{Methodref}.
+
+Оно определяет имена класса и метода.
+
+Первое поле \TT{Methodref} указывает на выражение \TT{Class}, которое, в свою очередь,
+указывает на обычную текстовую строку (\q{java/lang/Math}).
+
+Второе выражение \TT{Methodref} указывает на выражение \TT{NameAndType}, которое также
+имеет две ссылки на строки.
+
+Первая строка это \q{random}, это имя метода.
+
+Вторая строка это \q{()D}, которая кодирует тип функции. Это означает, что возвращаемый тип --- \IT{double} (отсюда \IT{D} в строке).
+
+Благодаря этому
+1) JVM проверяет корректность типов данных; 
+2) Java-декомпиляторы могут восстанавливать типы данных из class-файлов.
+
+
+Наконец попробуем пример \q{Hello, world!}:
+
+\begin{lstlisting}[style=customjava]
+public class HelloWorld
+{
+	public static void main(String[] args)
+	{
+		System.out.println("Hello, World");
+	}
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Constant pool]
+...
+   #2 = Fieldref           #16.#17        //  java/lang/System.out:Ljava/io/PrintStream;
+   #3 = String             #18            //  Hello, World
+   #4 = Methodref          #19.#20        //  java/io/PrintStream.println:(Ljava/lang/String;)V
+...
+  #16 = Class              #23            //  java/lang/System
+  #17 = NameAndType        #24:#25        //  out:Ljava/io/PrintStream;
+  #18 = Utf8               Hello, World
+  #19 = Class              #26            //  java/io/PrintStream
+  #20 = NameAndType        #27:#28        //  println:(Ljava/lang/String;)V
+...
+  #23 = Utf8               java/lang/System
+  #24 = Utf8               out
+  #25 = Utf8               Ljava/io/PrintStream;
+  #26 = Utf8               java/io/PrintStream
+  #27 = Utf8               println
+  #28 = Utf8               (Ljava/lang/String;)V
+...
+\end{lstlisting}
+
+\begin{lstlisting}
+  public static void main(java.lang.String[]);
+    flags: ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: getstatic     #2        // Field java/lang/System.out:Ljava/io/PrintStream;
+         3: ldc           #3        // String Hello, World
+         5: invokevirtual #4        // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+         8: return        
+\end{lstlisting}
+
+
+\TT{ldc} по смещению 3 берет указатель (или адрес) на строку \q{Hello, World}
+в пуле констант и заталкивает его в стек.
+
+В мире Java это называется \IT{reference}, но это скорее указатель или просто адрес
+\footnote{О разнице между указателями и \IT{reference} в С++: \myref{cpp_references}.}.
+
+
+Уже знакомая нам инструкция \TT{invokevirtual} берет информацию о функции (или методе) \TT{println} 
+из пула констант и вызывает её.
+
+Как мы можем знать, есть несколько методов \TT{println}, каждый предназначен для каждого типа
+данных.
+
+В нашем случае, используется та версия \TT{println}, которая для типа данных \IT{String}.
+
+
+Что насчет первой инструкции \TT{getstatic}?
+
+Эта инструкция берет \IT{reference} (или адрес) поля объекта \TT{System.out}
+и заталкивает его в стек.
+
+Это значение работает как указатель \IT{this} для метода \TT{println}.
+
+Таким образом, внутри, метод \TT{println} берет на вход два аргумента:
+1) \IT{this}, т.е. указатель на объект
+\footnote{Или \q{экземпляр класса} в некоторой русскоязычной литературе.};
+2) адрес строки \q{Hello, World}.
+
+
+Действительно, \TT{println()} вызывается как метод в рамках инициализированного объекта 
+\TT{System.out}.
+
+
+Для удобства, утилита \TT{javap} пишет всю эту информацию в комментариях.

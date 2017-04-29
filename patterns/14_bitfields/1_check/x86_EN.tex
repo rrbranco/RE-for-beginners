@@ -1,0 +1,151 @@
+\subsubsection{x86}
+\myindex{Windows!Win32}
+
+Win32 API example:
+
+\begin{lstlisting}[style=customc]
+	HANDLE fh;
+
+	fh=CreateFile ("file", GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+\end{lstlisting}
+
+We get (MSVC 2010):
+
+\begin{lstlisting}[caption=MSVC 2010,style=customasmx86]
+	push	0
+	push	128		; 00000080H
+	push	4
+	push	0
+	push	1
+	push	-1073741824	; c0000000H
+	push	OFFSET $SG78813
+	call	DWORD PTR __imp__CreateFileA@28
+	mov	DWORD PTR _fh$[ebp], eax
+\end{lstlisting}
+
+Let's take a look in WinNT.h:
+
+\begin{lstlisting}[caption=WinNT.h,style=customc]
+#define GENERIC_READ                     (0x80000000L)
+#define GENERIC_WRITE                    (0x40000000L)
+#define GENERIC_EXECUTE                  (0x20000000L)
+#define GENERIC_ALL                      (0x10000000L)
+\end{lstlisting}
+
+Everything is clear,
+GENERIC\_READ | GENERIC\_WRITE = 0x80000000 | 0x40000000 = 0xC0000000,
+and that value is used as the second argument for the \TT{CreateFile()}\footnote{\href{http://go.yurichev.com/17065}{msdn.microsoft.com/en-us/library/aa363858(VS.85).aspx}}function.
+
+How would \TT{CreateFile()} check these flags?
+\myindex{Windows!KERNEL32.DLL}
+
+If we look in KERNEL32.DLL in Windows XP SP3 x86, we'll find this fragment of code in \TT{CreateFileW}:
+
+\begin{lstlisting}[caption=KERNEL32.DLL (Windows XP SP3 x86),style=customasmx86]
+.text:7C83D429     test    byte ptr [ebp+dwDesiredAccess+3], 40h
+.text:7C83D42D     mov     [ebp+var_8], 1
+.text:7C83D434     jz      short loc_7C83D417
+.text:7C83D436     jmp     loc_7C810817
+\end{lstlisting}
+
+\myindex{x86!\Instructions!TEST}
+
+Here we see the \TEST instruction, however it doesn't take the whole second argument,\\
+but only the most significant byte (\TT{ebp+dwDesiredAccess+3}) and checks it for flag \TT{0x40}
+(which implies the \TT{GENERIC\_WRITE} flag here)
+\myindex{x86!\Instructions!AND}
+
+\TEST is basically the same instruction as \AND, but without saving the result
+(recall the fact \CMP is merely the same as \SUB, but without saving the result~(\myref{CMPandSUB})).
+
+The logic of this code fragment is as follows:
+
+\begin{lstlisting}[style=customc]
+if ((dwDesiredAccess&0x40000000) == 0) goto loc_7C83D417
+\end{lstlisting}
+
+\myindex{x86!\Instructions!AND}
+\myindex{x86!\Registers!ZF}
+
+If \AND instruction leaves this bit, the \ZF flag is to be cleared and the 
+\JZ conditional jump is not to be triggered.
+The conditional jump is triggered only if the \TT{0x40000000} bit is absent in \TT{dwDesiredAccess} variable~---then the result of \AND is 0,
+\ZF is to be set and the conditional jump is to be triggered.
+
+Let's try GCC 4.4.1 and Linux:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <fcntl.h>
+
+void main()
+{
+	int handle;
+
+	handle=open ("file", O_RDWR | O_CREAT);
+};
+\end{lstlisting}
+
+We get:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/14_bitfields/1_check/check.asm}
+
+\myindex{Linux!libc.so.6}
+\myindex{syscall}
+
+If we take a look in the \TT{open()} function in the \TT{libc.so.6} library, it is only a syscall:
+
+\begin{lstlisting}[caption=open() (libc.so.6),style=customasmx86]
+.text:000BE69B     mov     edx, [esp+4+mode] ; mode
+.text:000BE69F     mov     ecx, [esp+4+flags] ; flags
+.text:000BE6A3     mov     ebx, [esp+4+filename] ; filename
+.text:000BE6A7     mov     eax, 5
+.text:000BE6AC     int     80h             ; LINUX - sys_open
+\end{lstlisting}
+
+
+So, the bit fields for \TT{open()} are apparently checked somewhere in the Linux kernel.
+
+Of course, it is easy to download both Glibc and the Linux kernel source code, 
+but we are interested in understanding the matter without it.
+
+So, as of Linux 2.6, when the \TT{sys\_open} syscall is called, control eventually passes to \TT{do\_sys\_open},
+and from there---to the \TT{do\_filp\_open()} function (it's located in the kernel source tree in \TT{fs/namei.c}).
+
+\newcommand{\URLREGPARM}{\href{http://go.yurichev.com/17040}{ohse.de/uwe/articles/gcc-attributes.html\#func-regparm}}
+
+\myindex{fastcall}
+\label{regparm}
+N.B.  Aside from passing arguments via the stack,
+there is also a method of passing some of them
+via registers. This is also called fastcall~(\myref{fastcall}).
+This works faster since CPU does not need to access the stack in memory to read argument values.
+GCC has the option \IT{regparm}\footnote{\URLREGPARM},
+through which it's possible to set the number of arguments that can be passed via registers.
+
+\newcommand{\URLKERNELNEWB}{\href{http://go.yurichev.com/17066}{kernelnewbies.org/Linux\_2\_6\_20\#head-042c62f290834eb1fe0a1942bbf5bb9a4accbc8f}}
+\newcommand{\CALLINGHFILE}{arch/x86/include/asm/calling.h}
+
+The Linux 2.6 kernel is compiled with \TT{-mregparm=3} option~\footnote{\URLKERNELNEWB}
+\footnote{See also \TT{\CALLINGHFILE} file in kernel tree}.
+
+What this means to us is that the first 3 arguments are to be passed via registers \EAX, \EDX and \ECX, 
+and the rest via the stack. 
+Of course, if the number of arguments is less than 3, only part of registers set is to be used.
+
+So, let's download Linux Kernel 2.6.31, compile it in Ubuntu: \TT{make vmlinux}, open it in \IDA, 
+and find the \TT{do\_filp\_open()} function. At the beginning, we see (the comments are mine):
+
+\lstinputlisting[caption=do\_filp\_open() (linux kernel 2.6.31),style=customasmx86]{patterns/14_bitfields/1_check/check2_EN.asm}
+
+GCC saves the values of the first 3 arguments in the local stack. 
+If that wasn't done, the compiler would not touch these registers, 
+and that would be too tight environment for the compiler's \gls{register allocator}.
+
+Let's find this fragment of code:
+
+\lstinputlisting[caption=do\_filp\_open() (linux kernel 2.6.31),style=customasmx86]{patterns/14_bitfields/1_check/check3.asm}
+
+\TT{0x40}---is what the \TT{O\_CREAT} macro equals to.
+\TT{open\_flag} gets checked for the presence of the \TT{0x40} bit, and if this bit is 1, 
+the next \JNZ instruction is triggered.

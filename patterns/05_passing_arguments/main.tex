@@ -1,19 +1,5 @@
-\chapter{\RU{Доступ к переданным аргументам}\EN{Accessing passed arguments}}
-\index{\Stack}
-
-\RU{Как мы уже успели заметить, вызывающая функция передает аргументы для вызываемой через стек. 
-А как вызываемая функция получает к ним доступ?}
-\EN{Now we figured out that the \gls{caller} function is passing arguments to the \gls{callee} via the stack. 
-But how does the \gls{callee} access them?}
-
-\lstinputlisting[label=src:passing_arguments_ex,caption=\RU{простой пример}\EN{simple example}]{patterns/05_passing_arguments/ex.c}
-
-% sections
-\input{patterns/05_passing_arguments/x86.tex}
-\input{patterns/05_passing_arguments/x64.tex}
-\ifdefined\IncludeARM
-\input{patterns/05_passing_arguments/ARM/main.tex}
-\fi
-\ifdefined\IncludeMIPS
-\input{patterns/05_passing_arguments/MIPS.tex}
-\fi
+\EN{\input{patterns/05_passing_arguments/main_EN}}
+\RU{\input{patterns/05_passing_arguments/main_RU}}
+\ITA{\input{patterns/05_passing_arguments/main_ITA}}
+\DE{\input{patterns/05_passing_arguments/main_DE}}
+\FR{\input{patterns/05_passing_arguments/main_FR}}

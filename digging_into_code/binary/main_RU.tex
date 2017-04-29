@@ -1,0 +1,125 @@
+% TODO move section...
+
+\subsection{Некоторые паттерны в бинарных файлах}
+
+Все примеры здесь были подготовлены в Windows с активной кодовой страницей 437
+\footnote{\url{https://ru.wikipedia.org/wiki/CP437}} в консоли.
+Двоичные файлы внутри могут визуально выглядеть иначе если установлена другая кодовая страница.
+
+\clearpage
+\subsubsection{Массивы}
+
+Иногда мы можем легко заметить массив 16/32/64-битных значений визуально, в шестнадцатеричном 
+редакторе.
+
+Вот пример массива 16-битных значений.
+Мы видим, что каждый первый байт в паре всегда равен 7 или 8, а второй выглядит случайным:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/16bit_array.png}
+\caption{FAR: массив 16-битных значений}
+\end{figure}
+
+Для примера я использовал файл содержащий 12-канальный сигнал оцифрованный при помощи 16-битного \ac{ADC}.
+
+\clearpage
+\myindex{MIPS}
+\par А вот пример очень типичного MIPS-кода.
+
+Как мы наверное помним, каждая инструкция в MIPS (а также в ARM в режиме ARM, или ARM64) имеет 
+длину 32 бита (или 4 байта),
+так что такой код это массив 32-битных значений.
+
+Глядя на этот скриншот, можно увидеть некий узор.
+Вертикальные красные линии добавлены для ясности:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/typical_MIPS_code.png}
+\caption{Hiew: очень типичный код для MIPS}
+\end{figure}
+
+Еще пример таких файлов в этой книге: 
+\myref{Oracle_SYM_files_example}.
+
+\clearpage
+\subsubsection{Разреженные файлы}
+
+Это разреженный файл, в котором данные разбросаны посреди почти пустого файла.
+Каждый символ пробела здесь на самом деле нулевой байт (который выглядит как пробел).
+Это файл для программирования FPGA (чип Altera Stratix GX).
+Конечно, такие файлы легко сжимаются, но подобные форматы очень популярны в научном и инженерном ПО, где быстрый доступ важен, а компактность --- не очень.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/sparse_FPGA.png}
+\caption{FAR: Разреженный файл}
+\end{figure}
+
+\clearpage
+\subsubsection{Сжатый файл}
+
+% FIXME \ref{} ->
+Этот файл это просто некий сжатый архив.
+Он имеет довольно высокую энтропию и визуально выглядит просто хаотичным.
+Так выглядят сжатые и/или зашифрованные файлы.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/compressed.png}
+\caption{FAR: Сжатый файл}
+\end{figure}
+
+\clearpage
+\subsubsection{\ac{CDFS}}
+
+Инсталляции \ac{OS} обычно распространяются в ISO-файлах, которые суть копии CD/DVD-дисков.
+Используемая файловая система называется \ac{CDFS}, здесь видны имена файлов и какие-то допольнительные данные.
+Это могут быть длины файлов, указатели на другие директории, атрибуты файлов, итд.
+Так может выглядеть типичная файловая система внутри.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/cdfs.png}
+\caption{FAR: ISO-файл: инсталляционный \ac{CD} Ubuntu 15}
+\end{figure}
+
+\clearpage
+\subsubsection{32-битный x86 исполняемый код}
+
+Так выглядит 32-битный x86 исполняемый код.
+У него не очень высокая энтропия, потому что некоторые байты встречаются чаще других.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/x86_32.png}
+\caption{FAR: Исполняемый 32-битных x86 код}
+\end{figure}
+
+% TODO: Read more about x86 statistics: \ref{}. % FIXME blog post about decryption...
+
+\clearpage
+\subsubsection{Графические BMP-файлы}
+
+% TODO: bitmap, bit, group of bits...
+
+BMP-файлы не сжаты, так что каждый байт (или группа байт) описывают каждый пиксель.
+Я нашел эту картинку где-то внутри заинсталлированной Windows 8.1:
+
+\begin{figure}[H]
+\centering
+\myincludegraphicsSmall{digging_into_code/binary/bmp.png}
+\caption{Пример картинки}
+\end{figure}
+
+Вы видите, что эта картинка имеет пиксели, которые вряд ли могут быть хорошо сжаты (в районе центра),
+но здесь есть длинные одноцветные линии вверху и внизу.
+Действительно, линии вроде этих выглядят как линии при просмотре этого файла:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/bmp_FAR.png}
+\caption{Фрагмент BMP-файла}
+\end{figure}
+

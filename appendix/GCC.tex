@@ -1,26 +1,29 @@
-\section{GCC}
-\index{GCC}
+\subsection{GCC}
+\myindex{GCC}
 
 \RU{Некоторые полезные опции, которые были использованы в книге.}%
 \EN{Some useful options which were used through this book.}
+\DE{Einige nützliche Optionen die in diesem Buch genutzt werden.}
 
 \begin{center}
 \begin{tabular}{ | l | l | }
 \hline
-\cellcolor{blue!25} \RU{опция}\EN{option} & 
-\cellcolor{blue!25} \RU{значение}\EN{meaning} \\
+\HeaderColor \RU{опция}\EN{option}\DE{Option} & 
+\HeaderColor \RU{значение}\EN{meaning}\DE{Bedeutung} \\
 \hline
--Os		& \RU{оптимизация по размеру кода}\EN{code size optimization} \\
--O3		& \RU{максимальная оптимизация}\EN{maximum optimization} \\
+-Os		& \RU{оптимизация по размеру кода}\EN{code size optimization}\DE{Optimierung der Code-Größe} \\
+-O3		& \RU{максимальная оптимизация}\EN{maximum optimization}\DE{maximale Optimierung} \\
 -regparm=	& \RU{как много аргументов будет передаваться через регистры}
-			\EN{how many arguments are to be passed in registers} \\
--o file		& \RU{задать имя выходного файла}\EN{set name of output file} \\
+			\EN{how many arguments are to be passed in registers}\DE{Anzahl der in Registern übergebenen Argumente} \\
+-o file		& \RU{задать имя выходного файла}\EN{set name of output file}\DE{Name der Ausgabedatei} \\
 -g		& \RU{генерировать отладочную информацию в итоговом исполняемом файле}
-			\EN{produce debugging information in resulting executable} \\
+			\EN{produce debugging information in resulting executable}
+            \DE{Debug-Informationen in der ausführbaren Datei erzeugen} \\
 -S		& \RU{генерировать листинг на ассемблере}
-			\EN{generate assembly listing file} \\
--masm=intel	& \RU{генерировать листинг в синтаксисе Intel}\EN{produce listing in Intel syntax} \\
--fno-inline	& \RU{не вставлять тело функции там, где она вызывается}\EN{do not inline functions} \\
+			\EN{generate assembly listing file}
+            \DE{Assembler-Quellcode erstellen}\\
+-masm=intel	& \RU{генерировать листинг в синтаксисе Intel}\EN{produce listing in Intel syntax}\DE{Quellcode im Intel-Syntax erstellen} \\
+-fno-inline	& \RU{не вставлять тело функции там, где она вызывается}\EN{do not inline functions}\DE{keine Inline-Funktionen verwenden} \\
 \hline
 \end{tabular}
 \end{center}

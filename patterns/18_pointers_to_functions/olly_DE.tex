@@ -1,0 +1,39 @@
+\clearpage
+\subsubsection{MSVC + \olly}
+\myindex{\olly}
+Laden wir unser Beispiel in \olly und setzen einen Breakpoint auf \comp.
+Wir sehen wie dir Werte beim ersten Aufruf von \comp verglichen werden:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/18_pointers_to_functions/olly1.png}
+\caption{\olly: erster Aufruf von \comp}
+\label{fig:qsort_olly1}
+\end{figure}
+\olly zeigt die verglichenen Werte im Fenster unter dem Codefenster an.
+Wir können auch erkennen, dass der \ac{SP} auf \ac{RA} zeigt, wo sich die Funktion \qsort (innerhalb von
+\TT{MSVCR100.DLL}) befindet.
+
+\clearpage
+Durch Drücken von (F8) bis zum Befehl \TT{RETN} und einmaliges weiteres Drücken von F8 kehren wir zur Funktion
+\qsort zurück:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/18_pointers_to_functions/olly2.png}
+\caption{\olly: der Code in \qsort direkt nach dem Aufruf von \comp}
+\label{fig:qsort_olly2}
+\end{figure}
+
+Das war beispielhaft ein Aufruf der Vergleichsfunktion.
+
+\clearpage
+Hier ist noch ein Screenshot von dem Moment des zweiten Aufrufs von \comp---nun müssen die verglichenen Werte andere
+sein:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/18_pointers_to_functions/olly3.png}
+\caption{\olly: zweiter Aufruf von \comp}
+\label{fig:qsort_olly3}
+\end{figure}

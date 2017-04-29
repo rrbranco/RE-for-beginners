@@ -1,9 +1,9 @@
-\index{\CStandardLibrary!strlen()}
-\index{\CStandardLibrary!memchr()}
-\index{x86!\Instructions!SCASB}
-\index{x86!\Instructions!SCASW}
-\index{x86!\Instructions!SCASD}
-\index{x86!\Instructions!SCASQ}
+\myindex{\CStandardLibrary!strlen()}
+\myindex{\CStandardLibrary!memchr()}
+\myindex{x86!\Instructions!SCASB}
+\myindex{x86!\Instructions!SCASW}
+\myindex{x86!\Instructions!SCASD}
+\myindex{x86!\Instructions!SCASQ}
 \item[SCASB/SCASW/SCASD/SCASQ] (M) \RU{сравнить}\EN{compare} \RU{байт}\EN{byte}/
 16-\RU{битное слово}\EN{bit word}/
 32-\RU{битное слово}\EN{bit word}/
@@ -13,7 +13,7 @@ AX/EAX/RAX \RU{со значением, адрес которого находи
 \RU{Выставить флаги так же, как это делает \CMP}\EN{Set flags as \CMP does}.
 
 \label{REPNE_SCASx}
-\index{x86!\Prefixes!REPNE}
+\myindex{x86!\Prefixes!REPNE}
 \RU{Эта инструкция часто используется с префиксом REPNE: продолжать сканировать буфер до тех
 пор, пока не встретится специальное значение, записанное в AX/EAX/RAX}
 \EN{This instruction is often used with the REPNE prefix: continue to scan the buffer until a special value
@@ -27,7 +27,8 @@ stored in AX/EAX/RAX is found}.
 
 \RU{Пример}\EN{Example}:
 
-\lstinputlisting{appendix/x86/instructions/SCASB_ex1.asm.\LANG}
+\EN{\lstinputlisting[style=customasmx86]{appendix/x86/instructions/SCASB_ex1_EN.asm}}
+\RU{\lstinputlisting[style=customasmx86]{appendix/x86/instructions/SCASB_ex1_RU.asm}}
 
 \RU{Если использовать другое значение AX/EAX/RAX, функция будет работать как стандартная функция Си memchr(),
 т.е. для поиска определенного байта.}

@@ -1,0 +1,12 @@
+.data:0040FA80 _x              dd ?    ; DATA XREF: _main+10
+.data:0040FA80                         ; _main+22
+.data:0040FA84 dword_40FA84    dd ?    ; DATA XREF: _memset+1E
+.data:0040FA84                         ; unknown_libname_1+28
+.data:0040FA88 dword_40FA88    dd ?    ; DATA XREF: ___sbh_find_block+5
+.data:0040FA88                         ; ___sbh_free_block+2BC
+.data:0040FA8C ; LPVOID lpMem
+.data:0040FA8C lpMem           dd ?    ; DATA XREF: ___sbh_find_block+B
+.data:0040FA8C                         ; ___sbh_free_block+2CA
+.data:0040FA90 dword_40FA90    dd ?    ; DATA XREF: _V6_HeapAlloc+13
+.data:0040FA90                         ; __calloc_impl+72
+.data:0040FA94 dword_40FA94    dd ?    ; DATA XREF: ___sbh_free_block+2FE

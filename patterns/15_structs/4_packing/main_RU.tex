@@ -1,0 +1,31 @@
+\subsection{\StructurePackingSectionName}
+\label{structure_packing}
+
+Достаточно немаловажный момент, это упаковка полей в структурах\footnote{См. также: \URLWPDA}.
+
+Возьмем простой пример:
+
+\lstinputlisting[style=customc]{patterns/15_structs/4_packing/packing.c}
+
+Как видно, мы имеем два поля \Tchar (занимающий один байт) и еще два ~--- \Tint (по 4 байта).
+
+% subsections:
+\input{patterns/15_structs/4_packing/x86_RU}
+\input{patterns/15_structs/4_packing/ARM_RU}
+\input{patterns/15_structs/4_packing/MIPS_RU}
+
+\subsubsection{Еще кое-что}
+
+Передача структуры как аргумент функции (вместо передачи указателя на структуру) это то же
+что и передача всех полей структуры по одному.
+
+Если поля в структуре пакуются по умолчанию, то функцию f() можно переписать так:
+
+\begin{lstlisting}[style=customc]
+void f(char a, int b, char c, int d)
+{
+    printf ("a=%d; b=%d; c=%d; d=%d\n", a, b, c, d);
+};
+\end{lstlisting}
+
+И в итоге будет такой же код.

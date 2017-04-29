@@ -1,0 +1,92 @@
+\section{Strings}
+\label{sec:digging_strings}
+
+\input{digging_into_code/strings/main_DE}
+
+\subsection{Strings in Bin\"ar finden}
+
+\myindex{UNIX!strings}
+Das Standard UNIX \IT{strings} Utility ist ein quick-n-dirty Weg um alle Strings in der 
+Datei an zu schauen. Zum Beispiel, in der OpenSSH 7.2 sshd executable Datei gibt es einige Strings:
+
+\lstinputlisting{digging_into_code/sshd_strings.txt}
+
+Dort kann man Optionen, Fehler Meldungen, Datei Pfade, importierte dynamische Module, Funktionen und einige andere komische 
+Strings (keys?) sehen. Es gibt auch nicht druckbare Zeichen---x86 Code enth\"alt chunks von druckbaren ASCII Zeichen, bis zu ca 8 Zeichen. % <-- bessere formulierung?
+
+Sicher, OpenSSH ist ein open-source Programm.
+Aber sich die lesbaren Strings eines unbekannten Programms an zuschauen ist meist der erste Schritt bei 
+der Analyse. 
+\myindex{UNIX!grep}
+
+\IT{grep} kann genauso benutzt werden.
+
+\myindex{Hiew}
+\myindex{Sysinternals}
+Hiew hat die gleichen F\"ahigkeiten (Alt-F6), genau wie der Sysinternals ProcessMonitor.
+
+\subsection{Error/debug Narchichten}
+
+Debugging Messages sind auch sehr n\"utzlich, wenn vorhanden.
+Auf gewisse weise, melden die debug Narichten was gerade
+im Programm vorgeht. Oft schreiben diese \printf-\"ahnlichen Funktionen, in
+log-Dateien oder sie schreiben nirgends hin aber die calls zu den printf-\"ahnlichen Funktionen sind noch vorhanden, 
+weil der build kein Debug build aber ein \IT{release} ist. % <-- nochmal \"uber formulierung nachdenken
+\myindex{\oracle}
+
+Wenn lokale oder globale Variablen in Debug messages geschrieben werden, kann das auch 
+hilfreich sein da man so an die Variablen Namen kommt.
+Zum Beispiel, eine solche Funktion in \oracle ist \TT{ksdwrt()}.
+
+Textstrings mit Aussage sind auch Hilfreich.
+Der \IDA disassembler zeigt welche Funktion und von welchem Punkt aus ein spezifischer String benutzt wird.
+Manchmal passieren lustige Dinge dabei\footnote{\href{http://go.yurichev.com/17223}{blog.yurichev.com}}.
+
+Fehlermeldungen helfen uns genauso.
+In \oracle, werden Fehler von einer Gruppe von Funktionen gemeldet.
+\"Uber das Thema kann man mehr hier erfahren: \href{http://go.yurichev.com/17224}{blog.yurichev.com}.
+
+\myindex{Error messages}
+
+Es ist M\"oglich heraus zu finden welche Funktionen Fehler melden und unter welchen Bedingungen.
+
+
+\"Ubrigens, das ist f\"ur Kopierschutztsysteme oft der Grund kryptische Fehlermeldungen oder einfach nur 
+Fehlernummer aus zu geben. Niemand ist gl\"ucklich dar\"uber wenn der Softwarecracker den Kopierschutz besser
+versteht nur weil dieser durch eine Fehlermeldung ausgel\"ost wurde.
+
+Ein Beispiel von verschl\"usselten Fehlermeldungen gibt es hier: \myref{examples_SCO}.
+
+\subsection{Verd\"achtige magic strings}
+
+Manche Magic Strings die in Hintert\"uren benutzt werden sehen schon ziemlich verd\"achtig aus.
+
+Zum Beispiel, es gab eine Hintert\"ur im TP-Link WR740 Home Router\footnote{\url{http://sekurak.pl/tp-link-httptftp-backdoor/}}.
+Die Hintert\"ur konnte aktiviert werden wenn man folgende URL aufrief:
+\url{http://192.168.0.1/userRpmNatDebugRpm26525557/start_art.html}.\\
+
+Tats\"achlich, kann man den Magic String \q{userRpmNatDebugRpm26525557} in der Firmware finden.
+
+Der String war nicht googlebar bis die Information \"offentlich \"uber die Hintert\"ur \"offentlich verbreitet wurde.
+
+
+Man w\"urde solche Informationen nat\"urlich auch nicht in irgendeinem \ac{RFC} finden.
+
+
+Man w\"urde auch keinen Algorithmus finden der solch seltsame Byte Sequenzen benutzt.
+
+
+Und es sieht auch nicht nach einer Fehler- order Debugnaricht aus.
+
+
+Also es ist immer eine gute Idee so seltsamen Dinge genauer zu betrachten.
+
+\myindex{base64}
+
+Manchmal, sind solche Strings auch mit base64 codiert.
+
+Es ist also immer eine gute Idee diese Stings zu Decodieren und sie visuell zu durchsuchen, ein Blick
+kann schon gen\"ugen.
+
+\myindex{Security through obscurity}
+Pr\"aziser gesagt, diese Methode Hintert\"uren zu verstecken nennt man \q{security through obscurity}.

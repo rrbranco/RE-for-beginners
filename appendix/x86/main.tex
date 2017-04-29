@@ -1,12 +1,12 @@
-\chapter{x86}
+\section{x86}
 
-\section{\RU{Терминология}\EN{Terminology}}
+\subsection{\RU{Терминология}\EN{Terminology}}
 
-\RU{Общее для 16-bit (8086/80286), 32-bit (80386, \etc{}.), 64-bit.}
-\EN{Common for 16-bit (8086/80286), 32-bit (80386, \etc{}), 64-bit.}
+\RU{Общее для 16-bit (8086/80286), 32-bit (80386, итд), 64-bit.}
+\EN{Common for 16-bit (8086/80286), 32-bit (80386, etc.), 64-bit.}
 
-\index{IEEE 754}
-\index{MS-DOS}
+\myindex{IEEE 754}
+\myindex{MS-DOS}
 \begin{description}
 	\item[byte] 8-\bitENRU. 
 		\RU{Для определения переменных и массива байт используется директива ассемблера DB}
@@ -15,8 +15,9 @@
 		\EN{Bytes are passed in the 8-bit part of registers}: \TT{AL/BL/CL/DL/AH/BH/CH/DH/SIL/DIL/R*L}.
 	\item[word] 16-\bitENRU. \RU{\dittoclosing директива ассемблера DW}
 		\EN{DW assembly directive \dittoclosing}.
-		\RU{Слова передаются в 16-битных частях регистров}\EN{Words are passed in the 16-bit part
-		of the registers}: \TT{AX/BX/CX/DX/SI/DI/R*W}.
+		\RU{Слова передаются в 16-битных частях регистров}%
+		\EN{Words are passed in the 16-bit part of the registers}:\\
+			\TT{AX/BX/CX/DX/SI/DI/R*W}.
 	\item[double word] (\q{dword}) 32-\bitENRU. \RU{\dittoclosing директива ассемблера DD}
 		\EN{DD assembly directive \dittoclosing}.
 		\RU{Двойные слова передаются в регистрах}
@@ -28,15 +29,17 @@
 		\EN{DQ assembly directive \dittoclosing}.
 		\RU{В 32-битной среде, учетверенные слова передаются в парах 32-битных регистров}
 		\EN{In 32-bit environment, quad words are passed in 32-bit register pairs}.
-	\item[tbyte] (10 \RU{байт}\EN{bytes}) 80-\bitENRU \OrENRU 10 \RU{байт}\EN{bytes} 
-		(\RU{используется для регистров}\EN{used for} IEEE 754 FPU\EN{ registers}).
+	\EN{\item[tbyte] (10 bytes) 80-bit or 10 bytes (used for IEEE 754 FPU registers).}%
+	\RU{\item[tbyte] (10 байт) 80-бит или 10 байт (используется для регистров IEEE 754 FPU).}
 	\item[paragraph] (16 \RU{байт}\EN{bytes})\EMDASH{}\RU{термин был популярен в среде MS-DOS}
 	\EN{term was popular in MS-DOS environment}.
 \end{description}
 
-\index{Windows!API}
+\myindex{Windows!API}
 \RU{Типы данных с той же шириной (BYTE, WORD, DWORD) точно такие же и в}
 \EN{Data types of the same width (BYTE, WORD, DWORD) are also the same in} Windows \ac{API}.
 
 \input{appendix/x86/registers} % subsection
 \input{appendix/x86/instructions} % subsection
+\input{appendix/x86/npad} % subsection
+

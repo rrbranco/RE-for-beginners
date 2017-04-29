@@ -1,0 +1,13 @@
+\subsubsection{ARM}
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+Das gleiche Beispiel:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/15_structs/3_tm_linux/ARM/tm_ARM_keil_thumb.asm}
+
+\myparagraph{\OptimizingXcodeIV (\ThumbTwoMode)}
+\IDA erkennt das \TT{tm} struct, da \IDA die Typen der Argumente von Funktionen aus Bibliotheken wie \TT{localtime\_r()}
+kennt, sodass \IDA hier die Zugriffe auf die Elemente des structs und deren Namen anzeigt.
+
+\lstinputlisting[caption=\OptimizingXcodeIV (\ThumbTwoMode),style=customasmARM]{patterns/15_structs/3_tm_linux/ARM/tm_ARM_xcode_thumb.asm}

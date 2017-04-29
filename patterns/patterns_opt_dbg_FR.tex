@@ -1,0 +1,44 @@
+\section{La méthode}
+
+Lorsque l'auteur de ce livre a commencé à apprendre le C, et plus tard, le \Cpp, il a pris l'habitude d'écrire des petits morceaux de
+code, de les compiler et de regarder le langage d'assemblage généré.
+Cela lui a permis de comprendre facilement ce qui se passe dans le code qu'il écrit.
+\footnote{En fait, il fait encore cela lorsqu'il ne comprend ce qu'un morceau de code fait.}
+Il l'a fait si souvent que la relation entre le code \Cpp et ce que le compilateur produit a été imprimée profondémment dans son
+ esprit.
+Ca lui est facile d'imaginer immédiatement l'allure de la fonction et du code C.
+Peut-être que cette méthode pourrait être utile à d'autres.
+
+%Il y a beaucoup d'exemples pour x86/x64 et ARM.
+%Ceux qui sont déjà familier avec l'une de ces architectures peuvent rapidement survoler ces pages.
+
+Parfois, des anciens compilateurs sont utilisés, afin d'obtenir des extraits de code le plus court (ou le plus simple) possible.
+\ac{TBT}.
+\section*{\Exercises}
+
+Lorsque l'auteur de ce livre étudiant le langage d'assemblage, il a souvent compilé des petites fonctions en C et les a ensuite
+récrites peu à peu en assembleur, en essayant d'obtenir un code aussi conçis que possible.
+Cela n'en vaut probablement plus la peine aujourd'hui, car il est difficile
+de se mesurer aux derniers compilateurs en terme d'efficacité. Cela reste par contre un excellent moyen d'approfondir ses connaissances
+de l'assembleur.
+N'hésitez pas à prendre n'importe quel code assembleur de ce livre et à essayer de le rendre plus court.
+Toutefois, n'oublier pas de tester ce que vous aurez écrit.
+
+\section*{Niveau d'optimisation et information de débogage}
+
+Le code source peut être compilé par différents compilateurs, avec des niveaux d'optimisation variés.
+Un compilateur en a typiquement trois, où le niveau 0 désactive l'optimisation.
+L'optimisation peut se faire en ciblant la taille du code ou la vitesse d'exécution.
+Un compilateur sans optimisation est plus rapide et produit un code plus compréhensible (quoique verbeux),
+alors qu'un compilateur avec optimisation est plus lent et essaye de produire un code qui s'exécute plus
+vite (mais pas forcément plus compact).
+En plus des niveaux d'optimisation, un compilateur peut inclure dans le fichier généré des informations de
+débogage, qui produit un code facilitant le débogage.
+Une des caractéristiques importante du code de 'debug', est qu'il peut contenir des liens entre chaque ligne du code source et
+les adresses du code machine associé.
+D'un autre côté, l'optimisation des compilateurs tend à générer du code où des lignes du code source sont modifiées, et
+même parfois absentes du code machine résultants.
+Les rétro-ingénieurs peuvent rencontrer n'importe quelle version, simplement parce que certains développeurs mettent les options
+d'optimisation, et d'autres pas.
+Pour cette raison, et lorsque c'est possible, nous allons essayer de travailler sur des exemples avec les versions de débogage
+et finale du code présenté dans ce livre.

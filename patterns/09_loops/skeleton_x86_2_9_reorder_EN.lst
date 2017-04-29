@@ -1,0 +1,8 @@
+﻿    MOV REG, 2 ; initialization
+body:
+    ; loop body
+    ; do something here
+    ; use counter in REG, but do not modify it!
+    INC REG ; increment
+    CMP REG, 10
+    JL body

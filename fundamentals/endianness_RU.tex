@@ -1,0 +1,113 @@
+\section{Endianness (порядок байт)}
+\label{sec:endianness}
+
+Endianness (порядок байт) это способ представления чисел в памяти.
+
+\subsection{Big-endian (от старшего к младшему)}
+
+Число \TT{0x12345678} представляется в памяти так:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor адрес в памяти & \HeaderColor значение байта \\
+\hline
++0 & 0x12 \\
+\hline
++1 & 0x34 \\
+\hline
++2 & 0x56 \\
+\hline
++3 & 0x78 \\
+\hline
+\end{tabular}
+\end{center}
+
+CPU с таким порядком включают в себя Motorola 68k, IBM POWER.
+
+\subsection{Little-endian (от младшего к старшему)}
+
+Число \TT{0x12345678} представляется в памяти так:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor адрес в памяти & \HeaderColor значение байта \\
+\hline
++0 & 0x78 \\
+\hline
++1 & 0x56 \\
+\hline
++2 & 0x34 \\
+\hline
++3 & 0x12 \\
+\hline
+\end{tabular}
+\end{center}
+
+CPU с таким порядком байт включают в себя Intel x86.
+
+\subsection{\Example}
+
+Возьмем big-endian Linux для MIPS заинсталированный в QEMU
+\footnote{Доступен для скачивания здесь: \url{http://go.yurichev.com/17008}}.
+
+И скомпилируем этот простой пример:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+	int v, i;
+
+	v=123;
+
+	printf ("%02X %02X %02X %02X\n", 
+		*(char*)&v,
+		*(((char*)&v)+1),
+		*(((char*)&v)+2),
+		*(((char*)&v)+3));
+};
+\end{lstlisting}
+
+И запустим его:
+
+\begin{lstlisting}
+root@debian-mips:~# ./a.out 
+00 00 00 7B
+\end{lstlisting}
+
+Это оно и есть.
+0x7B это 123 в десятичном виде.
+В little-endian-архитектуре, 7B это первый байт (вы можете это проверить в x86 или x86-64),
+но здесь он последний, потому что старший байт идет первым.
+
+Вот почему имеются разные дистрибутивы Linux для MIPS
+(\q{mips} (big-endian) и \q{mipsel} (little-endian)).
+Программа скомпилированная для одного соглашения об endiannes, не сможет работать в OS использующей
+другое соглашение.
+
+Еще один пример связанный с big-endian в MIPS в этой книге: \myref{MIPS_structure_big_endian}.
+
+\subsection{Bi-endian (переключаемый порядок)}
+
+CPU поддерживающие оба порядка, и его можно переключать, включают в себя ARM, PowerPC, SPARC, MIPS, \ac{IA64}, итд.
+
+\subsection{Конвертирование}
+
+\myindex{x86!\Instructions!BSWAP}
+Инструкция \TT{BSWAP} может использоваться для конвертирования.
+
+\myindex{TCP/IP}
+Сетевые пакеты TCP/IP используют соглашение big-endian, вот почему программа, работающая на little-endian архитектуре
+должна конвертировать значения.
+
+Обычно, используются функции \TT{htonl()} и \TT{htons()}.
+
+Порядок байт big-endian в среде TCP/IP также называется, \q{network byte order},
+а порядок байт на компьютере \q{host byte order}.
+На архитектуре Intel x86, и других little-endian архитектурах, \q{host byte order} это little-endian, 
+а вот на IBM POWER это может быть big-endian, так что на последней, 
+\TT{htonl()} и \TT{htons()} не меняют порядок байт.
+

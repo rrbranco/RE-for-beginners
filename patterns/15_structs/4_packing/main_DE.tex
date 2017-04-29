@@ -1,0 +1,28 @@
+\subsection{\StructurePackingSectionName}
+\label{structure_packing}
+Ein wichtiges Thema ist das Packen von Feldern in structsfootnote{Siehe auch: \URLWPDA}.
+
+Betrachten wir ein einfaches Beispiel:
+
+\lstinputlisting[style=customc]{patterns/15_structs/4_packing/packing.c}
+Wie wir sehen haben wir zwei \Tchar Felder (jedes ist exakt ein Byte groß) und zwei weitere vom Typ \Tint (zu je 4
+Byte).
+
+% subsections:
+\input{patterns/15_structs/4_packing/x86_DE}
+\input{patterns/15_structs/4_packing/ARM_DE}
+\input{patterns/15_structs/4_packing/MIPS_DE}
+
+\subsubsection{Eine Sache noch}
+Ein struct als Funktionsargument zu übergeben (anstelle eines Pointers auf ein struct) ist das gleiche wie alle Felder
+des structs einzeln zu übergeben.
+
+Wenn die Felder im struct standardmäßig gepackt werden, kann die Funktion f() wie folgt neu geschrieben werden:
+
+\begin{lstlisting}[style=customc]
+void f(char a, int b, char c, int d)
+{
+    printf ("a=%d; b=%d; c=%d; d=%d\n", a, b, c, d);
+};
+\end{lstlisting}
+Das führt schlussendlich zum gleichen Code.

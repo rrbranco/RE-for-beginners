@@ -1,0 +1,87 @@
+\section{Больше об указателях}
+\myindex{\CLanguageElements!\Pointers}
+\label{label_pointers}
+
+\epigraph{The way C handles pointers, for example, was a brilliant innovation;
+it solved a lot of problems that we had before in data structuring and
+made the programs look good afterwards.}{Дональд Кнут, интервью (1993)}
+
+Для тех, кому все еще трудно понимать указатели в \CCpp{}, вот еще примеры.
+Некоторые из них крайне странные и служат только демонстрационным целям:
+использовать подобное в production-коде можно только если вы действительно понимаете, что вы делаете.
+
+\input{advanced/450_more_ptrs/1_RU}
+\input{advanced/450_more_ptrs/2_RU}
+\input{advanced/450_more_ptrs/3_RU}
+\input{advanced/450_more_ptrs/4_RU}
+\input{advanced/450_more_ptrs/5_RU}
+\input{advanced/450_more_ptrs/6_RU}
+
+\subsection{Указатель как идентификатор объекта}
+
+В ассемблере и Си нет возможностей \ac{OOP}, но там вполне можно писать код в стиле \ac{OOP}
+(просто относитесь к структуре, как к объекту).
+
+Интересно что, иногда, указатель на объект (или его адрес) называется идентификатором (в смысле сокрытия данных/инкапсуляции).
+
+\myindex{win32!LoadLibrary()}
+\myindex{win32!GetProcAddress()}
+Например, LoadLibrary(), судя по \ac{MSDN}, возвращает ``handle'' модуля
+\footnote{\url{https://msdn.microsoft.com/ru-ru/library/windows/desktop/ms684175(v=vs.85).aspx}}.
+Затем вы передаете этот ``handle'' в другую ф-цию вроде GetProcAddress().
+Но на самом деле, LoadLibrary() возвращает указатель на DLL-файл загруженный (\IT{mapped}) в памяти
+\footnote{\url{https://blogs.msdn.microsoft.com/oldnewthing/20041025-00/?p=37483}}.
+Вы можете прочитать два байта по адресу возвращенному LoadLibrary(), и это будет ``MZ'' (первые два байта любого файла
+типа .EXE/.DLL в Windows).
+
+\myindex{win32!HMODULE}
+\myindex{win32!HINSTANCE}
+Очевидно, Microsoft ``скрывает'' этот факт для обеспечения лучшей совместимости в будущем.
+Также, типы данных HMODULE и HINSTANCE имели другой смысл в 16-битной Windows.
+
+Возможно, это причина, почему \printf имеет модификатор ``\%p'', который используется для вывода указателей (32-битные
+целочисленные на 32-битных архитектурах, 64-битные на 64-битных, итд) в шестнадцатеричной форме.
+Адрес структуры сохраненный в отладочном протоколе может помочь в поисках такого же в том же протоколе.
+
+\myindex{SQLite}
+Вот например из исходного кода SQLite:
+
+\begin{lstlisting}
+
+...
+
+struct Pager {
+  sqlite3_vfs *pVfs;          /* OS functions to use for IO */
+  u8 exclusiveMode;           /* Boolean. True if locking_mode==EXCLUSIVE */
+  u8 journalMode;             /* One of the PAGER_JOURNALMODE_* values */
+  u8 useJournal;              /* Use a rollback journal on this file */
+  u8 noSync;                  /* Do not sync the journal if true */
+
+....
+
+static int pagerLockDb(Pager *pPager, int eLock){
+  int rc = SQLITE_OK;
+
+  assert( eLock==SHARED_LOCK || eLock==RESERVED_LOCK || eLock==EXCLUSIVE_LOCK );
+  if( pPager->eLock<eLock || pPager->eLock==UNKNOWN_LOCK ){
+    rc = sqlite3OsLock(pPager->fd, eLock);
+    if( rc==SQLITE_OK && (pPager->eLock!=UNKNOWN_LOCK||eLock==EXCLUSIVE_LOCK) ){
+      pPager->eLock = (u8)eLock;
+      IOTRACE(("LOCK %p %d\n", pPager, eLock))
+    }
+  }
+  return rc;
+}
+
+...
+
+  PAGER_INCR(sqlite3_pager_readdb_count);
+  PAGER_INCR(pPager->nRead);
+  IOTRACE(("PGIN %p %d\n", pPager, pgno));
+  PAGERTRACE(("FETCH %d page %d hash(%08x)\n",
+               PAGERID(pPager), pgno, pager_pagehash(pPg)));
+
+...
+
+\end{lstlisting}
+

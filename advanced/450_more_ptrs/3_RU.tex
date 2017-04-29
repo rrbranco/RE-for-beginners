@@ -1,0 +1,331 @@
+\subsection{Издевательство над указателями в ядре Windows}
+
+Секция ресурсов в исполняемых файлах типа PE в Windows это секция, содержащая картинки, иконки, строки, итд.
+Ранние версии Windows позволяли иметь к ним доступ только при помощи идентификаторов, но потом в Microsoft добавили
+также и способ адресовать ресурсы при помощи строк.
+
+Так что потом стало возможным передать идентификатор или строку в ф-цию
+\href{https://msdn.microsoft.com/en-us/library/windows/desktop/ms648042%28v=vs.85%29.aspx}{FindResource()}.
+Которая декларирована вот так:
+
+\myindex{win32!FindResource()}
+
+\begin{lstlisting}[style=customc]
+HRSRC WINAPI FindResource(
+  _In_opt_ HMODULE hModule,
+  _In_     LPCTSTR lpName,
+  _In_     LPCTSTR lpType
+);
+\end{lstlisting}
+
+\IT{lpName} и \IT{lpType} имеют тип \IT{char*} или \IT{wchar*}, и когда кто-то всё еще хочет передать идентификатор,
+нужно использовать макрос
+\href{https://msdn.microsoft.com/en-us/library/windows/desktop/ms648029%28v=vs.85%29.aspx}{MAKEINTRESOURCE}, вот так:
+
+\myindex{win32!MAKEINTRESOURCE()}
+
+\begin{lstlisting}[style=customc]
+result = FindResource(..., MAKEINTRESOURCE(1234), ...);
+\end{lstlisting}
+
+Очень интересно то, что всё что делает MAKEINTRESOURCE это приводит целочисленное к указателю.
+В MSVC 2013, в файле\\
+\IT{Microsoft SDKs\textbackslash{}Windows\textbackslash{}v7.1A\textbackslash{}Include\textbackslash{}Ks.h},
+мы можем найти это:
+
+\begin{lstlisting}[style=customc]
+...
+
+#if (!defined( MAKEINTRESOURCE )) 
+#define MAKEINTRESOURCE( res ) ((ULONG_PTR) (USHORT) res)
+#endif
+
+...
+\end{lstlisting}
+
+Звучит безумно. Заглянем внутрь древнего, когда-то утекшего, исходного кода Windows NT4.
+В \IT{private/windows/base/client/module.c} мы можем найти исходный код \IT{FindResource()}:
+
+\begin{lstlisting}[style=customc]
+HRSRC
+FindResourceA(
+    HMODULE hModule,
+    LPCSTR lpName,
+    LPCSTR lpType
+    )
+
+...
+
+{
+    NTSTATUS Status;
+    ULONG IdPath[ 3 ];
+    PVOID p;
+
+    IdPath[ 0 ] = 0;
+    IdPath[ 1 ] = 0;
+    try {
+        if ((IdPath[ 0 ] = BaseDllMapResourceIdA( lpType )) == -1) {
+            Status = STATUS_INVALID_PARAMETER;
+            }
+        else
+        if ((IdPath[ 1 ] = BaseDllMapResourceIdA( lpName )) == -1) {
+            Status = STATUS_INVALID_PARAMETER;
+...
+\end{lstlisting}
+
+Посмотрим в \IT{BaseDllMapResourceIdA()} в том же исходном файле:
+
+\begin{lstlisting}[style=customc]
+ULONG
+BaseDllMapResourceIdA(
+    LPCSTR lpId
+    )
+{
+    NTSTATUS Status;
+    ULONG Id;
+    UNICODE_STRING UnicodeString;
+    ANSI_STRING AnsiString;
+    PWSTR s;
+
+    try {
+        if ((ULONG)lpId & LDR_RESOURCE_ID_NAME_MASK) {
+            if (*lpId == '#') {
+                Status = RtlCharToInteger( lpId+1, 10, &Id );
+                if (!NT_SUCCESS( Status ) || Id & LDR_RESOURCE_ID_NAME_MASK) {
+                    if (NT_SUCCESS( Status )) {
+                        Status = STATUS_INVALID_PARAMETER;
+                        }
+                    BaseSetLastNTError( Status );
+                    Id = (ULONG)-1;
+                    }
+                }
+            else {
+                RtlInitAnsiString( &AnsiString, lpId );
+                Status = RtlAnsiStringToUnicodeString( &UnicodeString,
+                                                       &AnsiString,
+                                                       TRUE
+                                                     );
+                if (!NT_SUCCESS( Status )){
+                    BaseSetLastNTError( Status );
+                    Id = (ULONG)-1;
+                    }
+                else {
+                    s = UnicodeString.Buffer;
+                    while (*s != UNICODE_NULL) {
+                        *s = RtlUpcaseUnicodeChar( *s );
+                        s++;
+                        }
+
+                    Id = (ULONG)UnicodeString.Buffer;
+                    }
+                }
+            }
+        else {
+            Id = (ULONG)lpId;
+            }
+        }
+    except (EXCEPTION_EXECUTE_HANDLER) {
+        BaseSetLastNTError( GetExceptionCode() );
+        Id =  (ULONG)-1;
+        }
+    return Id;
+}
+\end{lstlisting}
+
+К \IT{lpId} применяется операция ``И'' с \IT{LDR\_RESOURCE\_ID\_NAME\_MASK}. Маску можно найти в \IT{public/sdk/inc/ntldr.h}:
+
+\begin{lstlisting}[style=customc]
+...
+
+#define LDR_RESOURCE_ID_NAME_MASK 0xFFFF0000
+
+...
+\end{lstlisting}
+
+Так что к \IT{lpId} применяется операция ``И'' c \IT{0xFFFF0000}, и если присутствуют какие-либо биты за младшими 16 битами,
+исполняется первая часто ф-ции и (\IT{lpId} принимается за адрес строки).
+Иначе --- вторая часть ф-ции (\IT{lpId} принимается за 16-битное значение).
+
+Этот же код можно найти и в Windows 7, в файле kernel32.dll:
+
+\begin{lstlisting}[style=customasmx86]
+....
+
+.text:0000000078D24510 ; __int64 __fastcall BaseDllMapResourceIdA(PCSZ SourceString)
+.text:0000000078D24510 BaseDllMapResourceIdA proc near         ; CODE XREF: FindResourceExA+34
+.text:0000000078D24510                                         ; FindResourceExA+4B
+.text:0000000078D24510
+.text:0000000078D24510 var_38          = qword ptr -38h
+.text:0000000078D24510 var_30          = qword ptr -30h
+.text:0000000078D24510 var_28          = _UNICODE_STRING ptr -28h
+.text:0000000078D24510 DestinationString= _STRING ptr -18h
+.text:0000000078D24510 arg_8           = dword ptr  10h
+.text:0000000078D24510
+.text:0000000078D24510 ; FUNCTION CHUNK AT .text:0000000078D42FB4 SIZE 000000D5 BYTES
+.text:0000000078D24510
+.text:0000000078D24510                 push    rbx
+.text:0000000078D24512                 sub     rsp, 50h
+.text:0000000078D24516                 cmp     rcx, 10000h
+.text:0000000078D2451D                 jnb     loc_78D42FB4
+.text:0000000078D24523                 mov     [rsp+58h+var_38], rcx
+.text:0000000078D24528                 jmp     short $+2
+.text:0000000078D2452A ; ---------------------------------------------------------------------------
+.text:0000000078D2452A
+.text:0000000078D2452A loc_78D2452A:                           ; CODE XREF: BaseDllMapResourceIdA+18
+.text:0000000078D2452A                                         ; BaseDllMapResourceIdA+1EAD0
+.text:0000000078D2452A                 jmp     short $+2
+.text:0000000078D2452C ; ---------------------------------------------------------------------------
+.text:0000000078D2452C
+.text:0000000078D2452C loc_78D2452C:                           ; CODE XREF: BaseDllMapResourceIdA:loc_78D2452A
+.text:0000000078D2452C                                         ; BaseDllMapResourceIdA+1EB74
+.text:0000000078D2452C                 mov     rax, rcx
+.text:0000000078D2452F                 add     rsp, 50h
+.text:0000000078D24533                 pop     rbx
+.text:0000000078D24534                 retn
+.text:0000000078D24534 ; ---------------------------------------------------------------------------
+.text:0000000078D24535                 align 20h
+.text:0000000078D24535 BaseDllMapResourceIdA endp
+
+....
+
+.text:0000000078D42FB4 loc_78D42FB4:                           ; CODE XREF: BaseDllMapResourceIdA+D
+.text:0000000078D42FB4                 cmp     byte ptr [rcx], '#'
+.text:0000000078D42FB7                 jnz     short loc_78D43005
+.text:0000000078D42FB9                 inc     rcx
+.text:0000000078D42FBC                 lea     r8, [rsp+58h+arg_8]
+.text:0000000078D42FC1                 mov     edx, 0Ah
+.text:0000000078D42FC6                 call    cs:__imp_RtlCharToInteger
+.text:0000000078D42FCC                 mov     ecx, [rsp+58h+arg_8]
+.text:0000000078D42FD0                 mov     [rsp+58h+var_38], rcx
+.text:0000000078D42FD5                 test    eax, eax
+.text:0000000078D42FD7                 js      short loc_78D42FE6
+.text:0000000078D42FD9                 test    rcx, 0FFFFFFFFFFFF0000h
+.text:0000000078D42FE0                 jz      loc_78D2452A
+
+....
+
+\end{lstlisting}
+
+Если значение больше чем 0x10000, происходит переход в то место, где обрабатывается строка.
+Иначе, входное значение \IT{lpId} возвращается как есть.
+Маска \IT{0xFFFF0000} здесь больше не используется, т.к., это все же 64-битный код, но всё-таки,
+маска \IT{0xFFFFFFFFFFFF0000} могла бы здесь использоваться.
+
+Внимательный читатель может спросить, что если адрес входной строки будет ниже 0x10000?
+Этот код полагается на тот факт, что в Windows нет ничего по адресам ниже 0x10000, по крайней мере, в Win32.
+
+Raymond Chen \href{https://blogs.msdn.microsoft.com/oldnewthing/20130925-00/?p=3123}{пишет} об этом:
+
+\begin{framed}
+\begin{quotation}
+How does MAKE­INT­RESOURCE work? It just stashes the integer in the bottom 16 bits of a pointer, leaving the upper bits zero. This relies on the convention that the first 64KB of address space is never mapped to valid memory, a convention that is enforced starting in Windows 7.
+\end{quotation}
+\end{framed}
+
+Коротко говоря, это грязный хак, и наверное не стоит его использовать, если только нет большой необходимости.
+Вероятно, аргумент ф-ции \IT{FindResource()} в прошлом имел тип \IT{SHORT}, а потом в Microsoft добавили возможность
+передавать здесь и строки, но старый код также нужно было поддерживать.
+
+Вот мой короткий очищенный пример:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+void f(char* a)
+{
+	if (((uint64_t)a)>0x10000)
+		printf ("Pointer to string has been passed: %s\n", a);
+	else
+		printf ("16-bit value has been passed: %d\n", (uint64_t)a);
+};
+
+int main()
+{
+	f("Hello!"); // pass string
+	f((char*)1234); // pass 16-bit value
+};
+\end{lstlisting}
+
+Работает!
+
+\subsubsection{Издевательство над указателями в ядре Linux}
+
+Как было упомянуто среди \href{https://news.ycombinator.com/item?id=11823647}{комментариев на Hacker News},
+в ядре Linux также есть что-то подобное.
+
+Например, эта ф-ция может возвращать и код ошибки и указатель:
+
+\begin{lstlisting}[style=customc]
+struct kernfs_node *kernfs_create_link(struct kernfs_node *parent,
+				       const char *name,
+				       struct kernfs_node *target)
+{
+	struct kernfs_node *kn;
+	int error;
+
+	kn = kernfs_new_node(parent, name, S_IFLNK|S_IRWXUGO, KERNFS_LINK);
+	if (!kn)
+		return ERR_PTR(-ENOMEM);
+
+	if (kernfs_ns_enabled(parent))
+		kn->ns = target->ns;
+	kn->symlink.target_kn = target;
+	kernfs_get(target);	/* ref owned by symlink */
+
+	error = kernfs_add_one(kn);
+	if (!error)
+		return kn;
+
+	kernfs_put(kn);
+	return ERR_PTR(error);
+}
+\end{lstlisting}
+
+( \url{https://github.com/torvalds/linux/blob/fceef393a538134f03b778c5d2519e670269342f/fs/kernfs/symlink.c#L25} )
+
+\IT{ERR\_PTR} это макрос, приводящий целочисленное к указателю:
+
+\begin{lstlisting}[style=customc]
+static inline void * __must_check ERR_PTR(long error)
+{
+	return (void *) error;
+}
+\end{lstlisting}
+
+( \url{https://github.com/torvalds/linux/blob/61d0b5a4b2777dcf5daef245e212b3c1fa8091ca/tools/virtio/linux/err.h} )
+
+Этот же заголовочный файл имеет также макрос, который можно использовать, чтобы отличить код ошибки от указателя:
+
+\begin{lstlisting}[style=customc]
+#define IS_ERR_VALUE(x) unlikely((x) >= (unsigned long)-MAX_ERRNO)
+\end{lstlisting}
+
+Это означает, коды ошибок это ``указатели'' очень близкие к -1, и, будем надеяться, в памяти ядра ничего не находится
+по адресам вроде 0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFE, 0xFFFFFFFFFFFFFFFD, итд.
+
+Намного более популярный способ это возвращать \IT{NULL} в случае ошибки и передавать код ошибки через дополнительный
+аргумент.
+Авторы ядры Linux так не делают, но все кто пользуется этими ф-циями, должны помнить, что возвращаемый указатель
+должен быть вначале проверен при помощи \IT{IS\_ERR\_VALUE} перед разыменовыванием.
+
+Например:
+
+\begin{lstlisting}[style=customc]
+	fman->cam_offset = fman_muram_alloc(fman->muram, fman->cam_size);
+	if (IS_ERR_VALUE(fman->cam_offset)) {
+		dev_err(fman->dev, "%s: MURAM alloc for DMA CAM failed\n",
+			__func__);
+		return -ENOMEM;
+	}
+\end{lstlisting}
+
+( \url{https://github.com/torvalds/linux/blob/aa00edc1287a693eadc7bc67a3d73555d969b35d/drivers/net/ethernet/freescale/fman/fman.c#L826} )
+
+\subsubsection{Издевательство над указателями в пользовательской среде UNIX}
+
+\myindex{UNIX!mmap()}
+Ф-ция mmap() возвращает -1 в случае ошибки (или \TT{MAP\_FAILED}, что равно -1).
+Некоторые люди говорят, что в некоторых случаях, mmap() может подключить память по нулевому адресу, так что использовать
+0 или NULL как код ошибки нельзя.
+

@@ -1,7 +1,7 @@
-\index{x86!\Instructions!INT}
-\index{MS-DOS}
+\myindex{x86!\Instructions!INT}
+\myindex{MS-DOS}
 
-\item[INT] (M): \TT{INT x} \RU{аналогична}\EN{is analogous to} \TT{PUSHF; CALL dword ptr [x*4]} 
+\item[INT] (M): \INS{INT x} \RU{аналогична}\EN{is analogous to} \INS{PUSHF; CALL dword ptr [x*4]} 
 \RU{в 16-битной среде}\EN{in 16-bit environment}.
   \RU{Она активно использовалась в MS-DOS, работая как сисколл. Аргументы записывались в регистры
   AX/BX/CX/DX/SI/DI и затем происходил переход на таблицу векторов прерываний (расположенную в самом
@@ -13,32 +13,32 @@
   сервисы MS-DOS не нужно было заморачиваться узнавая адреса всех функций этих сервисов}
   \EN{It was popular because INT has a short opcode (2 bytes) and the program which needs
   some MS-DOS services is not bother to determine the address of the service's entry point}.
-\index{x86!\Instructions!IRET}
+\myindex{x86!\Instructions!IRET}
   \RU{Обработчик прерываний возвращал управление назад при помощи инструкции IRET}
   \EN{The interrupt handler returns the control flow to caller using the IRET instruction}.
 
   \RU{Самое используемое прерывание в MS-DOS было 0x21, там была основная часть его \ac{API}}
   \EN{The most busy MS-DOS interrupt number was 0x21, serving a huge part of its \ac{API}}.
-  \RU{См. также}\EN{See also}: \cite{RalfBrown} 
+  \RU{См. также}\EN{See also}: [Ralf Brown \IT{Ralf Brown's Interrupt List}], 
   \RU{самый крупный список всех известных прерываний и вообще там много информации о MS-DOS}
   \EN{for the most comprehensive interrupt lists and other MS-DOS information}.
 
-\index{x86!\Instructions!SYSENTER}
-\index{x86!\Instructions!SYSCALL}
+\myindex{x86!\Instructions!SYSENTER}
+\myindex{x86!\Instructions!SYSCALL}
   \RU{Во времена после MS-DOS, эта инструкция все еще использовалась как сискол, и в Linux
   и в Windows (\myref{syscalls}), но позже была заменена инструкцией SYSENTER или SYSCALL}
   \EN{In the post-MS-DOS era, this instruction was still used as syscall both in Linux and 
   Windows (\myref{syscalls}), but was later replaced by the SYSENTER or SYSCALL instructions}.
 
 \item[INT 3] (M): \RU{эта инструкция стоит немного в стороне от}\EN{this instruction is somewhat close to} 
-\TT{INT}, \RU{она имеет собственный 1-байтный опкод}\EN{it has its own 1-byte opcode} (\TT{0xCC}), 
+\INS{INT}, \RU{она имеет собственный 1-байтный опкод}\EN{it has its own 1-byte opcode} (\GTT{0xCC}), 
 \RU{и активно используется в отладке}\EN{and is actively used while debugging}.
-\RU{Часто, отладчик просто записывает байт}\EN{Often, the debuggers just write the} \TT{0xCC} 
+\RU{Часто, отладчик просто записывает байт}\EN{Often, the debuggers just write the} \GTT{0xCC} 
 \RU{по адресу в памяти где устанавливается точка останова, и когда исключение поднимается, оригинальный байт
 будет восстановлен и оригинальная инструкция по этому адресу исполнена заново}\EN{byte at the address of 
 the breakpoint to be set, and when an exception is raised,
 the original byte is restored and the original instruction at this address is re-executed}. \\
-\RU{В}\EN{As of} \gls{Windows NT}, \RU{исключение}\EN{an} \TT{EXCEPTION\_BREAKPOINT} \RU{поднимается,
+\RU{В}\EN{As of} \gls{Windows NT}, \RU{исключение}\EN{an} \GTT{EXCEPTION\_BREAKPOINT} \RU{поднимается,
 когда \ac{CPU} исполняет эту инструкцию}\EN{exception is to be raised when the \ac{CPU} executes this instruction}.
 \RU{Это отладочное событие может быть перехвачено и обработано отладчиком, если он загружен}
 \EN{This debugging event may be intercepted and handled by a host debugger, if one is loaded}.
@@ -50,9 +50,9 @@ its debugger may be loaded and connected to the process}.
 проверяют целостность загруженного кода}\EN{a lot of anti-debugging methods check integrity of the loaded code}.
 
 \RU{В }\ac{MSVC} \RU{есть}\EN{has} \gls{compiler intrinsic} \RU{для этой инструкции}\EN{for the instruction}:
-\TT{\_\_debugbreak()}\footnote{\href{http://go.yurichev.com/17226}{MSDN}}.
+\GTT{\_\_debugbreak()}\footnote{\href{http://go.yurichev.com/17226}{MSDN}}.
 
 \RU{В win32 также имеется функция в}\EN{There is also a win32 function in} kernel32.dll \RU{с названием}\EN{named}
-\TT{DebugBreak()}\footnote{\href{http://go.yurichev.com/17227}{MSDN}},
-\RU{которая также исполняет}\EN{which also executes} \TT{INT 3}.
+\GTT{DebugBreak()}\footnote{\href{http://go.yurichev.com/17227}{MSDN}},
+\RU{которая также исполняет}\EN{which also executes} \GTT{INT 3}.
 

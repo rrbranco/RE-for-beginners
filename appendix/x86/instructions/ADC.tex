@@ -1,5 +1,5 @@
-\index{x86!\Instructions!ADC}
-\index{x86!\Flags!CF}
+\myindex{x86!\Instructions!ADC}
+\myindex{x86!\Flags!CF}
   \item[ADC] (\IT{add with carry}) \RU{сложить два значения, \glslink{increment}{инкремент} 
   если выставлен флаг CF.
   ADC часто используется для складывания больших значений, например, складывания двух 64-битных
@@ -8,6 +8,7 @@
   ADC is often used for the addition of large values, for example, 
   to add two 64-bit values in a 32-bit environment using two ADD and ADC instructions. For example:}
 
-\lstinputlisting{appendix/x86/instructions/ADC_example.lst.\LANG}
+\EN{\lstinputlisting[style=customasmx86]{appendix/x86/instructions/ADC_example_EN.lst}}
+\RU{\lstinputlisting[style=customasmx86]{appendix/x86/instructions/ADC_example_RU.lst}}
 
 \RU{Еще один пример}\EN{One more example}: \myref{sec:64bit_in_32_env}.

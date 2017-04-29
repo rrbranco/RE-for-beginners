@@ -1,0 +1,23 @@
+f_signed:
+; W0=a, W1=b
+	cmp	w0, w1
+	bgt	.L19	; Branch if Greater Than
+	          ; §branchement is supérieur (a>b)§
+	beq	.L20	; Branch if Equal
+            ; §branchement si égal (a==b)§
+	bge	.L15	; Branch if Greater than or Equal
+            ; §branchement si supérieur ou égal (a>=b) (impossible ici)§
+	; a<b
+	adrp	x0, .LC11	; "a<b"
+	add	x0, x0, :lo12:.LC11
+	b	puts
+.L19:
+	adrp	x0, .LC9	; "a>b"
+	add	x0, x0, :lo12:.LC9
+	b	puts
+.L15:	; impossible d'arriver ici
+	ret
+.L20:
+	adrp	x0, .LC10	; "a==b"
+	add	x0, x0, :lo12:.LC10
+	b	puts

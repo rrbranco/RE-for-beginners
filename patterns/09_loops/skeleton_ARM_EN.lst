@@ -1,0 +1,10 @@
+﻿    MOV R4, 2 ; initialization
+    B check
+body:
+    ; loop body
+    ; do something here
+    ; use counter in R4, but do not modify it!
+    ADD R4,R4, #1 ; increment
+check:
+    CMP R4, #10
+    BLT body

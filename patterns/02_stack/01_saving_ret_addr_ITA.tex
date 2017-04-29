@@ -1,0 +1,101 @@
+\subsubsection{Salvare l'indirizzo di ritorno della funzione}
+
+\myparagraph{x86}
+
+\myindex{x86!\Instructions!CALL}
+Quando si chiama una funzione con l'istruzione \CALL, l'indirizzo del punto esattamente dopo la \CALL viene salvato nello stack, e successivamente
+viene eseguito un jump non condizionale all'indirizzo dell'operando di \CALL.
+
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!JMP}
+L'istruzione \CALL e' equivalente alla coppia di istruzioni \INS{PUSH indirizzo\_dopo\_call / JMP operando}.
+
+\myindex{x86!\Instructions!RET}
+\myindex{x86!\Instructions!POP}
+\RET preleva un valore dallo stack e effettua un jump ad esso~--- cio' equivale alla coppia di istruzioni \TT{POP tmp / JMP tmp}.
+
+\myindex{\Stack!\MLStackOverflow}
+\myindex{\Recursion}
+
+Riempire lo stack fino allo straripamento e' semplicissimo. Basta ricorrere alla ricorsione eterna:
+
+\begin{lstlisting}[style=customc]
+void f()
+{
+	f();
+};
+\end{lstlisting}
+
+MSVC 2008 riporta il problema:
+
+\begin{lstlisting}
+c:\tmp6>cl ss.cpp /Fass.asm
+Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 15.00.21022.08 for 80x86
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ss.cpp
+c:\tmp6\ss.cpp(4) : warning C4717: 'f' : recursive on all control paths, function will cause runtime stack overflow
+\end{lstlisting}
+
+\dots ma genera in ogni caso il codice correttamente:
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+	push	ebp
+	mov	ebp, esp
+; Line 3
+	call	?f@@YAXXZ	; f
+; Line 4
+	pop	ebp
+	ret	0
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+\dots Se attiviamo le ottimizzazioni del compilatore (\TT{\Ox} option) il codice ottimizzato non causera' overflow dello stack 
+e funzionera' invece \IT{correttamente}\footnote{sarcasmo, si fa per dire}:
+
+\begin{lstlisting}[style=customasmx86]
+?f@@YAXXZ PROC			; f
+; File c:\tmp6\ss.cpp
+; Line 2
+$LL3@f:
+; Line 3
+	jmp	SHORT $LL3@f
+?f@@YAXXZ ENDP			; f
+\end{lstlisting}
+
+GCC 4.4.1 genera codice simile in antrambi i casi, senza avvertire del problema.
+
+\myparagraph{ARM}
+
+\myindex{ARM!\Registers!Link Register}
+Anche i programmi ARM usano lo stack per salvare gli indirizzi di ritorno, ma lo fanno in maniera diversa.
+Come detto in \q{\HelloWorldSectionName}~(\myref{sec:hw_ARM}),
+As mentioned in 
+il \ac{RA} viene salvato nel \ac{LR} (\gls{link register}).
+Se si presenta comunque la necessita' di chiamare un'altra funzione ed usare il registro \ac{LR} ancora una volta, 
+il suo valore deve essere salvato.
+\myindex{Function prologue}
+Solitamente questo valore e' slvato nel preambolo della funzione.
+
+\myindex{ARM!\Instructions!PUSH}
+\myindex{ARM!\Instructions!POP}
+Spesso vediamo istruzioni come \INS{PUSH {R4-R7,LR}} insieme ad isrtuzioni nell'epilogo come 
+\INS{POP {R4-R7,PC}}---percio' i valori dei registri che saranno usati nella funzione vengono salvati nello stack, incluso \ac{LR}.
+
+\myindex{ARM!Leaf function}
+Ciononostante, se una funzione non chiama al suo interno nessun'altra funzione, in terminologia \ac{RISC} e' detta 
+\IT{\gls{leaf function}}, o funzione foglia.\footnote{\href{http://go.yurichev.com/17064}{infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.faqs/ka13785.html}}. 
+Di conseguenza, le leaf functions non salvano il registro \ac{LR} register (perche' difatti non lo modificano).
+Se una simile funzione e' molto breve e usa un piccolo numero di registri, potrebbe non usare del tutto lo stack. 
+E' quindi possible chiamare le leaf functions senza usare lo stack, cosa che puo' essere piu' veloce che sulle macchine x86 perche' ;a RA< esterna non viene usata per lo stack
+\footnote{Tempo fa, su PDP-11 and VAX, l'istruzione CALL instruction (chiamare altre funzioni) era costosa; poteva richiedere fino al 50\%
+del tempo di esecuzione, ed era quindi consuetudine pensare che avere un grande numero di piccole funzioni fosee un \gls{anti-pattern} \InSqBrackets{\TAOUP Chapter 4, Part II}.}.
+Lo stesso principio puo' tornare utile quando la memoria per lo stack non e' stata ancora allocata o non e' disponibile.
+
+Alcuni esempi di funzioni foglia:
+\myref{ARM_leaf_example1}, \myref{ARM_leaf_example2}, 
+\myref{ARM_leaf_example3}, \myref{ARM_leaf_example4}, \myref{ARM_leaf_example5},
+\myref{ARM_leaf_example6}, \myref{ARM_leaf_example7}, \myref{ARM_leaf_example10}.

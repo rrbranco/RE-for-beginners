@@ -1,0 +1,44 @@
+\subsection{Let's allocate space for a structure using malloc()}
+\label{struct_malloc_example}
+
+
+Sometimes it is simpler to place structures not the in local stack, but in the \gls{heap}:
+
+\lstinputlisting[style=customc]{patterns/15_structs/2_using_malloc/systemtime_malloc.c}
+
+
+Let's compile it now with optimization (\Ox) so it would be easy to see what we need.
+
+\lstinputlisting[caption=\Optimizing MSVC,style=customasmx86]{patterns/15_structs/2_using_malloc/systemtime_malloc.asm}
+
+\myindex{\CStandardLibrary!malloc()}
+
+So, \TT{sizeof(SYSTEMTIME) = 16} and that is exact number of bytes to be allocated by \TT{malloc()}.
+It returns a pointer to a freshly allocated memory block in the \EAX register,
+which is then moved into the \ESI register.
+\TT{GetSystemTime()} win32 function takes care of saving value in \ESI,
+and that is why it is not saved here and continues to be used after the \TT{GetSystemTime()} call.
+
+\myindex{x86!\Instructions!MOVZX}
+
+New instruction~---\MOVZX (\IT{Move with Zero eXtend}).
+It may be used in most cases as \MOVSX, but it sets the remaining bits to 0.
+That's because \printf requires a 32-bit \Tint, but we got a WORD in the structure~---that
+is 16-bit unsigned type.
+That's why by copying the value from a WORD into \Tint{}, bits from 16 to 31 must be cleared, 
+because a random noise may be there, which is left from the previous operations on the register(s).
+
+
+In this example, it's possible to represent the structure as an array of 8 WORDs:
+
+\lstinputlisting[style=customc]{patterns/15_structs/2_using_malloc/systemtime_malloc2.c}
+
+We get:
+
+\lstinputlisting[caption=\Optimizing MSVC,style=customasmx86]{patterns/15_structs/2_using_malloc/systemtime_malloc2.asm}
+
+
+Again, we got the code that cannot be distinguished from the previous one.
+
+And again it has to be noted, you haven't to do this in practice, unless you really know what you are doing.
+

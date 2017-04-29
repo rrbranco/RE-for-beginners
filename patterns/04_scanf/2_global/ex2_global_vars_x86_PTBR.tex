@@ -1,0 +1,56 @@
+\subsubsection{MSVC: x86}
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/2_global/ex2_MSVC.asm}
+
+Nesse caso, a variável \TT{x} é definida no segmento \TT{\_DATA} e nenhuma memória é alocada na pilha local.
+Ela é acessada diretamente, não através da pilha.
+Variáveis globais não inicialiadas não ocupam espaço no arquivo executável 
+(realmente, ninguém precisa alocar espaço para uma variável inicialmente valendo zero), 
+mas quando alguém acessa o endereço delas, o sistema operacional vai alocar um bloco contendo somente zeros nele.
+\footnote{\ac{TBT}: That is how a \ac{VM} behaves}.
+
+Agora vamos definir um valor para a variável:
+
+% TODO translate
+\lstinputlisting[style=customc]{patterns/04_scanf/2_global/default_value_EN.c}
+
+Nós temos:
+
+\begin{lstlisting}[style=customasmx86]
+_DATA	SEGMENT
+_x	DD	0aH
+
+...
+\end{lstlisting}
+
+Aqui nós vemos um valor \TT{0xA} do tipo DWORD (DD significa DWORD = 32 bits) para essa variável.
+
+Se você abrir o .exe compilado no \IDA, você pode ver a variável \IT{x} colocada no começo do segmento \TT{\_DATA},
+e depois disso você pode ver as strings.
+
+Se você abrir o .exe compilado no exemplo anterior no \IDA, onde o valor de x não foi declarado, você poderá ver algo assim:
+
+\lstinputlisting[caption=\IDA,style=customasmx86]{patterns/04_scanf/2_global/IDA.lst}
+
+\TT{\_x} está marcada com \TT{?} juntamente com o resto das variáveis que não precisam ser inicializadas.
+Isso implica que após carregar o .exe para a memória, um espaço para todas essas variáveis será alocado e preenchido com zeros \InSqBrackets{\CNineNineStd 6.7.8p10}.
+Mas no arquivo .exe essas variáveis não inicializadas não ocupam nenhum espaço.
+Isso é conveniente para arrays grandes, por exemplo.
+
+\input{patterns/04_scanf/2_global/olly.tex}
+
+\subsubsection{GCC: x86}
+
+\PTBRph{}
+
+\subsubsection{MSVC: x64}
+
+% TODO translate
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/04_scanf/2_global/ex2_MSVC_x64_EN.asm}
+
+O código é quase o mesmo que no x86.
+Por favor, perceba que o endereço da variável x é passado para \TT{scanf()} usando uma instrução \LEA,
+enquanto os valores das variáveis são passadas para o segundo \printf usando uma instrução \MOV.
+\TT{DWORD PTR} é uma parte da linguagem assembly (sem relação com o código de máquina),
+indicando que o tamanho da informação da variável é de 32-bits e que a instrução \MOV tem de ser codificada de acordo.
+

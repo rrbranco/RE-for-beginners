@@ -1,0 +1,66 @@
+\section{Возврат значения}
+\label{ret_val_func}
+
+Еще одна простейшая функция это та, что возвращает некоторую константу:
+
+Вот, например:
+
+\lstinputlisting[caption=Код на \CCpp,style=customc]{patterns/011_ret/1.c}
+
+Скомпилируем её.
+
+\subsection{x86}
+
+И вот что делает оптимизирующий GCC:
+
+\lstinputlisting[caption=\Optimizing GCC/MSVC (\assemblyOutput),style=customasmx86]{patterns/011_ret/1.s}
+
+\myindex{x86!\Instructions!RET}
+Здесь только две инструкции. Первая помещает значение 123 в регистр \EAX, который используется
+для передачи возвращаемых значений. Вторая это \RET, которая возвращает управление в вызывающую функцию.
+
+Вызывающая функция возьмет результат из регистра \EAX.
+
+\subsection{ARM}
+
+А что насчет ARM?
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) ASM Output,style=customasmARM]{patterns/011_ret/1_Keil_ARM_O3.s}
+
+ARM использует регистр \Reg{0} для возврата значений, так что здесь 123 помещается в \Reg{0}.
+
+\myindex{ARM!\Instructions!MOV}
+\myindex{x86!\Instructions!MOV}
+Нужно отметить, что название инструкции \MOV в x86 и ARM сбивает с толку.
+
+На самом деле, данные не \IT{перемещаются}, а скорее \IT{копируются}.
+
+\subsection{MIPS}
+
+\label{MIPS_leaf_function_ex1}
+Вывод на ассемблере в GCC показывает регистры по номерам:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/011_ret/MIPS.s}
+
+\dots а \IDA --- по псевдоименам:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/011_ret/MIPS_IDA.lst}
+
+Так что регистр \$2 (или \$V0) используется для возврата значений.
+\myindex{MIPS!\Pseudoinstructions!LI}
+\INS{LI} это ``Load Immediate'', и это эквивалент \MOV в MIPS.
+
+\myindex{MIPS!\Instructions!J}
+Другая инструкция это инструкция перехода (J или JR), которая возвращает управление в \glslink{caller}{вызывающую ф-цию}.
+
+\myindex{MIPS!Branch delay slot}
+Но почему инструкция загрузки (LI) и инструкция перехода (J или JR) поменяны местами? Это артефакт \ac{RISC} и называется он ``branch delay slot''.
+
+На самом деле, нам не нужно вникать в эти детали. Нужно просто запомнить: в MIPS инструкция после инструкции перехода исполняется \IT{перед} инструкцией перехода.
+
+Таким образом, инструкция перехода всегда поменяна местами с той, которая должна быть исполнена перед ней.
+
+\subsection{На практике}
+
+На практике крайне часто встречаются ф-ции, которые возвращают 1 (\IT{true}) или 0 (\IT{false}).
+

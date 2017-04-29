@@ -1,0 +1,71 @@
+\subsubsection{Encapsulation}
+
+Encapsulation is hiding the data in the \IT{private} sections of the class, 
+e.g. to allow access to them only from this class methods.
+
+However, are there any marks in code the about the fact that some field is private and
+some other---not?
+
+No, there are no such marks.
+
+Let's try this simple example:
+
+\lstinputlisting[style=customc]{\CURPATH/classes/classes2_0.cpp}
+
+Let's compile it again in MSVC 2008 with \Ox and \Obzero options and see the \TT{box::dump()} method code:
+
+\lstinputlisting[style=customasmx86]{\CURPATH/classes/classes2_1.asm}
+
+Here is a memory layout of the class:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+  \tableheader{} \\
+\hline
+  +0x0 & int color \\
+\hline
+  +0x4 & int width \\
+\hline
+  +0x8 & int height \\
+\hline
+  +0xC & int depth \\
+\hline
+\end{tabular}
+\end{center}
+
+All fields are private and not allowed to be accessed from any other
+function, but knowing this layout, can we create code that modifies these fields? 
+
+To do this we'll add the \TT{hack\_oop\_encapsulation()} function, 
+which is not going to compile if it looked like this:
+
+\lstinputlisting[style=customc]{\CURPATH/classes/classes2_2_EN.cpp}
+
+Nevertheless, if we cast the \IT{box} type to a \IT{pointer to an int array},
+and we modify the array of \Tint{}-s that we have, we can succeed.
+
+\lstinputlisting[style=customc]{\CURPATH/classes/classes2_3.cpp}
+
+This function's code is very simple---it can be said that the function takes a pointer to an array of \Tint{}-s for input
+and writes \IT{123} to the second \Tint{}:
+
+\lstinputlisting[style=customasmx86]{\CURPATH/classes/classes2_5.asm}
+
+Let's check how it works:
+
+\lstinputlisting[style=customc]{\CURPATH/classes/classes2_4.cpp}
+
+Let's run:
+
+\begin{lstlisting}
+this is box. color=1, width=10, height=20, depth=30
+this is box. color=1, width=123, height=20, depth=30
+\end{lstlisting}
+
+We see that the encapsulation is just protection of class fields only in the compilation stage.
+
+The \Cpp compiler is not allowing the generation of code that modifies protected 
+fields straightforwardly, nevertheless,
+it is possible with the help of \IT{dirty hacks}.
+

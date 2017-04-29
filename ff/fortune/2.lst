@@ -1,0 +1,8 @@
+$ od -t x1 -c --skip-bytes=0xbfa --address-radix=x fortunes
+000bfa  44  6f  20  77  68  61  74  20  63  6f  6d  65  73  20  6e  61
+         D   o       w   h   a   t       c   o   m   e   s       n   a
+000c0a  74  75  72  61  6c  6c  79  2e  20  20  53  65  65  74  68  65
+         t   u   r   a   l   l   y   .           S   e   e   t   h   e
+000c1a  20  61  6e  64  20  66  75  6d  65  20  61  6e  64  20  74  68
+             a   n   d       f   u   m   e       a   n   d       t   h
+....

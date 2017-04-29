@@ -1,0 +1,41 @@
+% TODO proof-reading
+\subsection{\ac{JVM}-Speichermodell}
+
+%x86 and other low-level environments use the stack for argument passing and 
+%as a local variables storage.
+%
+%\ac{JVM} is slightly different.
+%
+%It has:
+%
+%\begin{itemize}
+%\item Local variable array (\ac{LVA}).
+%Used as storage for incoming function arguments and local variables.
+%
+%Instructions like \INS{iload\_0} load values from it.
+%
+%\INS{istore} stores values in it.
+%At the beginning the function arguments are stored: starting at 0 or at 1 
+%(if the zeroth argument is occupied by \IT{this} pointer).
+%
+%Then the local variables are allocated.
+%
+%
+%Each slot has size of 32-bit.
+%
+%Hence, values of \IT{long} and \IT{double} data types occupy two slots.
+%
+%
+%\item Operand stack (or just \q{stack}).
+%It's used for computations and passing arguments while calling other functions.
+%
+%Unlike low-level environments like x86, it's not possible to access the stack without using
+%instructions which explicitly pushes or pops values to/from it.
+%
+%
+%\item Heap. It is used as storage for objects and arrays.
+%
+%\end{itemize}
+%
+%These 3 areas are isolated from each other.
+%

@@ -1,0 +1,159 @@
+\subsubsection{x86}
+
+\myparagraph{\NonOptimizing MSVC}
+
+Kompilieren wir es:
+
+\lstinputlisting[style=customasmx86]{patterns/10_strings/1_strlen/10_1_msvc_DE.asm}
+
+\myindex{x86!\Instructions!MOVSX}
+\myindex{x86!\Instructions!TEST}
+
+Wir finden hier zwei neue Befehle: \MOVSX und \TEST.
+
+\label{MOVSX}
+
+Der erste --\MOVSX--nimmt ein Byte aus einer Speicheradresse und speichert den
+Wert in einem 32-bit-Register.
+\MOVSX steht für \IT{MOV with Sign-Extend}.
+\MOVSX setzt die übrigen Bits vom 8. bis zum 31. auf 1, falls das Quellbyte
+\IT{negativ} ist oder auf 0, falls es \IT{positiv} ist.
+
+Und hier ist der Grund dafür.
+
+Standardmäßig ist der \Tchar Datentyp in MSVC und GCC vorzeichenbehaftet
+(signed). Wenn wir zwei Werte haben, einen \Tchar und einen \Tint, (\Tint ist
+ebenfalls vorzeichenbehaftet) und der erste Wert enthält -2 (kodiert als
+\TT{0xFE}) und wir kopieren dieses Byte in den \Tint Container, erhalten wir
+\TT{0x000000FE} und dies entspricht als signed \Tint 254, aber nicht -2. Der
+signed \Tint -2 wird als \TT{0xFFFFFFFE} dargestellt. Wenn wir also \TT{0xFE}
+vom Datentyp \Tchar nach \Tint übertragen wollen, müssen wir das Vorzeichen
+identifizieren und den Wert entsprechend erweitern. Genau dies tut der Befehl
+\MOVSX.
+
+Weitere Informationen dazu finden sich im Abschnitt
+\q{\IT{\SignedNumbersSectionName}} ~(\myref{sec:signednumbers}).
+
+Es ist schwer zu sagen, ob der Compiler tatsächlich eine \Tchar Variable in \EDX
+speichern muss, er könnte auch einen 8-Bit-Registerteil (z.B. \DL) dafür
+verwenden . Offenbar arbeitet der \gls{register allocator} des Compilers auf
+diese Art.
+
+\myindex{ARM!\Instructions!TEST}
+
+Wir finden im Weiteren den Befehl \TT{TEST EDX, EDX}. 
+Für mehr Informationen zum \TEST Befehl siehe auch den Abschnitt über
+Bitfelder~(\myref{sec:bitfields}).
+In unserem Fall überprüft der Befehl lediglich, ob der Wert im Register \EDX
+gleich 0 ist.
+
+\myparagraph{\NonOptimizing GCC}
+
+Schauen wir uns GCC 4.4.1 an:
+
+\lstinputlisting[style=customasmx86]{patterns/10_strings/1_strlen/10_3_gcc.asm}
+
+\label{movzx}
+\myindex{x86!\Instructions!MOVZX}
+
+Das Ergebnis ist fast identisch mit dem von MSVC, aber hier finden wir \MOVZX
+anstelle von \MOVSX. 
+\MOVZX steht für \IT{MOV with Zero-Extend}. 
+Dieser Befehl kopiert einen 8-Bit- oder 16-Bit-Wert in ein 32-Bit-Register und
+setzt die übrigen Bits auf 0.
+Tatsächlich findet dieser Befehl vor allem deshalb Anwendung, weil er es uns
+erlaubt, folgendes Befehlspaar zu ersetzen:\\
+\TT{xor eax, eax / mov al, [...]}.
+
+Andererseits ist offensichtlich, dass der Compiler folgenden Code erzeugen kann:
+\\
+\TT{mov al, byte ptr [eax] / test al, al}--es ist fast das gleiche, aber die
+oberen Bits des \EAX Registers enthalten hier Zufallswerte bzw.
+sogenanntes Zufallsrauschen.
+Aber bedenken wir den Nachteil des Compilers--er kann nicht leichter
+verständlichen Code erzeugen. 
+Genau genommen, ist der Compiler überhaupt nicht daran gebunden, (Menschen)
+verständlichen Code zu erzeugen.
+
+\myindex{x86!\Instructions!SETcc}
+
+Der nächste neue Befehl für uns ist \SETNZ.
+In diesem Fall setzt \TT{test al,al} das \ZF flag auf 0, falls \AL nicht 0
+enthät, aber \SETNZ setzt \AL auf 1, falls \TT{ZF==0} (IT{NZ} steht für
+\IT{non zero}).
+In natürlicher Sprache, \IT{falls \AL ungleich 0, springe zu loc\_80483F0}. 
+Der Compiler erzeugt leicht redundanten Code, aber bedenken wir, dass die
+Optimierung hier deaktiviert ist.
+
+\myparagraph{\Optimizing MSVC}
+\label{strlen_MSVC_Ox}
+
+Kompilieren wir nun alles in MSVC 2012 mit aktivierter Optimierung (\Ox):
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 /Ob0,style=customasmx86]{patterns/10_strings/1_strlen/10_2_DE.asm}
+
+Jetzt ist alles einfacher.
+Unnötig zu erwähnen, dass der Compiler Register mit solcher Effizienz nur in
+kleinen Funktionen mit einigen wenigen lokalen Variablen verwenden kann.
+
+\myindex{x86!\Instructions!INC}
+\myindex{x86!\Instructions!DEC}
+\INC/\DEC---sind \glslink{increment}{inkrement}/\glslink{decrement}{dekrement} Befehle; mit anderen Worten:
+addiere oder subtrahiere 1 zu bzw. von einer Variable. 
+
+\input{patterns/10_strings/1_strlen/olly_EN.tex}
+
+\myparagraph{\Optimizing GCC}
+
+Schauen wir uns GCC 4.4.1 mit aktiverter Optimierung (\Othree key) an:
+
+\lstinputlisting[style=customasmx86]{patterns/10_strings/1_strlen/10_3_gcc_O3.asm}
+ 
+Hier erzeugt GCC fast identischen Code zu MSVC, außer dass hier ein \MOVZX
+auftritt. 
+In der Tat könnte \MOVZX hier durch \TT{mov dl, byte ptr [eax]} ersetzt werden.
+ 
+Möglicherweise ist es einfacher für den GCC Code Generator sich daran zu
+\IT{erinnern}, dass das gesamte 32-bit-\EDX Register für eine \Tchar Variable
+reserviert ist und so sicherzustellen, dass die oberen Bits zu keinem Zeitpunkt
+Zufallsrauschen enthalten.
+
+\label{strlen_NOT_ADD}
+\myindex{x86!\Instructions!NOT}
+\myindex{x86!\Instructions!XOR}
+
+Danach finden wir also einen neuen Befehl--\NOT. Dieser Befehl kippt alle Bits
+in seinem Operanden.\\
+Man kann sagen, dass es sich um ein Synonym zum Befehl \TT{XOR ECX, 0ffffffffh}
+handelt. 
+\NOT und das darauf folgende \ADD berechnen die Differenz im Pointer und
+subtrahieren 1, nur auf eine andere Art und Weise. 
+Zu Beginn wird \ECX, in dem der Pointer auf \IT{str} gespeichert ist, invertiert
+und vom Ergebnis wird 1 abgezogen.
+
+Hierzu siehe auch: \q{\SignedNumbersSectionName}~(\myref{sec:signednumbers}).
+ 
+Mit anderen Worten, am Ende der Funktion, direkt nach dem Schleifenkörper,
+werden die folgenden Befehle ausgeführt:
+
+\begin{lstlisting}[style=customc]
+ecx=str;
+eax=eos;
+ecx=(-ecx)-1; 
+eax=eax+ecx
+return eax
+\end{lstlisting}
+
+\dots~und das ist äquivalent zu:
+
+\begin{lstlisting}[style=customc]
+ecx=str;
+eax=eos;
+eax=eax-ecx;
+eax=eax-1;
+return eax
+\end{lstlisting}
+
+Warum GCC entschieden hat, dass das eine besser ist als das andere? Schwer zu
+sagen.
+Möglicherweise sind aber beide Variante gleichermaßen effizient.

@@ -1,0 +1,16 @@
+\subsection{Erneute Betrachtung des Beispiels zum Pseudozufallszahlengenerator}
+\label{FPU_PRNG_SIMD}
+
+Betrachten wir erneut das Beispiel zum Pseudozufallszahlengenerator \lstref{FPU_PRNG}.
+
+Wenn wir es in MSVC 2012 kompilieren, werden SIMD Befehle für die FPU benutzt.
+
+\lstinputlisting[caption=\Optimizing MSVC
+2012,style=customasmx86]{patterns/205_floating_SIMD/FPU_PRNG/MSVC2012_Ox_Ob0_DE.asm}
+
+% FIXME1 rewrite!
+Alle Befehle haben den Suffix \TT{-SS}, der für \q{Scalar Single} steht.
+
+\q{Scalar} bedeutet, dass nur ein Wert im Register gespeichert ist.
+\q{Single} steht für den Datentyp \Tfloat.
+

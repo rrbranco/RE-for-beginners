@@ -1,0 +1,200 @@
+\subsection{Working with addresses instead of pointers}
+
+Pointer is just an address in memory. But why we write \TT{char* string} instead of something like \TT{address string}?
+Pointer variable is supplied with a type of the value to which pointer points.
+So then compiler will able to catch data typization bugs during compilation.
+
+To be pedantic, data typing in programming languages is all about preventing bugs and self-documentation.
+It's possible to use maybe two of data types like \IT{int} (or \IT{int64\_t}) and byte---these are the only types which are available to assembly language programmers.
+But it's just very hard task to write big and practical assembly programs without nasty bugs.
+Any small typo can lead to hard-to-find bug.
+
+Data type information is absent in a compiled code (and this is one of the main problems for decompilers),
+and I can demonstrate this.
+
+This is what sane C/C++ programmer can write:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+void print_string (char *s)
+{
+	printf ("(address: 0x%llx)\n", s);
+	printf ("%s\n", s);
+};
+
+int main()
+{
+	char *s="Hello, world!";
+
+	print_string (s);
+};
+\end{lstlisting}
+
+This is what I can write:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+void print_string (uint64_t address)
+{
+	printf ("(address: 0x%llx)\n", address);
+	puts ((char*)address);
+};
+
+int main()
+{
+	char *s="Hello, world!";
+
+	print_string ((uint64_t)s);
+};
+\end{lstlisting}
+
+I use \IT{uint64\_t} because I run this example on Linux x64. \IT{int} would work for 32-bit \ac{OS}-es.
+First, a pointer to character (the very first in the greeting string) is casted to \IT{uint64\_t}, then it's passed further.
+\TT{print\_string()} function casts back incoming \IT{uint64\_t} value into pointer to a character.
+
+What is interesting is that GCC 4.8.4 produces identical assembly output for both versions:
+
+\begin{lstlisting}
+gcc 1.c -S -masm=intel -O3 -fno-inline
+\end{lstlisting}
+
+\begin{lstlisting}[style=customasmx86]
+.LC0:
+	.string	"(address: 0x%llx)\n"
+print_string:
+	push	rbx
+	mov	rdx, rdi
+	mov	rbx, rdi
+	mov	esi, OFFSET FLAT:.LC0
+	mov	edi, 1
+	xor	eax, eax
+	call	__printf_chk
+	mov	rdi, rbx
+	pop	rbx
+	jmp	puts
+.LC1:
+	.string	"Hello, world!"
+main:
+	sub	rsp, 8
+	mov	edi, OFFSET FLAT:.LC1
+	call	print_string
+	add	rsp, 8
+	ret
+\end{lstlisting}
+
+(I've removed all insignificant GCC directives.)
+
+I also tried UNIX \IT{diff} utility and it shows no differences at all.
+
+Let's continue to abuse C/C++ programming traditions heavily.
+Someone may write this:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+uint8_t load_byte_at_address (uint8_t* address)
+{
+	return *address;
+	//this is also possible: return address[0]; 
+};
+
+void print_string (char *s)
+{
+	char* current_address=s;
+	while (1)
+	{
+		char current_char=load_byte_at_address(current_address);
+		if (current_char==0)
+			break;
+		printf ("%c", current_char);
+		current_address++;
+	};
+};
+
+int main()
+{
+	char *s="Hello, world!";
+
+	print_string (s);
+};
+\end{lstlisting}
+
+It can be rewritten like this:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+#include <stdint.h>
+
+uint8_t load_byte_at_address (uint64_t address)
+{
+	return *(uint8_t*)address;
+	//this is also possible: return address[0]; 
+};
+
+void print_string (uint64_t address)
+{
+	uint64_t current_address=address;
+	while (1)
+	{
+		char current_char=load_byte_at_address(current_address);
+		if (current_char==0)
+			break;
+		printf ("%c", current_char);
+		current_address++;
+	};
+};
+
+int main()
+{
+	char *s="Hello, world!";
+
+	print_string ((uint64_t)s);
+};
+\end{lstlisting}
+
+Both source codes resulting in the same assembly output:
+
+\begin{lstlisting}
+gcc 1.c -S -masm=intel -O3 -fno-inline
+\end{lstlisting}
+
+\begin{lstlisting}[style=customasmx86]
+load_byte_at_address:
+	movzx	eax, BYTE PTR [rdi]
+	ret
+print_string:
+.LFB15:
+	push	rbx
+	mov	rbx, rdi
+	jmp	.L4
+.L7:
+	movsx	edi, al
+	add	rbx, 1
+	call	putchar
+.L4:
+	mov	rdi, rbx
+	call	load_byte_at_address
+	test	al, al
+	jne	.L7
+	pop	rbx
+	ret
+.LC0:
+	.string	"Hello, world!"
+main:
+	sub	rsp, 8
+	mov	edi, OFFSET FLAT:.LC0
+	call	print_string
+	add	rsp, 8
+	ret
+\end{lstlisting}
+
+(I have also removed all insignificant GCC directives.)
+
+No difference: C/C++ pointers are essentially addresses, but supplied with type information, in order to prevent possible mistakes at the time of compilation.
+Types are not checked during runtime---it would be huge (and unneeded) overhead.
+

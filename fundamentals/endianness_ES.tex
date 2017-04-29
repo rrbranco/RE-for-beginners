@@ -1,0 +1,112 @@
+\section{Endianness}
+\label{sec:endianness}
+
+Endianness es una forma de representar valores en la memoria.
+
+\subsection{Big-endian}
+
+El valor \TT{0x12345678} es representado en la memoria como:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor direcci\'on en memoria & \HeaderColor valor del byte \\
+\hline
++0 & 0x12 \\
+\hline
++1 & 0x34 \\
+\hline
++2 & 0x56 \\
+\hline
++3 & 0x78 \\
+\hline
+\end{tabular}
+\end{center}
+
+Entre los CPU big-endian se encuentran Motorola 68k, IBM POWER.
+
+\subsection{Little-endian}
+
+El valor \TT{0x12345678} es representado en la memoria como:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+\HeaderColor Direcci\'on en memoria & \HeaderColor valor del byte \\
+\hline
++0 & 0x78 \\
+\hline
++1 & 0x56 \\
+\hline
++2 & 0x34 \\
+\hline
++3 & 0x12 \\
+\hline
+\end{tabular}
+\end{center}
+
+Entre los CPU little-endian tenemos el Intel x86.
+
+\subsection{\Example}
+
+Tomemos el MIPS big-endian para Linux instalado y listo en QEMU
+\footnote{Disponible para descargar aqu\'i: \url{http://go.yurichev.com/17008}%}.
+
+Y compilemos este ejemplo sencillo:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+	int v, i;
+
+	v=123;
+
+	printf ("%02X %02X %02X %02X\n", 
+		*(char*)&v,
+		*(((char*)&v)+1),
+		*(((char*)&v)+2),
+		*(((char*)&v)+3));
+};
+\end{lstlisting}
+
+Despu\'es de correrlo obtenemos:
+
+\begin{lstlisting}
+root@debian-mips:~# ./a.out 
+00 00 00 7B
+\end{lstlisting}
+
+Eso es todo.
+0x7B es 123 en decimal.
+En las arquitecturas little-endian, 7B es el primer byte (puedes checarlo en x86 o x86-64),
+pero aqu\'i es el \'ultimo, porque el byte m\'as alto va primero.
+
+Por eso hay distribuciones separadas de Linux para MIPS
+(\q{mips} (big-endian) \ESph{} \q{mipsel} (little-endian)).
+Es imposible que un binario compilado para un endianness trabaje en un SO con diferente endianness.
+
+En este libro hay otro ejemplo de big-endianness en MIPS: \myref{MIPS_structure_big_endian}.
+
+\subsection{Bi-endian\RU{ (переключаемый порядок)}}
+
+CPUs que puede cambiar entre endianness son ARM, PowerPC, SPARC, MIPS, \ac{IA64}, etc.
+
+\subsection{Convirtiendo datos}
+
+\myindex{x86!\Instructions!BSWAP}
+La instrucci\'on \TT{BSWAP} puede ser utilizada para conversiones.
+
+\myindex{TCP/IP}
+Los paquetes de datos en redes TCP/IP utilizan convenciones big-endian, por eso un programa corriendo en una arquitectura
+little-endian tiene que convertir los valores.
+
+Las funciones \TT{htonl()} \ESph{} \TT{htons()} son usadas generalmente.
+
+En TCP/IP, big-endian tambi\'en es llamado \q{orden de bytes de red},
+mientras que el orden de bytes en la computadora se conoce como \q{orden de bytes de host}.
+\q{orden de bytes de host} es little-endian en Intel x86 y otras arquitecturas little-endian,
+pero es big-endian en IBM POWER, asi que \TT{htonl()} y \TT{htons()} no cambian el orden de los bytes
+en \'esta \'ultima.
+

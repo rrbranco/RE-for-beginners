@@ -1,0 +1,55 @@
+﻿\subsection{Arguments passing, addition, subtraction}
+
+\lstinputlisting[style=customc]{patterns/185_64bit_in_32_env/passing_add_sub/1.c}
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 /Ob1,style=customasmx86]{patterns/185_64bit_in_32_env/passing_add_sub/1_MSVC.asm}
+
+We can see in the \GTT{f\_add\_test()} function that each 64-bit value is passed using two 32-bit values,
+high part first, then low part. 
+
+Addition and subtraction occur in pairs as well.
+
+\myindex{x86!\Instructions!ADC}
+In addition, the low 32-bit part are added first.
+If carry has been occurred while adding, the \TT{CF} flag is set.
+
+The following \INS{ADC} instruction adds the high parts of the values, and also adds 1 if $CF=1$.
+
+\myindex{x86!\Instructions!SBB}
+Subtraction also occurs in pairs.
+The first \SUB may also turn on the CF flag, which is to be checked in the subsequent \INS{SBB} instruction:
+if the carry flag is on, then 1 is also to be subtracted from the result.
+
+It is easy to see how the \GTT{f\_add()} function result is then passed to \printf{}.
+
+\lstinputlisting[caption=GCC 4.8.1 -O1 -fno-inline,style=customasmx86]{patterns/185_64bit_in_32_env/passing_add_sub/1_GCC.asm}
+
+GCC code is the same.
+
+\subsubsection{ARM}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/185_64bit_in_32_env/passing_add_sub/Keil_ARM_O3.s}
+
+\myindex{ARM!\Instructions!ADDS}
+\myindex{ARM!\Instructions!SUBS}
+\myindex{ARM!\Instructions!ADC}
+\myindex{ARM!\Instructions!SBC}
+
+The first 64-bit value is passed in \Reg{0} and \Reg{1} register pair, the second in \Reg{2} and \Reg{3} register pair.
+ARM has the \INS{ADC} instruction as well (which counts carry flag) and \INS{SBC} (\q{subtract with carry}).
+Important thing: when the low parts are added/subtracted, \INS{ADDS} and \INS{SUBS} instructions with -S suffix are used.
+The -S suffix stands for \q{set flags}, and flags (esp. carry flag) is what consequent \INS{ADC}/\INS{SBC} instructions definitely need.
+Otherwise, instructions without the -S suffix would do the job (\ADD and \SUB).
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/185_64bit_in_32_env/passing_add_sub/MIPS_O3_IDA_EN.lst}
+
+MIPS has no flags register, so there is no such information present after the execution of arithmetic operations.
+So there are no instructions like x86's \INS{ADC} and \INS{SBB}.
+To know if the carry flag would be set, a comparison (using \INS{SLTU} instruction) also occurs, 
+which sets the destination register to 1 or 0.
+This 1 or 0 is then added or subtracted to/from the final result.
+

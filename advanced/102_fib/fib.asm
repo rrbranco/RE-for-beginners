@@ -33,7 +33,7 @@ _fib	ENDP
 _main	PROC
 	push	ebp
 	mov	ebp, esp
-	push	OFFSET $SG2647
+	push	OFFSET $SG2647 ; "0\n1\n1\n"
 	call	DWORD PTR __imp__printf
 	add	esp, 4
 	push	20

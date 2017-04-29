@@ -1,0 +1,46 @@
+\subsection{Simple example}
+
+\lstinputlisting[style=customc]{patterns/04_scanf/1_simple/ex1.c}
+
+It's not clever to use \scanf for user interactions nowadays. 
+But we can, however, illustrate passing a pointer to a variable of type \Tint.
+
+\subsubsection{About pointers}
+\myindex{\CLanguageElements!\Pointers}
+
+Pointers are one of the fundamental concepts in computer science.
+Often, passing a large array, structure or object as an argument to another function is too expensive, while passing their address is much cheaper.
+For example, if you going to print a text string to console, it's much easier to pass its address into \ac{OS} kernel.
+
+In addition if the \gls{callee} function needs to modify something in the large array or structure received as a parameter and return back the entire structure then the situation is close to absurd.
+So the simplest thing to do is to pass the address of the array or structure to the \gls{callee} function, and let it change what needs to be changed.
+
+A pointer in \CCpp---is simply an address of some memory location.
+
+\myindex{x86-64}
+In x86, the address is represented as a 32-bit number (i.e., it occupies 4 bytes), while in x86-64 it is a 64-bit number (occupying 8 bytes).
+By the way, that is the reason behind some people's indignation related to switching to x86-64---all pointers in the x64-architecture require twice as much space, including cache memory, which is ``expensive'' memory.
+
+% TODO ... а делать разные версии memcpy для разных типов - абсурд
+\myindex{\CStandardLibrary!memcpy()}
+It is possible to work with untyped pointers only, given some effort; e.g. the standard C function \TT{memcpy()}, that copies a block from one memory location to another,
+takes 2 pointers of type \TT{void*} as arguments, since it is impossible to predict the type of the data you would like to copy. Data types are not important, only the block size matters.
+
+Pointers are also widely used when a function needs to return more than one value
+(we are going to get back to this later
+~(\myref{label_pointers})
+).
+
+\IT{scanf()} function---is such a case.
+
+Besides the fact that the function needs to indicate how many values were successfully read, it also needs to return all these values.
+
+In \CCpp the pointer type is only needed for compile-time type checking.
+
+Internally, in the compiled code there is no information about pointer types at all.
+% TODO это сильно затрудняет декомпиляцию
+
+\input{patterns/04_scanf/1_simple/x86}
+\input{patterns/04_scanf/1_simple/x64}
+\input{patterns/04_scanf/1_simple/ARM}
+\input{patterns/04_scanf/1_simple/MIPS/main}

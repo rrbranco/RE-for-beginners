@@ -1,0 +1,21 @@
+\subsubsection{MIPS}
+\label{MIPS_structure_big_endian}
+
+% TODO translate to Russian:
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),numbers=left,style=customasmMIPS]{patterns/15_structs/4_packing/MIPS_O3_IDA.lst}
+
+Поля структуры приходят в регистрах \$A0..\$A3 и затем перетасовываются в регистры \$A1..\$A3 для \printf,
+в то время как 4-е поле (из \$A3) передается через локальный стек используя \INS{SW}.
+
+Но здесь есть две инструкции SRA (\q{Shift Word Right Arithmetic}), которые готовят поля типа \Tchar.
+
+Почему?
+По умолчанию, MIPS это big-endian архитектура \myref{sec:endianness}, и Debian Linux в котором мы работаем, также big-endian.
+
+Так что когда один байт расположен в 32-битном элементе структуры, он занимает биты 31..24.
+
+И когда переменную типа \Tchar нужно расширить до 32-битного значения, она должна быть сдвинута вправо
+на 24 бита.
+
+\Tchar это знаковый тип, так что здесь нужно использовать арифметический сдвиг вместо логического.
+

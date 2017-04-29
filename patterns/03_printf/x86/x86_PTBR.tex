@@ -1,0 +1,35 @@
+\subsubsection{x86: 3 argumentos}
+
+\myparagraph{MSVC}
+
+Quando compilamos esse código com o MSVC 2010 Express temos:
+
+\begin{lstlisting}[style=customasmx86]
+$SG3830	DB	'a=%d; b=%d; c=%d', 00H
+
+...
+
+	push	3
+	push	2
+	push	1
+	push	OFFSET $SG3830
+	call	_printf
+	add	esp, 16					; 00000010H
+\end{lstlisting}
+
+Quase a mesma coisa, mas agora nós podemos ver que os argumentos da função \printf são empurrados na pilha na ordem reversa. O primeiro argumento é empurrado por último.
+
+A propósito, variáveis do tipo \Tint em ambientes 32-bits tem 32-bits de largura, isso é 4 bytes.
+
+Então, nós temos quatro argumentos aqui, $4*4=16$ --- eles ocupam exatamente 16 bytes na pilha: um ponteiro de 32-bits para uma string e três números do tipo \Tint.
+
+\myindex{x86!\Instructions!ADD}
+\myindex{x86!\Registers!ESP}
+\myindex{cdecl}
+Quando o ponteiro da pilha (registrador \ESP) volta para seu valor anterior pela instrução \INS{ADD ESP, X} depois de uma chamada de função,
+geralmente o número de argumentos pode ser obtido simplismente por se dividir X, o argumento da função \ADD, por 4.
+
+Lógico que isso é por causa da convenção de chamada do \IT{cdecl} e somente para ambientes 32-bits.
+
+% TODO: Olly, GCC, GDB
+

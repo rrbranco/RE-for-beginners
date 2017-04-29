@@ -1,0 +1,135 @@
+﻿\section{Шутка с task manager (Windows Vista)}
+\myindex{Windows!Windows Vista}
+
+Посмотрим, сможем ли мы немного хакнуть Task Manager, чтобы он находил больше ядер в \ac{CPU}, чем присутствует.
+
+\myindex{Windows!NTAPI}
+В начале задумаемся, откуда Task Manager знает количество ядер?
+
+В win32 имеется функция \TT{GetSystemInfo()}, при помощи которой можно узнать.
+
+Но она не импортируется в \TT{taskmgr.exe}.
+Есть еще одна в \gls{NTAPI}, \TT{NtQuerySystemInformation()}, которая используется в 
+\TT{taskmgr.exe} в ряде мест.
+
+Чтобы узнать количество ядер, нужно вызвать эту функцию с константной \\
+\TT{SystemBasicInformation} в первом аргументе (а это ноль
+
+\footnote{\href{http://go.yurichev.com/17251}{MSDN}}).
+
+Второй аргумент должен указывать на буфер, который примет всю информацию.
+
+Так что нам нужно найти все вызовы функции \\
+\TT{NtQuerySystemInformation(0, ?, ?, ?)}.
+
+Откроем \TT{taskmgr.exe} в IDA. 
+\myindex{Windows!PDB}
+Что всегда хорошо с исполняемыми файлами от Microsoft, это то что IDA может скачать соответствующий 
+\gls{PDB}-файл именно для этого файла и добавить все имена функций.
+
+Видимо, Task Manager написан на \Cpp и некоторые функции и классы имеют говорящие за себя имена.
+
+Тут есть классы CAdapter, CNetPage, CPerfPage, CProcInfo, CProcPage, CSvcPage, 
+CTaskPage, CUserPage.
+Должно быть, каждый класс соответствует каждой вкладке в Task Manager.
+
+Пройдемся по всем вызовам и добавим комментарий с числом, передающимся как первый аргумент.
+
+В некоторых местах напишем \q{not zero}, потому что значение в тех местах однозначно не ноль, 
+но что-то другое (больше об этом во второй части главы).%
+
+А мы все-таки ищем ноль передаваемый как аргумент.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{examples/taskmgr/IDA_xrefs.png}
+\caption{IDA: вызовы функции NtQuerySystemInformation()}
+\end{figure}
+
+Да, имена действительно говорящие сами за себя.
+
+Когда мы внимательно изучим каждое место, где вызывается\\
+\TT{NtQuerySystemInformation(0, ?, ?, ?)},
+то быстро найдем то что нужно в функции \TT{InitPerfInfo()}:%
+
+\lstinputlisting[caption=taskmgr.exe (Windows Vista),style=customasmx86]{examples/taskmgr/taskmgr.lst}
+
+\TT{g\_cProcessors} это глобальная переменная и это имя присвоено IDA в соответствии с \gls{PDB}-файлом,
+скачанным с сервера символов Microsoft.
+
+Байт берется из \TT{var\_C20}. 
+И \TT{var\_C58} передается в\\
+\TT{NtQuerySystemInformation()} 
+как указатель на принимающий буфер.
+Разница между 0xC20 и 0xC58 это 0x38 (56).
+Посмотрим на формат структуры, который можно найти в MSDN:
+
+\begin{lstlisting}[style=customc]
+typedef struct _SYSTEM_BASIC_INFORMATION {
+    BYTE Reserved1[24];
+    PVOID Reserved2[4];
+    CCHAR NumberOfProcessors;
+} SYSTEM_BASIC_INFORMATION;
+\end{lstlisting}
+
+Это система x64, так что каждый PVOID занимает здесь 8 байт.
+
+Так что все \IT{reserved}-поля занимают $24+4*8=56$.
+
+О да, это значит, что \TT{var\_C20} в локальном стеке это именно поле
+\TT{NumberOfProcessors} структуры \TT{SYSTEM\_BASIC\_INFORMATION}.
+
+Проверим нашу догадку.
+Скопируем \TT{taskmgr.exe} из \TT{C:\textbackslash{}Windows\textbackslash{}System32} 
+в какую-нибудь другую папку 
+(чтобы \IT{Windows Resource Protection} не пыталась восстанавливать измененный \TT{taskmgr.exe}).
+
+Откроем его в Hiew и найдем это место:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{examples/taskmgr/hiew2.png}
+\caption{Hiew: найдем это место}
+\end{figure}
+
+Заменим инструкцию \TT{MOVZX} на нашу.
+
+Сделаем вид что у нас 64 ядра процессора.
+Добавим дополнительную инструкцию \ac{NOP} (потому что наша инструкция короче чем та что там сейчас):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{examples/taskmgr/hiew1.png}
+\caption{Hiew: меняем инструкцию}
+\end{figure}
+
+И это работает!
+Конечно же, данные в графиках неправильные.
+Иногда, Task Manager даже показывает общую загрузку CPU более 100\%.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{examples/taskmgr/taskmgr_64cpu_crop.png}
+\caption{Обманутый Windows Task Manager}
+\end{figure}
+
+Самое большое число, при котором Task Manager не падает, это 64.
+
+Должно быть, Task Manager в Windows Vista не тестировался на компьютерах с большим количеством ядер.
+
+И, наверное, там есть внутри какие-то статичные структуры данных, ограниченные до 64-х ядер.
+
+\subsection{Использование LEA для загрузки значений}
+\label{TaskMgr_LEA}
+
+Иногда, \TT{LEA} используется в \TT{taskmgr.exe} вместо \TT{MOV} для установки первого аргумента \\
+\TT{NtQuerySystemInformation()}:
+
+\lstinputlisting[caption=taskmgr.exe (Windows Vista),style=customasmx86]{examples/taskmgr/taskmgr2.lst}
+
+\myindex{x86!\Instructions!LEA}
+Должно быть, \ac{MSVC} сделал так, потому что код инструкции \INS{LEA} короче чем \INS{MOV REG, 5} (было бы 5 байт вместо 4).
+
+\INS{LEA} со смещением в пределах $-128..127$ (смещение будет занимать 1 байт в опкоде) с 32-битными регистрами даже еще короче (из-за отсутствия REX-префикса) --- 3 байта.
+
+Еще один пример подобного: \myref{using_MOV_and_pack_of_LEA_to_load_values}.

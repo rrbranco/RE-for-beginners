@@ -1,0 +1,31 @@
+\myparagraph{\Optimizing MSVC 2010}
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{patterns/12_FPU/3_comparison/x86/MSVC_Ox/MSVC_DE.asm}
+
+\myindex{x86!\Instructions!FCOM}
+\FCOM unterscheidet sich von \FCOMP in dem Sinne, dass es nur die Werte vergleicht ohne den FPU Stack zu verändern. 
+Anders als im vorangehenden Beispiel liegen die Operanden hier in umgekehrter Reihenfolge um vor. Dies ist der Grund
+warum das Ergebnis dieses Vergleichs bezüglich der \CThreeBits unterschiedlich ist:
+
+\begin{itemize}
+\item Falls $a>b$ in unserem Beispiel, dann werden die \CThreeBits Bits wie folgt gesetzt: 0, 0, 0.
+\item Falls $b>a$, dann ist das Bitmuster: 0, 0, 1.
+\item Falls $a=b$, dann ist das Bitmuster: 1, 0, 0.
+\end{itemize}
+% TODO: table?
+Der Befehl \INS{test ah, 65} setzt zwei Bits~---\Cthree und \Czero. 
+Beide werden auf 0 gesetzt, falls $a>b$: in diesem Fall wird der \JNE Sprungbefehl nicht ausgeführt.
+Dann folgt \INS{FSTP ST(1)}~---dieser Befehl kopiert den Wert von \ST{0} in den Operanden und holt einen Wert vom FPU
+Stack.
+Mit anderen Worten, der Befehl kopiert \ST{0} (in dem sich gerade der Wert von \GTT{\_a} befindet) nach \ST{1}. 
+Anschließend befinden sich zwei Kopien von {\_a} oben auf dem Stack.
+Nun wird ein Wert wieder vom Stack geholt. Schließlich enthält \ST{0} den Wert {\_a} und die Funktion beendet sich.
+
+Der bedingte Sprung \JNE wird in zwei Fällen ausgeführt: wenn $b>a$ oder wenn $a=b$.
+\ST{0} wird nach \ST{0} kopiert; dabei handelt es sich um eine Operation ohne Wirkung (\ac{NOP}), dann wird ein Wert
+ vom Stack geholt und in \ST{0} steht dann was sich vorher in \ST{1} befunden hat, nämlich {\_b}. Danach beendet sich
+ die Funktion.
+Der Grund dafür, dass dieser Befehl hier erzeugt wird ist wahrscheinlich, dass die \ac{FPU} über keinen anderen Befehl
+verfügt um einen Wert vom Stack zu holen und anschließend zu entsorgen.
+
+\input{patterns/12_FPU/3_comparison/x86/MSVC_Ox/olly_DE.tex}

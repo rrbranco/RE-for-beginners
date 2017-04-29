@@ -1,0 +1,128 @@
+\subsubsection{ARM + \OptimizingKeilVI (\ARMMode)}
+
+\begin{lstlisting}[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]
+02 0C C0 E3          BIC     R0, R0, #0x200
+01 09 80 E3          ORR     R0, R0, #0x4000
+1E FF 2F E1          BX      LR
+\end{lstlisting}
+
+\myindex{ARM!\Instructions!BIC}
+\INS{BIC} (\IT{BItwise bit Clear}) это инструкция сбрасывающая заданные биты. 
+Это как аналог \AND, но только с инвертированным операндом.
+
+Т.е. это аналог инструкций \NOT+\AND.
+
+\myindex{ARM!\Instructions!ORR}
+\INS{ORR} это \q{логическое или}, аналог \OR в x86.
+
+Пока всё понятно.
+
+\subsubsection{ARM + \OptimizingKeilVI (\ThumbMode),style=customasmARM}
+
+\begin{lstlisting}[caption=\OptimizingKeilVI (\ThumbMode)]
+01 21 89 03          MOVS    R1, 0x4000
+08 43                ORRS    R0, R1
+49 11                ASRS    R1, R1, #5   ; generate 0x200 and place to R1
+88 43                BICS    R0, R1
+70 47                BX      LR
+\end{lstlisting}
+
+Вероятно, Keil решил, что код в режиме Thumb,
+получающий \TT{0x200} из \TT{0x4000}, 
+более компактный, нежели код, 
+записывающий \TT{0x200} в какой-нибудь регистр.
+% TODO1 пример, как компилятор при помощи сдвигов оптизирует такое: a=0x1000; b=0x2000; c=0x4000, etc
+
+\myindex{ARM!\Instructions!ASRS}
+Поэтому при помощи инструкции \INS{ASRS} (\ASRdesc), это значение вычисляется как $\TT{0x4000} \gg 5$.
+
+\subsubsection{ARM + \OptimizingXcodeIV (\ARMMode)}
+\label{anomaly:LLVM}
+\myindex{\CompilerAnomaly}
+
+\begin{lstlisting}[caption=\OptimizingXcodeIV (\ARMMode),label=ARM_leaf_example3,style=customasmARM]
+42 0C C0 E3          BIC             R0, R0, #0x4200
+01 09 80 E3          ORR             R0, R0, #0x4000
+1E FF 2F E1          BX              LR
+\end{lstlisting}
+
+Код, который был сгенерирован LLVM, в исходном коде, на самом деле, выглядел бы так:
+
+\begin{lstlisting}[style=customc]
+    REMOVE_BIT (rt, 0x4200);
+    SET_BIT (rt, 0x4000);
+\end{lstlisting}
+
+И он делает в точности что нам нужно. 
+Но почему \TT{0x4200}? 
+Возможно, это артефакт оптимизатора LLVM
+\footnote{Это был LLVM build 2410.2.00 входящий в состав Apple Xcode 4.6.3}.
+Возможно, ошибка оптимизатора компилятора, но создаваемый код всё же работает верно.
+
+Об аномалиях компиляторов, подробнее читайте здесь ~(\myref{anomaly:Intel}).
+
+\OptimizingXcodeIV для режима Thumb генерирует точно такой же код.
+
+\subsubsection{ARM: ещё об инструкции \INS{BIC}}
+\myindex{ARM!\Instructions!BIC}
+
+Если немного переделать пример:
+
+\begin{lstlisting}[style=customc]
+int f(int a)
+{
+    int rt=a;
+
+    REMOVE_BIT (rt, 0x1234);
+
+    return rt;
+};
+\end{lstlisting}
+
+То оптимизирующий Keil 5.03 в режиме ARM сделает такое:
+
+\begin{lstlisting}[style=customasmARM]
+f PROC
+        BIC      r0,r0,#0x1000
+        BIC      r0,r0,#0x234
+        BX       lr
+        ENDP
+\end{lstlisting}
+
+Здесь две инструкции \INS{BIC}, т.е. биты \TT{0x1234} сбрасываются в два прохода.
+
+Это потому что в инструкции \INS{BIC} нельзя закодировать значение \TT{0x1234}, 
+но можно закодировать \TT{0x1000} либо \TT{0x234}.
+
+\subsubsection{ARM64: \Optimizing GCC (Linaro) 4.9}
+
+\Optimizing GCC, компилирующий для ARM64, может использовать \AND вместо \INS{BIC}:
+
+\begin{lstlisting}[caption=\Optimizing GCC (Linaro) 4.9,style=customasmARM]
+f:
+	and	w0, w0, -513	; 0xFFFFFFFFFFFFFDFF
+	orr	w0, w0, 16384	; 0x4000
+	ret
+\end{lstlisting}
+
+\subsubsection{ARM64: \NonOptimizing GCC (Linaro) 4.9}
+
+\NonOptimizing GCC генерирует больше избыточного кода, но он работает также:
+
+\begin{lstlisting}[caption=\NonOptimizing GCC (Linaro) 4.9,style=customasmARM]
+f:
+	sub	sp, sp, #32
+	str	w0, [sp,12]
+	ldr	w0, [sp,12]
+	str	w0, [sp,28]
+	ldr	w0, [sp,28]
+	orr	w0, w0, 16384	; 0x4000
+	str	w0, [sp,28]
+	ldr	w0, [sp,28]
+	and	w0, w0, -513	; 0xFFFFFFFFFFFFFDFF
+	str	w0, [sp,28]
+	ldr	w0, [sp,28]
+	add	sp, sp, 32
+	ret
+\end{lstlisting}
+

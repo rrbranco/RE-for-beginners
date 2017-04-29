@@ -1,0 +1,26 @@
+\subsubsection{MSVC: x86-64}
+
+\myindex{x86-64}
+Let's also try 64-bit MSVC:
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/01_helloworld/MSVC_x64.asm}
+
+\myindex{fastcall}
+
+In x86-64, all registers were extended to 64-bit and now their names have an \TT{R-} prefix.
+In order to use the stack less often (in other words, to access external memory/cache less often), there exists
+a popular way to pass function arguments via registers (\IT{fastcall}) \myref{fastcall}.
+I.e., a part of the function arguments is passed in registers, the rest---via the stack.
+In Win64, 4 function arguments are passed in the \RCX, \RDX, \Reg{8}, \Reg{9} registers.
+That is what we see here: a pointer to the string for \printf is now passed not in the stack, but in the \RCX register.
+The pointers are 64-bit now, so they are passed in the 64-bit registers (which have the \TT{R-} prefix).
+However, for backward compatibility, it is still possible to access the 32-bit parts, using the \TT{E-} prefix.
+This is how the \RAX/\EAX/\AX/\AL register looks like in x86-64:
+
+\RegTableOne{RAX}{EAX}{AX}{AH}{AL}
+
+The \main function returns an \Tint{}-typed value, which is, in \CCpp, for better backward compatibility
+and portability, still 32-bit, so that is why the \EAX register is cleared at the function end (i.e., the 32-bit
+part of the register) instead of \RAX{}.
+There are also 40 bytes allocated in the local stack.
+This is called the \q{shadow space}, about which we are going to talk later: \myref{shadow_space}.

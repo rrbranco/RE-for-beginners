@@ -1,0 +1,140 @@
+﻿\subsection{Multiplication}
+
+\subsubsection{Multiplication using addition}
+
+Here is a simple example:
+
+\begin{lstlisting}[style=customc]
+unsigned int f(unsigned int a)
+{
+	return a*8;
+};
+\end{lstlisting}
+
+Multiplication by 8 is replaced by 3 addition instructions, which do the same.
+Apparently, MSVC's optimizer decided that this code can be faster.
+
+\begin{lstlisting}[caption=\Optimizing MSVC 2010,style=customasmx86]
+_TEXT	SEGMENT
+_a$ = 8		; size = 4
+_f	PROC
+; File c:\polygon\c\2.c
+	mov	eax, DWORD PTR _a$[esp-4]
+	add	eax, eax
+	add	eax, eax
+	add	eax, eax
+	ret	0
+_f	ENDP
+_TEXT	ENDS
+END
+\end{lstlisting}
+
+\subsubsection{Multiplication using shifting}
+\label{subsec:mult_using_shifts}
+
+Multiplication and division instructions by a numbers that's a power of 2 are often replaced by shift instructions.
+
+\begin{lstlisting}[style=customc]
+unsigned int f(unsigned int a)
+{
+	return a*4;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[caption=\NonOptimizing MSVC 2010,style=customasmx86]
+_a$ = 8		; size = 4
+_f	PROC
+	push	ebp
+	mov	ebp, esp
+	mov	eax, DWORD PTR _a$[ebp]
+	shl	eax, 2
+	pop	ebp
+	ret	0
+_f	ENDP
+\end{lstlisting}
+
+
+Multiplication by 4 is just shifting the number to the left by 2 bits
+and inserting 2 zero bits at the right (as the last two bits).
+It is just like multiplying 3 by 100~---we just have to add two zeros at the right.
+
+That's how the shift left instruction works:
+
+\myindex{x86!\Instructions!SHL}
+\input{shift_left}
+
+The added bits at right are always zeros.
+
+Multiplication by 4 in ARM:
+
+\begin{lstlisting}[caption=\NonOptimizingKeilVI (\ARMMode),style=customasmARM]
+f PROC
+        LSL      r0,r0,#2
+        BX       lr
+        ENDP
+\end{lstlisting}
+
+Multiplication by 4 in MIPS:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/11_arith_optimizations/MIPS_SLL.lst}
+
+\myindex{MIPS!\Instructions!SLL}
+\INS{SLL} is \q{Shift Left Logical}.
+
+\subsubsection{Multiplication using shifting, subtracting, and adding}
+\label{multiplication_using_shifts_adds_subs}
+
+It's still possible to get rid of the multiplication operation when you multiply by numbers like
+7 or 17 again by using shifting.
+The mathematics used here is relatively easy.
+
+\myparagraph{32-bit}
+
+\lstinputlisting[style=customc]{patterns/11_arith_optimizations/mult_shifts.c}
+
+\mysubparagraph{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012,style=customasmx86]{patterns/11_arith_optimizations/mult_shifts_MSVC_2012_Ox.asm}
+
+\mysubparagraph{ARM}
+
+Keil for ARM mode takes advantage of the second operand's shift modifiers:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/11_arith_optimizations/mult_shifts_Keil_ARM_O3.s}
+
+But there are no such modifiers in Thumb mode.
+It also can't optimize \TT{f2()}:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/11_arith_optimizations/mult_shifts_Keil_thumb_O3.s}
+
+\mysubparagraph{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/11_arith_optimizations/mult_shifts_MIPS_O3_IDA.lst}
+
+\myparagraph{64-bit}
+
+\lstinputlisting[style=customc]{patterns/11_arith_optimizations/mult_shifts_64.c}
+
+\mysubparagraph{x64}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012,style=customasmx86]{patterns/11_arith_optimizations/mult_shifts_64_GCC49_x64_O3.s}
+
+\mysubparagraph{ARM64}
+
+GCC 4.9 for ARM64 is also terse, thanks to the shift modifiers:
+
+\lstinputlisting[caption=\Optimizing GCC (Linaro) 4.9 ARM64,style=customasmARM]{patterns/11_arith_optimizations/mult_shifts_64_GCC49_ARM64.s}
+
+\myparagraph{Booth's multiplication algorithm}
+
+\myindex{Data general Nova}
+\myindex{Booth's multiplication algorithm}
+There was a time when computers were big and that expensive, that some of them lacks hardware support of multiplication
+operation in \ac{CPU}, like Data General Nova.
+And when one need multiplication operation, it can be provided at software level, for example, using Booth's multiplication
+algorithm.
+This is an multiplication algorithm which uses only addition operation and shifts.
+
+What modern optimizing compilers do, isn't the same,
+but the goal (multiplication) and resources (faster operations) are the same.
+

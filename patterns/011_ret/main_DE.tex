@@ -1,0 +1,82 @@
+% TODO to be resynced with EN version
+\section{Die einfachste Funktion}
+
+Die einfachste, mögliche Funktion ist vermutlich eine, die lediglich einen konstanten Wert zurückgibt.
+
+Hier ist sie:
+
+\lstinputlisting[caption=\DE{\CCpp Code},style=customc]{patterns/011_ret/1.c}
+
+Und nun in kompilierter Version!
+
+\subsection{x86}
+
+Nachfolgend das, was sowohl der optimierende GCC- als auch MSVC-Compiler auf einer x86-Plattform erzeugt:
+
+\lstinputlisting[caption=\Optimizing GCC/MSVC (\assemblyOutput),style=customasmx86]{patterns/011_ret/1.s}
+
+\myindex{x86!\Instructions!RET}
+Es gibt zwei Anweisungen: die erste platziert den Wert 123 in das \EAX-Register, welches per Konvention
+als Speicherplatz für den Rückabewert genutzt wird. Die zweite ist \RET, die die Ausführung wieder an
+die aufrufende Funktion übergibt.
+
+Diese wird das Ergebnis vom \EAX-Register übernehmen.
+
+\subsection{ARM}
+
+Auf der ARM-Plattform gibt es einige kleine Unterschiede:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) Assembler-Ausgabe,style=customasmARM]{patterns/011_ret/1_Keil_ARM_O3.s}
+
+ARM nutzt das Register \Reg{0} für das Speichern des Rückgabewerts der Funktion. Also wird in diesem Beispiel
+der Wert 123 dorthin kopiert.
+
+%Maybe explain what a link register is, or if it is just a normal register, say so?
+Die Rücksprungadresse wird nicht auf dem lokalen Stack sondern im Link-Register gespeichert.
+Die Anweisung \INS{BX LR} führt dazu, dass die Ausführung an dieser Stelle fortgeführt wird. In diesem Fall wird
+also die Kontrolle wieder an die aufrufende Funktion übergeben.
+
+\myindex{ARM!\Instructions!MOV}
+\myindex{x86!\Instructions!MOV}
+Erwähnenswert ist der irreführende Name der \MOV-Anweisung sowohl beim x86- als auch ARM-Befehlssatz:
+die Daten werden nicht \IT{verschoben} sondern \IT{kopiert}.
+
+\subsection{MIPS}
+
+\label{MIPS_leaf_function_ex1}
+Es gibt zwei verschiedene Konventionen bei der Benamung von Registern in der MIPS-Welt:
+mit einer Nummer (von \$0 bis \$31) oder mit einem Pseudonamen (\$V0, \$A0, usw.).
+
+GCC benamt in der Ausgabe die Register mit Nummern:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/011_ret/MIPS.s}
+
+\dots während \IDA Pseudonamen verwendet:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/011_ret/MIPS_IDA.lst}
+
+Das \$2 (oder \$V0)-Register wird zum Speichern des Rückgabewerts genutzt.
+\myindex{MIPS!\Pseudoinstructions!LI}
+\INS{LI} steht für ''Load Immediate'' und ist das MIPS-Äquivalent zu \MOV.
+
+\myindex{MIPS!\Instructions!J}
+Die anderen Anweisungen sind Sprungbefehle (J oder JR), die die Ausführung wieder an die aufrufende Funktion übergeben,
+indem an die Adresse gesprungen wird die im \$31 (oder \$RA)-Register.
+
+Dieses Register ist analog zum \ac{LR} in der ARM-Architektur.
+
+\myindex{MIPS!Branch delay slot}
+Möglicherweise wundert man sich warum die Positionen der Lade- (LI) und Sprunganweisung (J or JR) vertauscht sind.
+Dies geschieht durch ein \ac{RISC}-Feature das ''branch delay slot'' genannt wird.
+
+Die Begründung liegt in der Eigenart einiger RISC-Befehlssets die hier jedoch nicht so wichtig ist. Man sollte
+aber im Hinterkopf behalten, dass bei MIPS die Anweisung \IT{nach} dem Sprungbefehl noch \IT{vor} dieser ausgeführt wird.
+
+Als Konsequenz sind Verzweigungsbefehle immer mit der Anweisung vertauscht, die zuvor ausgeführt werden muss.
+% A footnote/link to http://en.wikipedia.org/wiki/Delay_slot#Branch_delay_slots or
+% something similar might be useful for the people more interested in it.
+
+\subsubsection{Anmerkungen zu MIPS-Anweisungen / Registernamen}
+
+Register- und Anweisungsnamen sind in der MIPS-Welt traditionellerweise in Kleinbuchstaben geschrieben.
+Aus Gründen der Einheitlichkeit wird in diesem Buch jedoch die Großschreibung bevorzugt.

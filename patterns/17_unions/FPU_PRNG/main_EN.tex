@@ -1,0 +1,75 @@
+\subsection{Pseudo-random number generator example}
+\label{FPU_PRNG}
+
+If we need float random numbers between 0 and 1, the simplest thing is to use a \ac{PRNG} like
+the Mersenne twister. 
+It produces random unsigned 32-bit values (in other words, it produces random 32 bits).
+Then we can transform this value to \Tfloat and then
+divide it by \GTT{RAND\_MAX} (\GTT{0xFFFFFFFF} in our case)---we getting a value in the 0..1 interval.
+
+But as we know, division is slow.
+Also, we would like to issue as few FPU operations as possible.
+Can we get rid of the division?
+
+\myindex{IEEE 754}
+
+Let's recall what a floating point number consists of: sign bit, significand bits and exponent bits.
+We just have to store random bits in all significand bits to get a random float number!
+
+The exponent cannot be zero (the floating number is denormalized in this case),
+so we are storing 0b01111111
+to exponent---this means that the exponent is 1. 
+Then we filling the significand with random bits, set the sign bit to
+0 (which means a positive number) and voilà.
+The generated numbers is to be between 1 and 2, so we must also subtract 1.
+
+\newcommand{\URLXOR}{\url{http://go.yurichev.com/17308}}
+
+A very simple linear congruential random numbers generator is used in my 
+example\footnote{the idea was taken from: \URLXOR}, it produces 32-bit numbers. 
+The \ac{PRNG} is initialized with the current time in UNIX timestamp format.
+
+Here we represent the \Tfloat type as an \IT{union}---it is the \CCpp construction that enables us
+to interpret a piece of memory as different types.
+In our case, we are able to create a variable
+of type \IT{union} and then access to it as it is \Tfloat or as it is \IT{uint32\_t}. 
+It can be said, it is just a hack. A dirty one.
+
+% WTF?
+
+The integer \ac{PRNG} code is the same as we already considered: \myref{LCG_simple}.
+So this code in compiled form is omitted.
+
+\lstinputlisting[style=customc]{patterns/17_unions/FPU_PRNG/FPU_PRNG_EN.cpp}
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2010,style=customasmx86]{patterns/17_unions/FPU_PRNG/MSVC2010_Ox_Ob0_EN.asm}
+
+Function names are so strange here because this example was compiled as C++ and this is name mangling in C++,
+we will talk about it later: \myref{namemangling}.
+If we compile this in MSVC 2012, it uses the SIMD instructions for the FPU, read more about it here: \myref{FPU_PRNG_SIMD}.
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5,style=customasmMIPS]{patterns/17_unions/FPU_PRNG/MIPS_O3_IDA_EN.lst}
+
+There is also an useless \INS{LUI} instruction added for some weird reason.
+We considered this artifact earlier: \myref{MIPS_FPU_LUI}.
+
+\subsubsection{ARM (\ARMMode)}
+
+\lstinputlisting[caption=\Optimizing GCC 4.6.3 (IDA),style=customasmARM]{patterns/17_unions/FPU_PRNG/raspberry_GCC_O3_IDA_EN.lst}
+
+\myindex{objdump}
+\myindex{binutils}
+\myindex{IDA}
+
+We'll also make a dump in objdump and we'll see that the FPU instructions have different names than in \IDA.
+Apparently, IDA and binutils developers used different manuals?
+Perhaps it would be good to know both instruction name variants.
+
+\lstinputlisting[caption=\Optimizing GCC 4.6.3 (objdump),style=customasmARM]{patterns/17_unions/FPU_PRNG/raspberry_GCC_O3_objdump.lst}
+
+The instructions at 0x5c in \TT{float\_rand()} and at 0x38 in \main are (pseudo-)random noise.
+

@@ -1,0 +1,33 @@
+\section{\HelloWorldSectionName}
+\label{sec:helloworld}
+
+Beginnen wir mit dem berühmten Beispiel aus dem Buch \KRBook:
+
+\lstinputlisting[style=customc]{patterns/01_helloworld/hw.c}
+
+\subsection{x86}
+
+\input{patterns/01_helloworld/MSVC_x86}
+\input{patterns/01_helloworld/GCC_x86}
+\input{patterns/01_helloworld/string_patching_DE}
+
+\subsection{x86-64}
+\input{patterns/01_helloworld/MSVC_x64}
+\input{patterns/01_helloworld/GCC_x64}
+\input{patterns/01_helloworld/address_patching_DE}
+
+\input{patterns/01_helloworld/GCC_one_more_DE} % TODO translate
+\input{patterns/01_helloworld/ARM/main}
+\input{patterns/01_helloworld/MIPS/main}
+
+\subsection{\Conclusion{}}
+
+Der Hauptunterschied zwischen x86/ARM and x64/ARM64-Code ist das der Zeiger auf den String 64 Bit lang ist.
+Moderne \ac{CPU}s haben eine 64-Bit-Architektur um Speicherkosten zu reduzieren und den höheren Bedarf
+aktueller Anwendungen erfüllen zu können.
+Es ist möglich sehr viel mehr Speicher in dem Computer zu verwenden als 32-Bit-Zeiger adressieren können.
+Aus diesem Grund sind alle Zeiger 64 Bit lang.
+
+% sections
+\input{patterns/01_helloworld/exercises}
+

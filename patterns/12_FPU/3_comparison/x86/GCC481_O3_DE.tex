@@ -1,0 +1,65 @@
+\myparagraph{GCC 4.8.1 mit aktivierter \Othree Optimierung}
+\label{gcc481_o3}
+Mit der P6 Intel Familie\footnote{Beginnend mit Pentium Pro, Pentium-II, etc.}
+wurden einige neue FPU Befehle hinzugefügt. 
+\myindex{x86!\Instructions!FUCOMI}
+Diese sind \INS{FUCOMI} (vergleiche Operanden und setze Flags der CPU) und 
+\myindex{x86!\Instructions!FCMOVcc}
+\INS{FCMOVcc} (arbeitet wie \INS{CMOVcc}, aber auf FPU Registern).
+Offenbar haben sich die Verwalter von GCC dazu entschieden, den Support von
+vor-P6 Intel CPUs (frühe Pentiums, 80486, etc.) einzustellen.
+
+Außerdem ist die FPU nicht länger eine separate Einheit in der P6 Intel Familie,
+sodass es nun auch möglich ist, die Flags der CPU von der FPU aus zu prüfen oder
+zu verändern.
+
+Wir erhalten also das Folgende:
+
+\lstinputlisting[caption=\Optimizing GCC
+4.8.1,style=customasmx86]{patterns/12_FPU/3_comparison/x86/GCC481_O3_DE.s}
+
+Schwer zu sagen, warum \INS{FXCH} (vertausche Operanden) hier verwendet wird.
+
+Es ist möglich, diesen Befehl loszuwerden, indem man die ersten beiden \FLD
+Befehle vertauscht oder \INS{FCMOVBE} (\IT{below or equal}) durch \INS{FCMOVA}
+(\IT{above}) ersetzt.
+Wahrscheinlich handelt es sich hierbei um eine Ungenauigkeit im Compiler.
+
+\INS{FUCOMI} vergleicht also \ST{0} ($a$) und \ST{1} ($b$) und setzt einige
+Flags in der CPU. 
+\INS{FCMOVBE} prüft die Flags und kopiert \ST{1} (in diesem Moment also $b$)
+nach \ST{0} (hier: $a$), falls $ST0 (a) <= ST1 (b)$.
+Andernfalls ($a>b$) wird $a$ in \ST{0} belassen.
+
+Der letzte \FSTP Befehl belässt \ST{0} oben auf dem Stack und verwirft den
+Inhalt von \ST{1}. 
+
+Verfolgen wir den Funktionsverlauf in GDB:
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1 and GDB,numbers=left]{patterns/12_FPU/3_comparison/x86/gdb.txt}
+
+Unter Verwendung von \q{ni} führen wir die ersten beiden \FLD Befehle aus.
+
+Sehen wir uns die FPU Register (Zeile 33) an.
+
+Wie bereits erwähnt, bildet der FPU Registersatz einen Ringpuffer und keinen
+Stack (\myref{FPU_is_rather_circular_buffer}).
+Außerdem zeigt GDB nicht die \GTT{STx} Register, sondern die internen FPU
+Register (\GTT{Rx}). 
+Der Pfeil (in Zeile 35) zeigt auf das aktuell obere Ende des Stacks.
+
+Wir sehen auch den Inhalt des \GTT{TOP} Registers in \IT{Status Word} (Zeile
+44)--hier ist dieser 6, sodass das oberste Element im Stack also aktuell auf das
+interne Register 6 zeigt.
+
+Die Werte von $a$ und $b$ werden nach Ausführung von \INS{FXCH} (Zeile 54)
+vertauscht.
+
+\INS{FUCOMI} wird ausgeführt (Zeile 83).
+Betrachten wir die Flags: \CF ist gesetzt (Zeile 95).
+
+\INS{FCMOVBE} hat den Wert von $b$ kopiert (siehe Zeile 104).
+
+\FSTP lässt einen Wert oben auf dem Stack (Zeile 136).
+Der Wert von \GTT{TOP} beträgt jetzt 7, was bedeutet, dass das obere Ende des
+FPU Stacks jetzt auf das interne Register 7 zeigt.

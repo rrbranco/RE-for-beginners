@@ -1,0 +1,45 @@
+\clearpage
+\subsubsection{MSVC: x86 + \olly}
+
+Essayons de hacker notre programme dans \olly, pour le forcer à penser que \scanf
+fonctionne toujours sans erreur.
+Lorsque l'adresse d'une variable locale est passée à \scanf, la variable contient
+initiallement toujours des restes de données aléatoires, dans ce cas \TT{0x6E494714}:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/olly_1.png}
+\caption{\olly: passer l'adressed de la variable à \scanf}
+\label{fig:scanf_ex3_olly_1}
+\end{figure}
+
+\clearpage
+Lorsque \scanf s'exécute dans la console, entrons quelque chose qui n'est pas du
+tout un nombre, comme \q{asdasd}.
+\scanf termine avec 0 dans \EAX, ce qui indique qu'une erreur s'est produite:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/04_scanf/3_checking_retval/olly_2.png}
+\caption{\olly: \scanf renvoyant une erreur}
+\label{fig:scanf_ex3_olly_2}
+\end{figure}
+
+Nous pouvons vérifier la variable locale dans le pile et noter qu'elle n'a pas changé.
+En effet, qu'aurait écrit \scanf ici?
+Elle n'a simplement rien fait à part renvoyer zéro.
+
+Essayons de \q{hacker} notre programme.
+Clique-droit sur \EAX,
+Parmis les options il y a \q{Set to 1} (mettre à 1).
+C'est ce dont nous avons besoin.
+
+Nous avons maintenant 1 dans \EAX, donc la vérification suivante va s'exécuter comme
+souhaiter et \printf va afficher la valeur de la variable dans la pile.
+
+Lorsque nous lançons le programme (F9) nous pouvons voir ceci dans la fenêtre
+de la console:
+
+\lstinputlisting[caption=fenêtre console]{patterns/04_scanf/3_checking_retval/console.txt}
+
+En effet, 1850296084 est la représentation en décimal du nombre dans la pile (\TT{0x6E494714})!

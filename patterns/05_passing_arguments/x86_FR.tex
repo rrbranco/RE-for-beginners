@@ -1,0 +1,50 @@
+\subsection{x86}
+
+\subsubsection{MSVC}
+
+Voici ce que l'on obtient après compilation (MSVC 2010 Express):
+
+\lstinputlisting[label=src:passing_arguments_ex_MSVC_cdecl,caption=MSVC 2010 Express,style=customasmx86]{patterns/05_passing_arguments/msvc_FR.asm}
+
+\myindex{x86!\Registers!EBP}
+
+Ce que l'on voit, c'est que la fonction \main pousse 3 nombres sur la pile et appelle
+\TT{f(int,int,int)}.
+
+L'accès aux arguments à l'intérieur de \ttf est organisé à l'aide de macros
+comme:\\
+\TT{\_a\$ = 8}, 
+de la même façons que pour les variables locales, mais avec des offsets positifs
+(adressés avec \IT{plus}).
+Donc, nous accèdons la partie \IT{hors} de la \glslink{stack frame}{structure locale de pile}
+en ajoutant la macro \TT{\_a\$} à la valeur dans le registre \EBP.
+
+\myindex{x86!\Instructions!IMUL}
+\myindex{x86!\Instructions!ADD}
+
+Ensuite, la valeur de $a$ est stockée dans \EAX. Après l'exécution de l'instruction
+\IMUL, la valeur dans \EAX est le \glslink{product}{produit} de la valeur dans \EAX
+et du contenu de \TT{\_b}.
+
+Après cela, \ADD ajoute la valeur dans \TT{\_c} à \EAX.
+
+La valeur dans  \EAX n'a pas besoin d'être déplacée/copiée: elle est déjà là
+oú elle doit être.
+Lors du retour dans la fonction \glslink{caller}{appelante}, elle prend la valeur dans
+\EAX et l'utilise comme argument pour \printf.
+
+\input{patterns/05_passing_arguments/olly_FR}
+
+\subsubsection{GCC}
+
+Compilons le même code avec GCC 4.4.1 et regardons le résultat dans \IDA:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/05_passing_arguments/gcc_FR.asm}
+
+Le résultat est presque le même, avec quelques différencess mineures discutées
+précédemment.
+
+Le \glslink{stack pointer}{pointeur de pile} n'est pas remis après les deux appels
+de fonctions (f and printf), car la pénultième instruction \TT{LEAVE} (\myref{x86_ins:LEAVE})
+s'en occupe à la fin.
+

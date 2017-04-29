@@ -1,0 +1,144 @@
+﻿\section{XOR (exclusive OR)}
+\label{XOR_property}
+
+\input{fundamentals/XOR_property_EN}
+
+\subsection{Everyday speech}
+
+XOR operation present in common everyday speech.
+When someone asks ``please buy apples or bananas'',
+this usually means ``buy the first object or the second, but not both''---this is exactly exclusive OR,
+because logical OR would mean ``both objects are also fine''.
+
+Some people suggest ``and/or'' should be used in everyday speech to make emphasis that logical OR is used instead of
+exclusive OR: \url{https://en.wikipedia.org/wiki/And/or}.
+
+\subsection{Encryption}
+
+XOR is heavily used in both amateur (\ref{simple_XOR_encryption}) and \IT{real} encryption (at least in \IT{Feistel network}).
+
+XOR is very useful here because:
+$cipher\_text = plain\_text \oplus key$ and then:
+$(plain\_text \oplus key) \oplus key = plain\_text$.
+
+\subsection{\ac{RAID}4}
+\index{RAID4}
+
+\ac{RAID}4 offers a very simple method to to protect hard disks.
+For example, there are several disks ($D_1$, $D_2$, $D_3$, etc.) and one parity disk ($P$).
+Each bit/byte written to parity disk is calculated and written on-fly:
+
+\begin{equation} \label{eq:RAID4}
+P = D_1 \oplus D_2 \oplus D_3
+\end{equation}
+
+If any of disks is failed, for example, $D_2$, it's restored using the very same way:
+
+\begin{equation}
+D_2 = D_1 \oplus P \oplus D_3
+\end{equation}
+
+If parity disk failed, it is restored using \ref{eq:RAID4} way.
+If two of any disks are failed, then it wouldn't be possible to restore both.
+
+\ac{RAID}5 is more advanced, but this XOR property is still exploited there.
+
+That's why \ac{RAID} controllers has hardware ``XOR accelerators'' helping to XOR large chunks of written data on-fly.
+When computers get faster and faster, it now can be done at software level, using \ac{SIMD}.
+
+\subsection{XOR swap algorithm}
+
+Hard to believe, but this code swaps values in \EAX and \EBX without aid of any other additional register or memory cell:
+
+\begin{lstlisting}[style=customasmx86]
+xor eax, ebx
+xor ebx, eax
+xor eax, ebx
+\end{lstlisting}
+
+Let's find out, how it works.
+First, we will rewrite it to step aside from x86 assembly language:
+
+\begin{lstlisting}
+X = X XOR Y
+Y = Y XOR X
+X = X XOR Y
+\end{lstlisting}
+
+What X and Y has at each step?
+Just keep in mind the simple rule: $(X \oplus Y) \oplus Y = X$ for any values of X and Y.
+
+Let's see,
+$X$ after 1st step has $X \oplus Y$;
+$Y$ after 2nd step has $Y \oplus (X \oplus Y) = X$;
+$X$ after 3rd step has $(X \oplus Y) \oplus X = Y$.
+
+Hard to say if anyone should use this trick, but it servers as a good demonstration example of XOR properties.
+
+Wikipedia article (\url{https://en.wikipedia.org/wiki/XOR_swap_algorithm}) has also yet another explanation:
+addition and subtraction operations can be used instead of XOR:
+
+\begin{lstlisting}
+X = X + Y
+Y = X - Y
+X = X - Y
+\end{lstlisting}
+
+Let's see:
+$X$ after 1st step has $X+Y$;
+$Y$ after 2nd step has $X+Y-Y=X$;
+$X$ after 3rd step has $X+Y-X=Y$.
+
+\subsection{XOR linked list}
+\index{Doubly linked list}
+
+Doubly linked list is a list in which each element has link to the previous element and to the next one.
+Hence, it's very easy to traverse list backwards or forward.
+\TT{std::list} in C++ implements doubly linked list which also is examined in this book: \ref{std_list}.
+
+So each element has two pointers.
+Is it possible, perhaps in environment of small \ac{RAM} footprint, to preserve all functionality with one pointer instead of two?
+Yes, if it a value of $prev \oplus next$ will be stored in this memory cell, which is usually called ``link''.
+
+Maybe, we could say that address to the previous element is ``encrypted'' using address of next element and otherwise:
+next element address is ``encrypted'' using previous element address.
+
+When we traverse this list forward, we always know address of the previous element, so we can ``decrypt'' this field and get 
+address of the next element.
+Likewise, it's possible to traverse this list backwards, ``decrypting'' this field using next element's address.
+
+But it's not possible to find address of previous or next element of some specific element without
+knowing address of the first one.
+
+Couple of things to complete this solution: first element will have address of next element without any XOR-ing,
+last element will have address of previous element without any XOR-ing.
+
+Now let's sum it up. This is example of doubly linked list of 5 elements.
+$A_x$ is address of element.
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+	\hline
+	\HeaderColor address & \HeaderColor \IT{link} field contents \\
+	\hline
+	$A_0$ & $A_1$ \\
+	\hline
+	$A_1$ & $A_0 \oplus A_2$ \\
+	\hline
+	$A_2$ & $A_1 \oplus A_3$ \\
+	\hline
+	$A_3$ & $A_2 \oplus A_4$ \\
+	\hline
+	$A_4$ & $A_3$ \\
+	\hline
+\end{tabular}
+\end{center}
+
+And again, hard to say if anyone should use this tricky hacks, but this is also a good demonstration of XOR properties.
+As with XOR swap algorithm, Wikipedia article about it also offers way to use addition or subtraction instead of XOR:
+\url{https://en.wikipedia.org/wiki/XOR_linked_list}.
+
+\subsection{By the way}
+
+The usual \IT{OR} also sometimes called \IT{inclusive OR} (or even \IT{IOR}), as opposed to \IT{exclusive OR}.
+

@@ -1,0 +1,201 @@
+\section{Konstanten}
+
+Menschen, Programmierer eingeschlossen, neigen dazu Zahlen zu Runden wie z.B 10, 100, 1000,
+im realen Leben so wie in ihrem Code.
+
+Der angehende Reverse Engineer kennt diese Werte und ihre Hexadezimale Repr\"asentation sehr gut:
+0b10=0xA, 0b100=0x64, 0b1000=0x3E8, 0b10000=0x2710.
+
+Die Konstanten \TT{0xAAAAAAAA} (0b10101010101010101010101010101010) und 
+\TT{0x55555555} (0b01010101010101010101010101010101) sind auch sehr popul\"ar---
+sie sind zusammen-gesetzt aus ver\"andernden Bits. % <-- Findest vielleicht noch ne besere bezeichnung
+
+Das hilft vielleicht ein Signal von einem Signal zu unterscheiden bei dem alle Bits eingeschaltet werden  (0b1111 \dots) oder ausgeschaltet (0b0000 \dots).
+Zum Beispiel die \TT{0x55AA} Konstante wird
+zumindest beim Boot Sektor benutzt, \ac{MBR},
+und im \ac{ROM} von IBM-Kompatiblen Erweiterung Karten.
+
+Manche Algorithmen, speziell die Kryptografischen benutzen eindeutige Konstanten, die einfach zu finden 
+sind im Code mit der Hilfe von \IDA.
+
+\myindex{MD5}
+\newcommand{\URLMD}{http://go.yurichev.com/17111}
+
+Zum Beispiel, der MD5\footnote{\href{\URLMD}{wikipedia}} Algorithmus initialisiert seine Internen Variablen wie folgt:
+
+
+\begin{verbatim}
+var int h0 := 0x67452301
+var int h1 := 0xEFCDAB89
+var int h2 := 0x98BADCFE
+var int h3 := 0x10325476
+\end{verbatim}
+
+Wenn man diese vier Konstanten im Code hintereinander benutzt findet, dann ist die Wahrscheinlichkeit das diese Funktion 
+sich auf MD5 bezieht.
+
+\par Ein weiteres Beispiel sind die CRC16/CRC32 Algorithmen,
+ihre Berechnungs Algorithmen benutzen oft vor-berechnete Tabellen wie diese:
+
+\begin{lstlisting}[caption=linux/lib/crc16.c,style=customc]
+/** CRC table for the CRC-16. The poly is 0x8005 (x^16 + x^15 + x^2 + 1) */
+u16 const crc16_table[256] = {
+	0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
+	0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
+	0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40,
+	...
+\end{lstlisting}
+
+Man beachte auch die vor berechnete Tabelle f\"ur CRC32: \myref{sec:CRC32}.
+
+In Tabellen losen CRC Algorithmen werden bekannte Polynome benutzt, zum Beispiel, 0xEDB88320 f\"ur CRC32.
+
+\subsection{Magic numbers}
+\label{magic_numbers}
+
+\newcommand{\FNURLMAGIC}{\footnote{\href{http://go.yurichev.com/17112}{wikipedia}}}
+
+Viele Datei Formate definieren einen Standard Datei Header wo eine \IT{magic number(s)}\FNURLMAGIC{} benutzt wird, einzelne oder
+sogar mehrere. 
+
+\myindex{MS-DOS}
+
+Zum Beispiel, alle Win32 und MS-DOS executable starten mit zwei Zeichen \q{MZ}\footnote{\href{http://go.yurichev.com/17113}{wikipedia}}.
+
+
+\myindex{MIDI}
+
+Am Anfang einer MIDI Datei muss die \q{MThd} Signatur vorhanden sein.
+Wenn wir ein Programm haben das auf MIDI Dateien zugreift um sonst was zu machen,
+ist es sehr wahrscheinlich das das Programm die Datei validieren muss in dem es
+mindestens die ersten 4 Bytes pr\"uft.
+
+Das kann man wie folgt realisieren:
+(\IT{buf} Zeigt auf den Anfang der geladenen Datei im Speicher) 
+
+\begin{lstlisting}[style=customasmx86]
+cmp [buf], 0x6468544D ; "MThd"
+jnz _error_not_a_MIDI_file
+\end{lstlisting}
+
+\myindex{\CStandardLibrary!memcmp()}
+\myindex{x86!\Instructions!CMPSB}
+
+\dots oder durch das Aufrufen der Funktion f\"ur das vergleichen von Speicherbl\"ocken wie z.B \TT{memcmp()} oder 
+beliebigen anderen Code bis hin zu einer \TT{CMPSB} (\myref{REPE_CMPSx}) Instruktion.
+
+Wenn man so einen Punkt findet kann man bereits sagen das eine MIDI Datei geladen wird, % <-- \"Andern?
+wir k\"onnen auch sehen wo der Puffer mit den Inhalten der MIDI Datei liegt und was/wie aus diesem
+Puffer verwendet wird.
+
+\subsubsection{Daten}
+
+\myindex{UFS2}
+\myindex{FreeBSD}
+\myindex{HASP}
+
+Oft findet man auch nur eine Zahl wie \TT{0x19870116}, was ganz klar nach einem Jahres Datum aussieht (Tag 16,  1 Monat (Januar),  Jahr 1987).
+Das ist vielleicht das Geburtsdatum von jemandem (ein Programmierer. ihre/seine bekannte, Kind), oder ein anderes wichtiges Datum.
+Das Datum kann auch in umgekehrter folge auftreten, wie z.B \TT{0x16011987}. 
+Datums angaben im Amerikanischen-Stil sind auch weit verbreitet wie \TT{0x01161987}.
+
+Ein ziemlich bekanntes Beispiel ist  \TT{0x19540119} (magic number wird in der UFS2 Superblock Struktur benutzt), das 
+Geburtsdatum von Marschall Kirk McKusick ist, einem Prominenten FreeBSD Entwickler. 
+
+
+\myindex{Stuxnet}
+Stuxnet benutzt die Zahl ``19790509'' (nicht als 32-Bit Zahl, aber als String), was zu Spekulationen gef\"uhrt hat
+weil die malware Verbindungen nach Israel aufzeigt.
+\footnote{Das ist das Datum der Hinrichtung von Habib Elghanian, persischer Jude.}
+
+Solche Zahlen sind auch sehr beliebt in Amateur Kryptografie, zum Beispiel, ein Ausschnitt aus den \IT{secret function} Interna aus dem HASP3 Dongle %  <-- Vielleicht bessere formulierung?
+\footnote{\url{https://web.archive.org/web/20160311231616/http://www.woodmann.com/fravia/bayu3.htm}}:
+
+\begin{lstlisting}[style=customc]
+void xor_pwd(void) 
+{ 
+	int i; 
+	
+	pwd^=0x09071966;
+	for(i=0;i<8;i++) 
+	{ 
+		al_buf[i]= pwd & 7; pwd = pwd >> 3; 
+	} 
+};
+
+void emulate_func2(unsigned short seed)
+{ 
+	int i, j; 
+	for(i=0;i<8;i++) 
+	{ 
+		ch[i] = 0; 
+		
+		for(j=0;j<8;j++)
+		{ 
+			seed *= 0x1989; 
+			seed += 5; 
+			ch[i] |= (tab[(seed>>9)&0x3f]) << (7-j); 
+		}
+	} 
+}
+\end{lstlisting}
+
+\subsubsection{DHCP}
+
+Das Trifft auf Netzwerk Protokolle ebenso zu. 
+Zum Beispiel, die Pakete des DHCP Protokoll's beinhalten so genannte \IT{magic cookie}: \TT{0x63538263}.
+Jeder Code der ein DHCP Pakete generiert, muss diese Konstante in das Pakete einbetten.
+Wenn wir diesen Code finden, wissen wir auch wo es passiert und nicht nur was passiert.
+Jedes Programm das DHCP Pakete empfangen kann muss verifizieren das der \IT{magic cookie} mit der Konstante 
+\"ubereinstimmt. 
+
+Zum Beispiel, lasst uns die dhcpcore.dll Datei aus Windows 7 x64 analysieren die nach der Konstante suchen.
+Wir k\"onnen die Konstante zweimal finden:
+Es sieht danach aus als w\"are die Konstante in zwei Funktionen benutzt mit dem selbst redenden Namen\\
+\TT{DhcpExtractOptionsForValidation()} und \TT{DhcpExtractFullOptions()}:
+
+\begin{lstlisting}[caption=dhcpcore.dll (Windows 7 x64),style=customasmx86]
+.rdata:000007FF6483CBE8 dword_7FF6483CBE8 dd 63538263h          ; DATA XREF: DhcpExtractOptionsForValidation+79
+.rdata:000007FF6483CBEC dword_7FF6483CBEC dd 63538263h          ; DATA XREF: DhcpExtractFullOptions+97
+\end{lstlisting}
+
+Und hier die (Speicher) Orte an denen auf die Konstante zugegriffen wird:
+
+\begin{lstlisting}[caption=dhcpcore.dll (Windows 7 x64),style=customasmx86]
+.text:000007FF6480875F  mov     eax, [rsi]
+.text:000007FF64808761  cmp     eax, cs:dword_7FF6483CBE8
+.text:000007FF64808767  jnz     loc_7FF64817179
+\end{lstlisting}
+
+Und:
+
+\begin{lstlisting}[caption=dhcpcore.dll (Windows 7 x64),style=customasmx86]
+.text:000007FF648082C7  mov     eax, [r12]
+.text:000007FF648082CB  cmp     eax, cs:dword_7FF6483CBEC
+.text:000007FF648082D1  jnz     loc_7FF648173AF
+\end{lstlisting}
+
+\subsection{Spezifische Konstanten}
+
+Manchmal, gibt es spezifische Konstanten f\"ur gewissen Code % <-- Besser? 
+Zum Beispiel, einmal hat der Autor sich in ein St\"uck Code gegraben wo die Nummer 12 verd\"achtig
+oft vor kam. Arrays haben oft eine Gr\"oße von 12 oder ein vielfaches von 12 (24, etc). 
+Wie sich raus stellte, hat der Code eine 12-Kanal Audiodatei an der Eingabe entgegen genommen und
+sie verarbeitet.
+
+Und umgekehrt: zum Beispiel, wenn ein Programm ein Textfeld verarbeitet das eine L\"ange von 120 Bytes hat,
+dann gibt es auch eine Konstante 120 oder 119 irgendwo im Code.
+Wenn UTF-16 Benutzt wird, dann $2 \cdot 120$. Wenn Code mit Netzwerkpaketen arbeitet die von fester Gr\"oße
+sind, ist es eine gute Idee nach dieser Konstante im Code zu suchen.
+
+Das trifft auch auf Amateur Kryptografie zu (Lizenz Schl\"ussel, etc). 
+Bei einem verschl\"usselten Block von $n$ Bytes, will man versuchen die vorkommen dieser Nummer im Code zu suchen,
+auch, wenn man ein St\"uck Code sieht der sich $n$ mal w\"ahrend einer Schleifen Ausf\"uhrung wiederholt, ist das vielleicht
+eine ver-/Entschl\"usselung Routine.
+
+\subsection{Nach Konstanten suchen}
+
+Das ist einfach mit \IDA: Alt-B oder Alt-I.
+\myindex{bin\"ar grep}
+Und f\"ur das suchen von Konstanten in einem Haufen großer Dateien, oder f\"ur das suchen in nicht ausf\"uhrbaren Dateien,
+gibt es ein kleines Utility genannt \IT{binary grep}\footnote{\BGREPURL}.

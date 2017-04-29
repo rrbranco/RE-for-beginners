@@ -1,0 +1,222 @@
+\subsubsection{Простой пример}
+
+Внутреннее представление классов в \Cpp почти такое же, как и представление структур.
+
+Давайте попробуем простой пример с двумя переменными, двумя конструкторами и одним методом:
+
+\lstinputlisting[style=customc]{\CURPATH/classes/simple_RU.cpp}
+
+\myparagraph{MSVC: x86}
+
+Вот как выглядит \main на ассемблере:
+
+\lstinputlisting[caption=MSVC,style=customasmx86]{\CURPATH/classes/simple_1_msvc.asm}
+
+Вот что происходит. 
+Под каждый экземпляр класса $c$ выделяется по 8 байт, столько же, сколько нужно 
+для хранения двух переменных.
+
+Для \IT{c1} вызывается конструктор по умолчанию без аргументов \TT{??0c@@QAE@XZ}. \\
+Для \IT{c2} вызывается другой конструктор \TT{??0c@@QAE@HH@Z} и передаются два числа в качестве аргументов.
+
+\myindex{thiscall}
+\label{thiscall}
+\myindex{x86!\Registers!ECX}
+А указатель на объект (\ITthis в терминологии \Cpp) передается в регистре \ECX. 
+Это называется thiscall~(\myref{thiscall}) --- метод передачи указателя на объект.
+
+В данном случае, MSVC делает это через \ECX. Необходимо помнить, что это не стандартизированный метод, 
+и другие компиляторы могут делать это иначе, например, через первый аргумент функции (как GCC).
+
+\label{namemangling}
+\myindex{Name mangling}
+\myindex{ООП!Полиморфизм}
+Почему у имен функций такие странные имена? Это \gls{name mangling}.
+
+В \Cpp, у класса, может иметься несколько методов с одинаковыми именами, 
+но аргументами разных типов --- это полиморфизм. 
+Ну и конечно, у разных классов могут быть методы с одинаковыми именами.
+
+\myindex{Компоновщик}
+\IT{Name mangling} позволяет закодировать имя класса + имя метода + типы всех аргументов метода 
+в одной ASCII-строке, которая затем используется как внутреннее имя функции. 
+Это все потому что ни компоновщик\footnote{linker}, ни загрузчик DLL \ac{OS}
+(мангленные имена могут быть среди экспортов/импортов в DLL), 
+ничего не знают о \Cpp или \ac{OOP}.
+
+Далее вызывается два раза \TT{dump()}.
+
+Теперь смотрим на код в конструкторах:
+
+\lstinputlisting[caption=MSVC,style=customasmx86]{\CURPATH/classes/simple_2_msvc.asm}
+
+Конструкторы --- это просто функции, они используют указатель на структуру в \ECX, 
+копируют его себе в локальную переменную, хотя это и не обязательно.
+
+Из стандарта \Cpp мы знаем (C++11 12.1) 
+что конструкторы не должны возвращать значение.
+В реальности, внутри, конструкторы возвращают указатель на созданный объект, т.е., \ITthis.
+
+И еще метод \TT{dump()}:
+
+\lstinputlisting[caption=MSVC,style=customasmx86]{\CURPATH/classes/simple_3_msvc.asm}
+
+Все очень просто, \TT{dump()} берет указатель на структуру состоящую из двух \Tint через \ECX, 
+выдергивает оттуда две переменные и передает их в \printf.
+
+А если скомпилировать с оптимизацией (\Ox), то кода будет намного меньше:
+
+\lstinputlisting[caption=MSVC,style=customasmx86]{\CURPATH/classes/simple_4_msvc_Ox.asm}
+
+\myindex{x86!\Instructions!RET}
+Вот и все. Единственное о чем еще нужно сказать, это о том, что в функции \main, 
+когда вызывался второй конструктор с двумя аргументами, за ним не корректировался стек при помощи 
+\TT{add esp, X}. В то же время, в конце конструктора вместо \RET имеется \TT{RET 8}.
+
+\myindex{thiscall}
+Это потому что здесь используется thiscall~(\myref{thiscall}), который, вместе с stdcall~(\myref{sec:stdcall})
+(все это --- методы передачи аргументов через стек), предлагает вызываемой функции корректировать стек. 
+Инструкция \TT{ret X} сначала прибавляет \TT{X} к \ESP, затем передает управление вызывающей функции.
+
+См. также в соответствующем разделе о способах передачи аргументов через стек
+~(\myref{sec:callingconventions}).
+
+Еще, кстати, нужно отметить, что именно компилятор решает, когда вызывать конструктор и деструктор --- но это
+и так известно из основ языка \Cpp.
+
+\myparagraph{MSVC: x86-64}
+\label{simple_CPP_MSVC_x64}
+
+Как мы уже знаем, в x86-64 первые 4 аргумента функции передаются через регистры \RCX, \RDX, \Reg{8}, 
+\Reg{9}, а остальные --- через стек.
+Тем не менее, указатель на объект \ITthis передается через \RCX, а первый аргумент метода --- в \RDX, итд.
+Здесь это видно во внутренностях метода 
+\TT{c(int a, int b)}:
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 x64,style=customasmx86]{\CURPATH/classes/simple_MSVC_x64_RU.asm}
+
+Тип \Tint в x64 остается 32-битным
+\footnote{Видимо, так решили для упрощения портирования \CCpp{}-кода на x64}, 
+поэтому здесь используются 32-битные части регистров.
+
+В методе \TT{dump()} вместо \RET мы видим \TT{JMP printf}, этот \IT{хак} мы рассматривали ранее: \myref{JMP_instead_of_RET}.
+
+\myparagraph{GCC: x86}
+
+В GCC 4.4.1 всё почти так же, за исключением некоторых различий.
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{\CURPATH/classes/simple_GCC.asm}
+
+Здесь мы видим, что применяется иной \IT{name mangling} характерный для стандартов GNU
+\footnote{Еще о name mangling разных компиляторов:\\
+\InSqBrackets{\AgnerFogCC}.}
+Во-вторых, указатель на экземпляр передается как первый аргумент функции --- конечно же, скрыто от программиста.
+
+Это первый конструктор:
+
+\begin{lstlisting}[style=customasmx86]
+                public _ZN1cC1Ev ; weak
+_ZN1cC1Ev       proc near               ; CODE XREF: main+10
+
+arg_0           = dword ptr  8
+
+                push    ebp
+                mov     ebp, esp
+                mov     eax, [ebp+arg_0]
+                mov     dword ptr [eax], 667
+                mov     eax, [ebp+arg_0]
+                mov     dword ptr [eax+4], 999
+                pop     ebp
+                retn
+_ZN1cC1Ev       endp
+\end{lstlisting}
+
+Он просто записывает два числа по указателю, переданному в первом (и единственном) аргументе.
+
+Второй конструктор:
+
+\begin{lstlisting}[style=customasmx86]
+                public _ZN1cC1Eii
+_ZN1cC1Eii      proc near
+
+arg_0           = dword ptr  8
+arg_4           = dword ptr  0Ch
+arg_8           = dword ptr  10h
+
+                push    ebp
+                mov     ebp, esp
+                mov     eax, [ebp+arg_0]
+                mov     edx, [ebp+arg_4]
+                mov     [eax], edx
+                mov     eax, [ebp+arg_0]
+                mov     edx, [ebp+arg_8]
+                mov     [eax+4], edx
+                pop     ebp
+                retn
+_ZN1cC1Eii      endp
+\end{lstlisting}
+
+Это функция, аналог которой мог бы выглядеть так:
+
+\begin{lstlisting}[style=customc]
+void ZN1cC1Eii (int *obj, int a, int b)
+{
+  *obj=a;
+  *(obj+1)=b;
+};
+\end{lstlisting}
+
+\dots что, в общем, предсказуемо.
+
+И функция \TT{dump()}:
+
+\begin{lstlisting}[style=customasmx86]
+                public _ZN1c4dumpEv
+_ZN1c4dumpEv    proc near
+
+var_18          = dword ptr -18h
+var_14          = dword ptr -14h
+var_10          = dword ptr -10h
+arg_0           = dword ptr  8
+
+                push    ebp
+                mov     ebp, esp
+                sub     esp, 18h
+                mov     eax, [ebp+arg_0]
+                mov     edx, [eax+4]
+                mov     eax, [ebp+arg_0]
+                mov     eax, [eax]
+                mov     [esp+18h+var_10], edx
+                mov     [esp+18h+var_14], eax
+                mov     [esp+18h+var_18], offset aDD ; "%d; %d\n"
+                call    _printf
+                leave
+                retn
+_ZN1c4dumpEv    endp
+\end{lstlisting}
+
+Эта функция \IT{во внутреннем представлении} имеет один аргумент, через который передается указатель на 
+объект\footnote{экземпляр класса} (\ITthis).
+
+Это можно переписать на Си:
+
+\begin{lstlisting}[style=customc]
+void ZN1c4dumpEv (int *obj)
+{
+  printf ("%d; %d\n", *obj, *(obj+1));
+};
+\end{lstlisting}
+
+Таким образом, если брать в учет только эти простые примеры, разница между MSVC и GCC 
+в способе кодирования имен функций (\IT{name mangling}) и передаче указателя на экземпляр класса 
+(через \ECX или через первый аргумент).
+
+\myparagraph{GCC: x86-64}
+
+Первые 6 аргументов, как мы уже знаем, передаются через 6 регистров \RDI, \RSI, \RDX, \RCX, \Reg{8} и 
+\Reg{9} (\SysVABI), а указатель на \ITthis через первый (\RDI) что мы здесь и видим.
+Тип \Tint 32-битный и здесь.
+\IT{Хак} с \JMP вместо \RET используется и здесь.
+
+\lstinputlisting[caption=GCC 4.4.6 x64,style=customasmx86]{\CURPATH/classes/simple_GCC_x64_RU.s}
+

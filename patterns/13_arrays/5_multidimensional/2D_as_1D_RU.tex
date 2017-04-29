@@ -1,0 +1,17 @@
+﻿\subsubsection{Работа с двухмерным массивом как с одномерным}
+
+Мы можем легко убедиться, что можно работать с двухмерным массивом как с одномерным,
+используя по крайней мере два метода:
+
+\lstinputlisting[style=customc]{patterns/13_arrays/5_multidimensional/2D_as_1D_RU.c}
+
+Компилируете и запускаете: мы увидим корректные значения.
+
+Очарователен результат работы MSVC 2013~--- все три процедуры одинаковые!
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{patterns/13_arrays/5_multidimensional/2D_as_1D_MSVC_2013_Ox_x64_RU.asm}
+
+GCC сгенерировал практически одинаковые процедуры:
+
+\lstinputlisting[caption=\Optimizing GCC 4.9 x64,style=customasmx86]{patterns/13_arrays/5_multidimensional/2D_as_1D_GCC49_x64_O3_RU.s}
+

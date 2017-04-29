@@ -1,0 +1,36 @@
+\subsection{Multiplikation und Division}
+
+\lstinputlisting[style=customc]{patterns/185_64bit_in_32_env/multdiv/2.c}
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2013
+/Ob1,style=customasmx86]{patterns/185_64bit_in_32_env/multdiv/2_MSVC_DE.asm}
+Da Multiplikation und Division komplexere Operationen sind, verwendet der Compiler für deren Ausführung in der Regel
+Bibliotheksfunktionen.
+
+Diese Funktionen werden hier beschrieben:\myref{sec:MSVC_library_func}.
+
+\lstinputlisting[caption=\Optimizing GCC 4.8.1
+-fno-inline,style=customasmx86]{patterns/185_64bit_in_32_env/multdiv/2_GCC_DE.asm}
+GCC verhält sich wie erwartet, aber der Code für die Multiplikation wird direkt in der Funktion platziert und ist so
+effizienter. In GCC haben die Bibliotheksfunktionen andere Namen: \myref{sec:GCC_library_func}.
+
+\subsubsection{ARM}
+Keil für Thumb mode fügt Aufrufe von Routinen aus Bibliotheken ein:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/185_64bit_in_32_env/multdiv/Keil_thumb_O3.s}
+Keil für ARM mode ist wiederum in der Lage Code für 64-Bit-Multiplikation zu erzeugen:
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/185_64bit_in_32_env/multdiv/Keil_ARM_O3.s}
+% TODO add explanation
+
+\subsubsection{MIPS}
+Der optimierende GCC für MIPS kann Code für 64-Bit-Multiplikation erzeugen, muss aber für die Division auf eine
+Programmbibliothek zurückgreifen:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/185_64bit_in_32_env/multdiv/MIPS_O3_IDA.lst}
+Hier gibt es eine Menge \ac{NOP}s; möglicherweise sind dies delay slots, die nach dem Multiplikationsbefehl eingefügt
+wurden (diese Vorgehensweise ist jedoch langsamer als andere Befehle).
+
+% TODO add explanation

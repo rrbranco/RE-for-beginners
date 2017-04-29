@@ -1,0 +1,105 @@
+% TODO proof-reading
+\subsection{Linear congruential \ac{PRNG}}
+
+Let's try a simple pseudorandom numbers generator, 
+which we already considered once in the book (\myref{LCG_simple}):
+
+
+\begin{lstlisting}[style=customjava]
+public class LCG 
+{
+	public static int rand_state;
+
+	public void my_srand (int init)
+	{
+		rand_state=init;
+	}
+
+	public static int RNG_a=1664525;
+	public static int RNG_c=1013904223;
+
+	public int my_rand ()
+	{
+		rand_state=rand_state*RNG_a;
+		rand_state=rand_state+RNG_c;
+		return rand_state & 0x7fff;
+	}
+}
+\end{lstlisting}
+
+There are couple of class fields which are initialized at start.
+
+But how?
+In \TT{javap} output we can find the class constructor:
+
+
+\begin{lstlisting}
+  static {};
+    flags: ACC_STATIC
+    Code:
+      stack=1, locals=0, args_size=0
+         0: ldc           #5         // int 1664525
+         2: putstatic     #3         // Field RNG_a:I
+         5: ldc           #6         // int 1013904223
+         7: putstatic     #4         // Field RNG_c:I
+        10: return        
+\end{lstlisting}
+
+That's the way variables are initialized.
+
+\TT{RNG\_a} occupies the 3rd slot in the class and \TT{RNG\_c}---4th, 
+and \TT{putstatic} puts the constants there.
+
+
+The \TT{my\_srand()} function just stores the input value in \TT{rand\_state}:
+
+
+\begin{lstlisting}
+  public void my_srand(int);
+    flags: ACC_PUBLIC
+    Code:
+      stack=1, locals=2, args_size=2
+         0: iload_1       
+         1: putstatic     #2         // Field rand_state:I
+         4: return        
+\end{lstlisting}
+
+\TT{iload\_1} takes the input value and pushes it into stack. But why not \TT{iload\_0}?
+
+It's because this function may use fields of the class, and so \IT{this} is also passed to
+the function as a zeroth argument.
+
+The field \TT{rand\_state} occupies the 2nd slot in the class,
+so \TT{putstatic} copies the value from the \ac{TOS} into the 2nd slot.
+
+
+Now \TT{my\_rand()}:
+
+\begin{lstlisting}
+  public int my_rand();
+    flags: ACC_PUBLIC
+    Code:
+      stack=2, locals=1, args_size=1
+         0: getstatic     #2         // Field rand_state:I
+         3: getstatic     #3         // Field RNG_a:I
+         6: imul          
+         7: putstatic     #2         // Field rand_state:I
+        10: getstatic     #2         // Field rand_state:I
+        13: getstatic     #4         // Field RNG_c:I
+        16: iadd          
+        17: putstatic     #2         // Field rand_state:I
+        20: getstatic     #2         // Field rand_state:I
+        23: sipush        32767
+        26: iand          
+        27: ireturn       
+\end{lstlisting}
+
+It just loads all the values from the object's fields, does the operations and updates 
+\TT{rand\_state}'s value using the \TT{putstatic} instruction.
+
+At offset 20, \TT{rand\_state} is reloaded again 
+(because it has been dropped from the stack before, by \TT{putstatic}).
+
+This looks like non-efficient code, but be sure, the \ac{JVM} is usually good enough to optimize
+such things really well.
+

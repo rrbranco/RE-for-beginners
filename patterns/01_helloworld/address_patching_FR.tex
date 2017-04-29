@@ -1,0 +1,73 @@
+\subsubsection{Modification d'adresse (Win64)}
+
+Lorsque notre exemple est compilé sous MSVC2013 avec l'option \TT{\textbackslash{}MD}
+(générant un exécutable plus petit à cause du lien avec \TT{MSVCR*.DLL}), la fonction \main vient en premier et
+est trouvée facilement:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/01_helloworld/hiew_incr1.png}
+\caption{Hiew}
+\label{}
+\end{figure}
+
+A titre expérimental, nous pouvons \glslink{increment}{incrémenter} l'adresse du pointeur de 1:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/01_helloworld/hiew_incr2.png}
+\caption{Hiew}
+\label{}
+\end{figure}
+
+Hiew montre la chaîne \q{ello, world}.
+Et lorsque nous lançons l'exécutable modifié, la chaîne raccourcie est affichée.
+
+\subsubsection{Utiliser une autre chaîne d'un binaire (Linux x64)}
+
+Le fichier binaire que j'obtiens en compilant notre exemple avec GCC 5.4.0 sur un système Linux x64 contient de
+nombreuses autres chaînes:
+la plupart sont des noms de fonction et de bibliotèque importées.
+
+Je lance \IT{objdump} pour voir le contenu de toutes les sections du fichier compilé:
+
+\begin{lstlisting}[basicstyle=\ttfamily, mathescape]
+$\$$ objdump -s a.out
+
+a.out:     file format elf64-x86-64
+
+Contents of section .interp:
+ 400238 2f6c6962 36342f6c 642d6c69 6e75782d  /lib64/ld-linux-
+ 400248 7838362d 36342e73 6f2e3200           x86-64.so.2.
+Contents of section .note.ABI-tag:
+ 400254 04000000 10000000 01000000 474e5500  ............GNU.
+ 400264 00000000 02000000 06000000 20000000  ............ ...
+Contents of section .note.gnu.build-id:
+ 400274 04000000 14000000 03000000 474e5500  ............GNU.
+ 400284 fe461178 5bb710b4 bbf2aca8 5ec1ec10  .F.x[.......^...
+ 400294 cf3f7ae4                             .?z.
+
+...
+\end{lstlisting}
+
+Ce n'est pas un problème de passer l'adresse de la chaîne \q{/lib64/ld-linux-x86-64.so.2} à l'appel de \TT{printf()}:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+    printf(0x400238);
+    return 0;
+}
+\end{lstlisting}
+
+Difficile à croire, ce code affiche la chaîne mentionnée.
+
+%%On your system, executable may be slightly different, and all addresses will also be different.
+%%Also, adding/removing code to/from this source code will probably shift all addresses back and forth.
+Changez l'adresse en \TT{0x400260}, et la chaîne \q{GNU} sera affichée.
+L'adresse est valable pour cette version spécifique de GCC, outils GNU, etc.
+Sur votre système, l'exécutable peut être légèrement différent, et toutes les adresses seront différentes.
+Ainsi, ajouter/supprimer du code à/de ce code source va probablement décaler les adresses en arrière et avant.
+

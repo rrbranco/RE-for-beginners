@@ -1,0 +1,60 @@
+% TODO translate to Russian
+\section{Double negation}
+
+A popular way\footnote{This way is also controversial, because it leads to hard-to-read code} to convert non-zero value into 1 (or boolean \IT{true}) and zero value into 0 (or boolean \IT{false}) is \IT{!!statement}:
+
+\begin{lstlisting}[style=customc]
+int convert_to_bool(int a)
+{
+	return !!a;
+};
+\end{lstlisting}
+
+Optimizing GCC 5.4 x86:
+
+\begin{lstlisting}[style=customasmx86]
+convert_to_bool:
+        mov     edx, DWORD PTR [esp+4]
+        xor     eax, eax
+        test    edx, edx
+        setne   al
+        ret
+\end{lstlisting}
+
+\INS{XOR} always clears return value in \EAX, even in case if \INS{SETNE} will not trigger.
+I.e., \INS{XOR} sets default return value to zero.
+
+\myindex{x86!\Instructions!SET}
+If the input value is not equal to zero (\TT{-NE} suffix in \INS{SET} instruction),
+1 is set to \AL, otherwise \AL isn't touched.
+
+Why \INS{SETNE} operates on low 8-bit part of \EAX register?
+Because the matter is just in the last bit (0 or 1), while other bits are cleared by \INS{XOR}.
+
+Therefore, that C/C++ code could be rewritten like this:
+
+\begin{lstlisting}[style=customc]
+int convert_to_bool(int a)
+{
+	if (a!=0)
+		return 1;
+	else
+		return 0;
+};
+\end{lstlisting}
+
+\dots or even:
+
+\begin{lstlisting}[style=customc]
+int convert_to_bool(int a)
+{
+	if (a)
+		return 1;
+	else
+		return 0;
+};
+\end{lstlisting}
+
+Compilers targeting \ac{CPU}s lacking instruction similar to \INS{SET}, in this case,
+generates branching instructions, etc.
+

@@ -1,0 +1,119 @@
+\section{Условные переходы}
+\label{sec:Jcc}
+\myindex{\CLanguageElements!if}
+
+% sections
+\input{patterns/07_jcc/simple/main}
+\input{patterns/07_jcc/abs/main}
+\input{patterns/07_jcc/cond_operator/main}
+\input{patterns/07_jcc/minmax/main}
+
+\subsection{\Conclusion{}}
+
+\subsubsection{x86}
+
+Примерный скелет условных переходов:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+CMP register, register/value
+Jcc true ; §cc=код условия§
+false:
+... код, исполняющийся, если сравнение ложно ...
+JMP exit 
+true:
+... код, исполняющийся, если сравнение истинно ...
+exit:
+\end{lstlisting}
+
+\subsubsection{ARM}
+
+\begin{lstlisting}[caption=ARM,style=customasmARM]
+CMP register, register/value
+Bcc true ; §cc=код условия§
+false:
+... код, исполняющийся, если сравнение ложно ...
+JMP exit 
+true:
+... код, исполняющийся, если сравнение истинно ...
+exit:
+\end{lstlisting}
+
+\subsubsection{MIPS}
+
+\begin{lstlisting}[caption=Проверка на ноль,style=customasmMIPS]
+BEQZ REG, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Меньше ли нуля? (используя псевдоинструкцию),style=customasmMIPS]
+BLTZ REG, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Проверка на равенство,style=customasmMIPS]
+BEQ REG1, REG2, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Проверка на неравенство,style=customasmMIPS]
+BNE REG1, REG2, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Проверка на меньше (знаковое),style=customasmMIPS]
+SLT REG1, REG2, REG3
+BEQ REG1, label
+...
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Проверка на меньше (беззнаковое),style=customasmMIPS]
+SLTU REG1, REG2, REG3
+BEQ REG1, label
+...
+\end{lstlisting}
+
+\subsubsection{Без инструкций перехода}
+
+\myindex{ARM!\Instructions!MOVcc}
+\myindex{x86!\Instructions!CMOVcc}
+\myindex{ARM!\Instructions!CSEL}
+
+Если тело условного выражения очень короткое, может быть
+использована инструкция условного копирования: \INS{MOVcc} в ARM (в режиме ARM), \INS{CSEL} в ARM64, \INS{CMOVcc} в x86.
+
+\myparagraph{ARM}
+
+В режиме ARM можно использовать условные суффиксы для некоторых инструкций:
+
+\begin{lstlisting}[caption=ARM (\ARMMode),style=customasmARM]
+CMP register, register/value
+instr1_cc ; инструкция, которая будет исполнена, если условие истинно
+instr2_cc ; еще инструкция, которая будет исполнена, если условие истинно
+... и т.д....
+\end{lstlisting}
+
+Нет никаких ограничений на количество инструкций с условными суффиксами до тех пор,
+пока флаги CPU не были модифицированы одной из таких инструкций.
+
+% FIXME: list of such instructions or \myref{} to it
+
+\myindex{ARM!\Instructions!IT}
+В режиме Thumb есть инструкция \INS{IT}, позволяющая дополнить следующие 4 инструкции суффиксами, задающими
+условие.
+
+Читайте больше об этом: \myref{ARM_Thumb_IT}.
+
+\begin{lstlisting}[caption=ARM (\ThumbMode),style=customasmARM]
+CMP register, register/value
+ITEEE EQ ; выставить такие суффиксы: if-then-else-else-else
+instr1   ; инструкция будет исполнена, если истинно
+instr2   ; инструкция будет исполнена, если ложно
+instr3   ; инструкция будет исполнена, если ложно
+instr4   ; инструкция будет исполнена, если ложно
+\end{lstlisting}
+
+\subsection{\Exercise}
+
+(ARM64) Попробуйте переписать код в \lstref{cond_ARM64} 
+убрав все инструкции условного перехода, и используйте инструкцию \INS{CSEL}.
+

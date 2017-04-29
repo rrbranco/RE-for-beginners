@@ -1,0 +1,5 @@
+\scanf restituisce il risultato del suo lavoro nel registro \$V0. Cio' viene controllato all'indirizzo 0x004006E4
+confrontando il valore in \$V0 con quello in \$V1 (1 era stato memorizzato in \$V1 precedentemente, a 0x004006DC).
+\INS{BEQ} sta per \q{Branch Equal}.
+Se i due valori sono uguali (cioe' \scanf e' terminata con successo), l'esecuzione salta all'indirizzo 0x0040070C.
+

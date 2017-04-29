@@ -1,0 +1,11 @@
+\myparagraph{ARM64: \Optimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[caption=f\_signed(),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM64_GCC_O3_signed_DE.lst}
+
+\lstinputlisting[caption=f\_unsigned(),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM64_GCC_O3_unsigned_DE.lst}
+Die Kommentare stammen vom Autor. 
+Erstaunlich ist hier, dass der Compiler nicht bemerkt, dass einige Bedingungen unmöglich zu erfüllen sind, sodass Dead
+Code vorliegt, der nie ausgeführt werden kann.
+
+\mysubparagraph{\Exercise}
+Versuchen Sie die Funktionen manuell hinsichtlich Größe und Entfernen redundanter Befehle zu optimieren.

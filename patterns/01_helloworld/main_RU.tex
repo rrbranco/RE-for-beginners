@@ -1,0 +1,31 @@
+\section{\HelloWorldSectionName}
+\label{sec:helloworld}
+
+Продолжим, используя знаменитый пример из книги \KRBook:
+
+\lstinputlisting[style=customc]{patterns/01_helloworld/hw.c}
+
+\subsection{x86}
+
+\input{patterns/01_helloworld/MSVC_x86}
+\input{patterns/01_helloworld/GCC_x86}
+
+\subsection{x86-64}
+\input{patterns/01_helloworld/MSVC_x64}
+\input{patterns/01_helloworld/GCC_x64}
+
+\input{patterns/01_helloworld/GCC_one_more}
+\input{patterns/01_helloworld/ARM/main}
+\input{patterns/01_helloworld/MIPS/main}
+
+\subsection{\Conclusion{}}
+
+Основная разница между кодом x86/ARM и x64/ARM64 в том, что указатель на строку теперь 64-битный.
+Действительно, ведь для того современные \ac{CPU} и стали 64-битными, потому что подешевела память,
+её теперь можно поставить в компьютер намного больше, и чтобы её адресовать, 32-х бит уже
+недостаточно.
+Поэтому все указатели теперь 64-битные.
+
+% sections
+\input{patterns/01_helloworld/exercises}
+

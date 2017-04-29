@@ -1,0 +1,56 @@
+\subsubsection{ARM: \OptimizingKeilVI (\ARMMode)}
+\myindex{\CLanguageElements!switch}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/few_ARM_ARM_O3.asm}
+Auch hier können wir bei Untersuchung des Code nicht sagen, ob im Quellcode ein switch() oder eine Folge von
+if()-Ausdrücken vorliegt.
+
+
+\myindex{ARM!\Instructions!ADRcc}
+Wir finden hier Befehle mit Prädikaten wieder (wie \ADREQ (\IT{Equal})), welcher nur dann ausgeführt wird, wenn $R0=0$
+und dann die Adresse des Strings IT{<<zero\textbackslash{}n>>} nach \Reg{0} lädt.
+
+\myindex{ARM!\Instructions!BEQ}
+Der folgende \ac{BEQ} Befehl übergibt den Control Flow an \TT{loc\_170}, falls $R0=0$.
+Ein aufmerksamer Leser könnte sich fragen, ob \ac{BEQ} korrekt ausgelöst wird, da \ADREQ das \Reg{0} Register bereits
+mit einem anderen Wert befüllt hat.
+Es wird korrekt ausgelöst, da \ac{BEQ} die Flags, die vom \CMP Befehl gesetzt wurden, prüft und \ADREQ die Flags nicht
+verändert.
+
+Die übrigen Befehle kennen wir bereits.
+Es gibt nur einen Aufruf von \printf am Ende und wir haben diesen Trick bereits hier
+kennengelernt~(\myref{ARM_B_to_printf}). Am Ende gibt es drei Wege zur Ausführung von \printf.
+
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!CMP}
+Der letzte Befehl, \TT{CMP R0, \#2}, wird benötigt, um zu prüfen, ob $a=2$.
+Wenn dies nicht der Fall ist, lädt \ADRNE einen Pointer auf den String \IT{<<something unknown \textbackslash{}n>>} nach
+\Reg{0}, da $a$ bereits auf Gleichheit mit 0 oder 1 geprüft wurde und wir können sicher sein, dass die Variable $a$ an
+dieser Stelle keinen dieser beiden Werte enthält.
+Falls $R0=2$ ist, lädt \ADREQ einen Pointer auf den String \IT{<<two\textbackslash{}n>>} nach \Reg{0}. 
+
+\subsubsection{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/few_ARM_thumb_O3.asm}
+
+% FIXME а каким можно? к каким нельзя? \myref{} ->
+Wie bereits erwähnt ist es bei den meisten Befehlen im Thumb mode nicht möglich Prädikate für Bedingungen hinzuzufügen,
+sodass der Thumb-Code hier dem leicht verständlichen x86 \ac{CISC}-style Code sehr ähnlich ist.
+
+\subsubsection{ARM64: \NonOptimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/ARM64_GCC_O0_DE.lst}
+Der Datentyp des Eingabewertes ist \Tint, deshalb wird das Register \RegW{0} anstatt des \RegX{0} Registers verwendet,
+um ihn aufzunehmen.
+
+Die Pointer auf die Strings werden an \puts mit einem \INS{ADRP}/\INS{ADD} Befehlspaar übergeben, genauso wie wir es im
+\q{\HelloWorldSectionName} Beispiel gezeigt haben:~\myref{pointers_ADRP_and_ADD}.
+
+\subsubsection{ARM64: \Optimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/ARM64_GCC_O3_DE.lst}
+Ein besser optimiertes Stück Code. 
+Der Befehl \TT{CBZ} (\IT{Compare and Branch on Zero}) springt, falls \RegW{0} gleich null ist.
+Es gibt auch einen direkten Sprung zu \puts anstelle eines Aufrufs, so wie bereits hier
+erklärt:~\myref{JMP_instead_of_RET}.
+

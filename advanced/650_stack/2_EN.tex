@@ -1,0 +1,99 @@
+\subsection{Returning string}
+
+This is classic bug from \RobPikePractice{}:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+char* amsg(int n, char* s)
+{
+        char buf[100];
+
+        sprintf (buf, "error %d: %s\n", n, s) ;
+
+        return buf;
+};
+
+int main()
+{
+        amsg ("%s\n", interim (1234, "something wrong!"));
+};
+\end{lstlisting}
+
+It would crash.
+First, let's understand, why.
+
+This is a stack state before amsg() return:
+
+\begin{lstlisting}
+[amsg(): 100 bytes][RA][two amsg arguments][something else][main() local variables]
+                    ^^
+                 current SP
+\end{lstlisting}
+
+When amsg() returns control flow to \main, so far so good.
+But \printf is called from \main, which is, in turn, use stack for its own needs, zapping 100-byte buffer.
+A random garbage will be printed at the best.
+
+Hard to believe, but I know how to fix this problem:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+char* amsg(int n, char* s)
+{
+        char buf[100];
+
+        sprintf (buf, "error %d: %s\n", n, s) ;
+
+        return buf;
+};
+
+char* interim (int n, char* s)
+{
+        char large_buf[8000];
+        // make use of local array.
+        // it will be optimized away otherwise, as useless.
+        large_buf[0]=0;
+        return amsg (n, s);
+};
+
+int main()
+{
+        printf ("%s\n", interim (1234, "something wrong!"));
+};
+\end{lstlisting}
+
+It will work if compiled by MSVC 2013 with no optimizations and with \TT{/GS-} option\footnote{Turn off buffer security check}.
+MSVC will warn: ``warning C4172: returning address of local variable or temporary'', but the code will run and message
+will be printed.
+Let's see stack state at the moment when amsg() returns control to interim():
+
+\begin{lstlisting}
+[amsg(): 100 bytes][RA][two amsg() arguments][interim() stuff, incl. 8000 bytes][something else][main() local variables]
+                    ^^
+                 current SP
+\end{lstlisting}
+
+Now the stack state at the moment when interim() returns control to \main{}:
+
+\begin{lstlisting}
+[amsg(): 100 bytes][RA][two amsg() arguments][interim() stuff, incl. 8000 bytes][something else][main() local variables]
+                                                                                        ^^
+                                                                                     current SP
+\end{lstlisting}
+
+So when \main calls \printf, it uses stack at the place where interim()'s buffer was allocated,
+and doesn't zap 100 bytes with error message inside, because 8000 bytes (or maybe much less) is just enough for everything
+\printf and other descending functions do!
+
+It may also work if there are many functions between, like:
+\main $\rightarrow$ f1() $\rightarrow$ f2() $\rightarrow$ f3() ... $\rightarrow$ amsg(),
+and then the result of amsg() is used in \main.
+The distance between \ac{SP} in \main and address of \TT{buf[]} must be long enough,
+
+This is why bugs like these are dangerous: sometimes your code works (and bug can be hiding unnoticed), sometimes not.
+\label{heisenbug}
+\myindex{Heisenbug}
+Bugs like these are jokingly called heisenbugs or schrödinbugs\footnote{\url{https://en.wikipedia.org/wiki/Heisenbug}}.
+

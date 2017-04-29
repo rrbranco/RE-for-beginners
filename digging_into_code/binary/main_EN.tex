@@ -1,0 +1,124 @@
+% TODO move section...
+
+\subsection{Some binary file patterns}
+
+All examples here were prepared on the Windows with active code page 437
+\footnote{\url{https://en.wikipedia.org/wiki/Code_page_437}} in console.
+Binary files internally may look visually different if another code page is set.
+
+\clearpage
+\subsubsection{Arrays}
+
+Sometimes, we can clearly spot an array of 16/32/64-bit values visually, in hex editor.
+
+Here is an example of array of 16-bit values.
+We see that the first byte in pair is 7 or 8, and the second looks random:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/16bit_array.png}
+\caption{FAR: array of 16-bit values}
+\end{figure}
+
+I used a file containing 12-channel signal digitized using 16-bit \ac{ADC}.
+
+\clearpage
+\myindex{MIPS}
+\par And here is an example of very typical MIPS code.
+
+As we may recall, every MIPS (and also ARM in ARM mode or ARM64) instruction has size of 32 bits (or 4 bytes), 
+so such code is array of 32-bit values.
+
+By looking at this screenshot, we may see some kind of pattern.
+
+Vertical red lines are added for clarity:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/typical_MIPS_code.png}
+\caption{Hiew: very typical MIPS code}
+\end{figure}
+
+Another example of such pattern here is book: 
+\myref{Oracle_SYM_files_example}.
+
+\clearpage
+\subsubsection{Sparse files}
+
+This is sparse file with data scattered amidst almost empty file.
+Each space character here is in fact zero byte (which is looks like space).
+This is a file to program FPGA (Altera Stratix GX device).
+Of course, files like these can be compressed easily, but formats like this one are very popular in scientific and engineering software where efficient access is important while compactness is not.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/sparse_FPGA.png}
+\caption{FAR: Sparse file}
+\end{figure}
+
+\clearpage
+\subsubsection{Compressed file}
+
+% FIXME \ref{} ->
+This file is just some compressed archive.
+It has relatively high entropy and visually looks just chaotic.
+This is how compressed and/or encrypted files looks like.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/compressed.png}
+\caption{FAR: Compressed file}
+\end{figure}
+
+\clearpage
+\subsubsection{\ac{CDFS}}
+
+\ac{OS} installations are usually distributed as ISO files which are copies of CD/DVD discs.
+Filesystem used is named \ac{CDFS}, here is you see file names mixed with some additional data.
+This can be file sizes, pointers to another directories, file attributes, etc.
+This is how typical filesystems may look internally.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/cdfs.png}
+\caption{FAR: ISO file: Ubuntu 15 installation \ac{CD}}
+\end{figure}
+
+\clearpage
+\subsubsection{32-bit x86 executable code}
+
+This is how 32-bit x86 executable code looks like.
+It has not very high entropy, because some bytes occurred more often than others.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/x86_32.png}
+\caption{FAR: Executable 32-bit x86 code}
+\end{figure}
+
+% TODO: Read more about x86 statistics: \ref{}. % FIXME blog post about decryption...
+
+\clearpage
+\subsubsection{BMP graphics files}
+
+% TODO: bitmap, bit, group of bits...
+
+BMP files are not compressed, so each byte (or group of bytes) describes each pixel.
+I've found this picture somewhere inside my installed Windows 8.1:
+
+\begin{figure}[H]
+\centering
+\myincludegraphicsSmall{digging_into_code/binary/bmp.png}
+\caption{Example picture}
+\end{figure}
+
+You see that this picture has some pixels which unlikely can be compressed very good (around center), 
+but there are long one-color lines at top and bottom.
+Indeed, lines like these also looks as lines during viewing the file:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/bmp_FAR.png}
+\caption{BMP file fragment}
+\end{figure}
+

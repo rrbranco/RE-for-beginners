@@ -1,0 +1,45 @@
+\section{Using magic numbers while tracing}
+
+Oft ist unser Hauptziel zu verstehen wie ein Programm einen Wert behandelt der entweder \"uber eine Datei oder \"uber das Netzwerk erhalten wurde.
+Das manuelle tracen eines Wertes ist meistens ein ziemlich arbeits-intensiver Task. Eine der einfachsten Techniken um Werte zu Tracen (auch wenn nicht 100\% verl\"asslich)
+ist eigene \IT{magic number}'s zu benutzen. 
+
+Das \"ahnelt ein wenig dem Vorgang beim R\"ontgen auf gewisser weise: ein radioaktives Kontrastmittel wird dem Patienten injeziert,
+welches dann benutzt wird um die Gef\"asse des Patienten besser zu erkennen duch die R\"onthgenstahlung. Wie das blut bei 
+gesunden Menschen in den Nieren gereinigt wird wenn das Kontrastmittel im Blut ist, man kann dann sehr einfach auf dem
+Bild der Tomografie erkennen ob sich Nierensteine oder Tumore in den Nierenbefinden. 
+
+Wir k\"onnen einfach eine 32-Bit Zahl nehmen z.B \TT{0xbadf00d}, oder ein Geburtsdatum wie \TT{0x11101979}
+und diese 4-Byte Zahl wird an einem bestimmten Punkt in eine Datei geschrieben welche von dem Programm 
+das wir untersuchen genutzt wird. 
+
+\myindex{\GrepUsage}
+\myindex{tracer}
+
+Dann w\"ahrend das programm getraced wird mit \tracer im \IT{code coverage} modus, mit der Hilfe von \IT{grep}
+oder durch einfaches durchsuchen der Textdatei (der trace Ergebnisse), k\"onnen wir ganz einfach sehen wo der 
+Wert benutzt wurde und wie er benutzt wurde. 
+
+Beispiel der \IT{grepable} \tracer Ergebnissen im \IT{cc} mode:
+
+\begin{lstlisting}[style=customasmx86]
+0x150bf66 (_kziaia+0x14), e=       1 [MOV EBX, [EBP+8]] [EBP+8]=0xf59c934 
+0x150bf69 (_kziaia+0x17), e=       1 [MOV EDX, [69AEB08h]] [69AEB08h]=0 
+0x150bf6f (_kziaia+0x1d), e=       1 [FS: MOV EAX, [2Ch]] 
+0x150bf75 (_kziaia+0x23), e=       1 [MOV ECX, [EAX+EDX*4]] [EAX+EDX*4]=0xf1ac360 
+0x150bf78 (_kziaia+0x26), e=       1 [MOV [EBP-4], ECX] ECX=0xf1ac360 
+\end{lstlisting}
+% TODO: good example!
+
+Das gleiche verfahren kann man auch auf Netzwerkpakete anwenden.
+F\"ur die \IT{magic number} ist es wichtig das diese einzigartig ist und nicht im Programm code vorkommt.
+
+\newcommand{\DOSBOXURL}{\href{http://go.yurichev.com/17222}{blog.yurichev.com}}
+
+\myindex{DosBox}
+\myindex{MS-DOS}
+Neben dem \tracer Befehl, gibt es noch den DosBox (MS-DOS emulator) im heavydebug Modus,
+welcher in der Lage ist alle Informationen \"uber alle Register zust\"ande f\"ur jede ausgef\"uhrte Instruktion des Programmes in
+eine einfache Textdatei\footnote{See also my blog post about this DosBox feature: \DOSBOXURL{}} zu schreiben, so kann
+diese Technik f\"ur DOS Programme n\"utzlich sein. 
+

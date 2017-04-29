@@ -1,14 +1,7 @@
 dennis@ubuntuvm:~/polygon$ gcc -O3 d_max.c -o d_max -fno-inline
 dennis@ubuntuvm:~/polygon$ gdb d_max
 GNU gdb (GDB) 7.6.1-ubuntu
-Copyright (C) 2013 Free Software Foundation, Inc.
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-and "show warranty" for details.
-This GDB was configured as "i686-linux-gnu".
-For bug reporting instructions, please see:
-<http://www.gnu.org/software/gdb/bugs/>...
+...
 Reading symbols from /home/dennis/polygon/d_max...(no debugging symbols found)...done.
 (gdb) b d_max
 Breakpoint 1 at 0x80484a0

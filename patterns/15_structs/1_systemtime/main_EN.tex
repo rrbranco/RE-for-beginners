@@ -1,0 +1,73 @@
+\subsection{MSVC: SYSTEMTIME example}
+\label{sec:SYSTEMTIME}
+
+\newcommand{\FNSYSTEMTIME}{\footnote{\href{http://go.yurichev.com/17260}{MSDN: SYSTEMTIME structure}}}
+
+Let's take the SYSTEMTIME\FNSYSTEMTIME{} win32 structure that describes time.
+
+This is how it's defined:
+
+\begin{lstlisting}[caption=WinBase.h,style=customc]
+typedef struct _SYSTEMTIME {
+  WORD wYear;
+  WORD wMonth;
+  WORD wDayOfWeek;
+  WORD wDay;
+  WORD wHour;
+  WORD wMinute;
+  WORD wSecond;
+  WORD wMilliseconds;
+} SYSTEMTIME, *PSYSTEMTIME;
+\end{lstlisting}
+
+Let's write a C function to get the current time:
+
+\lstinputlisting[style=customc]{patterns/15_structs/1_systemtime/systemtime.c}
+
+We get (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010 /GS-,style=customasmx86]{patterns/15_structs/1_systemtime/systemtime.asm}
+
+16 bytes are allocated for this structure in the local stack~---that is exactly \TT{sizeof(WORD)*8}
+(there are 8 WORD variables in the structure).
+
+\newcommand{\FNMSDNGST}{\footnote{\href{http://go.yurichev.com/17261}{MSDN: GetSystemTime function}}}
+
+Pay attention to the fact that the structure begins with the \TT{wYear} field.
+It can be said that a pointer to the SYSTEMTIME structure is passed to the \TT{GetSystemTime()}\FNSYSTEMTIME,
+but it is also can be said that a pointer to the \TT{wYear} field is passed, and that is the same!
+\TT{GetSystemTime()} writes the current year to the WORD pointer pointing to, then shifts 2 bytes
+ahead, writes current month, etc., etc.
+
+\input{patterns/15_structs/1_systemtime/olly_EN.tex}
+
+\subsubsection{Replacing the structure with array}
+
+The fact that the structure fields are just variables located side-by-side, can be easily demonstrated by doing the following.
+Keeping in mind the \TT{SYSTEMTIME} structure description, it's possible to rewrite this simple example like this:
+
+\lstinputlisting[style=customc]{patterns/15_structs/1_systemtime/systemtime2.c}
+
+The compiler grumbles a bit:
+
+\begin{lstlisting}
+systemtime2.c(7) : warning C4133: 'function' : incompatible types - from 'WORD [8]' to 'LPSYSTEMTIME'
+\end{lstlisting}
+
+But nevertheless, it produces this code:
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2010,style=customasmx86]{patterns/15_structs/1_systemtime/systemtime2.asm}
+
+And it works just as the same!
+
+It is very interesting that the
+result in assembly form cannot be distinguished from the result of the previous compilation.
+
+So by looking at this code, one cannot say for sure if there was a structure declared, or an array. 
+
+Nevertheless, no sane person would do it, as it is not convenient. 
+
+Also the structure fields may be changed by developers, swapped, etc.
+
+We will not study this example in \olly, because it will be just the same as in the case with the structure.
+

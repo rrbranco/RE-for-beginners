@@ -1,0 +1,78 @@
+\section[Linear congruential generator]{Linear congruential generator as pseudorandom number generator}
+\myindex{\CStandardLibrary!rand()}
+\label{LCG_simple}
+
+Perhaps, the linear congruential generator is the simplest possible way to generate random numbers.
+
+It's not in favour nowadays\footnote{Mersenne twister is better}, but it's so simple 
+(just one multiplication, one addition and one AND operation), 
+we can use it as an example.
+
+\lstinputlisting[style=customc]{patterns/145_LCG/rand_EN.c}
+
+There are two functions: the first one is used to initialize the internal state, and the second one is called
+to generate pseudorandom numbers.
+
+We see that two constants are used in the algorithm.
+They are taken from
+[William H. Press and Saul A. Teukolsky and William T. Vetterling and Brian P. Flannery, \IT{Numerical Recipes}, (2007)].
+
+Let's define them using a \TT{\#define} \CCpp statement. It's a macro.
+
+The difference between a \CCpp macro and a constant is that all macros are replaced 
+with their value by \CCpp preprocessor,
+and they don't take any memory, unlike variables.
+
+In contrast, a constant is a read-only variable.
+
+It's possible to take a pointer (or address) of a constant variable, but impossible to do so with a macro.
+
+The last AND operation is needed because by C-standard \TT{my\_rand()} has to return a value in 
+the 0..32767 range.
+
+If you want to get 32-bit pseudorandom values, just omit the last AND operation.
+
+\subsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2013,style=customasmx86]{patterns/145_LCG/rand_MSVC_2013_x86_Ox.asm}
+
+Here we see it: both constants are embedded into the code.
+There is no memory allocated for them.
+
+The \TT{my\_srand()} function just copies its input value into the internal\\
+\TT{rand\_state} variable.
+
+\TT{my\_rand()} takes it, calculates the next \TT{rand\_state}, cuts it and leaves it in the EAX register.
+
+The non-optimized version is more verbose:
+
+\lstinputlisting[caption=\NonOptimizing MSVC 2013,style=customasmx86]{patterns/145_LCG/rand_MSVC_2013_x86.asm}
+
+\subsection{x64}
+
+The x64 version is mostly the same and uses 32-bit registers instead of 64-bit ones 
+(because we are working with \Tint values here).
+
+But \TT{my\_srand()} takes its input argument from the \ECX register rather than from stack:
+
+\lstinputlisting[caption=\Optimizing MSVC 2013 x64,style=customasmx86]{patterns/145_LCG/rand_MSVC_2013_x64_Ox_EN.asm}
+
+GCC compiler generates mostly the same code.
+
+\subsection{32-bit ARM}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/145_LCG/rand.s_Keil_ARM_O3_EN.s}
+
+It's not possible to embed 32-bit constants into ARM instructions, so Keil has to place them externally and load them additionally.
+One interesting thing is that it's not possible to embed the 0x7FFF constant as well.
+So what Keil does is shifting \TT{rand\_state} left by 17 bits and then shifting it right by 17 bits.
+This is analogous to the $(rand\_state \ll 17) \gg 17$ statement in \CCpp.
+It seems to be useless operation, but what it does is clearing the high 17 bits, leaving the low 15 bits intact, and that's our goal after all. \\
+\\
+\Optimizing Keil for Thumb mode generates mostly the same code.
+
+\input{patterns/145_LCG/MIPS_EN}
+
+\subsection{Thread-safe version of the example}
+
+The thread-safe version of the example is to be demonstrated later: \myref{LCG_TLS}.

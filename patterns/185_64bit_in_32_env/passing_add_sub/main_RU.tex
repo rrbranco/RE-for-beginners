@@ -1,0 +1,55 @@
+﻿\subsection{Передача аргументов, сложение, вычитание}
+
+\lstinputlisting[style=customc]{patterns/185_64bit_in_32_env/passing_add_sub/1.c}
+
+\subsubsection{x86}
+
+\lstinputlisting[caption=\Optimizing MSVC 2012 /Ob1,style=customasmx86]{patterns/185_64bit_in_32_env/passing_add_sub/1_MSVC.asm}
+
+В \GTT{f\_add\_test()} видно, как каждое 64-битное число передается двумя 32-битными значениями,
+сначала старшая часть, затем младшая.
+
+Сложение и вычитание происходит также парами. 
+
+\myindex{x86!\Instructions!ADC}
+При сложении, в начале складываются младшие 32 бита.
+Если при сложении был перенос, выставляется флаг CF.
+Следующая инструкция \INS{ADC} складывает старшие части чисел, но также прибавляет единицу если $CF=1$.
+
+\myindex{x86!\Instructions!SBB}
+Вычитание также происходит парами.
+Первый \SUB может также включить флаг переноса CF, который затем будет проверяться в \INS{SBB}:
+если флаг переноса включен, то от результата отнимется единица.
+
+Легко увидеть, как результат работы \GTT{f\_add()} затем передается в \printf{}.
+
+\lstinputlisting[caption=GCC 4.8.1 -O1 -fno-inline,style=customasmx86]{patterns/185_64bit_in_32_env/passing_add_sub/1_GCC.asm}
+
+Код GCC почти такой же.
+
+\subsubsection{ARM}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/185_64bit_in_32_env/passing_add_sub/Keil_ARM_O3.s}
+
+\myindex{ARM!\Instructions!ADDS}
+\myindex{ARM!\Instructions!SUBS}
+\myindex{ARM!\Instructions!ADC}
+\myindex{ARM!\Instructions!SBC}
+Первое 64-битное значение передается в паре регистров \Reg{0} и \Reg{1}, второе --- в паре \Reg{2} и \Reg{3}.
+В ARM также есть инструкция \INS{ADC} (учитывающая флаг переноса) и \INS{SBC} (\q{subtract with carry} --- вычесть с переносом).
+Важная вещь: когда младшие части слагаются/вычитаются, используются инструкции \INS{ADDS} и \INS{SUBS} с суффиксом -S.
+Суффикс -S означает \q{set flags} (установить флаги), а флаги (особенно флаг переноса) это то что однозначно нужно последующим инструкциями \INS{ADC}/\INS{SBC}.
+А иначе инструкции без суффикса -S здесь вполне бы подошли (\ADD и \SUB).
+
+\subsubsection{MIPS}
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/185_64bit_in_32_env/passing_add_sub/MIPS_O3_IDA_RU.lst}
+
+В MIPS нет регистра флагов, так что эта информация не присутствует после исполнения арифметических операций.
+
+Так что здесь нет инструкций как \INS{ADC} или \INS{SBB} в x86.
+Чтобы получить информацию о том, был бы выставлен флаг переноса, происходит сравнение (используя инструкцию
+\INS{SLTU}), которая выставляет целевой регистр в 1 или 0.
+
+Эта 1 или 0 затем прибавляется к итоговому результату, или вычитается.
+

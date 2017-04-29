@@ -1,55 +1,23 @@
-* Compiling on Ubuntu
+* Compiling on Ubuntu (checked way)
 
-1) Get TeXlive 2013
+1) Get all the packages listed in .travis.yml file.
 
-These Ubuntu packages should be installed for English version (or both):
-texlive
-latexmk
-texlive-fonts-extra
-texlive-latex-extra
-texlive-bibtex-extra
-texlive-science (for bytefield package)
-biblatex
-biber
-
-These Ubuntu packages should be also installed for Russian version:
-texlive-lang-cyrillic
-
-For other languages, other textlive-lang-* packages must also be installed.
-
-If unsure, install everything: texlive-full and biber.
-
-2) You may need to install PT Sans font.
-Download it here: http://www.fontsquirrel.com/fonts/PT-Sans
-How to install it in Ubuntu: http://www.wikihow.com/Install-TrueType-Fonts-on-Ubuntu
-
-3) For all versions (Russian, English, and A5 version for both languages):
+2) For all versions (Russian, English):
    make all
 
    For English-only version:
-   make english
+   make EN
 
    For Russian-only version:
-   make russian
+   make RU
 
-   A5 versions for e-book readers has "-A5" suffix (see Makefile)
-   Lite versions has "-lite" suffix (see Makefile)
-
-It's also possible to build your own version of book, see the HACKING.md file.
-
-* Compiling on Mac OS X 10.8
+* Compiling on Mac OS X 10.8 (unchecked)
 
 1) Get MacTeX: https://www.tug.org/mactex/
 
-2) You may need Droid Sans Mono font.
-Get it here: http://www.fontsaddict.com/font/droid-sans-mono.html
-Install it in Mac OS X as it's described here: 
-http://macs.about.com/od/usingyourmac/qt/How-To-Install-Fonts-In-Os-X.htm
+2) Run make as it has been described before.
 
-3) Run make as it has been described before.
-
-* Windows
+* Windows (unchecked)
 
 Install TeXlive and use Cygwin.
-Please run "make" from Cygwin shell, because Makefile depends on *NIX "find" utility rather
-than Windows one.
+

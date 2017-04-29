@@ -1,16 +1,17 @@
-\newcommand{\NormalScale}{0.66} % FIXME?
-\ifdefined\ebook
-\documentclass[a5paper,oneside]{book}
-\newcommand{\FigScale}{0.4}
-\else
 \documentclass[a4paper,oneside]{book}
-\newcommand{\FigScale}{\NormalScale} 
-\fi
+
+% http://www.tex.ac.uk/FAQ-noroom.html
+\usepackage{etex}
+
+\usepackage[table,usenames,dvipsnames]{xcolor}
 
 \usepackage{fontspec}
 % fonts
-\setmonofont{Droid Sans Mono}
-\setmainfont[Ligatures=TeX]{PT Sans}
+%\setmonofont{DroidSansMono}
+%\setmainfont[Ligatures=TeX]{PT Sans}
+%\setmainfont{DroidSans}
+\setmainfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}
 \usepackage{polyglossia}
 \defaultfontfeatures{Scale=MatchLowercase} % ensure all fonts have the same 1ex
 \usepackage{ucharclasses}
@@ -23,12 +24,14 @@
 
 \ifdefined\RUSSIAN
 \setmainlanguage{russian}
-\newfontfamily\cyrillicfonttt{Droid Sans Mono}
+%\newfontfamily\cyrillicfont{LiberationSans}
+%\newfontfamily\cyrillicfonttt{LiberationMono}
+%\newfontfamily\cyrillicfontsf{lmsans10-regular.otf}
 \setotherlanguage{english}
 \fi
 
 \ifdefined\GERMAN
-\wlog{main GERMAN defined OK}
+%\wlog{main GERMAN defined OK}
 \setmainlanguage{german}
 \setotherlanguage{english}
 \fi
@@ -44,12 +47,32 @@
 \fi
 
 \ifdefined\BRAZILIAN
-\setmainlanguage{portuguese}
+\setmainlanguage{portuges}
 \setotherlanguage{english}
 \fi
 
 \ifdefined\POLISH
 \setmainlanguage{polish}
+\setotherlanguage{english}
+\fi
+
+\ifdefined\DUTCH
+\setmainlanguage{dutch}
+\setotherlanguage{english}
+\fi
+
+\ifdefined\THAI
+\setmainlanguage{thai}
+%\usepackage[thai]{babel}
+%\usepackage{fonts-tlwg}
+\setmainfont[Script=Thai]{TH SarabunPSK}
+\newfontfamily{\thaifont}[Script=Thai]{TH SarabunPSK}
+\let\thaifonttt\ttfamily
+\setotherlanguage{english}
+\fi
+
+\ifdefined\FRENCH
+\setmainlanguage{french}
 \setotherlanguage{english}
 \fi
 
@@ -60,10 +83,8 @@
 \usepackage{url}
 \usepackage{graphicx}
 \usepackage{makeidx}
-\usepackage[backend=biber,style=alphabetic]{biblatex}
-%\usepackage{cite}
 \usepackage[cm]{fullpage}
-\usepackage{color}
+%\usepackage{color}
 \usepackage{fancyvrb}
 \usepackage{xspace}
 \usepackage{tabularx}
@@ -74,7 +95,6 @@
 \usepackage[nottoc]{tocbibind}
 \usepackage{longtable}
 \usepackage[footnote,printonlyused,withpage]{acronym}
-\usepackage[table]{xcolor}% http://ctan.org/pkg/xcolor
 \usepackage[]{bookmark,hyperref} % must be last
 \usepackage[official]{eurosym}
 
@@ -82,7 +102,7 @@
 % http://tex.stackexchange.com/questions/228286/how-to-mix-ref-and-pageref#228292
 \ifdefined\RUSSIAN
 \newcommand{\myref}[1]{%
-  \ref{#1} 
+  \ref{#1}
   (стр.~\pageref{#1})%
   }
 % FIXME: I wasn't able to force varioref to output russian text...
@@ -99,84 +119,27 @@
 
 \usepackage{amsmath}
 \usepackage{MnSymbol}
-\undef\mathdollar 
+\undef\mathdollar
 
 \usepackage{float}
 
 \usepackage{shorttoc}
 \usetikzlibrary{calc,positioning,chains,arrows}
-\ifdefined\ebook
-\usepackage[margin=0.5in,headheight=11pt]{geometry}
-\else
-\usepackage[margin=0.5in,headheight=12.5pt]{geometry}
-\fi
-
-\ifdefined\RUSSIAN
-\renewcommand\lstlistingname{Листинг}
-\renewcommand\lstlistlistingname{Листинг}
-\fi
-
-%\iffalse
-% fancyhdr ********************************************************
-\makeatletter
-    \let\stdchapter\chapter
-    \renewcommand*\chapter{%
-    \@ifstar{\starchapter}{\@dblarg\nostarchapter}}
-    \newcommand*\starchapter[1]{%
-        \stdchapter*{#1}
-        \thispagestyle{fancy}
-        \markboth{\MakeUppercase{#1}}{}
-    }
-    \def\nostarchapter[#1]#2{%
-        \stdchapter[{#1}]{#2}
-        \thispagestyle{fancy}
-    }
-\makeatother
-
-% taken from http://texblog.org/tag/fancyhdr-font-size/
-\newcommand{\changefont}{%
-\ifdefined\ebook
-    \fontsize{6}{7}\selectfont
-\else
-    \fontsize{8}{9.5}\selectfont
-\fi
-}
-\fancyhf{}
-\fancyhead[L,RO]{\changefont \slshape \rightmark} %section
-\fancyhead[R,LO]{\changefont \slshape \leftmark} %chapter
-\fancyfoot[C]{\changefont \thepage} %footer
-% *****************************************************************
-%\fi
+\usepackage[margin=0.5in,headheight=15.5pt]{geometry}
 
 \newcommand{\footnoteref}[1]{\textsuperscript{\ref{#1}}}
 
-\definecolor{lstbgcolor}{rgb}{0.94,0.94,0.94}
+%\definecolor{lstbgcolor}{rgb}{0.94,0.94,0.94}
+
+% I don't know why this voodoo works, but without all-caps, it can't find LIGHT-GRAY color. WTF?
+\definecolor{light-gray}{gray}{0.87}
+\definecolor{LIGHT-GRAY}{gray}{0.87}
 \makeindex
 
 \include{macros}
 \include{glossary}
-\include{common_URLS}
-\include{common_phrases}
 
 \makeglossaries
-
-\newcommand{\TITLE}{%
-\RU{Reverse Engineering для начинающих}%
-\EN{Reverse Engineering for Beginners}%
-\ES{Ingenier\'ia Inversa para Principiantes}%
-\PTBRph{}%
-\DEph{}\PLph{}%
-\ITAph{}%
-}
-\newcommand{\AUTHOR}{%
-\RU{Денис Юричев}%
-\EN{Dennis Yurichev}%
-\ES{Dennis Yurichev}%
-\PTBRph{}%
-\DEph{}\PLph{}%
-\ITAph{}%
-}
-\newcommand{\EMAIL}{dennis(a)yurichev.com}
 
 \hypersetup{
     colorlinks=true,
@@ -189,10 +152,21 @@
 \newcommand{\LstStyle}{\ttfamily\small}
 %\else
 %\newcommand{\LstStyle}{\ttfamily}
-%\fi 
+%\fi
+
+% inspired by http://prismjs.com/
+\definecolor{digits}{RGB}{0,0,0}
+\definecolor{bg}{RGB}{255,252,250}
+\definecolor{col1}{RGB}{154,20,150}
+\definecolor{col2}{RGB}{112,128,144}
+\definecolor{col3}{RGB}{10,120,180}
+\definecolor{col4}{RGB}{106,164,108}
+
 
 \lstset{
-    backgroundcolor=\color{lstbgcolor},
+    %backgroundcolor=\color{lstbgcolor},
+    %backgroundcolor=\color{light-gray},
+    backgroundcolor=\color{bg},
     basicstyle=\LstStyle,
     breaklines=true,
     %prebreak=\raisebox{0ex}[0ex][0ex]{->},
@@ -205,40 +179,153 @@
     inputencoding=utf8
 }
 
+% I'm giving up with syntax highlighting so far.
+% one problem is: make hexadecimal numbers and keywords distinct
+% anyone can try to solve it
+% see also: http://tex.stackexchange.com/questions/347784/package-listing-colorizing-assembly-listings
+
+\lstdefinestyle{customc}{
+  %language=C,
+  %showstringspaces=false,
+  %backgroundcolor=\color{bg},
+  %keywordstyle=\color{col3},
+  %commentstyle=\color{col2},
+  %identifierstyle=\color{col4},
+  %stringstyle=\color{col1}
+}
+
+\lstdefinestyle{custommath}{
+  %language=Mathematica,
+  %showstringspaces=false,
+  %backgroundcolor=\color{bg},
+  %keywordstyle=\color{col3},
+  %commentstyle=\color{col2},
+  %identifierstyle=\color{col4},
+  %stringstyle=\color{col1}
+}
+
+\lstdefinestyle{custompy}{
+  %language=Python,
+  %showstringspaces=false,
+  %backgroundcolor=\color{bg},
+  %keywordstyle=\color{col3},
+  %commentstyle=\color{col2},
+  %identifierstyle=\color{col4},
+  %stringstyle=\color{col1}
+}
+
+\lstdefinestyle{customjava}{
+  %language=Java,
+  %showstringspaces=false,
+  %backgroundcolor=\color{bg},
+  %keywordstyle=\color{col3},
+  %commentstyle=\color{col2},
+  %identifierstyle=\color{col4},
+  %stringstyle=\color{col1}
+}
+
+\lstdefinestyle{customasmx86}{
+  %morekeywords={push,mov,sub,call,and,leave,ret,lea,and,retn,xor,add,db,%
+%	  eax,ebx,ecx,edx,esi,edi,esp,ebp,eip%
+%	  rax,rbx,rcx,rdx,rsi,rdi,rbp,rsp,rip},%
+  %alsoletter=.,alsodigit=?,%
+  %alsodigit=abcdefhABCDEFhH,%
+  %sensitive=f,%
+  %morestring=[b]",%
+  %morestring=[b]',%
+  %morecomment=[l];%
+  %showstringspaces=false,
+  %basicstyle=\color{red},
+  %backgroundcolor=\color{bg},
+  %keywordstyle=\color{red},
+  %commentstyle=\color{green},
+  %identifierstyle=\color{black},
+  %identifierstyle=\color{blue},
+  %stringstyle=\color{yellow},
+}
+
+\lstdefinestyle{customasmARM}{
+  %morekeywords={stmfd,mov,adr,bl,ldmfd,push,movs,pop,b,stp,add,adrp,ldp,ret,str,sub,movt,stmfa,movw,mov.w,movt.w,add.w,stmia.w,str.w,blx,%
+%		  sp,pc,r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,lr,%
+%		  x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,%
+%		  w0,w1,w2,w3,w4,w5,w6,w7,w8,w9,w10},
+  %alsoletter=.,alsodigit=?,%
+  %sensitive=f,%
+  %morestring=[b]",%
+  %morestring=[b]',%
+  %morecomment=[l];%  
+  %showstringspaces=false,
+  %backgroundcolor=\color{bg},
+  %keywordstyle=\color{col3},
+  %commentstyle=\color{col2},
+  %identifierstyle=\color{black},
+  %identifierstyle=\color{col4},
+  %stringstyle=\color{col1},
+}
+
+\lstdefinestyle{customasmMIPS}{
+  %morekeywords={lui,addiu,sw,lw,li,jalr,move,j,la,jr,or,%
+  %		\$0,\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11, \$12, \$13, \$14, \$15, \$16, \$17, \$18, \$19,%
+  %		\$20, \$21, \$22, \$23, \$24, \$25, \$26, \$27, \$28, \$29, \$30,\$31,\$sp,\$gp,\$fp,%
+%		\%lo,\%hi,
+%		},
+  %alsoletter=.,alsodigit=?,%
+  %sensitive=f,%
+  %morestring=[b]",%
+  %morestring=[b]',%
+  %morecomment=[l];%  
+  %showstringspaces=false,
+  %backgroundcolor=\color{bg},
+  %keywordstyle=\color{col3},
+  %commentstyle=\color{col2},
+  %identifierstyle=\color{black}, 
+  %stringstyle=\color{col1},
+}
+
+\lstdefinestyle{customasmPPC}{
+  %showstringspaces=false,
+}
+
+\ifdefined\RUSSIAN
+\renewcommand\lstlistingname{Листинг}
+\renewcommand\lstlistlistingname{Листинг}
+\fi
+
 \DeclareMathSizes{12}{30}{16}{12}%
-\RU{\bibliography{C_book_ru,books,articles,usenet,misc}}%
-\EN{\bibliography{C_book_en,books,articles,usenet,misc}}%
-\ES{\bibliography{C_book_en,books,articles,usenet,misc}}%
-\PTBR{\bibliography{C_book_en,books,articles,usenet,misc}}%
-\DE{\bibliography{C_book_en,books,articles,usenet,misc}}%
-\PL{\bibliography{C_book_en,books,articles,usenet,misc}}%
-\ITA{\bibliography{C_book_en,books,articles,usenet,misc}}
+
+% see also:
+% http://tex.stackexchange.com/questions/129225/how-can-i-get-get-makeindex-to-ignore-capital-letters
+% http://tex.stackexchange.com/questions/18336/correct-sorting-of-index-entries-containing-macros
+\def\myindex#1{\expandafter\index\expandafter{#1}}
 
 \begin{document}
 
+% fancyhdr
 \pagestyle{fancy}
+\setlength{\headheight}{13pt}
+\fancyhead[R]{} % suppress chapter name
 
 \VerbatimFootnotes
 
 \frontmatter
 
+%\RU{\include{1st_page_RU}}
+%\EN{\include{1st_page_EN}}\DE{\include{1st_page_DE}}\RU{\include{1st_page_RU}}\CN{\include{1st_page_CN}}
 \include{page_after_cover}
 \include{call_for_translators}
-\ifdefined\LITE
-\include{LITE_warning}
-\fi
-%\include{survey}
 
-\ifx\LITE\undefined
 \shorttoc{%
-	\RU{Краткое оглавление}%
-	\EN{Abridged contents}%
-	\ES{Contenidos abreviados}%
-	\PTBRph{}%
-	\DEph{}\PLph{}%
-	\ITAph{}%
-}{-1} % Only sections
-\fi
+    \RU{Краткое оглавление}%
+    \EN{Abridged contents}%
+    \ES{Contenidos abreviados}%
+    \PTBRph{}%
+    \DE{Inhaltsverzeichnis (gekürzt)}%
+    \PLph{}%
+    \ITAph{}%
+    \THAph{}\NLph{}%
+    \FR{Contenus abrégés}
+}{0}
+
 \tableofcontents
 \cleardoublepage
 
@@ -247,19 +334,9 @@
 
 \mainmatter
 
-\ifx\LITE\undefined
-\include{contents}
-\fi
-
 \include{parts}
 
-\ifdefined\LITE
-\include{LITE_warning}
-\fi
-
-\ifx\LITE\undefined
-\include{appendix/appendix}
-\fi
+\EN{\include{appendix/appendix}}\RU{\include{appendix/appendix}}
 \include{acronyms}
 
 \bookmarksetup{startatroot}
@@ -267,29 +344,20 @@
 \clearpage
 \phantomsection
 \addcontentsline{toc}{chapter}{%
-	\RU{Глоссарий}%
-	\EN{Glossary}%
-	\ES{Glosario}%
-	\PTBRph{}%
-	\DEph{}\PLph{}%
-	\ITAph{}%
+    \RU{Глоссарий}%
+    \EN{Glossary}%
+    \ES{Glosario}%
+    \PTBRph{}%
+    \DE{Glossar}%
+    \PLph{}%
+    \ITAph{}%
+    \THAph{}\NLph{}%
+    \FR{Glossaire}
 }
 \printglossaries
 
 \clearpage
 \phantomsection
 \printindex
-
-\clearpage
-\phantomsection
-\addcontentsline{toc}{chapter}{%
-	\RU{Библиография}%
-	\EN{Bibliography}%
-	\ES{Bibliograf\'ia}%
-	\PTBRph{}%
-	\DEph{}\PLph{}%
-	\ITAph{}%
-}
-\printbibliography
 
 \end{document}

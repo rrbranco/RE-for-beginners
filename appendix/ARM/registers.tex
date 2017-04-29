@@ -1,25 +1,25 @@
-\section{32-\RU{битный}\EN{bit} ARM (AArch32)}
+\subsection{32-\RU{битный}\EN{bit} ARM (AArch32)}
 
-\subsection{\RU{Регистры общего пользования}\EN{General purpose registers}}
+\subsubsection{\RU{Регистры общего пользования}\EN{General purpose registers}}
 
 \begin{itemize}
-\index{ARM!\Registers!R0}
+\myindex{ARM!\Registers!R0}
 	\item R0\EMDASH{}\RU{результат функции обычно возвращается через R0}
 		\EN{function result is usually returned using R0}
 	\item R1...R12\EMDASH{}\ac{GPR}s
 	\item R13\EMDASH{}\ac{AKA} SP (\gls{stack pointer})
-\index{ARM!\Registers!Link Register}
+\myindex{ARM!\Registers!Link Register}
 	\item R14\EMDASH{}\ac{AKA} LR (\gls{link register})
 	\item R15\EMDASH{}\ac{AKA} PC (program counter)
 \end{itemize}
 
-\index{ARM!\Registers!scratch registers}
+\myindex{ARM!\Registers!scratch registers}
 \Reg{0}-\Reg{3} \RU{называются также \q{scratch registers}: аргументы функции обычно передаются через них,
 и эти значения не обязательно восстанавливать перед выходом из функции}
 \EN{are also called \q{scratch registers}: the function's arguments are usually passed in them,
 and the values in them are not required to be restored upon the function's exit}.
 
-\subsection{Current Program Status Register (CPSR)}
+\subsubsection{Current Program Status Register (CPSR)}
 
 \begin{center}
 \begin{tabular}{ | l | l | }
@@ -53,7 +53,7 @@ and the values in them are not required to be restored upon the function's exit}
 \hline
 29             & C\EMDASH{}carry/borrow/extend \\
 \hline
-\index{ARM!\Registers!Z}
+\myindex{ARM!\Registers!Z}
 30             & Z\EMDASH{}zero bit \\
 \hline
 31             & N\EMDASH{}negative/less than \\
@@ -62,22 +62,22 @@ and the values in them are not required to be restored upon the function's exit}
 \end{center}
 
 % TODO
-% \index{ARM!\Registers!APSR}
-% \subsection{Application Program Status Register (APSR)}
+% \myindex{ARM!\Registers!APSR}
+% \subsubsection{Application Program Status Register (APSR)}
 
 % TODO
-% \index{ARM!\Registers!FPSCR}
-% \subsection{Floating-Point Status and Control Register (FPPSR)}
+% \myindex{ARM!\Registers!FPSCR}
+% \subsubsection{Floating-Point Status and Control Register (FPPSR)}
 % http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0344b/Chdfafia.html
 
-\subsection{\RU{Регистры VPF (для чисел с плавающей точкой) и NEON}
+\subsubsection{\RU{Регистры VPF (для чисел с плавающей точкой) и NEON}
 \EN{VFP (floating point) and NEON registers}}
 \label{ARM_VFP_registers}
 
 % http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dht0002a/ch01s03s02.html
 
-\index{ARM!D-\registers{}}
-\index{ARM!S-\registers{}}
+\myindex{ARM!D-\registers{}}
+\myindex{ARM!S-\registers{}}
 \begin{center}
 \begin{tabular}{ | l | l | l | l | }
 \hline
@@ -98,9 +98,9 @@ S0\textsuperscript{32 bits} & S1 & S2 & S3 \\
 \RU{D-регистры 64-битные, используются для хранения чисел с двойной точностью}
 \EN{D-registers are 64-bit ones, used for the storage of double precision numbers}.
 
-\RU{D- и S-регистры занимают одно и то же место в памяти CPU\EMDASH{}
-можно обращаться к D-регистрам через S-регистры (хотя это и бессмысленно)}
-\EN{D- and S-registers share the same physical space in the CPU\EMDASH{}it is possible to access 
+\RU{D- и S-регистры занимают одно и то же место в памяти CPU --- можно
+обращаться к D-регистрам через S-регистры (хотя это и бессмысленно)}
+\EN{D- and S-registers share the same physical space in the CPU---it is possible to access 
 a D-register via the S-registers (it is senseless though)}.
 
 \RU{Точно также, \gls{NEON} Q-регистры имеют размер 128 бит и занимают то же физическое место 
@@ -114,25 +114,21 @@ with the other floating point registers}.
 \RU{В VPFv2 были добавлены 16 D-регистров, которые занимают то же место что и S0..S31}
 \EN{In VFPv2 there 16 D-registers are added, which in fact occupy the same space as S0..S31}.
 
-\RU{В}\EN{In} VFPv3 (\gls{NEON} \OrENRU \q{Advanced SIMD}) 
-\RU{добавили еще 16 D-регистров, в итоге это D0..D31, но регистры D16..D31 не делят место
-с другими S-регистрами}
-\EN{there are 16 more D-registers, D0..D31, but the D16..D31 registers are not 
-sharing space with any other S-registers}.
+\EN{In VFPv3 (\gls{NEON} or \q{Advanced SIMD}) there are 16 more D-registers, D0..D31, but the D16..D31 registers are not sharing space with any other S-registers.}%
+\RU{В VFPv3 (\gls{NEON} или \q{Advanced SIMD}) добавили еще 16 D-регистров, в итоге это D0..D31, но регистры D16..D31 не делят место с другими S-регистрами.}
 
-\RU{В}\EN{In} \gls{NEON} \OrENRU \q{Advanced SIMD} \RU{были добавлены также 16 128-битных Q-регистров,
-делящих место с регистрами D0..D31}
-\EN{another 16 128-bit Q-registers were added, which share the same space as D0..D31}.
+\EN{In \gls{NEON} or \q{Advanced SIMD} another 16 128-bit Q-registers were added, which share the same space as D0..D31.}%
+\RU{В \gls{NEON} или \q{Advanced SIMD} были добавлены также 16 128-битных Q-регистров, делящих место с регистрами D0..D31.}
 
-\section{64-\RU{битный}\EN{bit} ARM (AArch64)}
+\subsection{64-\RU{битный}\EN{bit} ARM (AArch64)}
 
-\subsection{\RU{Регистры общего пользования}\EN{General purpose registers}}
+\subsubsection{\RU{Регистры общего пользования}\EN{General purpose registers}}
 \label{ARM64_GPRs}
 
-\RU{Количество регистров было удвоено со времен}\EN{The register count was doubled since} AArch32.
+\RU{Количество регистров было удвоено со времен}\EN{The number of registers was doubled since} AArch32.
 
 \begin{itemize}
-\index{ARM!\Registers!X0}
+\myindex{ARM!\Registers!X0}
 	\item X0\EMDASH{}\RU{результат функции обычно возвращается через X0}
 		\EN{function result is usually returned using X0}
         \item X0...X7\EMDASH{}\RU{Здесь передаются аргументы функции}\EN{Function arguments are passed here}.
@@ -146,14 +142,14 @@ sharing space with any other S-registers}.
 завершению}\EN{callee function can use them, but must restore them upon exit}.
 	\item X29\EMDASH{}\EN{used as}\RU{используется как} \ac{FP} (\EN{at least}\RU{как минимум в} GCC)
 	\item X30\EMDASH{}\q{Procedure Link Register} \ac{AKA} \ac{LR} (\gls{link register}).
-	\item X31\EMDASH{}\EN{register always contains zero}\RU{регистр, всегда содержащий ноль}
-\ac{AKA} XZR \OrENRU \q{Zero Register}. \RU{Его 32-битная часть называется}\EN{It's 32-bit part is called} WZR.
+	\EN{\item X31---register always contains zero \ac{AKA} XZR or \q{Zero Register}. It's 32-bit part is called WZR.}%
+	\RU{\item X31 --- регистр, всегда содержащий ноль \ac{AKA} XZR или \q{Zero Register}. Его 32-битная часть называется WZR.}
 	\item \ac{SP}, \RU{больше не регистр общего пользования}\EN{not a general purpose register anymore}.
 \end{itemize}
 
-\RU{См.также}\EN{See also}: \cite{ARM64_PCS}.
+\RU{См.также}\EN{See also}: \ARMPCS.
 
-\EN{The 32-bit part of each X-register is also accessible via W-registers (W0, W1, \etc{}).}
-\RU{32-битная часть каждого X-регистра также доступна как W-регистр (W0, W1, \etc{}.).}
+\EN{The 32-bit part of each X-register is also accessible via W-registers (W0, W1, etc.).}
+\RU{32-битная часть каждого X-регистра также доступна как W-регистр (W0, W1, итд).}
 
 \input{ARM_X0_register}

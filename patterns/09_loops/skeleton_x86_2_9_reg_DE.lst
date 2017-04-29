@@ -1,0 +1,10 @@
+    MOV EBX, 2 ; Initialisierung
+    JMP check
+body:
+    ; Schleifenkörper
+    ; tue etwas
+    ; verwende Zähler in EBX, aber verändere ihn nicht!
+    INC EBX ; inkrementieren
+check:
+    CMP EBX, 9
+    JLE body

@@ -1,0 +1,64 @@
+\section{Una breve introduzione alla CPU}
+
+La \ac{CPU} è il dispositivo che esegue il codice macchina di cui è fatto un programma.
+
+\textbf{Un breve glossario:}
+
+\begin{description}
+\item[Istruzione]: Un comando \ac{CPU} primitivo.
+L'esempio piò semplice include: spostare dati da un registro all'altro, lavorare con la memoria, effettuare operazioni aritmetiche primitive.
+Di norma ogni \ac{CPU} ha il suo insieme di istruzioni, detto instruction set architecture o (\ac{ISA}).
+
+\item[Codice macchina]: Codice che la \ac{CPU} è in grado di processare direttamente. 
+Ciascuna istruzione è solitamente codificata da diversi byte.
+\item[Linguaggio Assembly]: Codici mnemonico ed alcune estensioni come le macro introdotti per facilitare la vita del programmatore.
+\item[Registro CPU]: Ogni \ac{CPU} ha un insieme finito di registri generici (\ac{GPR}).
+$\approx 8$ in x86, $\approx 16$ in x86-64, $\approx 16$ in ARM.
+Il modo più semplice per capire un registro è quello di pensare ad esso come una variabile temporanea senza tipo.
+Immagina se stessi lavorando con un linguaggio di programmazione di alto livello \ac{PL} e potessi usare solo otto variabili a 32 (o 64) bit.
+
+Eppure solo con questi si possono fare un sacco!
+\end{description}
+
+% TODO1 add about linker: "компоновщик" и "редактор связей" в русскоязычной лит-ре
+
+% A note on the experiments in this area (like the LISP machines http://en.wikipedia.org/wiki/Lisp_machine
+% might be useful
+Qualcuno potrebbe chiedersi perchè ci debba essere una differenza tra il codice macchina ed un ac{PL}. La risposta risiede nel fatto che gli umani e i processori (\ac{CPU}) non sono uguali---%
+per un umano è molto più facille utilizzare un linguaggio di programmazione ad alto livello come \CCpp, Java, Python, etc., mentre per una \ac{CPU} è più semplice utilizzare un livello di astrazione più basso.
+Potrebbe essere forse possibile inventare una \ac{CPU} in grado di eseguire codice di un linguaggio \ac{PL} ad alto livello, ma sarebbe molto più complesso dei processori che conosciamo oggi.
+Allo stesso modo sarebbe del tutto sconveniente per gli umani scrivere in linguaggio assembly, a causa della sua natura di basso livello e la difficoltà nello scrivere senza commettere un enorme numero di fastidiosi errori.
+Il programma che converte il codice di un \ac{PL} di alto livello in assembly è detto un \IT{compilatore}.
+\footnote{La vecchia letteratura russa in materia utilizza il termine \q{traduttore}.}.
+
+\myindex{ARM!\ARMMode}%
+\myindex{ARM!\ThumbMode}%
+\myindex{ARM!\ThumbTwoMode}%
+
+\subsection{Qualche parola sulle diverse \ac{ISA}}
+L'architettura x86 \ac{ISA} è sempre stata una con opcodes di lunghezza variabile, e all'arrivo dell'era 64-bit l'estensione x64 non ha avuto impatti significativi sulla \ac{ISA}. Infatti l'architettura x86 contiene molte istruzioni apparse per la prima volta nelle CPU a 16-bit 8086 che si trovano ancora nei processori odierni.
+ARM è una \ac{CPU} \ac{RISC} progettata con opcodes di lunghezza costante, che in passato avevano alcuni vantaggi.
+Originariamente tutte le istruzioni ARM erano codificate in 4 byte%
+\footnote{
+A proposito, le istruzioni a lunghezza fissa sono utili perchè è possibile calcolare senza sforzo l'indirizzo della prossiama (o della precedente) istruzione. Questa caratteristica sarà discussa nella sezione dedicata all'operatore switch() operator~(\myref{sec:SwitchARMLot}) .
+}.
+Oggi è noto come \q{ARM mode}.
+Successivamente si pensò che non fosse poi tanto economico come si immaginava inizialmente.
+Infatti, le istruzioni \ac{CPU} più usate \footnote{Che sono MOV/PUSH/CALL/Jcc} , in applicazioni reali, possono essere codificate usando meno informazioni.
+Venne quindi aggiunta un'altra \ac{ISA}, detta Thumb, in cui ogni istruzione era codificata in solo 2 byte.
+Oggi detto \q{Thumb mode}.
+Tuttavia non \IT{tutte} le istruzioni ARM possono essere codificate in 2 byte, e il set di istruzioni Thumb è quindi in qualche modo limitato.
+Vale la pena notare che il codice compilato in ARM mode e Thumb mode può tranquillamente coesistere all'interno dello stesso programma.
+I creatori di ARM pensarono di estendere Thumb, dando vita a Thumb-2, appartso per la prima volta in ARMv7.
+Thumb-2 utilizza ancora istruzioni da 2-byte, ma ha anche alcune nuove istruzioni da 4 byte. 
+
+Esiste la convinzione errata che Thumb-2 sia un mix di ARM e Thumb. Questo non è corretto. 
+Thumb-2 è stato invece esteso per supportare completamente tutte le caratteristiche del processore così da competere con l'ARM mode--- un goal che è stato chiaramente raggiunto, visto che la maggior parte delle applicazioni per \idevices sono compilate per il set di istruzioni Thumb-2 (in effetti, molto probabilmente dovuto anche al fatto che Xcode lo fa per default).
+Successivamente fu la volta di ARM a 64-bit. Questa \ac{ISA} ha opcode di 4-byte, e non necessita di alcun Thumb mode aggiuntivo.
+Tuttavia i requisiti a 64-bit hanno avuto un impatto sulla \ac{ISA}, motivo per cui abbiamo oggi tre set di istruzioni ARM: ARM mode, Thumb mode (incluso Thumb-2) e ARM64.
+Queste \ac{ISA} si intersecano parzialmente, ma si può dire che sono \ac{ISA} differenti piuttosto che varianti della stessa.
+Per questo motivo cercheremo di aggiungere frammenti di codice in tutte e tre le \ac{ISA} ARM in questo libro.
+\myindex{PowerPC}%
+\myindex{MIPS}%
+\myindex{Alpha AXP}%
+A proposito, esistono anche molte altre \ac{ISA}s \ac{RISC} con opcode a lunghezza fissa di 32-bit, come MIPS, PowerPC e Alpha AXP.

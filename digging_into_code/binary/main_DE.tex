@@ -1,0 +1,132 @@
+% TODO move section...
+
+\subsection{ Muster in Bin\"ardatein finden}
+
+Alle Beispiele hier wurden vorbereitet mit Windows mit aktiver Code Page 437
+\footnote{\url{https://en.wikipedia.org/wiki/Code_page_437}} in der Konsole.
+Bin\"ar Dateien sehen intern etwas anders aus wenn eine andere Code page gesetzt ist.
+
+\clearpage
+\subsubsection{Arrays}
+
+Manchmal kann man klar ein Array von 16/32/64-Bit Werten mit bloßem Auge im hex Editor erkennen.
+
+Hier ist ein Beispiel eines 16-Bit Wertes.
+Wir sehen das das erste Byte ein paar aus 7 oder 8 ist und das zweite sieht
+zuf\"allig aus:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/16bit_array.png}
+\caption{FAR: array von 16-Bit Werten}
+\end{figure}
+
+Ich habe eine Datei benutzt die ein 12 Kanal Signal digitalisiert mit 16-Bit nutzt \ac{ADC}.
+
+\clearpage
+\myindex{MIPS}
+\par Und hier ist ein Beispiel von einem Typischen MIPS Code.
+
+Wie wir uns vielleicht erinnern, jede MIPS ( also auch ARM in ARM Mode oder ARM64 ) Instruktion hat eine Gr\"oße von 32 Bits (oder 4 Bytes),
+also ist solcher Code ein Array von 32-Bit Werten. 
+
+Wenn man den Screenshot anschaut, sehen wir eine Art Muster.
+
+Vertikale und rote Linien wurden zur besseren Lesbarkeit eingef\"ugt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/typical_MIPS_code.png}
+\caption{Hiew: sehr typischer MIPS code}
+\end{figure}
+
+Ein weiteres Beispiel eines solchen Musters ist Buch:
+\myref{Oracle_SYM_files_example}.
+
+\clearpage
+\subsubsection{Sparse Dateien} 
+
+Diese d\"urftige Datei mit zerstreuten Daten inmitten einer fast leeren Datei.
+Jedes Space Zeichen hier ist in der tat ein Zero Byte (das wie ein space aussieht). % <-- findet man sicher was besseres
+Das ist eine Datei mit der ein FPGA Programmiert wird (Ein Altera Stratix GX Ger\"at).
+Sicher k\"onnen Dateien wie diese einfach Komprimiert werden, aber diese Formate sind in 
+der Wissenschaft und im Ingenieurs Wesen so wie in der Softwareentwicklung sehr verbreitet.
+Wo es oft um effizienten Zugriff geht und weniger um die Komprimierung der Daten.
+
+% This is sparse file with data scattered amidst almost empty file.
+% Each space character here is in fact zero byte (which is looks like space).
+% This is a file to program FPGA (Altera Stratix GX device).
+% Of course, files like these can be compressed easily, but formats like this one are very popular in scientific and engineering software where efficient access is important while compactness is not.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/sparse_FPGA.png}
+\caption{FAR: Sparse file}
+\end{figure}
+
+\clearpage
+\subsubsection{Komprimierte Dateien}
+
+% FIXME \ref{} ->
+Diese Datei ist einfach ein komprimiertes Archiv. 
+Es hat eine relativ hohe Entropie und visuell betrachtet sieht es 
+eher Chaotisch aus. So sehen komprimierte oder verschl\"usselte Dateien aus.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/compressed.png}
+\caption{FAR: Komprimierte Datei}
+\end{figure}
+
+\clearpage
+\subsubsection{\ac{CDFS}}
+
+\ac{OS} Installationen werden \"ublicherweise als ISO Datei bereit gestellt, die Kopien von CD/DVD Disks sind. 
+Das Dateisystem das benutzt wird heißt \ac{cdfs}, hier sieht man wie Dateinamen mit zus\"atzlichen Daten vermischt sind.
+Das k\"onnen Datei Gr\"oßen, Pointer auf andere Verzeichnisse, Datei Attribute und anderes sein. 
+So sehen Dateisysteme typischerweise auch von innen aus.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/cdfs.png}
+\caption{FAR: ISO file: Ubuntu 15 Installation \ac{CD}}
+\end{figure}
+
+\clearpage
+\subsubsection{32-bit x86 ausf\"uhrbarer Code} 
+
+So sieht 32-Bit x86 ausf\"uhrbarer Code aus. 
+Der Code hat nicht wirklich viel Entropie, weil manche Bytes \"ofters vorkommen als andere.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/x86_32.png}
+\caption{FAR: Executable 32-bit x86 code}
+\end{figure}
+
+% TODO: Read more about x86 statistics: \ref{}. % FIXME blog post about decryption...
+
+\clearpage
+\subsubsection{BMP graphics files}
+
+% TODO: bitmap, bit, group of bits...
+
+BMP Dateien sind nicht komprimiert, also ist jedes Byte ( oder Gruppen von Bytes ) beschrieben als
+ein Pixel. Diese Bild habe ich irgendwo in meiner Windows 8.1 Installation gefunden: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphicsSmall{digging_into_code/binary/bmp.png}
+\caption{Example picture}
+\end{figure}
+
+Man kann sehen das dieses Bild Pixel hat, die nicht wirklich gut komprimiert werden k\"onne (um das Zentrum herum),
+aber es sind lange ein-Farben Linien am Anfang und am ende der Datei. Tats\"achlich Linien wie diese sehen wie Linien aus
+wenn man sich die Datei anschaut:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{digging_into_code/binary/bmp_FAR.png}
+\caption{BMP file fragment}
+\end{figure}
+

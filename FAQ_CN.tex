@@ -1,0 +1,54 @@
+% !TEX program = XeLaTeX
+% !TEX encoding = UTF-8
+\documentclass[UTF8,nofonts]{ctexart}
+\setCJKmainfont[BoldFont=STHeiti,ItalicFont=STKaiti]{STSong}
+\setCJKsansfont[BoldFont=STHeiti]{STXihei}
+\setCJKmonofont{STFangsong}
+
+\begin{document}
+
+%daveti: translated on Dec 25, 2016 (Merry Xmas!)
+%NOTE: above is needed for MacTex.
+
+\subsection*{迷你答疑 mini-FAQ}
+
+\par Q: 阅读本书的预备知识是什么？
+\par A: 最好对C/C++有基本了解。
+
+\par Q: 我能买到俄语或者英语的纸板印刷品吗？
+\par A: 抱歉，买不到，因为没有出版商对俄语或者英语版本有兴趣。当然，你可以自己找地方打印装订成书。
+
+\par Q: 有epub/mobi版本吗？
+\par A: 本书是用TeX/LaTeX编写和编译, 所以转换成HTML (epub/mobi是一种HTMLs)不是那么容易。\footnote{译者语：国内有一个早先的翻译版本，可以从这个链接下载 (\url{https://github.com/veficos/reverse-engineering-for-beginners})。注意，该版本基于某个较老版本翻译，已经不再和目前版本同步。}
+
+
+\par Q: 这年头为啥还要学汇编呢？
+\par A: 除非你是 \ac{OS} 程序员, 否则你基本不需要写汇编\textemdash{}最新的编译器 (2010s) 已经能产生比手动汇编优化更好的优化代码。 \footnote{推荐一个相关扩展阅读: \InSqBrackets{\AgnerFog}}.
+
+而且，最新的 \ac{CPU}s 相当复杂，汇编知识已经不能帮助理解其内部构造。
+
+然而懂汇编至少对2个领域依然有帮助：
+第一个也是最重要的一个，安全／病毒研究 (security/malware research)。另外，在调试程序的时候，对汇编的理解也能帮助理解编译器产生的代码。
+因此，本书着重于帮助读者理解汇编语言而不是手动写汇编语言。
+这也是为什么本书含有大量的编译器产生的汇编代码。
+
+\par Q: 我点击了一个PDF里的链接，然后如何回到PDF？
+\par A: 在Adobe Acrobat Reader点击Alt+LeftArrow。在Evince点击 ``<'' 按键。
+
+\par Q: 我能打印本书或者作为教材教课吗？
+\par A: 必须的！本书使用Creative Commons license (CC BY-SA 4.0)就是为了这个目的。
+
+\par Q: 为啥本书免费？这本书很牛比，而且免费，让人生疑。
+\par A:  根据我的经验，技术类书籍作者通常通过免费来打广告。而且通常写这类书赚不到什么银子。
+
+\par Q: 如何能找到一个逆向工程师的工作呢？How does one get a job in reverse engineering?
+\par A: Reddit上有一个专门的用来招聘逆向工程师的论坛\FNURLREDDIT{}
+(\RedditHiringThread{})。去那儿看看。
+
+另一个相关的招聘信息可以在\q{netsec} subreddit: \NetsecHiringThread{}找到。
+
+\par Q: 我想提问。。。
+\par A: 给俺发邮件 (\EMAIL)。
+
+\end{document}
+

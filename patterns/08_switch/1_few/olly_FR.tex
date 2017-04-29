@@ -1,0 +1,114 @@
+﻿\clearpage
+\mysubparagraph{\olly}
+
+Comme cet exemple est compliqué, traçons-le dans \olly.
+
+\olly peut détecter de telles constructions avec switch(), et ajoute des commentaires
+utiles.
+\EAX contient 2 au début, c'est la valeur du paramètre de la fonction:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly1.png}
+\caption{\olly: \EAX 
+contient maintenant le premier (et unique) argument de la fonction}
+\label{fig:switch_few_olly1}
+\end{figure}
+
+\clearpage
+0 est soustrait de 2 dans \EAX.
+Bien sûr, \EAX contient toujours 2.
+Mais le flag \ZF est maintenant à 0, indiquant que le résultat est différent de
+zèro:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly2.png}
+\caption{\olly: \SUB exécuté}
+\label{fig:switch_few_olly2}
+\end{figure}
+
+\clearpage
+\DEC est exécuté et \EAX contient maintenant 1.
+Mais 1 est différent de zéro, donc le flag \ZF est toujours à 0:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly3.png}
+\caption{\olly: premier \DEC exécuté}
+\label{fig:switch_few_olly3}
+\end{figure}
+
+\clearpage
+Le \DEC suivant est exécuté.
+\EAX contient maintenant 0 et le flag \ZF est mis, car le résultat devient zéro:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly4.png}
+\caption{\olly: second \DEC exécuté}
+\label{fig:switch_few_olly4}
+\end{figure}
+
+\olly montre que le saut va être effectué (\IT{Jump is taken}).
+
+\clearpage
+Un pointeur sur la chaîne \q{two} est maintenant écrit sur la pile:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly5.png}
+\caption{\olly: 
+pointeur sur la chaîne qui va être écrite à la place du premier argument}
+\label{fig:switch_few_olly5}
+\end{figure}
+
+% TODO: homogenize numbers
+% now they are inconsistent: sometimes plain text, sometimes in math mode
+% some kind of \expr{} both for numbers and expressions? --DY
+Veuillez noter: l'argument de la fonction courante est 2, et 2 est maintenant
+sur la pile, à l'adresse \TT{0x001EF850}.
+
+\clearpage
+\MOV écrit le pointeur sur la chaîne à l'adresse \TT{0x001EF850} (voir la fenêtre de la pile).
+Puis, le saut est effectué.
+Ceci est la première instruction de la fonction \printf dans MSVCR100.DLL (Cet exemple
+a été compilé avec le switch /MD):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly6.png}
+\caption{\olly: première instruction de \printf dans MSVCR100.DLL}
+\label{fig:switch_few_olly6}
+\end{figure}
+
+Maintenant \printf traite la chaîne à l'adresse \TT{0x00FF3010} comme c'est son
+seul argument et l'affiche.
+
+\clearpage
+Ceci est la dernière insruction de \printf:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly7.png}
+\caption{\olly: dernière instruction de \printf dans MSVCR100.DLL}
+\label{fig:switch_few_olly7}
+\end{figure}
+
+La chaîne \q{two} vient juste d'être affichée dans la fenêtre console.
+
+\clearpage
+Maintenant, appuyez sur F7 ou F8 (\stepover) et le retour ne se fait pas sur \ttf,
+mais sur \main:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/1_few/olly8.png}
+\caption{\olly: retourne à \main}
+\label{fig:switch_few_olly8}
+\end{figure}
+
+Oui, le saut a été direct, depuis les entrailles de \printf vers \main.
+Car \ac{RA} dans la pile pointe non pas quelque part dans \ttf, mais en fait sur
+\main.
+Et \CALL \TT{0x00FF1000} a été l'instruction qui a appelé \ttf.

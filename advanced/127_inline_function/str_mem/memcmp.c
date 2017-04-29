@@ -1,4 +1,4 @@
-void memcpy_1235(char *inbuf, char *outbuf)
+int memcmp_1235(char *buf1, char *buf2)
 {
-	memcpy(outbuf+10, inbuf, 1235);
+	return memcmp(buf1, buf2, 1235);
 };

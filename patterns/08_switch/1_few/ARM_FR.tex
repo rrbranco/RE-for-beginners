@@ -1,0 +1,67 @@
+\subsubsection{ARM: \OptimizingKeilVI (\ARMMode)}
+\myindex{\CLanguageElements!switch}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/few_ARM_ARM_O3.asm}
+
+Á nouveau, en investiguant ce code, nous ne pouvons pas dire si il y avait un switch()
+dans le code source d'origine ou juste un ensemble de déclarations if().
+
+\myindex{ARM!\Instructions!ADRcc}
+
+En tout cas, nous voyons ici des instructions conditionnelles (comme \ADREQ (\IT{Equal}))
+qui ne sont exécutées que si $R0=0$, et qui chargent ensuite l'adresse de la chaîne
+\IT{<<zero\textbackslash{}n>>} dans \Reg{0}.
+\myindex{ARM!\Instructions!BEQ}
+L'instruction suivante \ac{BEQ} redirige le flux d'exécution en \TT{loc\_170}, si $R0=0$.
+
+Le lecteur attentif peut se demander si \ac{BEQ} s'exécute correctement puisque \ADREQ
+a déjà mis une autre valeur dans le registre \Reg{0}.
+
+Oui, elle s'exécutera correctement, car \ac{BEQ} vérifie les flags mis par l'instruction
+\CMP et \ADREQ ne modifie aucun flag.
+
+Les instructions restantes nous sont déjà familières.
+Il y a seulement un appel à \printf, à la fin, et nous avons déjà examiné cette
+astuce ici~(\myref{ARM_B_to_printf}).
+A la fin, il y a trois chemins vers \printf{}.
+
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!CMP}
+La dernière instruction, \TT{CMP R0, \#2}, est nécessaire pour vérifier si $a=2$.
+
+Si ce n'est pas vrai, alors \ADRNE charge un pointeur sur la chaîne \IT{<<something unknown \textbackslash{}n>>}
+dans \Reg{0}, puisque $a$ a déjà été comparée pour savoir s'elle est égale
+à 0 ou 1, et nous sommes sûrs que la variable $a$ n'est pas égale à l'un de
+ces nombres, à ce point.
+Et si $R0=2$, un pointeur sur la chaîne \IT{<<two\textbackslash{}n>>} sera chargé
+par \ADREQ dans \Reg{0}.
+
+\subsubsection{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/few_ARM_thumb_O3.asm}
+
+% FIXME а каким можно? к каким нельзя? \myref{} ->
+
+Comme il y déjà été dit, il n'est pas possible d'ajouter un prédicat conditionnel
+à la plupart des instructions en mode Thumb, donc ce dernier est quelque peu similaire
+au code \ac{CISC}-style x86, facilement compréhensible.
+
+\subsubsection{ARM64: GCC (Linaro) 4.9 \NonOptimizing}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/ARM64_GCC_O0_FR.lst}
+
+Le type de la valeur d'entrée est \Tint, par conséquent le registre \RegW{0} est
+utilisé pour garder la veleur au lieu du registre complet \RegX{0}.
+
+Les pointeurs de chaîne sont passés à \puts en utilisant la paire d'instructions
+\INS{ADRP}/\INS{ADD} comme expliqué dans l'exemple \q{\HelloWorldSectionName}:~\myref{pointers_ADRP_and_ADD}.
+
+\subsubsection{ARM64: GCC (Linaro) 4.9 \Optimizing}
+
+\lstinputlisting[style=customasmARM]{patterns/08_switch/1_few/ARM64_GCC_O3_FR.lst}
+
+Morceau de code mieux optimisé.
+L'instruction \TT{CBZ} (\IT{Compare and Branch on Zero} comparer et sauter si zéro)
+effectue un saut si \RegW{0} vaut zéro.
+Il y a alors un saut direct à \puts au lieu de l'appeler, comme cela a été expliqué
+avant:~\myref{JMP_instead_of_RET}.

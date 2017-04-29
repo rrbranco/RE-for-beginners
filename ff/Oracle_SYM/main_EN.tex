@@ -1,0 +1,297 @@
+\section{\oracle: .SYM-files}
+\myindex{\oracle}
+\label{Oracle_SYM_files_example}
+
+When an \oracle process experiences some kind of crash, it writes a lot of information into log files,
+including stack trace, like this:
+
+\begin{lstlisting}
+----- Call Stack Trace -----
+calling              call     entry                argument values in hex      
+location             type     point                (? means dubious value)     
+-------------------- -------- -------------------- ----------------------------
+_kqvrow()                     00000000             
+_opifch2()+2729      CALLptr  00000000             23D4B914 E47F264 1F19AE2
+                                                   EB1C8A8 1
+_kpoal8()+2832       CALLrel  _opifch2()           89 5 EB1CC74
+_opiodr()+1248       CALLreg  00000000             5E 1C EB1F0A0
+_ttcpip()+1051       CALLreg  00000000             5E 1C EB1F0A0 0
+_opitsk()+1404       CALL???  00000000             C96C040 5E EB1F0A0 0 EB1ED30
+                                                   EB1F1CC 53E52E 0 EB1F1F8
+_opiino()+980        CALLrel  _opitsk()            0 0
+_opiodr()+1248       CALLreg  00000000             3C 4 EB1FBF4
+_opidrv()+1201       CALLrel  _opiodr()            3C 4 EB1FBF4 0
+_sou2o()+55          CALLrel  _opidrv()            3C 4 EB1FBF4
+_opimai_real()+124   CALLrel  _sou2o()             EB1FC04 3C 4 EB1FBF4
+_opimai()+125        CALLrel  _opimai_real()       2 EB1FC2C
+_OracleThreadStart@  CALLrel  _opimai()            2 EB1FF6C 7C88A7F4 EB1FC34 0
+4()+830                                            EB1FD04
+77E6481C             CALLreg  00000000             E41FF9C 0 0 E41FF9C 0 EB1FFC4
+00000000             CALL???  00000000             
+\end{lstlisting}
+
+But of course, \oracle's executables must have some kind of debug information or map files with symbol
+information included or something like that.
+
+Windows NT \oracle has symbol information in files with .SYM extension, but the format is proprietary.
+(Plain text files are good, but needs additional parsing, hence offer slower access.)
+
+Let's see if we can understand its format.
+
+We will pick the shortest \TT{orawtc8.sym} file that comes with the \TT{orawtc8.dll} file in Oracle 8.1.7
+\footnote{We can chose an ancient \oracle version intentionally due to the smaller size of its modules}.
+
+\clearpage
+Here is the file opened in Hiew:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_SYM/whole1.png}
+\caption{The whole file in Hiew}
+\label{fig:oracle_SYM_whole1}
+\end{figure}
+
+By comparing the file with other .SYM files, we can quickly see that \TT{OSYM} is always header (and footer),
+so this is maybe the file's signature.
+
+We also see that basically, the file format is: OSYM + some binary data + zero delimited text strings + OSYM.
+The strings are, obviously, function and global variable names.
+
+\clearpage
+We will mark the OSYM signatures and strings here: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_SYM/whole2.png}
+\caption{OSYM signature and text strings}
+\label{fig:oracle_SYM_whole2}
+\end{figure}
+
+Well, let's see. 
+In Hiew, we will mark the whole strings block (except the trailing OSYM signatures) and put it into a separate file.
+Then we run UNIX \IT{strings} and \IT{wc} utilities to count the text strings:
+
+\begin{lstlisting}
+strings strings_block | wc -l
+66
+\end{lstlisting}
+
+So there are 66 text strings.
+Please note that number.
+
+We can say, in general, as a rule, the number of \IT{anything} is often stored separately in binary files.
+
+It's indeed so, we can find the 66 value (0x42) at the file's start, right after the OSYM signature:
+
+\lstinputlisting{ff/Oracle_SYM/dump1.txt}
+
+Of course, 0x42 here is not a byte, but most likely a 32-bit value packed as little-endian, hence we see
+0x42 and then at least 3 zero bytes.
+
+Why do we believe it's 32-bit?
+Because, \oracle's symbol 
+files may be pretty big.
+
+The oracle.sym file for the main oracle.exe (version 10.2.0.4) executable contains \TT{0x3A38E} (238478) symbols.
+A 16-bit value isn't enough here.
+
+We can check other .SYM files like this and it proves our guess: the value after the 32-bit OSYM signature always
+reflects the number of text strings in the file.
+
+It's a general feature of almost all binary files: a header with a signature plus some other information 
+about the file.
+
+Now let's investigate closer what this binary block is.
+
+Using Hiew again, we put the block starting at address 8 (i.e., after the 32-bit \IT{count} value) 
+ending at the strings block, into a separate binary file.
+
+\clearpage
+Let's see the binary block in Hiew:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_SYM/binary1.png}
+\caption{Binary block}
+\label{fig:oracle_SYM_binary1}
+\end{figure}
+
+There is a clear pattern in it. 
+
+\clearpage
+We will add red lines to divide the block: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_SYM/binary2.png}
+\caption{Binary block patterns}
+\label{fig:oracle_SYM_binary2}
+\end{figure}
+
+Hiew, like almost any other hexadecimal editor, shows 16 bytes per line.
+So the pattern is clearly visible: 
+there are 4 32-bit values per line.
+
+The pattern is visually visible because some values here (till address \TT{0x104}) 
+are always in \TT{0x1000xxxx} form, 
+started with 0x10 and zero bytes.
+
+Other values (starting at \TT{0x108}) are in \TT{0x0000xxxx} form, so always started with two zero bytes.
+
+Let's dump the block as an array of 32-bit values:
+
+\lstinputlisting[caption=first column is address]{ff/Oracle_SYM/dump2.txt}
+
+There are 132 values, that's 66*2.
+Probably, there are two 32-bit values for each symbol, but maybe there are two arrays? 
+Let's see.
+
+Values starting with \TT{0x1000} may be addresses.
+
+This is a .SYM file for a DLL after all, and the default base address of
+win32 DLLs is \TT{0x10000000}, and the code usually starts at \TT{0x10001000}.
+
+When we open the orawtc8.dll file in \IDA, the base address is different, but nevertheless, the first function is:
+
+\begin{lstlisting}[style=customasmx86]
+.text:60351000 sub_60351000    proc near
+.text:60351000
+.text:60351000 arg_0    = dword ptr  8
+.text:60351000 arg_4    = dword ptr  0Ch
+.text:60351000 arg_8    = dword ptr  10h
+.text:60351000
+.text:60351000          push    ebp
+.text:60351001          mov     ebp, esp
+.text:60351003          mov     eax, dword_60353014
+.text:60351008          cmp     eax, 0FFFFFFFFh
+.text:6035100B          jnz     short loc_6035104F
+.text:6035100D          mov     ecx, hModule
+.text:60351013          xor     eax, eax
+.text:60351015          cmp     ecx, 0FFFFFFFFh
+.text:60351018          mov     dword_60353014, eax
+.text:6035101D          jnz     short loc_60351031
+.text:6035101F          call    sub_603510F0
+.text:60351024          mov     ecx, eax
+.text:60351026          mov     eax, dword_60353014
+.text:6035102B          mov     hModule, ecx
+.text:60351031
+.text:60351031 loc_60351031:    ; CODE XREF: sub_60351000+1D
+.text:60351031          test    ecx, ecx
+.text:60351033          jbe     short loc_6035104F
+.text:60351035          push    offset ProcName ; "ax_reg"
+.text:6035103A          push    ecx             ; hModule
+.text:6035103B          call    ds:GetProcAddress
+...
+\end{lstlisting}
+
+Wow, \q{ax\_reg} string sounds familiar. 
+
+It's indeed the first string in the strings block!
+So the name of this function seems to be \q{ax\_reg}.
+
+The second function is:
+
+\begin{lstlisting}[style=customasmx86]
+.text:60351080 sub_60351080    proc near
+.text:60351080
+.text:60351080 arg_0    = dword ptr  8
+.text:60351080 arg_4    = dword ptr  0Ch
+.text:60351080
+.text:60351080          push    ebp
+.text:60351081          mov     ebp, esp
+.text:60351083          mov     eax, dword_60353018
+.text:60351088          cmp     eax, 0FFFFFFFFh
+.text:6035108B          jnz     short loc_603510CF
+.text:6035108D          mov     ecx, hModule
+.text:60351093          xor     eax, eax
+.text:60351095          cmp     ecx, 0FFFFFFFFh
+.text:60351098          mov     dword_60353018, eax
+.text:6035109D          jnz     short loc_603510B1
+.text:6035109F          call    sub_603510F0
+.text:603510A4          mov     ecx, eax
+.text:603510A6          mov     eax, dword_60353018
+.text:603510AB          mov     hModule, ecx
+.text:603510B1
+.text:603510B1 loc_603510B1:    ; CODE XREF: sub_60351080+1D
+.text:603510B1          test    ecx, ecx
+.text:603510B3          jbe     short loc_603510CF
+.text:603510B5          push    offset aAx_unreg ; "ax_unreg"
+.text:603510BA          push    ecx             ; hModule
+.text:603510BB          call    ds:GetProcAddress
+...
+\end{lstlisting}
+
+The \q{ax\_unreg} string is also the second string in the strings block!
+
+The starting address of the second function is \TT{0x60351080}, and the second value in the binary 
+block is \TT{10001080}.
+So this is the address, 
+but for a DLL with the default base address.
+
+We can quickly check and be sure that the first 66 values in the array (i.e., the first half of the array) 
+are just function addresses in the DLL, including some labels, \etc{}.
+Well, what's the other part of array then? 
+The other 66 values that start with \TT{0x0000}? 
+These seem to be in range \TT{[0...0x3F8]}. 
+And they do not look like bitfields: 
+the series of numbers is increasing.
+
+The last hexadecimal digit seems to be random, so, it's unlikely the address of something 
+(it would be divisible by 4 or maybe 8 or 0x10 otherwise).
+
+Let's ask ourselves: what else \oracle's developers would save here, in this file?
+
+Quick wild guess: it could be the address of the text string (function name).
+
+It can be quickly checked, and yes, each number is just the position of the first character in the strings block.
+
+This is it! All done.
+
+\myindex{IDA}
+We will write an utility to convert these .SYM files into \IDA script, 
+so we can load the .idc script and it sets the function names:
+
+\lstinputlisting[style=customc]{ff/Oracle_SYM/unpacker.c}
+
+Here is an example of its work:
+
+\begin{lstlisting}[style=customc]
+#include <idc.idc>
+
+static main() {
+	MakeName(0x60351000, "_ax_reg");
+	MakeName(0x60351080, "_ax_unreg");
+	MakeName(0x603510F0, "_loaddll");
+	MakeName(0x60351150, "_wtcsrin0");
+	MakeName(0x60351160, "_wtcsrin");
+	MakeName(0x603511C0, "_wtcsrfre");
+	MakeName(0x603511D0, "_wtclkm");
+	MakeName(0x60351370, "_wtcstu");
+...
+}
+\end{lstlisting}
+
+The example files were used in this example are here: 
+\href{http://go.yurichev.com/17216}{beginners.re}.
+
+\clearpage
+Oh, let's also try \oracle for win64.
+There has to be 64-bit addresses instead, right?
+
+The 8-byte pattern is visible even easier here:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/Oracle_SYM/whole64.png}
+\caption{.SYM-file example from \oracle for win64}
+\label{fig:oracle_SYM_whole64}
+\end{figure}
+
+So yes, all tables now have 64-bit elements, even string offsets!
+
+The signature is now \TT{OSYMAM64}, to distinguish the target platform, apparently.
+
+This is it!
+
+Here is also library which has functions to access \oracle .SYM-files:
+\href{http://go.yurichev.com/17007}{GitHub}.

@@ -1,0 +1,68 @@
+\clearpage
+\subsection{Simplest possible 4-byte XOR encryption}
+
+If a longer pattern was used for XOR-encryption, for example a 4 byte pattern, it's easy to spot as well.
+
+For example, here is the beginning of the kernel32.dll file (32-bit version from Windows Server 2008):
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/XOR/4byte/original1.png}
+\caption{Original file}
+\end{figure}
+
+\clearpage
+
+Here it is \q{encrypted} with a 4-byte key:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/XOR/4byte/encrypted1.png}
+\caption{\q{Encrypted} file}
+\end{figure}
+
+It's very easy to spot the recurring 4 symbols.
+
+Indeed, the header of a PE-file has a lot of long zero areas, which are the reason for the key to become visible.
+
+\clearpage
+
+Here is the beginning of a PE-header in hexadecimal form:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/XOR/4byte/original2.png}
+\caption{PE-header}
+\end{figure}
+
+\clearpage
+
+Here it is \q{encrypted}:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{ff/XOR/4byte/encrypted2.png}
+\caption{\q{Encrypted} PE-header}
+\end{figure}
+
+It's easy to spot that the key is the following 4 bytes: \TT{8C 61 D2 63}.
+
+With this information, it's easy to decrypt the whole file.
+
+So it is important to keep in mind these properties of PE-files:
+1) PE-header has many zero-filled areas;
+2) all PE-sections are padded with zeros at a page boundary (4096 bytes),
+so long zero areas are usually present after each section.
+
+Some other file formats may contain long zero areas.
+
+It's typical for files used by scientific and engineering software.
+
+For those who want to inspect these files on their own, they are downloadable here: \url{http://go.yurichev.com/17352}.
+
+\subsubsection{\Exercise}
+
+\begin{itemize}
+	\item \url{http://challenges.re/50}
+\end{itemize}
+

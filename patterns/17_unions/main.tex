@@ -1,19 +1,27 @@
-\chapter{\RU{Объединения (union)}\EN{Unions}}
+\section{\RU{Объединения (union)}\EN{Unions}\DE{Unions}}
 
 \EN{\CCpp \IT{union} is mostly used for interpreting a variable (or memory block) of one data type as a variable of another data type.}
-\RU{\IT{union} в \CCpp используется в основном для интерпертации переменной (или блока памяти) одного типа как переменной другого типа.}
+\DE{Die \\Cpp \IT{union} wird hauptsächlich verwendet um eine Variable (oder einen Speicherblock) eines Datentyps als
+Variable eines anderen Datentyps zu interpretieren.}
+\RU{\IT{union} в \CCpp используется в основном для интерпретации переменной (или блока памяти) одного типа как переменной другого типа.}
 
 % sections
 \input{patterns/17_unions/FPU_PRNG/main}
 \input{patterns/17_unions/epsilon/main}
+\EN{\input{patterns/17_unions/FSCALE_EN}}
+\DE{\input{patterns/17_unions/FSCALE_DE}}
 
-\section{\RU{Быстрое вычисление квадратного корня}\EN{Fast square root calculation}}
+\subsection{\RU{Быстрое вычисление квадратного корня}\EN{Fast square root calculation}\DE{Schnelle Berechnung der
+Quadratwurzel}}
 
 \RU{Вот где еще можно на практике применить трактовку типа \Tfloat как целочисленного, это быстрое вычисление квадратного корня.}%
 \EN{Another well-known algorithm where \Tfloat is interpreted as integer is fast calculation of square root.}
+\DE{Ein anderer bekannter Algorithmus, in dem \Tfloat als \Tint interpretiert wird, ist die schnelle Berechnung einer
+Quadratwurzel.}
 
-\begin{lstlisting}[caption=\EN{The source code is taken from Wikipedia}\RU{Исходный код взят из Wikipedia}: \url{http://go.yurichev.com/17364}]
-/* Assumes that float is in the IEEE 754 single precision floating point format
+\begin{lstlisting}[caption=DE{Quellcode stammt aus der Wikipedia}\EN{The source code is taken from
+Wikipedia}\RU{Исходный код взят из Wikipedia}:
+\url{http://go.yurichev.com/17364},style=customc] /* Assumes that float is in the IEEE 754 single precision floating point format
  * and that int is 32 bits. */
 float sqrt_approx(float z)
 {
@@ -39,14 +47,31 @@ float sqrt_approx(float z)
 }
 \end{lstlisting}
 
-\RU{В качестве упражнения, вы можете попробовать скомпилировать эту функцию и разобраться, как она работает.}
-\EN{As an exercise, you can try to compile this function and to understand, how it works.}\ESph{}\PTBRph{}\DEph{}\PLph{}\ITAph{}\\
+\ifdefined\RUSSIAN
+В качестве упражнения, вы можете попробовать скомпилировать эту функцию и разобраться, как она работает. \\
 \\
-\RU{Имеется также известный алгоритм быстрого вычисления}\EN{There is also well-known algorithm of fast calculation of} $\frac{1}{\sqrt{x}}$.
-\index{Quake III Arena}
-\RU{Алгоритм стал известным, вероятно потому, что был применен в Quake III Arena.}%
-\EN{Algorithm became popular, supposedly, because it was used in Quake III Arena.}
+Имеется также известный алгоритм быстрого вычисления $\frac{1}{\sqrt{x}}$.
+\myindex{Quake III Arena}
+Алгоритм стал известным, вероятно потому, что был применен в Quake III Arena.
 
-\RU{Описание алгоритма есть в}\EN{Algorithm description is present in} Wikipedia:
-\EN{\url{http://go.yurichev.com/17360}}\RU{\url{http://go.yurichev.com/17361}}.
+Описание алгоритма есть в Wikipedia: \url{http://go.yurichev.com/17361}.
+\fi % RUSSIAN
+
+\ifdefined\ENGLISH
+As an exercise, you can try to compile this function and to understand, how it works. \\
+\\
+There is also well-known algorithm of fast calculation of $\frac{1}{\sqrt{x}}$.
+\myindex{Quake III Arena}
+Algorithm became popular, supposedly, because it was used in Quake III Arena.
+
+Algorithm description can be found in Wikipedia: \url{http://go.yurichev.com/17360}.
+\fi % ENGLISH
+
+\ifdefined\GERMAN
+Versuchen Sie als Übung, diese Funktion zu kompilieren und zu verstehen wie sie funktioniert.\\\\
+Es gibt auch einen bekannten Algorithmus zur schnellen Berechnung von $\frac{1}{\sqrt{x}}$.
+\myindex{Quake III Arena}
+Der Algorithmus wurde vermutlich so populär, weil er in Quake III Arena verwendet wurde.
+Eine Beschreibung des Algorithmus' findet man bei Wikipedia: \url{http://go.yurichev.com/17360}.
+\fi % GERMAN
 

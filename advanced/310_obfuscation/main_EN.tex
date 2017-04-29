@@ -1,0 +1,191 @@
+\section{Obfuscation}
+
+The obfuscation is an attempt to hide the code (or its meaning) from reverse engineers.
+
+\subsection{Text strings}
+
+As we saw in (\myref{sec:digging_strings}), text strings may be really helpful.
+
+Programmers who are aware of this try to hide them, making it impossible to find the string in \IDA{} or any hex editor.
+
+Here is the simplest method.
+
+This is how the string can be constructed:
+
+\begin{lstlisting}[style=customasmx86]
+mov     byte ptr [ebx], 'h'
+mov     byte ptr [ebx+1], 'e'
+mov     byte ptr [ebx+2], 'l'
+mov     byte ptr [ebx+3], 'l'
+mov     byte ptr [ebx+4], 'o'
+mov     byte ptr [ebx+5], ' '
+mov     byte ptr [ebx+6], 'w'
+mov     byte ptr [ebx+7], 'o'
+mov     byte ptr [ebx+8], 'r'
+mov     byte ptr [ebx+9], 'l'
+mov     byte ptr [ebx+10], 'd'
+\end{lstlisting}
+
+The string can also be compared with another one like this:
+
+\begin{lstlisting}[style=customasmx86]
+mov	ebx, offset username
+cmp	byte ptr [ebx], 'j'
+jnz	fail
+cmp	byte ptr [ebx+1], 'o'
+jnz	fail
+cmp	byte ptr [ebx+2], 'h'
+jnz	fail
+cmp	byte ptr [ebx+3], 'n'
+jnz	fail
+jz	it_is_john
+\end{lstlisting}
+
+In both cases, it is impossible to find these strings straightforwardly in a hex editor.
+
+\myindex{Shellcode}
+
+By the way, this is a way to work with the strings when it is impossible
+to allocate space for them in the data segment, for example in a \ac{PIC} or in shellcode.
+
+Another method is to use \TT{sprintf()} 
+for the construction:
+
+\begin{lstlisting}[style=customc]
+sprintf(buf, "%s%c%s%c%s", "hel",'l',"o w",'o',"rld");
+\end{lstlisting}
+
+The code looks weird, but as a simple anti-reversing measure, it may be helpful.
+
+Text strings may also be present in encrypted form, 
+then every string usage is to be preceded by a string decrypting routine.
+For example: \myref{examples_SCO}.
+
+\subsection{Executable code}
+
+\subsubsection{Inserting garbage}
+
+Executable code obfuscation implies inserting random garbage code between real one,
+which executes but does nothing useful.
+
+A simple example:
+
+\begin{lstlisting}[caption=original code,style=customasmx86]
+add	eax, ebx
+mul	ecx
+\end{lstlisting}
+
+\lstinputlisting[caption=obfuscated code,style=customasmx86]{\CURPATH/1_EN.asm}
+
+Here the garbage code uses registers which are not used in the real code (\TT{ESI} and \TT{EDX}).
+However, the intermediate results produced by the real code 
+may be used by the garbage instructions for some extra mess---why not?
+
+\subsubsection{Replacing instructions with bloated equivalents}
+
+\begin{itemize}
+\item \TT{MOV op1, op2} can be replaced by the \TT{PUSH op2 / POP op1} pair.
+\item \TT{JMP label} can be replaced by the \TT{PUSH label / RET} pair. 
+\IDA{} will not show the references to the label.
+\item \TT{CALL label} can be replaced by the following instructions triplet:\\
+\TT{PUSH label\_after\_CALL\_instruction / PUSH label / RET}.
+\item \TT{PUSH op} can also be replaced with the following instructions pair: \\
+\TT{SUB ESP, 4 (or 8) / MOV [ESP], op}.%
+
+\end{itemize}
+
+\subsubsection{Always executed/never executed code}
+
+If the developer is sure that ESI 
+at always 0 at that point:
+
+\lstinputlisting[style=customasmx86]{\CURPATH/2_EN.asm}
+
+The reverse engineer needs some time to get into it.
+
+\myindex{opaque predicate}
+This is also called an \IT{opaque predicate}.
+
+Another example (and again, the developer is sure that ESI is always zero):
+
+\lstinputlisting[style=customasmx86]{\CURPATH/3_EN.asm}
+
+\subsubsection{Making a lot of mess}
+
+\begin{lstlisting}
+instruction 1
+instruction 2
+instruction 3
+\end{lstlisting}
+
+Can be replaced with:
+
+\begin{lstlisting}[style=customasmx86]
+begin:		jmp	ins1_label
+
+ins2_label:	instruction 2
+		jmp	ins3_label
+
+ins3_label:	instruction 3
+		jmp	exit:
+
+ins1_label:	instruction 1
+		jmp	ins2_label
+exit:
+\end{lstlisting}
+
+\subsubsection{Using indirect pointers}
+
+\begin{lstlisting}[style=customasmx86]
+dummy_data1	db	100h dup (0)
+message1	db	'hello world',0
+
+dummy_data2	db	200h dup (0)
+message2	db	'another message',0
+
+func		proc
+		...
+		mov	eax, offset dummy_data1 ; PE or ELF reloc here
+		add	eax, 100h
+		push	eax
+		call	dump_string
+		...
+		mov	eax, offset dummy_data2 ; PE or ELF reloc here
+		add	eax, 200h
+		push	eax
+		call	dump_string
+		...
+func		endp
+\end{lstlisting}
+
+\IDA{} will show references only to \TT{dummy\_data1} and \TT{dummy\_data2}, 
+but not to the text strings.
+
+Global variables and even functions may be accessed like that.
+
+\subsection{Virtual machine / pseudo-code}
+
+A programmer can construct his/her own \ac{PL} or \ac{ISA} and interpreter for it.
+
+(Like the pre-5.0 Visual Basic, .NET or Java machines).
+The reverse engineer will have to spend some time to understand the meaning 
+and details of all of the \ac{ISA}'s instructions.
+
+He/she will also have to write a disassembler/decompiler of some sort.
+% TODO about obfuscation VMs
+
+\subsection{Other things to mention}
+
+My own (yet weak) attempt to patch the Tiny C compiler to produce obfuscated code: \url{http://go.yurichev.com/17220}.
+
+Using the \MOV 
+instruction for really complicated things: 
+[Stephen Dolan, \IT{mov is Turing-complete}, (2013)]
+\footnote{\AlsoAvailableAs \url{http://www.cl.cam.ac.uk/~sd601/papers/mov.pdf}}. 
+
+\subsection{\Exercise}
+
+\begin{itemize}
+	\item \url{http://challenges.re/29}
+\end{itemize}
+

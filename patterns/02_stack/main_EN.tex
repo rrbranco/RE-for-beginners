@@ -1,0 +1,102 @@
+\section{\Stack}
+\label{sec:stack}
+\myindex{\Stack}
+
+The stack is one of the most fundamental data structures in computer science
+\footnote{\href{http://go.yurichev.com/17119}{wikipedia.org/wiki/Call\_stack}}.
+\ac{AKA} \ac{LIFO}.
+
+Technically, it is just a block of memory in process memory along with the \ESP or \RSP register in x86 or x64, or the \ac{SP} register in ARM, as a pointer within that block.
+
+\myindex{ARM!\Instructions!PUSH}
+\myindex{ARM!\Instructions!POP}
+\myindex{x86!\Instructions!PUSH}
+\myindex{x86!\Instructions!POP}
+The most frequently used stack access instructions are \PUSH and \POP (in both x86 and ARM Thumb-mode). 
+\PUSH subtracts from \ESP/\RSP/\ac{SP} 4 in 32-bit mode (or 8 in 64-bit mode) and then writes the contents of its sole operand to the memory address pointed by \ESP/\RSP/\ac{SP}.
+
+\POP is the reverse operation: retrieve the data from the memory location that \ac{SP} points to, 
+load it into the instruction operand (often a register) and then add 4 (or 8) to the \gls{stack pointer}.
+
+After stack allocation, the \gls{stack pointer} points at the bottom of the stack.
+\PUSH decreases the \gls{stack pointer} and \POP increases it.
+The bottom of the stack is actually at the beginning of the memory allocated for the stack block. It seems strange, but that's the way it is.
+
+ARM supports both descending and ascending stacks.
+
+\myindex{ARM!\Instructions!STMFD}
+\myindex{ARM!\Instructions!LDMFD}
+\myindex{ARM!\Instructions!STMED}
+\myindex{ARM!\Instructions!LDMED}
+\myindex{ARM!\Instructions!STMFA}
+\myindex{ARM!\Instructions!LDMFA}
+\myindex{ARM!\Instructions!STMEA}
+\myindex{ARM!\Instructions!LDMEA}
+
+For example the \ac{STMFD}/\ac{LDMFD}, \ac{STMED}/\ac{LDMED} instructions are intended to deal with a descending stack (grows downwards, starting with a high address and progressing to a lower one).
+The \ac{STMFA}/\ac{LDMFA}, \ac{STMEA}/\ac{LDMEA} instructions are intended to deal with an ascending stack (grows upwards, starting from a low address and progressing to a higher one).
+
+% It might be worth mentioning that STMED and STMEA write first,
+% and then move the pointer,
+% and that LDMED and LDMEA move the pointer first, and then read.
+% In other words, ARM not only lets the stack grow in a non-standard direction,
+% but also in a non-standard order.
+% Maybe this can be in the glossary, which would explain why E stands for "empty".
+
+\subsection{Why does the stack grow backwards?}
+\label{stack_grow_backwards}
+
+Intuitively, we might think that the stack grows upwards, i.e. towards higher addresses, like any other data structure.
+
+The reason that the stack grows backward is probably historical.
+When the computers were big and occupied a whole room, it was easy to divide memory into two parts, one for the \gls{heap} and one for the stack.
+Of course, it was unknown how big the \gls{heap} and the stack would be during program execution, so this solution was the simplest possible.
+
+\input{patterns/02_stack/stack_and_heap}
+
+In \RitchieThompsonUNIX we can read:
+
+\begin{framed}
+\begin{quotation}
+The user-core part of an image is divided into three logical segments. The program text segment begins at location 0 in the virtual address space. During execution, this segment is write-protected and a single copy of it is shared among all processes executing the same program. At the first 8K byte boundary above the program text segment in the virtual address space begins a nonshared, writable data segment, the size of which may be extended by a system call. Starting at the highest address in the virtual address space is a stack segment, which automatically grows downward as the hardware's stack pointer fluctuates.
+\end{quotation}
+\end{framed}
+
+This reminds us how some students write two lecture notes using only one notebook:
+notes for the first lecture are written as usual, 
+and notes for the second one are written from the end of notebook, by flipping it.
+Notes may meet each other somewhere in between, in case of lack of free space.
+
+% I think if we want to expand on this analogy,
+% one might remember that the line number increases as as you go down a page.
+% So when you decrease the address when pushing to the stack, visually,
+% the stack does grow upwards.
+% Of course, the problem is that in most human languages,
+% just as with computers,
+% we write downwards, so this direction is what makes buffer overflows so messy.
+
+\subsection{What is the stack used for?}
+
+% subsections
+\input{patterns/02_stack/01_saving_ret_addr}
+\input{patterns/02_stack/02_args_passing}
+\EN{\input{patterns/02_stack/03_local_vars_EN}}
+\RU{\input{patterns/02_stack/03_local_vars_RU}}
+\PTBR{\input{patterns/02_stack/03_local_vars_PTBR}}
+\input{patterns/02_stack/04_alloca/main}
+\input{patterns/02_stack/05_SEH}
+\input{patterns/02_stack/06_BO_protection}
+
+\subsubsection{Automatic deallocation of data in stack}
+
+Perhaps the reason for storing local variables and SEH records in the stack is that they are freed automatically upon function exit,
+using just one instruction to correct the stack pointer (it is often \ADD).
+Function arguments, as we could say, are also deallocated automatically at the end of function.
+In contrast, everything stored in the \IT{heap} must be deallocated explicitly.
+
+% sections
+\EN{\input{patterns/02_stack/07_layout_EN}}
+\RU{\input{patterns/02_stack/07_layout_RU}}
+\PTBR{\input{patterns/02_stack/07_layout_PTBR}}
+\input{patterns/02_stack/08_noise/main}
+\input{patterns/02_stack/exercises}

@@ -1,0 +1,100 @@
+\section{\PrintfSeveralArgumentsSectionName}
+
+Estendiamo l'esempio \IT{\HelloWorldSectionName}~(\myref{sec:helloworld}) modificando la chiamata a  \printf nella funzione \main:
+
+\lstinputlisting[label=hw_c,style=customc]{patterns/03_printf/1.c}
+
+% sections
+\input{patterns/03_printf/x86/main}
+\input{patterns/03_printf/ARM/main}
+\input{patterns/03_printf/MIPS/main}
+
+\subsection{\Conclusion{}}
+
+Si riporta di seguito una lista di bozze di chiamate alla call:
+
+% TODO translate to Italian:
+\begin{lstlisting}[caption=x86,style=customasmx86]
+...
+PUSH 3rd argument
+PUSH 2nd argument
+PUSH 1st argument
+CALL function
+; modify stack pointer (if needed)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x64 (MSVC),style=customasmx86]
+MOV RCX, 1st argument
+MOV RDX, 2nd argument
+MOV R8, 3rd argument
+MOV R9, 4th argument
+...
+PUSH 5th, 6th argument, etc. (if needed)
+CALL function
+; modify stack pointer (if needed)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x64 (GCC),style=customasmx86]
+MOV RDI, 1st argument
+MOV RSI, 2nd argument
+MOV RDX, 3rd argument
+MOV RCX, 4th argument
+MOV R8, 5th argument
+MOV R9, 6th argument
+...
+PUSH 7th, 8th argument, etc. (if needed)
+CALL function
+; modify stack pointer (if needed)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ARM,style=customasmARM]
+MOV R0, 1st argument
+MOV R1, 2nd argument
+MOV R2, 3rd argument
+MOV R3, 4th argument
+; pass 5th, 6th argument, etc., in stack (if needed)
+BL function
+; modify stack pointer (if needed)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ARM64,style=customasmARM]
+MOV X0, 1st argument
+MOV X1, 2nd argument
+MOV X2, 3rd argument
+MOV X3, 4th argument
+MOV X4, 5th argument
+MOV X5, 6th argument
+MOV X6, 7th argument
+MOV X7, 8th argument
+; pass 9th, 10th argument, etc., in stack (if needed)
+BL function
+; modify stack pointer (if needed)
+\end{lstlisting}
+
+\myindex{MIPS!O32}
+\begin{lstlisting}[caption=MIPS (O32 calling convention),style=customasmMIPS]
+LI $4, 1st argument ; AKA $A0
+LI $5, 2nd argument ; AKA $A1
+LI $6, 3rd argument ; AKA $A2
+LI $7, 4th argument ; AKA $A3
+; pass 5th, 6th argument, etc., in stack (if needed)
+LW temp_reg, address of function
+JALR temp_reg
+\end{lstlisting}
+
+\subsection{A proposito...}
+
+\myindex{fastcall}
+Le differenze negli approcci utilizzati per il passaggio di argomenti in x86, x64, 
+fastcall, ARM and MIPS e' un'ottima dimostrazione del fatto che la CPU e' inconsapevole di come gli argomenti vengono passati alle funzioni. 
+Sarebbe anche possibile creare un compilatore ipotetico in grado di passare gli argomenti attraverso una struttura speciale, senza usare lo stack.
+
+\myindex{MIPS!O32}
+I registri MIPS \$A0 \dots \$A3 sono indicati in questo modo soltanto per convenienza (cioe' nella O32 calling convention).
+I programmatori possono usare qualunque altro registro (tranne \$ZERO) per passare i dati, o utilizzare qualunque altra calling convention. 
+
+La \ac{CPU} non e' assolutamente consapevole delle calling conventions.
+
+Possiamo anche ricordare come i programmatori principianti in assembly passano gli argomenti alle altre funzioni: 
+di suolito tramite i registri, senza un ordine esplicitop, o attraverso variabili globali.
+Questi approcci sono ovviamente validi e funzionanti.

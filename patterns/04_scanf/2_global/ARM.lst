@@ -1,0 +1,36 @@
+.text:00000000 ; Segment type: Pure code
+.text:00000000         AREA .text, CODE
+...
+.text:00000000 main
+.text:00000000         PUSH    {R4,LR}
+.text:00000002         ADR     R0, aEnterX  ; "Enter X:\n"
+.text:00000004         BL      __2printf
+.text:00000008         LDR     R1, =x
+.text:0000000A         ADR     R0, aD       ; "%d"
+.text:0000000C         BL      __0scanf
+.text:00000010         LDR     R0, =x
+.text:00000012         LDR     R1, [R0]
+.text:00000014         ADR     R0, aYouEnteredD___ ; "You entered %d...\n"
+.text:00000016         BL      __2printf
+.text:0000001A         MOVS    R0, #0
+.text:0000001C         POP     {R4,PC}
+...
+.text:00000020 aEnterX DCB "Enter X:",0xA,0 ; DATA XREF: main+2
+.text:0000002A         DCB    0
+.text:0000002B         DCB    0
+.text:0000002C off_2C  DCD x                ; DATA XREF: main+8
+.text:0000002C                              ; main+10
+.text:00000030 aD      DCB "%d",0           ; DATA XREF: main+A
+.text:00000033         DCB    0
+.text:00000034 aYouEnteredD___ DCB "You entered %d...",0xA,0 ; DATA XREF: main+14
+.text:00000047         DCB 0
+.text:00000047 ; .text ends
+.text:00000047
+...
+.data:00000048 ; Segment type: Pure data
+.data:00000048         AREA .data, DATA
+.data:00000048         ; ORG 0x48
+.data:00000048         EXPORT x
+.data:00000048 x       DCD 0xA              ; DATA XREF: main+8
+.data:00000048                              ; main+10
+.data:00000048 ; .data ends

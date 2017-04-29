@@ -1,0 +1,50 @@
+\subsubsection{ARM}
+
+\myparagraph{\NonOptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/13_arrays/1_simple/simple_Keil_ARM_O0_EN.asm}
+
+\Tint type requires 32 bits for storage (or 4 bytes),
+
+so to store 20 \Tint variables 80 (\TT{0x50}) bytes are needed.
+So that is why the \INS{SUB SP, SP, \#0x50} 
+
+instruction in the function's prologue allocates exactly this amount of space in the stack.
+
+In both the first and second loops, the loop iterator \var{i} is placed in the \Reg{4} register.
+
+\myindex{ARM!Optional operators!LSL}
+
+The number that is to be written into the array is calculated as $i*2$, which is effectively equivalent 
+to shifting it left by one bit,\\
+so \INS{MOV R0, R4,LSL\#1} instruction does this.
+
+\myindex{ARM!\Instructions!STR}
+\INS{STR R0, [SP,R4,LSL\#2]} writes the contents of \Reg{0} into the array.
+
+Here is how a pointer to array element is calculated: \ac{SP} points to the start of the array, \Reg{4} is $i$.
+
+So shifting $i$ left by 2 bits is effectively equivalent to multiplication by 4
+(since each array element has a size of 4 bytes) and then it's added to the address of the start of the array.
+
+\myindex{ARM!\Instructions!LDR}
+
+The second loop has an inverse \INS{LDR R2, [SP,R4,LSL\#2]}
+instruction. It loads the value we need from the array, and the pointer to it is calculated likewise.
+
+\myparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[style=customasmARM]{patterns/13_arrays/1_simple/simple_Keil_thumb_O3_EN.asm}
+
+Thumb code is very similar.
+\myindex{ARM!\Instructions!LSLS}
+
+Thumb mode has special instructions for bit shifting (like \TT{LSLS}),
+which calculates the value to be written into the array and the address of each element in the array as well.
+
+The compiler allocates slightly more space in the local stack, however, the last 4 bytes are not used.
+
+\myparagraph{\NonOptimizing GCC 4.9.1 (ARM64)}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1 (ARM64),style=customasmARM]{patterns/13_arrays/1_simple/ARM64_GCC491_O0_EN.s}
+

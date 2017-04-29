@@ -1,0 +1,102 @@
+\myparagraph{32-битный ARM}
+\label{subsec:jcc_ARM}
+
+\mysubparagraph{\OptimizingKeilVI (\ARMMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_O3_signed.asm}
+
+\myindex{ARM!Condition codes}
+% FIXME \ref -> which instructions?
+Многие инструкции в режиме ARM могут быть исполнены только при некоторых выставленных флагах.
+
+Это нередко используется для сравнения чисел.
+
+\myindex{ARM!\Instructions!ADD}
+\myindex{ARM!\Instructions!ADDAL}
+К примеру, инструкция \ADD на самом деле называется \TT{ADDAL} внутри, \TT{AL} означает \IT{Always}, то есть, исполнять всегда.
+Предикаты кодируются в 4-х старших битах инструкции 32-битных ARM-инструкций (\IT{condition field}).
+\myindex{ARM!\Instructions!B}
+Инструкция безусловного перехода \TT{B} на самом деле условная и кодируется так же, 
+как и прочие инструкции условных переходов, но имеет \TT{AL} в \IT{condition field}, 
+то есть исполняется всегда (\IT{execute ALways}), игнорируя флаги.
+
+\myindex{ARM!\Instructions!ADR}
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!CMP}
+Инструкция \TT{ADRGT} работает так же, как и \TT{ADR}, но исполняется только в случае,
+если предыдущая инструкция \CMP,
+сравнивая два числа, обнаруживает, что одно из них больше второго (\IT{Greater Than}).
+
+\myindex{ARM!\Instructions!BL}
+\myindex{ARM!\Instructions!BLcc}
+Следующая инструкция \TT{BLGT} ведет себя так же, как и \TT{BL} и сработает, только если 
+результат сравнения ``больше чем'' (\IT{Greater Than}).
+\TT{ADRGT} записывает в \Reg{0} указатель на строку \TT{a>b\textbackslash{}n}, а \TT{BLGT} вызывает \printf.
+Следовательно, эти инструкции с суффиксом \TT{-GT} исполнятся только в том случае, если значение
+в \Reg{0} (там $a$) было больше, чем значение в \Reg{4} (там $b$).
+
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!BLcc}
+Далее мы увидим инструкции \TT{ADREQ} и \TT{BLEQ}.
+Они работают так же, как и \TT{ADR} и \TT{BL}, но исполнятся только если значения при последнем сравнении были равны.
+Перед ними расположен ещё один \CMP, потому что вызов \printf мог испортить состояние флагов.
+
+\myindex{ARM!\Instructions!LDMccFD}
+\myindex{ARM!\Instructions!LDMFD}
+Далее мы увидим \TT{LDMGEFD}. Эта инструкция работает так же, как и \TT{LDMFD}\footnote{\ac{LDMFD}}, 
+но сработает только если в результате сравнения одно из значений было больше или равно второму (\IT{Greater or Equal}).
+Смысл инструкции \TT{LDMGEFD SP!, \{R4-R6,PC\}} 
+в том, что это как бы эпилог функции, но он сработает только если $a>=b$, только тогда работа 
+функции закончится.
+
+\myindex{Function epilogue}
+Но если это не так, то есть $a<b$, то исполнение дойдет до следующей инструкции 
+\TT{LDMFD SP!, \{R4-R6,LR\}}. Это ещё один эпилог функции. Эта инструкция восстанавливает состояние регистров
+\TT{R4-R6}, но и \ac{LR} вместо \ac{PC}, таким образом, пока что, не делая возврата из функции.
+
+Последние две инструкции вызывают \printf 
+со строкой <<a<b\textbackslash{}n>> в качестве единственного аргумента.
+Безусловный переход на \printf вместо возврата из функции мы уже рассматривали в секции
+ <<\PrintfSeveralArgumentsSectionName>>~(\myref{ARM_B_to_printf}).
+
+\myindex{ARM!\Instructions!ADRcc}
+\myindex{ARM!\Instructions!BLcc}
+\myindex{ARM!\Instructions!LDMccFD}
+Функция \TT{f\_unsigned} точно такая же, но там используются инструкции \TT{ADRHI}, \TT{BLHI}, и \TT{LDMCSFD}. Эти предикаты
+(\IT{HI = Unsigned higher, CS = Carry Set (greater than or equal)})
+аналогичны рассмотренным, но служат для работы с беззнаковыми значениями.
+
+В функции \main ничего нового для нас нет:
+
+\lstinputlisting[caption=\main,style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_O3_main.asm}
+
+Так, в режиме ARM можно обойтись без условных переходов.
+
+\myindex{Конвейер RISC}
+Почему это хорошо? Читайте здесь: \myref{branch_predictors}.
+
+\myindex{x86!\Instructions!CMOVcc}
+В x86 нет аналогичной возможности, если не считать инструкцию \TT{CMOVcc}, это то же что и \MOV, 
+но она срабатывает только при определенных выставленных флагах, обычно выставленных при помощи \CMP во время сравнения.
+
+\mysubparagraph{\OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/07_jcc/simple/ARM/ARM_thumb_signed.asm}
+
+\myindex{ARM!\Instructions!BLE}
+\myindex{ARM!\Instructions!BNE}
+\myindex{ARM!\Instructions!BGE}
+\myindex{ARM!\Instructions!BLS}
+\myindex{ARM!\Instructions!BCS}
+\myindex{ARM!\Instructions!B}
+\myindex{ARM!\ThumbMode}
+В режиме Thumb только инструкции \TT{B} могут быть дополнены условием исполнения (\IT{condition code}), 
+так что код для режима Thumb выглядит привычнее.
+
+\TT{BLE} это обычный переход с условием \IT{Less than or Equal}, 
+\TT{BNE} --- \IT{Not Equal}, 
+\TT{BGE} --- \IT{Greater than or Equal}.
+
+Функция \TT{f\_unsigned} точно такая же, но для работы с беззнаковыми величинами 
+там используются инструкции \TT{BLS} 
+(\IT{Unsigned lower or same}) и \TT{BCS} (\IT{Carry Set (Greater than or equal)}).

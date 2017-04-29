@@ -1,0 +1,85 @@
+\subsection{Uma breve introdução a CPU}
+
+A \ac{CPU} é o dispositivo que executa o código de máquina do qual consiste um programa.
+
+\textbf{Um glossário resumido:}
+
+\begin{description}
+\item[Instrução]: Um comando primário da \ac{CPU}. Os exemplos mais simples incluem: mover informação entre os registradores, trabalhar com memória, operações primárias de aritimética.
+Como regra, cada \ac{CPU} tem sua própria arquitetura do conjunto de instruções (\ac{ISA}).
+
+\item[Código de máquina]: Código que a \ac{CPU} processa diretamente, cada instrução geralmente é codificada por vários bytes.
+
+\item[Linguagem assembly]: Códigos mnemônicos e algumas extensões como macros que tem por intenção facilitar a vida do programador.
+
+\item[Registrador da CPU]: Cada \ac{CPU} tem um conjunto fixo de registradores de propósito geral (\ac{GPR}).
+Aproximadamente 8 na arquitetura x86, 16 na x86-64, 16 na ARM.
+A maneira mais fácil de entender um registrador é imaginá-lo como uma variável temporário sem tipo.
+Imagine que você está trabalhando em uma linguagem de alto nível e pudesse usar somente oito variáveis de 32-bit (ou 64).
+Ainda assim uma gama de coisas podem ser feitas usando somente estes!
+
+\end{description}
+
+Você pode pensar por quê há a necessidade dessa diferença entre código de máquina e linguagens de programação de alto nível.
+A resposta está no fato de humanos e CPUs não se parecerem nada --- é muito mais fácil para um humano usar uma linguagem de alto nível como \CCpp, Java, Python, etc., 
+mas para a CPU é mais fácil usar um nível muito mais baixo de abstração.
+Talvez seja possível inventar uma CPU que pode executar códigos em linguagem de alto nível, mas ela seria muitas vezes mais complexa que as CPUs que conhecemos hoje.
+De uma maneira similar, é muito mais inconveniente para humanos escreverem em linguagem assemly,
+devido ao fato dela ser tão baixo nível e difícil de se escrever sem cometer um alto número de erros irritantes. O programa que converte linguagem de alto nível em código assembly é chamado de compilador.
+
+\iffalse
+% another translation
+\subsection{Uma breve introdução à CPU}
+
+A \ac{CPU} é o dispositivo que executa o código de máquina que consiste num programa.
+\textbf{Um pequeno glossário:}
+\begin{description}
+\item[Instrução]: Um primitivo \ac{CPU} comando.
+Os exemplos mais simples incluem: mover dados entre registradores, trabalhar com a memória, operações aritiméticas primitivas.
+Como regra geral, cada \ac{CPU} tem seu próprio conjunto de instruções (\ac{ISA}).
+
+\item[\PTBRph{}]: Código que a \ac{CPU} processa diretamente. 
+Cada instrução é normalmente codificada em vários bytes.
+\item[Linguagem assembly]: Código mnemônico e algumas extensões como macros que têm a finalidade de facilitar a vida do programamdor.
+\item[Registradores da CPU]: Cada \ac{CPU} tem um conjunto fixo de registradores de propósito geral (\ac{GPR}).
+$\approx 8$ \PTBRph{} x86, $\approx 16$ \PTBRph{} x86-64, $\approx 16$ \PTBRph{} ARM.
+A forma mais fácil de entender um registrador é pensar nele como uma variável temporária não tipada.
+Imagine que você estivesse trabalhando com uma \ac{PL} de alto nível e pudesse usar apenas oito variáveis de 32-bit (ou de 64-bit).
+No entanto, muito ainda pode ser feito usando apenas eles.
+\end{description}
+
+Alguém poderia perguntar por que é preciso haver diferença entre código de máquina e uma \ac{PL} de alto nível.  A resposta reside no fato de que humanos e \ac{CPU}s não são iguais---%
+É muito mais fácil para os humanos usar uma \ac{PL} de alto nível como \CCpp, Java, Python, etc., mas é muito mais fácil para a \ac{CPU} usar um nível de abstração muito menor.
+talvez fosse possível inventar uma \ac{CPU} que pudesse executar código feito em \ac{PL} alto nível, mas seria inúmeras vezes mais complexa do que as \ac{CPU}s que conhecemos hoje.
+De forma semelhante, é muito inconveninente para os seres humanos escrever em linguagem assembly, devido ao fato dela ser tão baixo nível e difícil de escrever sem comenter uma enorme quantidade de erros irritantes.
+O programa que converte o código de \ac{PL} de alto nível em assembly é chamado \IT{compiler}.
+\fi
+
+\myindex{ARM!\ARMMode}%
+\myindex{ARM!\ThumbMode}%
+\myindex{ARM!\ThumbTwoMode}%
+
+\subsubsection{Algumas palavras a respeito de diferentes \ac{ISA}s}
+O \ac{ISA} x86 sempre possuiu opcodes de tamanho variável, então com a chegada da era do 64-bit, as extensões x64 não impactaram a \ac{ISA} de forma muito significante. De fato, o \ac{ISA} x86 ainda contém uma série de instrucões que surgiram inicialmente na CPU 8086 16-bit, mas ainda são encontradas nas CPUs de hoje em dia.
+ARM é uma \ac{CPU} \ac{RISC} desenvolvido com a idéia de opcodes com tamanho constante, o que trouxe algumas vantagens no passado.
+Bem no início, todas as instruções ARM foram codificadas em 4 bytes%
+\footnote{A propósito, instruções de tamanho fixo são úteis porque se pode calcular o endereço da próxima instrução (ou da anterior) sem esforço. Esta característica será discutida na seção do operador switch() ~(\myref{sec:SwitchARMLot}).}.
+Este é atualmente referenciado como \q{ARM mode}.
+Então concluiu-se que não era tão econômico quanto se imaginou a princípio.
+Na verdade, as instruções de \ac{CPU} mais utilizadas \footnote{São estas MOV/PUSH/CALL/Jcc} em aplicações do mundo real podem ser codificadas usando menos informação.
+Foi adicionado então outro \ac{ISA}, chamado Thumb, onde cada instrução era codificada em apenas 2 bytes.
+Este é conhecido como \q{Thumb mode}.
+No entanto, nem \IT{all} instruções ARM podem ser codificadas em apenas 2 bytes, então o conjunto de instruções Thumb é de certa forma limitado.
+É interessante notar que códigos compilados para os modos ARM e Thumb podem, conforme esperado, coexistir num mesmo programa.
+Os criadores do ARM concluíram que o Thumb poderia ser extendido, dando origem ao Thumb-2, que apareceu no ARMv7.
+Thumb-2 ainda usa instruções de 2 bytes, mas possui algumas novas instruções com 4 bytes de tamanho.
+Há um equívoco comum que Thumb-2 é uma mistura de ARM e Thumb. Isso é incorreto.
+Em vez disso, Thumb-2 foi extendido para suportar completamente todos os recursos de processador de forma que ele pudesse competir com o modo ARM---um objetivo que foi claramente alcançado, uma vez que a maioria das aplicações para \idevices são compiladas para o conjunto de instruções do Thumb-2 (admitidamente, principalmente devido ao fato que o Xcode faz isso por padrão).
+Posteriormente o ARM 64-bit foi lançado. Este \ac{ISA} tem opcodes de 4 bytes, e descarta a necessidade de qualquer modo Thumb adicional.
+No entanto, os requisitos de 64-bit afetaram o \ac{ISA}, resultando em termos atualmente três conjuntos de instruções ARM: ARM mode, Thumb mode (incluindo Thumb-2) e ARM64.
+Estes \ac{ISA}s se intersecionam parcialmente, porém podemos dizer que são \ac{ISA}s diferentes, ao invés de variações do mesmo.
+Portanto, gostaríamos de tentar adicionar pedaços de código dos três \ac{ISA}s do ARM neste livro.
+\myindex{PowerPC}%
+\myindex{MIPS}%
+\myindex{Alpha AXP}%
+Existem, a propósito, muitos outros \ac{RISC} \ac{ISA}s com opcodes de tamanho fixo de 32-bit, como MIPS, PowerPC \PTBRph{} Alpha AXP.

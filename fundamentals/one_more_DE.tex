@@ -1,0 +1,53 @@
+\subsection{Einige weitere Anmerkungen zum Zweierkomplement}
+
+\subsubsection{Das Maximum eines \gls{word} finden}
+Die maximale Zahl in vorzeichenloser Form ist lediglich eine Zahl in der alle
+Bits gesetzt sind: \IT{0xFF....FF}
+(das entspricht -1 wenn das \gls{word} als vorzeichenbehaftete Zahl behandelt wird).
+Also nimmt man ein \gls{word}, setzt alle Bits und bekommt den Wert:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+	unsigned int val=~0; // Aendern zu "unsigned char" um den maximalen Wert fur vorzeichenlose 8-Bit-Zahlen
+	// 0-1 funktionieren auch oder nur -1
+	printf ("%u\n", val); // %u fuer vorzeichenlos
+};
+\end{lstlisting}
+
+Dies entspricht 4294967295 für 32-Bit-Integer.
+
+\subsubsection{Das Minimum eines vorzeichenbehafteten \gls{word} finden}
+
+%Minimum signed number has form of \IT{0x80....00}, i.e., most significant bit is set, while others are cleared.
+%Maximum signed number has the same form, but all bits are inverted: \IT{0x7F....FF}.
+
+%Let's shift a lone bit left until it disappears:
+
+\begin{lstlisting}[style=customc]
+#include <stdio.h>
+
+int main()
+{
+	signed int val=1; // Aendern zu signed char um den maximalen Wert fur vorzeichenbehaftete 8-Bit-Zahlen
+	while (val!=0)
+	{
+		printf ("%d %d\n", val, ~val);
+		val=val<<1;
+	};
+};
+\end{lstlisting}
+
+Die Ausgabe ist:
+
+\begin{lstlisting}
+...
+
+536870912 -536870913
+1073741824 -1073741825
+-2147483648 2147483647
+\end{lstlisting}
+
+Die letzten beiden Zahlen sind minimaler beziehungsweise maximaler Wert eines 32-Bit \IT{int}.

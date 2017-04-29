@@ -1,0 +1,51 @@
+\clearpage
+\mysubparagraph{\olly}
+\myindex{\olly}
+
+Untersuchen wir das Beispiel in \olly.
+Der Eingabewert der Funktion (2) wird nach \EAX geladen: 
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/2_lot/olly1.png}
+\caption{\olly: das Funktionsargument wird nach \EAX geladen}
+\label{fig:switch_lot_olly1}
+\end{figure}
+
+\clearpage
+Es wird geprüft, ob der Eingabewert größer als 4 ist.
+Falls nicht, wird der \q{default} Sprung nicht ausgeführt:
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/2_lot/olly2.png}
+\caption{\olly: 2 ist nicht größer als 4: kein Sprung wird ausgeführt}
+\label{fig:switch_lot_olly2}
+\end{figure}
+
+\clearpage
+Hier sehen wir eine Jumptable:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/2_lot/olly3.png}
+\caption{\olly: Zieladresse mit Jumptable berechnen}
+\label{fig:switch_lot_olly3}
+\end{figure}
+Wir haben \q{Follow in Dump}$\rightarrow$ \q{Address constant} geklickt, sodass wir jetzt die \IT{Jumptable} im
+Datenfenster sehen. Hier sind 5 32-Bit-Werte\footnote{Diese werden von \olly unterstrichen, da
+es auch FIXUPs sind: \myref{subsec:relocs}, wir kommen später darauf zurück}.
+\ECX ist jetzt 2, sodass das zweite Element (beginnend bei null) der Tabelle verwendet wird.
+% TBT
+Es ist auch möglich durch Klicken auf q{Follow in Dump} $\rightarrow$ 
+\q{Memory address} in \olly das Element, das durch den \JMP Befehl angesteuert wird, anzeigen zu lassen. Dieses Element
+ist hier \TT{0x010B103A}.
+
+\clearpage
+Nach dem Sprung sind wir an der Stelle \TT{0x010B103A}: der Code zur Ausgabe von \q{two} wird jetzt ausgeführt:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/08_switch/2_lot/olly4.png}
+\caption{\olly: jetzt sind wir am \IT{case:} Label}
+\label{fig:switch_lot_olly4}
+\end{figure}

@@ -1,0 +1,10 @@
+    mov [counter], 2 ; Initialisierung
+    jmp check
+body:
+    ; Schleifenkörper
+    ; tue etwas
+    ; verwende Zählervariable auf lokalem Stack
+    add [counter], 1 ; inkrementieren
+check:
+    cmp [counter], 9
+    jle body

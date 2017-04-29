@@ -1,0 +1,53 @@
+\subsection{MIPS}
+
+\lstinputlisting[caption=GCC 4.4.5 \Optimizing,style=customasmMIPS]{patterns/05_passing_arguments/MIPS_O3_IDA_FR.lst}
+
+Les quatre premiers arguments de la fonction sont passés par quatres registres préfixés
+par A-.
+
+\myindex{MIPS!\Instructions!MULT}
+
+Il y a deux registres spéciaux en MIPS: HI et LO qui sont remplis avec le résultat
+64-bit de la multiplication lors de l'exécution d'une instruction \TT{MULT}.
+\myindex{MIPS!\Instructions!MFLO}
+\myindex{MIPS!\Instructions!MFHI}
+
+Ces registres sont accessibles seulement en utilisant les instructions \TT{MFLO} et \TT{MFHI}.
+Ici \TT{MFLO} prend la partie basse du résultat de la multiplication et le stocke
+dans \$V0.
+Donc la partie haute du résultat de la multiplication est abandonnée (le contenu
+du registre HI n'est pas utilisé).
+Effectivement: nous travaillons avec des types de données \Tint 32-bit ici.
+
+\myindex{MIPS!\Instructions!ADDU}
+
+Enfin, \TT{ADDU} (\q{Add Unsigned} addition non signée) ajoute la valeur du troisième
+argument au résultat.
+
+\myindex{MIPS!\Instructions!ADD}
+\myindex{MIPS!\Instructions!ADDU}
+\myindex{Ada}
+\myindex{Integer overflow}
+
+Il y a deux instructions différentes pour l'addition en MIPS: \TT{ADD} et \TT{ADDU}.
+La différence entre les deux n'est pas relative au fait d'être signé, mais aux
+exceptions. \TT{ADD} peut déclencher une exception lors d'un débordement, ce qui
+est parfois utile\footnote{\url{http://go.yurichev.com/17326}} et supporté en ADA
+\ac{PL}, par exemple.
+\TT{ADDU} ne déclenche pas d'exception lors d'un débordement.
+Comme \CCpp ne supporte pas ceci, dans notre exemple nous voyons \TT{ADDU} au lieu
+de \TT{ADD}.
+
+Le résultat 32-bit est laissé dans \$V0.
+
+\myindex{MIPS!\Instructions!JAL}
+\myindex{MIPS!\Instructions!JALR}
+
+Il y a une instruction nouvelle pour nous dans \main: \TT{JAL} (\q{Jump and Link}).
+
+La différence entre \INS{JAL} et \INS{JALR} est qu'un offset relatif est encodé
+dans la première instruction, tandis que \INS{JALR} saute à l'adresse absolue stockée
+dans un registre (\q{Jump and Link Register}).
+
+Les deux fonctions \ttf et \main sont stockées dans le même fichoer objet, donc
+l'adresse relative de \ttf est connue et fixée.

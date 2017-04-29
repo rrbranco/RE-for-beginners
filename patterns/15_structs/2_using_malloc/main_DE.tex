@@ -1,0 +1,36 @@
+\subsection{Reservieren von Platz für ein struct mit malloc()}
+\label{struct_malloc_example}
+Manchmal ist es einfacher structs nicht im lokalen Stack, sondern im Heap abzulegen:
+
+\lstinputlisting[style=customc]{patterns/15_structs/2_using_malloc/systemtime_malloc.c}
+Kompilieren wir das Beispiel nun mit Optimierung (\Ox), sodass leicht zu erkennen ist, was wir brauchen.
+
+\lstinputlisting[caption=\Optimizing MSVC,style=customasmx86]{patterns/15_structs/2_using_malloc/systemtime_malloc.asm}
+
+\myindex{\CStandardLibrary!malloc()}
+Also ist \TT{sizeof(SYSTEMTIME) = 16} und das entspricht exakt der Anzahl an Bytes, die von \TT{malloc()} reserviert
+wurde. Die Funktion gibt einen Pointer auf den neu reservierten Speicherblock in das Register \EAX zurück, welcher dann
+nach \ESI verschoben wird.
+Die win32-Funktion \TT{GetSystemTime()} kümmert sich um das Speichern des Wertes in \ESI und das ist der Grund, warum er
+nicht hier gesichert wird und nach dem Aufruf von \TT{GetSystemTime()} weiterverwendet wird.
+
+\myindex{x86!\Instructions!MOVZX}
+Wir finden einen neuen Befehl~---\MOVZX (\IT{Move with Zero eXtend}).
+Er wird in den meisten Fällen als \MOVSX verwendet, setzt aber die übrigen Bits auf 0.
+Das wird benötigt, da \printf einen 32-Bit \Tint erwartet, wir aber ein WORD im struct haben~---also einen 16-Bit Typ
+ohne Vorzeichen.
+Das ist der Grund dafür, dass beim Kopieren eines Wertes aus einem WORD in einen \Tint die Bits 16 bis 31 gelöscht
+werden müsse: hier könnten sich Zufallswerte vom Ergebnis einer vorherigen Operation auf diesem Register befinden.
+
+In diesem Beispiel ist es möglich das struct als Array von 8 WORDs darzustellen:
+
+\lstinputlisting[style=customc]{patterns/15_structs/2_using_malloc/systemtime_malloc2.c}
+
+Wir erhalten:
+
+\lstinputlisting[caption=\Optimizing MSVC,style=customasmx86]{patterns/15_structs/2_using_malloc/systemtime_malloc2.asm}
+Wieder erhalten wir Code, der nicht vom vorhergehenden zu unterscheiden ist.
+
+Ebenfalls halten wir fest, dass man dies in der Praxis nicht macht, außer man weiß genau, was man tut.
+
+

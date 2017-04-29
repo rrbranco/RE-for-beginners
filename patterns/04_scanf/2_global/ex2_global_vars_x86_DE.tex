@@ -1,0 +1,72 @@
+\subsubsection{MSVC: x86}
+
+\lstinputlisting[style=customasmx86]{patterns/04_scanf/2_global/ex2_MSVC.asm}
+In diesem Falle wird die Variable \TT{x} im \TT{\_DATA} Segment definiert und kein Speicher auf dem lokalen Stack wird
+reserviert. Es erfolgt ein direkter Zugriff ohne Umweg über den Stack.
+Nicht initialisierte globale Variablen verbrauchen keinen Platz in der ausführbaren Datei (und wirklich: warum sollte
+man Speicher reservieren, wenn die Variable auf Anfang auf 0 gesetzt wird?), aber wenn jemand auf ihre Adresse zugreift,
+wird das \ac{OS} einen Block Nullen reservieren\footnote{That is how a \ac{VM} behaves}.
+
+Weisen wir nun der Variablen ausdrücklich einen Wert zu:
+
+\lstinputlisting[style=customc]{patterns/04_scanf/2_global/default_value_DE.c}
+
+Wir erhalten:
+
+\begin{lstlisting}[style=customasmx86]
+_DATA	SEGMENT
+_x	DD	0aH
+
+...
+\end{lstlisting}
+
+Wir sehen hier einen Wert \TT{0xA} vom Typ DWORD (DD steht für DWORD = 32 Bit) für diese Variable.
+
+Wenn man die kompilierte .exe in \IDA öffnet, sieht man, dass die Variable $x$ am Anfang des \TT{\_DATA} Segments
+angelegt wird und danach sehen wir Textstrings. 
+
+Here we see a value \TT{0xA} of DWORD type (DD stands for DWORD = 32 bit) for this variable.
+
+Wenn man die kompilierte .exe aus dem vorangegangenen Beispiel in \IDA öffnet, in dem der Wert von \TT{x} nicht gesetzt
+wurde, sieht man etwa das Folgende:
+
+\lstinputlisting[caption=\IDA,style=customasmx86]{patterns/04_scanf/2_global/IDA.lst}
+
+\TT{\_x} ist mit \TT{?} markiert zusammen mit dem Rest der Variablen, die nicht initialisiert werden müssen.
+Daraus folgt, dass nachdem die .exe in den Speicher geladen wurde, Platz für alle diese Variablen angelegt und mit
+Nullen gefüllt werden muss \InSqBrackets{\CNineNineStd 6.7.8p10}.
+Aber in der .exe Datei selbst, belegen diese nicht initialisierten Variablen keinerlei Platz. 
+Dies ist beispielsweise für große Arrays üblich.
+
+\input{patterns/04_scanf/2_global/olly.tex}
+
+\subsubsection{GCC: x86}
+
+\myindex{ELF}
+Unter Linux zeigt sich ein ähnliches Bild, mit dem Unterschied, dass die nicht initialisierten Variablen im \TT{\_bss}
+Segment gehalten werden. 
+I der \ac{ELF} Datei hat dieses Segment die folgenden Attribute: 
+
+\begin{lstlisting}
+; Segment type: Uninitialized
+; Segment permissions: Read/Write
+\end{lstlisting}
+
+Wenn man nun der Variablen einen Wert zuweist, z.B. 10, muss diese im \TT{\_data} Segment abgelegt werden, dass die
+folgenden Attribute aufweist:
+
+\begin{lstlisting}
+; Segment type: Pure data
+; Segment permissions: Read/Write
+\end{lstlisting}
+
+\subsubsection{MSVC: x64}
+
+\lstinputlisting[caption=MSVC 2012 x64,style=customasmx86]{patterns/04_scanf/2_global/ex2_MSVC_x64_DE.asm}
+Der Code ist beinahe der gleich wie in x86.
+Man beachte, dass die Adresse der Variable $x$ mittels des Befehls \LEA an die Funktion \TT{scanf()} übergeben wird,
+wohingegen der Wert der Variablen an das zweite \printf mit einem \MOV Befehl übergeben wird.
+\TT{DWORD PTR}---ist ein Teil der Assemblersprache (mit keinerlei Verbindung zum Maschinencode) und zeigt an, dass die
+Variablengröße 32 Bit beträgt und der \MOV Befehl entsprechend aufgebaut sein muss.
+
+

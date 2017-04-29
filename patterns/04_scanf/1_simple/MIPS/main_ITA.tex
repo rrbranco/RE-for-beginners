@@ -1,0 +1,14 @@
+\subsubsection{MIPS}
+
+Nello stack locale viene allocato spazio per la variabile $x$ , a cui viene fatto riferimento come $\$sp+24$.
+\myindex{MIPS!\Instructions!LW}
+
+Il suo indirizzo è passato a \scanf, il valore immesso dall'utente è caricato usand l'istruzione \INS{LW} (\q{Load Word}) ed è infine passato a \printf.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/04_scanf/1_simple/MIPS/ex1.O3_EN.s}
+
+IDA mostra il layout dello stack nel modo seguente:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/04_scanf/1_simple/MIPS/ex1.O3.IDA_EN.lst}
+
+% TODO non-optimized version?

@@ -1,4 +1,4 @@
-\section{\RU{Отладочные регистры}\EN{Debugging registers}}
+\subsection{\RU{Отладочные регистры}\EN{Debugging registers}}
 
 \RU{Применяются для работы с т.н.}\EN{Used for} hardware breakpoints\EN{ control}.
 
@@ -11,8 +11,8 @@
 	\item DR7 --- \RU{здесь можно задать типы точек останова}\EN{breakpoint types are set here}
 \end{itemize}
 
-\subsection{DR6}
-\index{x86!\Registers!DR6}
+\subsubsection{DR6}
+\myindex{x86!\Registers!DR6}
 
 \begin{center}
 \begin{tabular}{ | l | l | }
@@ -20,13 +20,13 @@
 \headercolor\ \RU{Бит}\EN{Bit} (\RU{маска}\EN{mask}) &
 \headercolor\ \RU{Описание}\EN{Description} \\
 \hline
-0 (1)       &  B0 --- \RU{сработала точка останова \#1}\EN{breakpoint \#1 was triggered} \\
+0 (1)       &  B0 --- \RU{сработала точка останова \#1}\EN{breakpoint \#1 has been triggered} \\
 \hline
-1 (2)       &  B1 --- \RU{сработала точка останова \#2}\EN{breakpoint \#2 was triggered} \\
+1 (2)       &  B1 --- \RU{сработала точка останова \#2}\EN{breakpoint \#2 has been triggered} \\
 \hline
-2 (4)       &  B2 --- \RU{сработала точка останова \#3}\EN{breakpoint \#3 was triggered} \\
+2 (4)       &  B2 --- \RU{сработала точка останова \#3}\EN{breakpoint \#3 has been triggered} \\
 \hline
-3 (8)       &  B3 --- \RU{сработала точка останова \#4}\EN{breakpoint \#4 was triggered} \\
+3 (8)       &  B3 --- \RU{сработала точка останова \#4}\EN{breakpoint \#4 has been triggered} \\
 \hline
 13 (0x2000) &  BD --- \RU{была попытка модифицировать один из регистров DRx.}
                \EN{modification attempt of one of the DRx registers.} \\
@@ -34,7 +34,7 @@
 	       \EN{may be raised if GD is enabled} \\
 \hline
 14 (0x4000) &  BS --- \RU{точка останова типа single step (флаг TF был выставлен в EFLAGS)}
-               \EN{single step breakpoint (TF flag was set in EFLAGS)}. \\
+               \EN{single step breakpoint (TF flag has been set in EFLAGS)}. \\
 	    &  \RU{Наивысший приоритет. Другие биты также могут быть выставлены}
 	       \EN{Highest priority. Other bits may also be set}. \\
 \hline
@@ -49,11 +49,12 @@ N.B. \RU{Точка останова single step это срабатывающа
 \RU{Может быть включена выставлением флага TF в EFLAGS}
 \EN{It can be enabled by setting TF in EFLAGS} (\myref{EFLAGS}).
 
-\subsection{DR7}
-\index{x86!\Registers!DR7}
+\subsubsection{DR7}
+\myindex{x86!\Registers!DR7}
 
 \RU{В этом регистре задаются типы точек останова}\EN{Breakpoint types are set here}.
 
+\small
 \begin{center}
 \begin{tabular}{ | l | l | }
 \hline
@@ -103,6 +104,7 @@ N.B. \RU{Точка останова single step это срабатывающа
 \hline
 \end{tabular}
 \end{center}
+\normalsize
 
 \RU{Так задается тип точки останова}\EN{The breakpoint type is to be set as follows} (R/W):
 

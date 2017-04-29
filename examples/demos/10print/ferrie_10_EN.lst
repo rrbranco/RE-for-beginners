@@ -1,0 +1,12 @@
+; AL is random at this point
+00000000: AE         scasb
+; CF is set according subtracting random memory byte from AL.
+; so it is somewhat random at this point
+00000001: D6         setalc
+; AL is set to 0xFF if CF=1 or to 0 if otherwise
+00000002: 242D       and         al,02D ;'-'
+; AL here is 0x2D or 0
+00000004: 042F       add         al,02F ;'/'
+; AL here is 0x5C or 0x2F
+00000006: CD29       int         029       ; output AL to screen
+00000008: EBF6       jmps        000000000 ; loop endlessly

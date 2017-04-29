@@ -1,0 +1,104 @@
+\subsubsection{MSVC}
+
+Let's compile it in MSVC 2010:
+
+\begin{lstlisting}
+cl 1.cpp /Fa1.asm
+\end{lstlisting}
+
+(\TT{/Fa} option instructs the compiler to generate assembly listing file)
+
+\begin{lstlisting}[caption=MSVC 2010,style=customasmx86]
+CONST	SEGMENT
+$SG3830	DB	'hello, world', 0AH, 00H
+CONST	ENDS
+PUBLIC	_main
+EXTRN	_printf:PROC
+; Function compile flags: /Odtp
+_TEXT	SEGMENT
+_main	PROC
+	push	ebp
+	mov	ebp, esp
+	push	OFFSET $SG3830
+	call	_printf
+	add	esp, 4
+	xor	eax, eax
+	pop	ebp
+	ret	0
+_main	ENDP
+_TEXT	ENDS
+\end{lstlisting}
+
+MSVC produces assembly listings in Intel-syntax.
+The difference between Intel-syntax and AT\&T-syntax will be discussed in \myref{ATT_syntax}.
+
+The compiler generated the file, \TT{1.obj}, which is to be linked into \TT{1.exe}.
+In our case, the file contains two segments: \TT{CONST} (for data constants) and \TT{\_TEXT} (for code).
+
+\myindex{\CLanguageElements!const}
+\label{string_is_const_char}
+The string \TT{hello, world} in \CCpp has type \TT{const char[]}\InSqBrackets{\TCPPPL p176, 7.3.2}, but it does not have its own name.
+The compiler needs to deal with the string somehow so it defines the internal name \TT{\$SG3830} for it.
+
+That is why the example may be rewritten as follows:
+
+\lstinputlisting[style=customc]{patterns/01_helloworld/hw_2.c}
+
+Let's go back to the assembly listing. As we can see, the string is terminated by a zero byte, which is standard for \CCpp strings.
+More about \CCpp strings: \myref{C_strings}.
+
+In the code segment, \TT{\_TEXT}, there is only one function so far: \main{}.
+The function \main starts with prologue code and ends with epilogue code (like almost any function)
+\footnote{You can read more about it in the section about function prologues and epilogues ~(\myref{sec:prologepilog}).}.
+
+\myindex{x86!\Instructions!CALL}
+After the function prologue we see the call to the \printf{} function:\\
+\INS{CALL \_printf}.
+\myindex{x86!\Instructions!PUSH}
+Before the call, a string address (or a pointer to it) containing our greeting is placed on the stack with the help of the \PUSH instruction.
+
+When the \printf function returns the control to the \main function, the string address (or a pointer to it) is still on the stack.
+Since we do not need it anymore, the \gls{stack pointer} (the \ESP register) needs to be corrected.
+
+\myindex{x86!\Instructions!ADD}
+\INS{ADD ESP, 4} means add 4 to the \ESP register value.
+
+Why 4? Since this is a 32-bit program, we need exactly 4 bytes for address passing through the stack. If it was x64 code we would need 8 bytes.
+\INS{ADD ESP, 4} is effectively equivalent to \INS{POP register} but without using any register\footnote{CPU flags, however, are modified}.
+
+\myindex{Intel C++}
+\myindex{\oracle}
+\myindex{x86!\Instructions!POP}
+
+For the same purpose, some compilers (like the Intel C++ Compiler) may emit \TT{POP ECX} 
+instead of \ADD (e.g., such a pattern can be observed in the \oracle{} code as it is compiled with the Intel C++ compiler).
+This instruction has almost the same effect but the \ECX register contents will be overwritten.
+The Intel C++ compiler supposedly uses \TT{POP ECX} since this instruction's opcode is shorter than \TT{ADD ESP, x} (1 byte for \TT{POP} against 3 for \TT{ADD}).
+
+Here is an example of using \POP instead of \ADD from \oracle{}:
+
+\begin{lstlisting}[caption=\oracle 10.2 Linux (app.o file),style=customasmx86]
+.text:0800029A                 push    ebx
+.text:0800029B                 call    qksfroChild
+.text:080002A0                 pop     ecx
+\end{lstlisting}
+
+%Read more about the stack in section
+% ~(\myref{sec:stack}).
+\myindex{\CLanguageElements!return}
+After calling \printf, the original \CCpp code contains the statement \TT{return 0}~---return 0 as the result of the \main function.
+
+\myindex{x86!\Instructions!XOR}
+In the generated code this is implemented by the instruction \INS{XOR EAX, EAX}.
+
+\myindex{x86!\Instructions!MOV}
+
+\XOR is in fact just \q{eXclusive OR}\footnote{\href{http://go.yurichev.com/17118}{wikipedia}} but the compilers often use it instead of
+\INS{MOV EAX, 0}---again because it is a slightly shorter opcode (2 bytes for \XOR against 5 for \MOV).
+
+\myindex{x86!\Instructions!SUB}
+Some compilers emit \INS{SUB EAX, EAX}, which means \IT{SUBtract the value in the} \EAX \IT{from the value in} \EAX. That in any case will results in zero.
+
+\myindex{x86!\Instructions!RET}
+The last instruction \RET returns the control to the \gls{caller}. Usually, this is \CCpp \ac{CRT} code which in turn returns control to the \ac{OS}.
+

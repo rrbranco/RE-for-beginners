@@ -1,0 +1,71 @@
+\subsubsection{std::vector}
+\myindex{\Cpp!STL!std::vector}
+
+We would call \TT{std::vector} a safe wrapper of the \ac{PODT} C array.
+Internally it is somewhat similar to \TT{std::string} (\myref{std_string}):
+it has a pointer to the allocated buffer, a pointer to the end of the array, and a pointer to the end of the allocated buffer.
+
+The array's elements  lie in memory adjacently to each other, just like in a normal array (\myref{arrays}).
+\myindex{\Cpp!C++11}
+In C++11 there is a new method called \TT{.data()} , that returns a pointer to the buffer, like \TT{.c\_str()} in \TT{std::string}.
+
+The buffer allocated in the \gls{heap} can be larger than the array itself.
+
+Both MSVC's and GCC's implementations are similar, just the names of the structure's fields are slightly different\footnote
+{GCC internals: \url{http://go.yurichev.com/17086}}, so here is one source
+code that works for both compilers.
+Here is again the C-like code for dumping the structure of \TT{std::vector}:
+
+\lstinputlisting[style=customc]{\CURPATH/STL/vector/2_EN.cpp}
+
+Here is the output of this program when compiled in MSVC:
+
+\lstinputlisting{\CURPATH/STL/vector/MSVC.txt}
+
+As it can be seen, there is no allocated buffer when \main starts.
+After the first \TT{push\_back()} call, a buffer is allocated.
+And then, after each \TT{push\_back()} 
+call, both array size and buffer size (\IT{capacity}) are increased.
+But the buffer address changes as well, because \TT{push\_back()} 
+reallocates the buffer in the \gls{heap} each time.
+It is costly operation, that's why it is very important to predict the size of the array in the future and reserve 
+enough space for it with the \TT{.reserve()} method.
+
+The last number is garbage: there are no array elements at this point, so a random number is printed.
+This illustrates the fact that \TT{operator[]} of 
+\TT{std::vector} does not check of the index is in the array's bounds.
+The slower \TT{.at()} 
+method, however, does this checking and throws an \TT{std::out\_of\_range} 
+exception in case of error.
+
+Let's see the code:
+
+\lstinputlisting[caption=MSVC 2012 /GS- /Ob1,style=customasmx86]{\CURPATH/STL/vector/MSVC.asm}
+
+We see how the \TT{.at()} 
+method checks the bounds and throws an exception in case of error.
+The number that the last \printf call prints is just taken from the memory, without any checks.
+
+One may ask, why not use the variables like \q{size} and \q{capacity}, 
+like it was done in \TT{std::string}.
+Supposedly, this was done for faster bounds checking.
+
+\myindex{Inline code}
+
+The code GCC generates is in general almost the same, but the \TT{.at()} method is inlined:
+
+\lstinputlisting[caption=GCC 4.8.1 -fno-inline-small-functions -O1,style=customasmx86]{\CURPATH/STL/vector/GCC.asm}
+
+\TT{.reserve()} is inlined as well.
+It calls \TT{new()} if the buffer is too small for the new size, calls \TT{memmove()} 
+to copy the contents of the buffer, and calls \TT{delete()} to free the old buffer.
+
+Let's also see what the compiled program outputs if compiled with GCC:
+
+\lstinputlisting{\CURPATH/STL/vector/GCC.txt}
+
+We can spot that the buffer size grows in a different way that in MSVC.
+
+Simple experimentation shows that in MSVC's implementation the buffer grows by \textasciitilde{}50\% each time it needs to be enlarged,
+while GCC's code enlarges it by 100\% each time, i.e., doubles it.
+

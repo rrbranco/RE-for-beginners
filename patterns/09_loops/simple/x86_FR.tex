@@ -1,0 +1,191 @@
+\subsubsection{x86}
+
+\myindex{x86!\Instructions!LOOP}
+
+Il y a une instruction \LOOP spéciale en x86 qui teste le contenu du registre \ECX
+et si il est différent de 0, le \glslink{decrement}{décrémente} et continue l'exécution
+au label de l'opérande \LOOP.
+Probablement que cette instruction n'est pas très pratique, et il n'y a aucun compilateur
+moderne qui la génère automatiquement.
+Donc, si vous la rencontrez dans du code, il est probable qu'il s'agisse de code
+assembleur écrit manuellement.
+
+\par
+
+En \CCpp les boucles sont en général construites avec une déclaration \TT{for()},
+\TT{while()} ou \TT{do/while()}.
+
+Commençons avec \TT{for()}.
+\myindex{\CLanguageElements!for}
+
+Cette déclaration définit l'initialisation de la boucle (met le compteur à sa valeur
+initiale), la condition de boucle (est-ce que le compteur est plus grand qu'une limite?),
+qu'est-ce qui est fait à chaque itération (\glslink{increment}{incrémenter}/\glslink{decrement}{décrémenter})
+et bien sûr le corps de la boucle.
+
+\lstinputlisting[style=customc]{patterns/09_loops/simple/loops_1_FR.c}
+
+Le code généré consiste également en quatre parties.
+
+Commençons avec un exemple simple:
+
+\lstinputlisting[label=loops_src,style=customc]{patterns/09_loops/simple/loops_2.c}
+
+Résultat (MSVC 2010):
+
+\lstinputlisting[caption=MSVC 2010,style=customasmx86]{patterns/09_loops/simple/1_MSVC_FR.asm}
+
+Comme nous le voyons, rien de spécial.
+
+GCC 4.4.1 génère presque le même code, avec une différence subtile:
+
+\lstinputlisting[caption=GCC 4.4.1,style=customasmx86]{patterns/09_loops/simple/1_GCC_FR.asm}
+
+Maintenant, regardons ce que nous obtenons avec l'optimisation  (\TT{\Ox}):
+
+\lstinputlisting[caption=\Optimizing MSVC,style=customasmx86]{patterns/09_loops/simple/1_MSVC_Ox.asm}
+
+Ce qui se passe alors, c'est que l'espace pour la variable $i$ n'est plus alloué
+sur la pile locale, mais utilise un registre individuel pour cela, \ESI. Ceci est
+possible pour ce genre de petites fonctions, où il n'y a pas beaucoup de variables
+locales.
+
+Il est très important que la fonction \ttf ne modifie pas la valeur de \ESI.
+Notre compilateur en est sûr ici.
+Et si le compilateur décide d'utiliser le registre \ESI aussi dans la fonction \ttf,
+sa valeur devra être sauvegardée lors du prologue de la fonction et restaurée lors
+de son épilogue, presque comme dans notre listing: notez les \TT{PUSH ESI/POP ESI}
+au début et à la fin de la fonction.
+
+Essayons GCC 4.4.1 avec l'optimisation la plus performante (option \Othree):
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.1,style=customasmx86]{patterns/09_loops/simple/1_GCC_O3.asm}
+
+\myindex{Loop unwinding}
+
+Hey, GCC a juste déroulé notre boucle.
+
+\glslink{loop unwinding}{Déroulement de boucle} est un avantage lorsqu'il n'y a pas
+beaucoup d'itérations et que nous pouvons économiser du temps d'exécution en supprimant
+les instructions de gestion de la boucle.
+D'un autre côté, le code est étonnament plus gros.
+
+Dérouler des grandes boucles n'est pas recommandé de nos jours, car les grosses fonctions
+ont une plus grandes empreintes sur le cache%
+%
+\footnote{Un très bon article à ce sujet: \DrepperMemory.
+D'autres recommandations sur l'expansion des boucles d'Intel sont ici:
+\InSqBrackets{\IntelOptimization 3.4.1.7}.}.
+
+OK, augmentons la valeur maximale de la variable $i$ à 100 et essayons à nouveau.
+GCC donne:
+
+\lstinputlisting[caption=GCC,style=customasmx86]{patterns/09_loops/simple/2_GCC_FR.asm}
+
+C'est assez similaire à ce que MSVC 2010 génère avec l'optimisation (\Ox), avec l'exception
+que le registre \EBX est utilisé pour la variable $i$.
+
+GCC est sûr que ce registre ne sera pas modifié à l'intérieur de la fonction \ttf,
+et si il l'était, il serait sauvé dans le prologue de la fonction et restauré dans
+l'épiogue, tout comme dans la fonction \main.
+
+\clearpage
+\subsubsection{x86: \olly}
+\myindex{\olly}
+
+Compilons notre exemple dans MSVC 2010 avec les options \Ox et \Obzero, puis chargeons
+le dans \olly.
+
+Il semble qu'\olly soit capable de détecter des boucles simples et les affiche entre
+parenthèses, par commodité.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/09_loops/simple/olly1.png}
+\caption{\olly: début de \main}
+\label{fig:loops_olly_1}
+\end{figure}
+
+En traçant (F8~--- \stepover) nous voyons \ESI 
+s'\glslink{increment}{incrémenter}.
+Ici, par exemple, $ESI=i=6$:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/09_loops/simple/olly2.png}
+\caption{\olly: le corps de la boucle vient de s'exécuter avec $i=6$}
+\label{fig:loops_olly_2}
+\end{figure}
+
+9 est la dernière valeur de la boucle.
+C'est pourquoi \JL ne s'exécute pas après l'\glslink{increment}{incrémentation},
+et que le fonction se termine.
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/09_loops/simple/olly3.png}
+\caption{\olly: $ESI=10$, fin de la boucle}
+\label{fig:loops_olly_3}
+\end{figure}
+
+\subsubsection{x86: tracer}
+\myindex{tracer}
+
+Comme nous venons de le voir, il n'est pas très commode de tracer manuellement dans
+le débogueur.
+C'est pourquoi nous allons essayer \tracer.
+
+Nous ouvrons dans \IDA l'exemple compilé, trouvons l'adresse de l'instruction \INS{PUSH ESI}
+(qui passe le seul argument à \ttf), qui est \TT{0x401026} dans ce cas et nous lançons
+le \tracer:
+
+\begin{lstlisting}
+tracer.exe -l:loops_2.exe bpx=loops_2.exe!0x00401026
+\end{lstlisting}
+
+\TT{BPX} met juste un point d'arrêt à l'adresse et \tracer va alors afficher l'état
+des registres.
+
+Voici ce que l'on voit dans \TT{tracer.log}:
+
+\lstinputlisting{patterns/09_loops/simple/tracer.log}
+
+Nous voyons comment la valeur du registre \ESI change de 2 à 9.
+
+Encore plus que ça, le \tracer peut collecter les valeurs des registres pour toutes
+les adresses dans la fonction. C'est appelé \IT{trace} ici. Chaque instruction est
+tracées, toutes les valeurs intéressantes des registres sont enregistrées.
+
+Ensuite, un script \IDA .idc est généré, qui ajoute des commentaires.
+Donc, dans \IDA, nous avons appris que l'adresse de la fonction \main est \TT{0x00401020}
+et nous lançons:
+
+\begin{lstlisting}
+tracer.exe -l:loops_2.exe bpf=loops_2.exe!0x00401020,trace:cc
+\end{lstlisting}
+
+\TT{BPF} stands for set breakpoint on function.
+
+Comme résultat, nous obtenons les scripts \TT{loops\_2.exe.idc} et \TT{loops\_2.exe\_clear.idc}.
+
+\clearpage
+Nous chargeons \TT{loops\_2.exe.idc} dans \IDA et voyons:
+
+\begin{figure}[H]
+\centering
+\myincludegraphics{patterns/09_loops/simple/IDA_tracer_cc.png}
+\caption{\IDA avec .idc-script chargé}
+\label{fig:loops_IDA_tracer}
+\end{figure}
+
+Nous voyons que \ESI peut être de 2 à 9 au début du corps de boucle, mais de 3 à
+0xA (10) après l'incrément.
+Nous voyons aussi que \main se termine avec 0 dans \EAX.
+
+\tracer génère également \TT{loops\_2.exe.txt}, qui contient des informations sur
+le nombre de fois qu'une instruction a été exécutée et les valeurs du registre:
+
+\lstinputlisting[caption=loops\_2.exe.txt]{patterns/09_loops/simple/loops_2.exe.txt}
+\myindex{\GrepUsage}
+Nous pouvons utiliser grep ici.
+

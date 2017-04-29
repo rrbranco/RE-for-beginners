@@ -1,0 +1,75 @@
+f:
+                lui     $gp, (__gnu_local_gp >> 16)
+; §sauter en loc\_24 si la valeur entrée est plus petite que 5:§
+                sltiu   $v0, $a0, 5
+                bnez    $v0, loc_24
+                la      $gp, (__gnu_local_gp & 0xFFFF) ; §slot de délai de branchement§
+; §la valeur entrée est supérieur ou égale à 5.§
+; afficher "something unknown" et terminer:
+                lui     $a0, ($LC5 >> 16)  # "something unknown"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC5 & 0xFFFF)  # "something unknown" ; §slot de délai de branchement§
+
+loc_24:                                  # CODE XREF: f+8
+; charger l'adresse de la table de branchement/saut
+; LA est une pseudo instruction, il s'agit en fait de LUI et ADDIU:
+                la      $v0, off_120
+; §multiplier la valeur entrés par 4:§
+                sll     $a0, 2
+; §ajouter la valeur multipliée et l'adresse de la table de saut:§
+                addu    $a0, $v0, $a0
+; §charger l'élément de la table de saut§:
+                lw      $v0, 0($a0)
+                or      $at, $zero ; NOP
+; §sauter à l'adresse que nous avons dans la table de saut:§
+                jr      $v0
+                or      $at, $zero ; §slot de délai de branchement§, NOP
+
+sub_44:                                  # DATA XREF: .rodata:0000012C
+; afficher "three" et terminer
+                lui     $a0, ($LC3 >> 16)  # "three"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC3 & 0xFFFF)  # "three" ; §slot de délai de branchement§
+
+sub_58:                                  # DATA XREF: .rodata:00000130
+; afficher "four" et terminer
+                lui     $a0, ($LC4 >> 16)  # "four"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC4 & 0xFFFF)  # "four" ; §slot de délai de branchement§
+
+sub_6C:                                  # DATA XREF: .rodata:off_120
+; afficher "zero" et terminer
+                lui     $a0, ($LC0 >> 16)  # "zero"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC0 & 0xFFFF)  # "zero" ; §slot de délai de branchement§
+
+sub_80:                                  # DATA XREF: .rodata:00000124
+; afficher "one" et terminer
+                lui     $a0, ($LC1 >> 16)  # "one"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC1 & 0xFFFF)  # "one" ; §slot de délai de branchement§
+
+sub_94:                                  # DATA XREF: .rodata:00000128
+; afficher "two" et terminer
+                lui     $a0, ($LC2 >> 16)  # "two"
+                lw      $t9, (puts & 0xFFFF)($gp)
+                or      $at, $zero ; NOP
+                jr      $t9
+                la      $a0, ($LC2 & 0xFFFF)  # "two" ; §slot de délai de branchement§
+
+; §peut être mis dans une section .rodata:§
+off_120:        .word sub_6C
+                .word sub_80
+                .word sub_94
+                .word sub_44
+                .word sub_58

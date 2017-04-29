@@ -1,0 +1,65 @@
+\subsubsection{ARM64}
+
+\myparagraph{\Optimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[style=customasmARM]{patterns/12_FPU/3_comparison/ARM/ARM64_GCC_O3_RU.lst}
+
+В ARM64 \ac{ISA} теперь есть FPU-инструкции, устанавливающие флаги CPU \ac{APSR} вместо \ac{FPSCR} для удобства.
+\ac{FPU} больше не отдельное устройство (по крайней мере логически).
+\myindex{ARM!\Instructions!FCMPE}
+Это \INS{FCMPE}. Она сравнивает два значения, переданных в \RegD{0} и \RegD{1} 
+(а это первый и второй аргументы функции) и выставляет флаги в \ac{APSR} (N, Z, C, V).
+
+\myindex{ARM!\Instructions!FCSEL}
+\INS{FCSEL} (\IT{Floating Conditional Select}) копирует значение \RegD{0} или
+\RegD{1} в \RegD{0} в зависимости от условия 
+(\GTT{GT} --- Greater Than --- больше чем),
+и снова, она использует флаги в регистре \ac{APSR} вместо \ac{FPSCR}.
+Это куда удобнее, если сравнивать с тем набором инструкций, что был в процессорах раньше.
+
+Если условие верно (\GTT{GT}), тогда значение из \RegD{0} копируется в \RegD{0} (т.е. ничего не происходит).
+Если условие не верно, то значение \RegD{1} копируется в \RegD{0}.
+
+\myparagraph{\NonOptimizing GCC (Linaro) 4.9}
+
+\lstinputlisting[style=customasmARM]{patterns/12_FPU/3_comparison/ARM/ARM64_GCC_RU.lst}
+
+Неоптимизирующий GCC более многословен.
+В начале функция сохраняет значения входных аргументов в локальном стеке (\IT{Register Save Area}).
+Затем код перезагружает значения в регистры
+\RegX{0}/\RegX{1} и наконец копирует их в 
+\RegD{0}/\RegD{1} для сравнения инструкцией \INS{FCMPE}. 
+Много избыточного кода, но так работают неоптимизирующие компиляторы.
+\INS{FCMPE} сравнивает значения и устанавливает флаги в \ac{APSR}.
+В этот момент компилятор ещё не думает о более удобной инструкции \INS{FCSEL}, так что он работает старым 
+методом: 
+использует инструкцию \INS{BLE} (\IT{Branch if Less than or Equal} (переход если меньше или равно)).
+В одном случае ($a>b$) значение $a$ перезагружается в \RegX{0}.
+В другом случае ($a<=b$) значение $b$ загружается в \RegX{0}.
+Наконец, значение из \RegX{0} копируется в \RegD{0}, 
+потому что возвращаемое значение оставляется в этом регистре.
+
+\mysubparagraph{\Exercise}
+
+Для упражнения вы можете попробовать оптимизировать этот фрагмент кода вручную, удалив избыточные инструкции,
+но не добавляя новых (включая \INS{FCSEL}).
+
+\myparagraph{\Optimizing GCC (Linaro) 4.9: float}
+
+Перепишем пример. Теперь здесь \Tfloat вместо \Tdouble.
+
+\begin{lstlisting}[style=customc]
+float f_max (float a, float b)
+{
+	if (a>b)
+		return a;
+
+	return b;
+};
+\end{lstlisting}
+
+\lstinputlisting[style=customasmARM]{patterns/12_FPU/3_comparison/ARM/ARM64_GCC_O3_float_RU.lst}
+
+Всё то же самое, только используются S-регистры вместо D-.
+Так что числа типа \Tfloat передаются в 32-битных S-регистрах (а это младшие части 64-битных D-регистров).
+

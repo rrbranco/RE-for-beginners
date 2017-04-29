@@ -1,0 +1,48 @@
+main:
+
+; IDA не знает названия переменных в локальном стеке
+; Это мы назвали их вручную:
+i               = -0x10
+saved_FP        = -8
+saved_RA        = -4
+
+; пролог функции:
+                addiu   $sp, -0x28
+                sw      $ra, 0x28+saved_RA($sp)
+                sw      $fp, 0x28+saved_FP($sp)
+                move    $fp, $sp
+; инициализировать счетчик значением 2 и сохранить это значение в локальном стеке
+                li      $v0, 2
+                sw      $v0, 0x28+i($fp)
+; псевдоинструкция. здесь на самом деле "BEQ $ZERO, $ZERO, loc_9C":
+                b       loc_9C
+                or      $at, $zero ; branch delay slot, NOP
+
+loc_80:                                  # CODE XREF: main+48
+; загрузить значение счетчика из локального стека и вызвать printing_function():
+                lw      $a0, 0x28+i($fp)
+                jal     printing_function
+                or      $at, $zero ; branch delay slot, NOP
+; загрузить счетчик, инкрементировать его и записать назад:
+                lw      $v0, 0x28+i($fp)
+                or      $at, $zero ; NOP
+                addiu   $v0, 1
+                sw      $v0, 0x28+i($fp)
+
+loc_9C:                                  # CODE XREF: main+18
+; проверить счетчик, он больше 10?
+                lw      $v0, 0x28+i($fp)
+                or      $at, $zero ; NOP
+                slti    $v0, 0xA
+; если он меньше 10, перейти на loc_80 (§начало§ §тела§ §цикла§):
+                bnez    $v0, loc_80
+                or      $at, $zero ; branch delay slot, NOP
+; заканчиваем, возвращаем 0:
+                move    $v0, $zero
+; эпилог функции:
+                move    $sp, $fp
+                lw      $ra, 0x28+saved_RA($sp)
+                lw      $fp, 0x28+saved_FP($sp)
+                addiu   $sp, 0x28
+                jr      $ra
+                or      $at, $zero ; branch delay slot, NOP

@@ -1,0 +1,106 @@
+\section{\PrintfSeveralArgumentsSectionName}
+
+Maintenant, améliorons l'exemple \IT{\HelloWorldSectionName}~(\myref{sec:helloworld})
+en remplaçant \printf dans la fonction \main par ceci:
+
+\lstinputlisting[label=hw_c,style=customc]{patterns/03_printf/1.c}
+
+% sections
+\input{patterns/03_printf/x86/main}
+\input{patterns/03_printf/ARM/main}
+\input{patterns/03_printf/MIPS/main}
+
+\subsection{\Conclusion{}}
+
+Voici un schéma grossier de l'appel de la fonction:
+
+\begin{lstlisting}[caption=x86,style=customasmx86]
+...
+PUSH 3rd argument
+PUSH 2nd argument
+PUSH 1st argument
+CALL fonction
+; modifier le pointeur de pile (si besoin)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x64 (MSVC),style=customasmx86]
+MOV RCX, 1st argument
+MOV RDX, 2nd argument
+MOV R8, 3rd argument
+MOV R9, 4th argument
+...
+PUSH 5ème, 6ème argument, etc. (si besoin)
+CALL fonction
+; modifier le pointeur de pile (si besoin)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=x64 (GCC),style=customasmx86]
+MOV RDI, 1st argument
+MOV RSI, 2nd argument
+MOV RDX, 3rd argument
+MOV RCX, 4th argument
+MOV R8, 5th argument
+MOV R9, 6th argument
+...
+PUSH 7ème, 8ème argument, etc. (si besoin)
+CALL fonction
+; modifier le pointeur de pile (si besoin)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ARM,style=customasmARM]
+MOV R0, 1st argument
+MOV R1, 2nd argument
+MOV R2, 3rd argument
+MOV R3, 4th argument
+; passer le 5ème, 6ème argument, etc., dans la pile (si besoin)
+BL fonction
+; modifier le pointeur de pile (si besoin)
+\end{lstlisting}
+
+\begin{lstlisting}[caption=ARM64,style=customasmARM]
+MOV X0, 1st argument
+MOV X1, 2nd argument
+MOV X2, 3rd argument
+MOV X3, 4th argument
+MOV X4, 5th argument
+MOV X5, 6th argument
+MOV X6, 7th argument
+MOV X7, 8th argument
+; passer le 9ème, 10ème argument, etc., dans la pile (si besoin)
+BL fonction
+; modifier le pointeur de pile (si besoin)
+\end{lstlisting}
+
+\myindex{MIPS!O32}
+\begin{lstlisting}[caption=MIPS (O32 calling convention),style=customasmMIPS]
+LI $4, 1st argument ; AKA $A0
+LI $5, 2nd argument ; AKA $A1
+LI $6, 3rd argument ; AKA $A2
+LI $7, 4th argument ; AKA $A3
+; passer le 5ème, 6ème argument, etc., dans la pile (si besoin)
+LW temp_reg, adresse de la fonction
+JALR temp_reg
+\end{lstlisting}
+
+\subsection{Á propos}
+
+\myindex{fastcall}
+Á propos, cette différence du passage des arguments entre x86, x64, fastcall, ARM
+et MIPS est une bonne illustration du fait que le CPU est inconscient de comment
+les arguments sont passés aux fonctions.
+Il est aussi possible de créer un hypothétique compilateur capable de passer les
+arguments via une srtucture spéciale sans utiliser du tout la pile.
+
+\myindex{MIPS!O32}
+Les registres MIPS \$A0 \dots \$A3 sont appelés comme ceci par commodité (c'est
+dans la convention d'appel O32).
+Les programmeurs peuvent utiliser n'importe quel autre registre, (bon, peut-être
+à l'exception de \$ZERO) pour passer des données ou n'importe quelle autre convention d'appel.
+
+Le \ac{CPU} n'est pas au courant de quoi que ce soit des conventions d'appel.
+
+Nous pouvons aussi nous rappeler comment les débutants en langage d'assemblage passent
+les arguments aux autres fonctions: généralement par les registres, sans ordre explicite,
+ou même par des variables globales.
+Bien sûr, cela fonctionne.
+

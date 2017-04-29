@@ -1,0 +1,33 @@
+\section{Windows 16-bit}
+\myindex{Windows!Windows 3.x}
+
+\RU{16-битные программы под Windows в наше время редки, хотя иногда можно поработать с ними, в смысле ретрокомпьютинга,
+либо которые защищенные донглами (\myref{dongles}).}%
+\EN{16-bit Windows programs are rare nowadays, but can be used in the cases of retrocomputing
+or dongle hacking (\myref{dongles}).}
+
+\RU{16-битные версии Windows были вплоть до}\EN{16-bit Windows versions were up to} 3.11.
+95/98/ME \RU{также поддерживает 16-битный код, как и все 32-битные OS линейки}
+\EN{also support 16-bit code, as well as the 32-bit versions of the} \gls{Windows NT}\EN{ line}.
+\RU{64-битные версии}\EN{The 64-bit versions of} \gls{Windows NT} \RU{не поддерживают 16-битный код вообще}
+\EN{line do not support 16-bit executable code at all}.
+
+\RU{Код напоминает тот что под MS-DOS}\EN{The code resembles MS-DOS's one}.
+
+\RU{Исполняемые файлы имеют NE-тип (так называемый \q{new executable}).}
+\EN{Executable files are of type NE-type (so-called \q{new executable}).}
+
+\RU{Все рассмотренные здесь примеры скомпилированы компилятором}
+\EN{All examples considered here were compiled by the} OpenWatcom 1.9 \RU{используя эти опции}\EN{compiler, using these switches}:\\
+
+\begin{lstlisting}
+wcl.exe -i=C:/WATCOM/h/win/ -s -os -bt=windows -bcl=windows example.c
+\end{lstlisting}
+
+\input{\CURPATH/ex1.tex}
+\input{\CURPATH/ex2.tex}
+\input{\CURPATH/ex3.tex}
+\input{\CURPATH/ex4.tex}
+\input{\CURPATH/ex5.tex}
+\EN{\input{\CURPATH/ex6_EN.tex}}\RU{\input{\CURPATH/ex6_RU.tex}}
+

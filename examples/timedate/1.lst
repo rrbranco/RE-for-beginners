@@ -1,0 +1,107 @@
+.text:6EB9DBC7 ; private: enum  Gdiplus::Status __thiscall CAnalogClock::_DrawHand(class Gdiplus::Graphics *, int, struct ClockHand const &, class Gdiplus::Pen *)
+.text:6EB9DBC7 ?_DrawHand@CAnalogClock@@AAE?AW4Status@Gdiplus@@PAVGraphics@3@HABUClockHand@@PAVPen@3@@Z proc near
+.text:6EB9DBC7                                         ; CODE XREF: CAnalogClock::_ClockPaint(HDC__ *)+163
+.text:6EB9DBC7                                         ; CAnalogClock::_ClockPaint(HDC__ *)+18B
+.text:6EB9DBC7
+.text:6EB9DBC7 var_10          = dword ptr -10h
+.text:6EB9DBC7 var_C           = dword ptr -0Ch
+.text:6EB9DBC7 var_8           = dword ptr -8
+.text:6EB9DBC7 var_4           = dword ptr -4
+.text:6EB9DBC7 arg_0           = dword ptr  8
+.text:6EB9DBC7 arg_4           = dword ptr  0Ch
+.text:6EB9DBC7 arg_8           = dword ptr  10h
+.text:6EB9DBC7 arg_C           = dword ptr  14h
+.text:6EB9DBC7
+.text:6EB9DBC7                 mov     edi, edi
+.text:6EB9DBC9                 push    ebp
+.text:6EB9DBCA                 mov     ebp, esp
+.text:6EB9DBCC                 sub     esp, 10h
+.text:6EB9DBCF                 mov     eax, [ebp+arg_4]
+.text:6EB9DBD2                 push    ebx
+.text:6EB9DBD3                 push    esi
+.text:6EB9DBD4                 push    edi
+.text:6EB9DBD5                 cdq
+.text:6EB9DBD6                 push    3Ch
+.text:6EB9DBD8                 mov     esi, ecx
+.text:6EB9DBDA                 pop     ecx
+.text:6EB9DBDB                 idiv    ecx
+.text:6EB9DBDD                 push    2
+.text:6EB9DBDF                 lea     ebx, table[edx*8]
+.text:6EB9DBE6                 lea     eax, [edx+1Eh]
+.text:6EB9DBE9                 cdq
+.text:6EB9DBEA                 idiv    ecx
+.text:6EB9DBEC                 mov     ecx, [ebp+arg_0]
+.text:6EB9DBEF                 mov     [ebp+var_4], ebx
+.text:6EB9DBF2                 lea     eax, table[edx*8]
+.text:6EB9DBF9                 mov     [ebp+arg_4], eax
+.text:6EB9DBFC                 call    ?SetInterpolationMode@Graphics@Gdiplus@@QAE?AW4Status@2@W4InterpolationMode@2@@Z ; Gdiplus::Graphics::SetInterpolationMode(Gdiplus::InterpolationMode)
+.text:6EB9DC01                 mov     eax, [esi+70h]
+.text:6EB9DC04                 mov     edi, [ebp+arg_8]
+.text:6EB9DC07                 mov     [ebp+var_10], eax
+.text:6EB9DC0A                 mov     eax, [esi+74h]
+.text:6EB9DC0D                 mov     [ebp+var_C], eax
+.text:6EB9DC10                 mov     eax, [edi]
+.text:6EB9DC12                 sub     eax, [edi+8]
+.text:6EB9DC15                 push    8000            ; nDenominator
+.text:6EB9DC1A                 push    eax             ; nNumerator
+.text:6EB9DC1B                 push    dword ptr [ebx+4] ; nNumber
+.text:6EB9DC1E                 mov     ebx, ds:__imp__MulDiv@12 ; MulDiv(x,x,x)
+.text:6EB9DC24                 call    ebx ; MulDiv(x,x,x) ; MulDiv(x,x,x)
+.text:6EB9DC26                 add     eax, [esi+74h]
+.text:6EB9DC29                 push    8000            ; nDenominator
+.text:6EB9DC2E                 mov     [ebp+arg_8], eax
+.text:6EB9DC31                 mov     eax, [edi]
+.text:6EB9DC33                 sub     eax, [edi+8]
+.text:6EB9DC36                 push    eax             ; nNumerator
+.text:6EB9DC37                 mov     eax, [ebp+var_4]
+.text:6EB9DC3A                 push    dword ptr [eax] ; nNumber
+.text:6EB9DC3C                 call    ebx ; MulDiv(x,x,x) ; MulDiv(x,x,x)
+.text:6EB9DC3E                 add     eax, [esi+70h]
+.text:6EB9DC41                 mov     ecx, [ebp+arg_0]
+.text:6EB9DC44                 mov     [ebp+var_8], eax
+.text:6EB9DC47                 mov     eax, [ebp+arg_8]
+.text:6EB9DC4A                 mov     [ebp+var_4], eax
+.text:6EB9DC4D                 lea     eax, [ebp+var_8]
+.text:6EB9DC50                 push    eax
+.text:6EB9DC51                 lea     eax, [ebp+var_10]
+.text:6EB9DC54                 push    eax
+.text:6EB9DC55                 push    [ebp+arg_C]
+.text:6EB9DC58                 call    ?DrawLine@Graphics@Gdiplus@@QAE?AW4Status@2@PBVPen@2@ABVPoint@2@1@Z ; Gdiplus::Graphics::DrawLine(Gdiplus::Pen const *,Gdiplus::Point const &,Gdiplus::Point const &)
+.text:6EB9DC5D                 mov     ecx, [edi+8]
+.text:6EB9DC60                 test    ecx, ecx
+.text:6EB9DC62                 jbe     short loc_6EB9DCAA
+.text:6EB9DC64                 test    eax, eax
+.text:6EB9DC66                 jnz     short loc_6EB9DCAA
+.text:6EB9DC68                 mov     eax, [ebp+arg_4]
+.text:6EB9DC6B                 push    8000            ; nDenominator
+.text:6EB9DC70                 push    ecx             ; nNumerator
+.text:6EB9DC71                 push    dword ptr [eax+4] ; nNumber
+.text:6EB9DC74                 call    ebx ; MulDiv(x,x,x) ; MulDiv(x,x,x)
+.text:6EB9DC76                 add     eax, [esi+74h]
+.text:6EB9DC79                 push    8000            ; nDenominator
+.text:6EB9DC7E                 push    dword ptr [edi+8] ; nNumerator
+.text:6EB9DC81                 mov     [ebp+arg_8], eax
+.text:6EB9DC84                 mov     eax, [ebp+arg_4]
+.text:6EB9DC87                 push    dword ptr [eax] ; nNumber
+.text:6EB9DC89                 call    ebx ; MulDiv(x,x,x) ; MulDiv(x,x,x)
+.text:6EB9DC8B                 add     eax, [esi+70h]
+.text:6EB9DC8E                 mov     ecx, [ebp+arg_0]
+.text:6EB9DC91                 mov     [ebp+var_8], eax
+.text:6EB9DC94                 mov     eax, [ebp+arg_8]
+.text:6EB9DC97                 mov     [ebp+var_4], eax
+.text:6EB9DC9A                 lea     eax, [ebp+var_8]
+.text:6EB9DC9D                 push    eax
+.text:6EB9DC9E                 lea     eax, [ebp+var_10]
+.text:6EB9DCA1                 push    eax
+.text:6EB9DCA2                 push    [ebp+arg_C]
+.text:6EB9DCA5                 call    ?DrawLine@Graphics@Gdiplus@@QAE?AW4Status@2@PBVPen@2@ABVPoint@2@1@Z ; Gdiplus::Graphics::DrawLine(Gdiplus::Pen const *,Gdiplus::Point const &,Gdiplus::Point const &)
+.text:6EB9DCAA
+.text:6EB9DCAA loc_6EB9DCAA:                           ; CODE XREF: CAnalogClock::_DrawHand(Gdiplus::Graphics *,int,ClockHand const &,Gdiplus::Pen *)+9B
+.text:6EB9DCAA                                         ; CAnalogClock::_DrawHand(Gdiplus::Graphics *,int,ClockHand const &,Gdiplus::Pen *)+9F
+.text:6EB9DCAA                 pop     edi
+.text:6EB9DCAB                 pop     esi
+.text:6EB9DCAC                 pop     ebx
+.text:6EB9DCAD                 leave
+.text:6EB9DCAE                 retn    10h
+.text:6EB9DCAE ?_DrawHand@CAnalogClock@@AAE?AW4Status@Gdiplus@@PAVGraphics@3@HABUClockHand@@PAVPen@3@@Z endp
+.text:6EB9DCAE

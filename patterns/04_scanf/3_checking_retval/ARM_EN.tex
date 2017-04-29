@@ -1,0 +1,31 @@
+\subsubsection{ARM}
+
+\myparagraph{ARM: \OptimizingKeilVI (\ThumbMode)}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ThumbMode),style=customasmARM]{patterns/04_scanf/3_checking_retval/ex3_ARM_Keil_thumb_O3.asm}
+
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!BEQ}
+
+The new instructions here are \CMP and \ac{BEQ}.
+
+\CMP is analogous to the x86 instruction with the same name, it subtracts one of the arguments from the other and updates the conditional flags if needed.
+% TODO: в мануале ARM $op1 + NOT(op2) + 1$ вместо вычитания
+
+\myindex{ARM!\Registers!Z}
+\myindex{x86!\Instructions!JZ}
+\ac{BEQ} jumps to another address if the operands were equal to each other, or,
+if the result of the last computation has been 0, or if the Z flag is 1.
+It behaves as \JZ in x86.
+
+Everything else is simple: the execution flow forks in two branches, then the branches
+converge at the point where 0 is written into the \Reg{0} as a function return value, and then the function ends.
+
+\myparagraph{ARM64}
+
+\lstinputlisting[caption=\NonOptimizing GCC 4.9.1 ARM64,numbers=left,style=customasmARM]{patterns/04_scanf/3_checking_retval/ARM64_GCC491_O0_EN.s}
+
+\myindex{ARM!\Instructions!CMP}
+\myindex{ARM!\Instructions!Bcc}
+Code flow in this case forks with the use of \INS{CMP}/\INS{BNE} (Branch if Not Equal) instructions pair.
+

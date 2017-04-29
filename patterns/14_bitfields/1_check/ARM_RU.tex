@@ -1,0 +1,52 @@
+\subsubsection{ARM}
+
+\myindex{Linux}
+В ядре Linux 3.8.0 бит \TT{O\_CREAT} проверяется немного иначе.
+
+\begin{lstlisting}[caption=linux kernel 3.8.0,style=customc]
+struct file *do_filp_open(int dfd, struct filename *pathname,
+		const struct open_flags *op)
+{
+...
+	filp = path_openat(dfd, pathname, &nd, op, flags | LOOKUP_RCU);
+...
+}
+
+static struct file *path_openat(int dfd, struct filename *pathname,
+		struct nameidata *nd, const struct open_flags *op, int flags)
+{
+...
+	error = do_last(nd, &path, file, op, &opened, pathname);
+...
+}
+
+
+static int do_last(struct nameidata *nd, struct path *path,
+		   struct file *file, const struct open_flags *op,
+		   int *opened, struct filename *name)
+{
+...
+	if (!(open_flag & O_CREAT)) {
+    ...
+		error = lookup_fast(nd, path, &inode);
+    ...
+	} else {
+    ...
+		error = complete_walk(nd);
+        }
+...
+}
+\end{lstlisting}
+
+Вот как это выглядит в \IDA, ядро скомпилированное для режима ARM:
+
+\lstinputlisting[caption=do\_last() из vmlinux (IDA),style=customasmARM]{patterns/14_bitfields/1_check/IDA.lst}
+
+\myindex{ARM!\Instructions!TST}
+\myindex{x86!\Instructions!TEST}
+\TT{TST} это аналог инструкции \TEST в x86.
+Мы можем \q{узнать} визуально этот фрагмент кода по тому что в одном случае исполнится 
+функция \TT{lookup\_fast()}, а в другом \TT{complete\_walk()}.
+Это соответствует исходному коду функции \TT{do\_last()}.
+Макрос \TT{O\_CREAT} здесь так же равен \TT{0x40}.
+

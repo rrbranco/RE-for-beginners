@@ -1,0 +1,12 @@
+    MOV [counter], 2 ; Initialisierung
+    JMP label_check
+label_increment:
+    ADD [counter], 1 ; inkrementieren
+label_check:
+    CMP [counter], 10
+    JGE exit
+    ; Schleifenkörper
+    ; tue etwas
+    ; verwende Zählervariable auf lokalem Stack
+    JMP label_increment
+exit:

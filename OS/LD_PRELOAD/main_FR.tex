@@ -1,0 +1,119 @@
+\subsection{Hack \IT{LD\_PRELOAD} sur Linux}
+
+\myindex{LD\_PRELOAD}
+\label{ld_preload}
+
+Cela permet de charger nos propres bibilothèques dynamiques avant les autres, même celle du système, comme libc.so.6.
+
+Cela permet de \q{substituer} nos propres fonctions, avant celles originales des bibliothèques du système.
+Par exemple, il est facile d'intercepter tous les appels à
+time(), read(), write(), etc. \\
+\\
+\myindex{uptime}
+Regardons si l'on peut tromper l'utilitaire \IT{uptime}.
+Comme chacun le sait, il indique depuis combien de temps l'ordinateur est démarré.
+\myindex{strace}
+Avec l'aide de strace(\myref{strace}), on voit que ces informations proviennent du fichier \TT{/proc/uptime}:
+
+\begin{lstlisting}
+$ strace uptime 
+...
+open("/proc/uptime", O_RDONLY)          = 3
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "416166.86 414629.38\n", 2047)  = 20
+...
+\end{lstlisting}
+
+Ce n'est pas un fichier réel sur le disque, il est virtuel et généré au vol par le noyau Linux.
+Il y a seulement deux nombres:
+
+\begin{lstlisting}
+$ cat /proc/uptime
+416690.91 415152.03
+\end{lstlisting}
+
+Ce que l'on peut apprendre depuis Wikipedia
+\footnote{\href{http://go.yurichev.com/17043}{wikipedia}}:
+
+\begin{framed}
+\begin{quotation}
+Le premier est le nombre total de seconde depuis lequel le système est démarré.
+Le second est la part de ce temps pendant lequel la machine était inoccupée, en secondes.
+\end{quotation}
+\end{framed}
+
+\myindex{\CStandardLibrary!open()}
+\myindex{\CStandardLibrary!read()}
+\myindex{\CStandardLibrary!close()}
+
+Essayons d'écrire notre propre bibliothèque dynamique, avec les fonctions
+open(), read(), close() fonctionnants comme nous en avons besoin.
+
+Tout d'abord, notre fonction open() va comparer le nom du fichier à ouvrir avec celui que l'on veut modifier,
+et si c'est le cas, sauver le descripteur du fichier ouvert.
+
+Ensuite, si read() est appelé avec ce descripteur de fichier, nous allons substituer la sortie,
+et dans les autres cas, nous appelerons la fonction read() originale de libc.so.6.
+Et enfin close() fermera le fichier que nous suivons.
+
+\myindex{dlopen()}
+\myindex{dlsym()}
+
+Nous allons utiliser les fonctions dlopen() et dlsym() pour déterminer les adresses des fonctions originales dans libc.so.6.
+
+Nous en avons besoin pour appeler les fonctions \q{réelles}.
+
+\myindex{\CStandardLibrary!strcmp()}
+
+D'un autre côté, si nous interceptons strcmp() et surveillons chaque comparaison de
+chaînes dans le programme, nous pouvons alors implémenter notre propre fonction strcmp(),
+et ne pas utiliser la fonction originale du tout.
+
+\footnote{Par exemple, voilà comment implémenter une interception simple de strcmp() dans cet article
+\footnote{\href{http://go.yurichev.com/17143}{yurichev.com}}
+écrit par Yong Huang}.
+
+\lstinputlisting[style=customc]{OS/LD_PRELOAD/fool_uptime.c}
+( \href{https://github.com/dennis714/RE-for-beginners/blob/master/OS/LD_PRELOAD/fool_uptime.c}{Code source sur GitHub} )
+% FIXME go.yurichev.com...
+
+Compilons le comme une bibliothèque dynamique standard:
+
+\begin{lstlisting}
+gcc -fpic -shared -Wall -o fool_uptime.so fool_uptime.c -ldl
+\end{lstlisting}
+
+Lançons \IT{uptime}
+en chargeant notre bibliothèque avant les autres:
+
+\begin{lstlisting}
+LD_PRELOAD=`pwd`/fool_uptime.so uptime
+\end{lstlisting}
+
+Et nous voyons:
+
+\begin{lstlisting}
+ 01:23:02 up 24855 days,  3:14,  3 users,  load average: 0.00, 0.01, 0.05
+\end{lstlisting}
+
+Si la variable d'environnement \IT{LD\_PRELOAD}
+
+pointe toujours sur le nom et le chemin de notre bibliothèque,
+elle sera chargée pour tous les programmes démarrés. \\
+\\
+Plus d'exemples:
+
+\begin{itemize}
+
+\item
+Interception simple de strcmp() (Yong Huang)
+\url{http://go.yurichev.com/17143}
+
+\item
+Kevin Pulo---Jouons avec LD\_PRELOAD. De nombreux exemples et idées.
+\href{http://go.yurichev.com/17145}{yurichev.com}
+
+\item
+Interception des fonctions de fichier pour compresser/décompresser les fichiers au vol (zlibc) \url{http://go.yurichev.com/17146}
+
+\end{itemize}

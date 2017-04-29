@@ -1,0 +1,207 @@
+\chapter{Strumenti}
+
+\epigraph{Ora che Dennis Yurichev ha reso questo libro free (libre), è un
+contributo a tutto il mondo della libera informazione ed educazione.
+Comunque, per il bene della nostra libertà, abbiamo bisogno di strumenti free (libre) per il reverse
+engineering in modo da rimpiazzare quelli proprietari descritti in questo libro.}{Richard M. Stallman}
+
+\section{Analisi di Binari}
+
+Strumenti da utilizzare senza eseguire nessun processo:
+
+\myindex{Hiew}
+\myindex{UNIX!strings}
+\myindex{UNIX!xxd}
+\myindex{UNIX!od}
+
+\begin{itemize}
+\item
+(Free, open-source) \IT{ent}\footnote{\url{http://www.fourmilab.ch/random/}}: strumento per analizzare l'entropia.
+Leggi di più riguardo l'entropia: \myref{entropy}.
+
+\item
+\label{Hiew}
+\IT{Hiew}\footnote{\href{http://go.yurichev.com/17035}{hiew.ru}}:
+per piccole modifiche del codice dei file binari.
+
+\item (Free, open-source) \IT{xxd} and \IT{od}: standard UNIX utility per effettuare il dump nel formato desiderato. 
+
+\item (Free, open-source) \IT{strings}: strumento *NIX per cercare stringhe ASCII all'interno di file binari, eseguibili compresi.
+Sysinternals ha un'alternativa\footnote{\url{https://technet.microsoft.com/en-us/sysinternals/strings}}
+che supporta la stringhe con caratteri di tipo "wide" (UTF-16, ampiamente utilizzati in Windows).
+
+\item (Free, open-source) \IT{Binwalk}\footnote{\url{http://binwalk.org/}}: analisi di immagini firmware.
+
+\item
+\myindex{binary grep}
+(Free, open-source) \IT{binary grep}:
+piccola utility per cercare una sequenza di byte in molti file,
+incluso file non eseguibili: \BGREPURL.
+% TBT
+\end{itemize}
+
+\subsection{Disassemblers}
+
+\myindex{IDA}
+\myindex{Binary Ninja}
+\myindex{BinNavi}
+\myindex{objdump}
+
+\begin{itemize}
+\item \IT{IDA}. Una versione più vecchia è liberamente disponibile per lo scaricamento
+\footnote{\href{http://go.yurichev.com/17031}{hex-rays.com/products/ida/support/download\_freeware.shtml}}.
+\ShortHotKeyCheatsheet: \myref{sec:IDA_cheatsheet}
+
+\item \IT{Binary Ninja}\footnote{\url{http://binary.ninja/}}
+
+\item (Free, open-source) \IT{zynamics BinNavi}\footnote{\url{https://www.zynamics.com/binnavi.html}}
+
+\item (Free, open-source) \IT{objdump}: semplice utility command-line per effettuare il dump e il disassembling.
+
+\item (Free, open-ssource) \IT{readelf}\footnote{\url{https://sourceware.org/binutils/docs/binutils/readelf.html}}:
+dump delle informazioni dei file ELF.
+\end{itemize}
+
+\subsection{Decompilers}
+
+C'è solo un decompiler conosciuto, pubblicamente disponibile e di elevata qualità per decompilare in C: \IT{Hex-Rays}:
+\href{http://go.yurichev.com/17033}{hex-rays.com/products/decompiler/}
+
+\subsection{Comparazione Patch/diffing}
+
+Potresti voler utilizzare questi strumenti quando devi comparare la versione originale di un eseguibile con quella patchata,
+in modo da trovare cos'è stato patchato e perchè.
+
+\begin{itemize}
+\item (Free) \IT{zynamics BinDiff}\footnote{\url{https://www.zynamics.com/software.html}}
+
+\item (Free, open-source) \IT{Diaphora}\footnote{\url{https://github.com/joxeankoret/diaphora}}
+\end{itemize}
+
+\section{Live analysis}
+
+Strumenti da utilizzare per effettuare un'analisi live del sistema o di un processo in esecuzione.
+
+\subsection{Debuggers}
+
+\myindex{\olly}
+\myindex{Radare}
+\myindex{GDB}
+\myindex{tracer}
+\myindex{LLDB}
+\myindex{WinDbg}
+
+\begin{itemize}
+\item (Free) \IT{OllyDbg}.
+Popolare win32 debugger\footnote{\href{http://go.yurichev.com/17032}{ollydbg.de}}.
+\ShortHotKeyCheatsheet: \myref{sec:Olly_cheatsheet}
+
+\item (Free, open-source) \IT{GDB}.
+Strumento non molto popolare tra reverse engineers perchè è per lo più inteso per programmatori.
+Alcuni comandi: \myref{sec:GDB_cheatsheet}.
+C'è anche un'interfaccia per GDB, ``GDB dashboard''\footnote{\url{https://github.com/cyrus-and/gdb-dashboard}}.
+
+\item (Free, open-source) \IT{LLDB}\footnote{\url{http://lldb.llvm.org/}}.
+
+\item \IT{WinDbg}\footnote{\url{https://developer.microsoft.com/en-us/windows/hardware/windows-driver-kit}}:
+kernel debugger per Windows.
+
+\item (Free, open-source) \IT{Radare} \ac{AKA} rada.re \ac{AKA} r2\footnote{\url{http://rada.re/r/}}.
+Esiste anche una GUI: \IT{ragui}\footnote{\url{http://radare.org/ragui/}}.
+
+\item (Free, open-source) \IT{tracer}.
+\label{tracer}
+L'autore usa spesso \IT{tracer}
+\footnote{\href{http://go.yurichev.com/17338}{yurichev.com}}
+invece di un debugger.
+
+L'autore di queste righe ha smesso di utilizzare un debugger dato che l'unica cosa di cui aveva bisogno era di trovare gli
+argomenti delle funzioni durante l'esecuzione o lo stato dei registri ad un determinato punto.
+Caricare un debugger ogni volta risultava essere non ottimale, perciò è nacque una nuova utility chiamata \IT{tracer}.
+Funziona dalla linea di comando e permette di intercettare l'esecuzione di funzioni,
+impostare breakpoint in posizioni arbitrarie, leggere e modificare lo stato dei registri, ecc.
+
+N.B.: \IT{tracer} non sta evolvendo perchè è nato principalmente come strumento di dimostrazione per questo libro, non come strumento di ogni giorno.
+\end{itemize}
+
+\subsection{Tracciare chiamate alle librerie}
+
+\IT{ltrace}\footnote{\url{http://www.ltrace.org/}}.
+
+\subsection{Tracciare chiamate di sistema}
+
+\label{strace}
+\myindex{strace}
+\myindex{dtruss}
+\subsubsection{strace / dtruss}
+
+\myindex{syscall}
+Mostra quali chiamate di sistema sono chiamate da un processo. (syscalls(\myref{syscalls}))
+
+Per esempio:
+
+\begin{lstlisting}
+# strace df -h
+
+...
+
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+open("/lib/i386-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0\220\232\1\0004\0\0\0"..., 512) = 512
+fstat64(3, {st_mode=S_IFREG|0755, st_size=1770984, ...}) = 0
+mmap2(NULL, 1780508, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0xb75b3000
+\end{lstlisting}
+
+\myindex{\MacOSX}
+\MacOSX ha dtruss per lo stesso compito.
+
+\myindex{Cygwin}
+Cygwin ha strace ma, per quanto ne so, funziona solo per file .exe compilati all'interno dell'ambiente
+cygwin.
+
+\subsection{Network sniffing}
+
+\IT{Sniffing} significa intercettare informazioni di cui si potrebbe essere interessati.
+
+(Free, open-source) \IT{Wireshark}\footnote{\url{https://www.wireshark.org/}} per lo sniffing di rete.
+Puà sniffare anche USB\footnote{\url{https://wiki.wireshark.org/CaptureSetup/USB}}.
+
+Wireshark ha un fratello chiamato \IT{tcpdump}\footnote{\url{http://www.tcpdump.org/}}, un semplice strumento a linea di comando.
+
+\subsection{Sysinternals}
+
+\myindex{Sysinternals}
+(Free) Sysinternals (developed by Mark Russinovich)
+\footnote{\url{https://technet.microsoft.com/en-us/sysinternals/bb842062}}.
+Questi strumenti sono importanti e vale la pena studiarli: Process Explorer, Handle, VMMap, TCPView, Process Monitor.
+
+\subsection{Valgrind}
+
+(Free, open-source) strumento per rilevare memory leak: \url{http://valgrind.org/}.
+A causa del suo potente meccanismo \ac{JIT}, Valgrind è utilizzato come framework per altri strumenti.
+
+% TODO network fuzzing
+
+\subsection{Emulatori}
+
+\begin{itemize}
+\item (Free, open-source) \IT{QEMU}\footnote{\url{http://qemu.org}}: emulatore per differenti tipi di CPU e architetture.
+
+\item (Free, open-source) \IT{DosBox}\footnote{\url{https://www.dosbox.com/}}: emulatore MS-DOS, usato soprattutto per il retro-gaming.
+
+\item (Free, open-source) \IT{SimH}\footnote{\url{http://simh.trailing-edge.com/}}: emulatore di antichi computer, mainframe, ecc.
+\end{itemize}
+
+\section{Altri strumenti}
+
+\IT{Microsoft Visual Studio Express}
+\footnote{\href{http://go.yurichev.com/17034}{visualstudio.com/en-US/products/visual-studio-express-vs}}:
+Versione gratuita di Visual Studio, conveniente per semplici esperimenti.
+
+Alcune opzioni utili: \myref{sec:MSVC_options}.
+
+\section{Manca qualcosa qui?}
+
+Se conosci qualche strumento non elencato qui, per favore segnalamelo tramite e-mail al seguente indirizzo:\\
+\TT{\EMAIL}.
+

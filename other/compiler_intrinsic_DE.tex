@@ -1,0 +1,22 @@
+\section{Intrinsische Compiler-Funktionen}
+\myindex{Compiler intrinsic}
+\label{sec:compiler_intrinsic}
+
+\myindex{x86!\Instructions!ROL}
+\myindex{x86!\Instructions!ROR}
+
+Dabei handelt es sich um spezielle Funktionen eines Compilers, die nicht in der
+Standard-Bibliothek enthalten sind.
+Der Compiler generiert einen spezifischen Maschinencode anstatt ihn aufzurufen.
+Dies ist häufig eine Pseudofunktion für eine spezielle \ac{CPU}-Anweisung.
+
+Beispielsweise gibt es keine zyklische Schiebe-Anweisungen in \CCpp -Sprachen,
+in den meisten \ac{CPU}s sind sie jedoch vorhanden.
+Um dem Programmierer das Leben einfacher zu machen hat zumindest MSVC die
+Pseudofunktionen \IT{\_rotl()} und \IT{\_rotr()}\FNMSDNROTxURL{} welche vom
+Compiler direkt in die ROL/ROR x86-Anweisungen übersetzt werden.
+
+Ein anderes Beispiel sind Funktionen die SSE-Anweisungen direkt im Code umwandeln.
+
+Eine vollständige Liste von intrinsischen Funktionen in MSVC ist hier zu finden:
+\href{http://go.yurichev.com/17254}{MSDN}.

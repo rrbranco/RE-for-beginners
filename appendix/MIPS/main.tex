@@ -1,23 +1,25 @@
-\chapter{MIPS}
+\section{MIPS}
 
-\section{\Registers}
+\subsection{\Registers}
 \label{MIPS_registers_ref}
 
-\index{MIPS!O32}
+\myindex{MIPS!O32}
 ( \RU{Соглашение о вызовах O32}\EN{O32 calling convention} )
 
-\subsection{\RU{Регистры общего пользования}\EN{General purpose registers} \ac{GPR}}
+\subsubsection{\RU{Регистры общего пользования}\EN{General purpose registers} \ac{GPR}}
 
+\small
 \begin{center}
 \begin{tabular}{ | l | l | l | }
 \hline
-\cellcolor{blue!25} \RU{Номер}\EN{Number} & 
-\cellcolor{blue!25} \RU{Псевдоимя}\EN{Pseudoname} & 
-\cellcolor{blue!25} \RU{Описание}\EN{Description} \\
+\HeaderColor \RU{Номер}\EN{Number} & 
+\HeaderColor \RU{Псевдоимя}\EN{Pseudoname} & 
+\HeaderColor \RU{Описание}\EN{Description} \\
 \hline
-\$0             & \$ZERO          & \RU{Всегда ноль. Запись в этот регистр работает как холостая инструкция}\EN{Always zero. Writing to this register is effectively an idle instruction} (\ac{NOP}). \\
+\$0             & \$ZERO          & \RU{Всегда ноль. Запись в этот регистр это как}\EN{Always zero. Writing to this register is like} \ac{NOP}. \\
 \hline
-\$1             & \$AT            & \RU{Используется как временный регистр для ассемблерных макросов и псевдоинструкций}\EN{Used as a temporary register for assembly macros and pseudoinstructions}. \\
+\$1             & \$AT            & \RU{Используется как временный регистр}\EN{Used as a temporary register} \\
+                &                 & \RU{для ассемблерных макросов и псевдоинструкций}\EN{for assembly macros and pseudo instructions}. \\
 \hline
 \$2 \dots \$3   & \$V0 \dots \$V1 & \RU{Здесь возвращается результат функции}\EN{Function result is returned here}. \\
 \hline
@@ -47,14 +49,15 @@ n/a             & LO              & \RU{младшие 32 бита резуль�
 \hline
 \end{tabular}
 \end{center}
+\normalsize
 
-\subsection{\RU{Регистры для работы с числами с плавающей точкой}\EN{Floating-point registers}}
+\subsubsection{\RU{Регистры для работы с числами с плавающей точкой}\EN{Floating-point registers}}
 \label{MIPS_FPU_registers}
 
 \begin{center}
 \begin{tabular}{ | l | l | l | }
 \hline
-\cellcolor{blue!25} \RU{Название}\EN{Name} & \cellcolor{blue!25} \RU{Описание}\EN{Description} \\
+\HeaderColor \RU{Название}\EN{Name} & \HeaderColor \RU{Описание}\EN{Description} \\
 \hline
 \$F0..\$F1   & \RU{Здесь возвращается результат функции}\EN{Function result returned here}. \\
 \hline
@@ -76,11 +79,11 @@ n/a             & LO              & \RU{младшие 32 бита резуль�
 \AsteriskOne{}\EMDASH{}\Gls{callee} \RU{должен сохранять}\EN{must preserve the value}.\\
 \AsteriskTwo{}\EMDASH{}\Gls{callee} \RU{должен сохранять}\EN{must preserve the value} (\RU{кроме \ac{PIC}-кода}
 \EN{except in \ac{PIC} code}).\\
-\index{MIPS!\Instructions!MFLO}
-\index{MIPS!\Instructions!MFHI}
+\myindex{MIPS!\Instructions!MFLO}
+\myindex{MIPS!\Instructions!MFHI}
 \AsteriskThree{}\EMDASH{}\RU{доступны используя инструкции}\EN{accessible using the} \TT{MFHI} \AndENRU \TT{MFLO}\EN{ instructions}.\\
 
-\section{\Instructions}
+\subsection{\Instructions}
 
 \RU{Есть три типа инструкций}\EN{There are 3 kinds of instructions}:
 
@@ -93,9 +96,9 @@ n/a             & LO              & \RU{младшие 32 бита резуль�
 instruction destination, source1, source2
 \end{lstlisting}
 
-\RU{Важно помнить что если первый и второй регистр один и тот же, IDA может показать инструкцию в сокращенной
+\RU{Важно помнить, что если первый и второй регистр один и тот же, IDA может показать инструкцию в сокращенной
 форме:}
-\EN{One important thing to remember is that when the first and second register are the same, 
+\EN{One important thing to keep in mind is that when the first and second register are the same, 
 IDA may show the instruction in its shorter form:}
 
 \begin{lstlisting}
@@ -113,10 +116,10 @@ instruction destination/source1, source2
 
 \end{itemize}
 
-\subsection{\RU{Инструкции перехода}\EN{Jump instructions}}
+\subsubsection{\RU{Инструкции перехода}\EN{Jump instructions}}
 
-\RU{Какая разница между инструкциями начинающихся с B- (BEQ, B, \etc{}.) и с J- (JAL, JALR, \etc{}.)?}
-\EN{What is the difference between B- instructions (BEQ, B, \etc{}) and J- ones (JAL, JALR, \etc{})?}
+\RU{Какая разница между инструкциями начинающихся с B- (BEQ, B, итд) и с J- (JAL, JALR, итд)?}
+\EN{What is the difference between B- instructions (BEQ, B, etc.) and J- ones (JAL, JALR, etc.)?}
 
 \RU{B-инструкции имеют тип I, так что, смещение в этих инструкциях кодируется как 16-битное значение.}
 \EN{The B-instructions have an I-type, hence, the B-instructions' offset is encoded as a 16-bit immediate.}
@@ -129,5 +132,5 @@ instruction destination/source1, source2
 (B на самом деле это псевдоинструкция для \TT{BEQ \$ZERO, \$ZERO, LABEL}),
 а в J-инструкциях нельзя.}
 \EN{In short, B-instructions can encode a condition 
-(B is in fact pseudoinstruction for \TT{BEQ \$ZERO, \$ZERO, LABEL}), 
+(B is in fact pseudo instruction for \TT{BEQ \$ZERO, \$ZERO, LABEL}), 
 while J-instructions can't.}

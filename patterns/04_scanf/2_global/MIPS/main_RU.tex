@@ -1,0 +1,69 @@
+\subsubsection{MIPS}
+
+\myparagraph{Неинициализированная глобальная переменная}
+
+Так что теперь переменная $x$ глобальная.
+Сделаем исполняемый файл вместо объектного и загрузим его в \IDA.
+IDA показывает присутствие переменной $x$ в ELF-секции .sbss (помните о \q{Global Pointer}? \myref{MIPS_GP}),
+так как переменная не инициализируется в самом начале.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/04_scanf/2_global/MIPS/O3_IDA_RU.lst}
+
+IDA уменьшает количество информации, так что сделаем также листинг используя objdump и добавим туда свои комментарии:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (objdump),numbers=left,style=customasmMIPS]{patterns/04_scanf/2_global/MIPS/O3_objdump_RU.txt}
+
+Теперь мы видим, как адрес переменной $x$ берется из буфера 64KiB, используя GP и прибавление к нему отрицательного смещения (строка 18).
+
+И даже более того: адреса трех внешних функций, используемых в нашем примере (\puts, \scanf, \printf)
+также берутся из буфера 64KiB используя GP (строки 9, 16 и 26).
+
+GP указывает на середину буфера, так что такие смещения могут нам подсказать, что адреса всех трех функций,
+а также адрес переменной $x$ расположены где-то в самом начале буфера.
+Действительно, ведь наш пример крохотный.
+
+\myindex{MIPS!\Pseudoinstructions!MOVE}
+\myindex{MIPS!\Pseudoinstructions!NOP}
+Ещё нужно отметить что функция заканчивается двумя \ac{NOP}-ами (\TT{MOVE \$AT,\$AT}~--- 
+это холостая инструкция), чтобы выровнять начало следующей функции по 16-байтной границе.
+
+\myparagraph{Инициализированная глобальная переменная}
+
+Немного изменим наш пример и сделаем, чтобы у $x$ было значение по умолчанию:
+
+\lstinputlisting[style=customc]{patterns/04_scanf/2_global/default_value_RU.c}
+
+Теперь IDA показывает что переменная $x$ располагается в секции .data:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/04_scanf/2_global/MIPS/O3_IDA_init_RU.lst}
+
+Почему не .sdata? Может быть, нужно было указать какую-то опцию в GCC?
+Тем не менее, $x$ теперь в .data, а это уже общая память и мы можем посмотреть как происходит
+работа с переменными там.
+
+\myindex{MIPS!\Instructions!LUI}
+\myindex{MIPS!\Instructions!ADDIU}
+Адрес переменной должен быть сформирован парой инструкций.
+В нашем случае это \INS{LUI} (\q{Load Upper Immediate}~--- загрузить старшие 16 бит) и 
+\INS{ADDIU} (\q{Add Immediate Unsigned Word}~--- прибавить значение).
+Вот так же листинг сгенерированный objdump-ом для лучшего рассмотрения:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (objdump),style=customasmMIPS]{patterns/04_scanf/2_global/MIPS/O3_objdump_init_RU.txt}
+
+\myindex{MIPS!\Instructions!LUI}
+\myindex{MIPS!\Instructions!ADDIU}
+\myindex{MIPS!\Instructions!LW}
+Адрес формируется используя \INS{LUI} и \INS{ADDIU}, но старшая часть адреса
+всё ещё в регистре \$S0, и можно закодировать смещение в инструкции \INS{LW} (\q{Load Word}), так что одной
+\INS{LW} достаточно для загрузки значения из переменной и передачи его в \printf.
+Регистры хранящие временные данные имеют префикс T-, но здесь есть также регистры с префиксом S-,
+содержимое которых должно быть сохранено в других функциях (т.е. \q{saved}).
+
+% FIXME:
+% This needs to be clarified a bit, e.g. "the registers need to be preserved if a function is called and it wants to use them
+Вот почему \$S0 был установлен по адресу 0x4006cc и затем был использован по адресу 0x4006e8
+после вызова \scanf.
+
+Функция \scanf не изменяет это значение.
+
+% TODO non-optimized example?

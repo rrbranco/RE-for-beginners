@@ -1,0 +1,76 @@
+\subsubsection{Пример CPUID}
+
+Язык \CCpp позволяет указывать, сколько именно бит отвести для каждого поля структуры. 
+Это удобно если нужно экономить место в памяти. К примеру, для переменной типа \Tbool достаточно одного бита.
+Но, это не очень удобно, если нужна скорость.
+
+% FIXME!
+% another use of this is to parse binary protocols/packets, for example
+% the definition of struct iphdr in include/linux/ip.h
+
+\newcommand{\FNCPUID}{\footnote{\href{http://go.yurichev.com/17069}{wikipedia}}}
+
+\myindex{x86!\Instructions!CPUID}
+\label{cpuid}
+Рассмотрим пример с инструкцией \CPUID\FNCPUID. 
+Эта инструкция возвращает информацию о том, какой процессор имеется в наличии и какие возможности он имеет.
+
+Если перед исполнением инструкции в \EAX будет 1, 
+то \CPUID вернет упакованную в \EAX такую информацию о процессоре:
+
+\begin{center}
+\begin{tabular}{ | l | l | }
+\hline
+3:0 (4 бита)& Stepping \\
+7:4 (4 бита) & Model \\
+11:8 (4 бита) & Family \\
+13:12 (2 бита) & Processor Type \\
+19:16 (4 бита) & Extended Model \\
+27:20 (8 бит) & Extended Family \\
+\hline
+\end{tabular}
+\end{center}
+
+\newcommand{\FNGCCAS}{\footnote{\href{http://go.yurichev.com/17070}
+{Подробнее о встроенном ассемблере GCC}}}
+
+MSVC 2010 имеет макрос для \CPUID, а GCC 4.4.1 ~--- нет. 
+Поэтому для GCC сделаем эту функцию сами, используя его встроенный ассемблер\FNGCCAS.
+
+\lstinputlisting[style=customc]{patterns/15_structs/6_bitfields/cpuid/CPUID.c}
+
+После того как \CPUID заполнит \EAX/\EBX/\ECX/\EDX, у нас они отразятся в массиве \TT{b[]}. 
+Затем, мы имеем указатель на структуру \TT{CPUID\_1\_EAX}, и мы указываем его на значение 
+\EAX из массива \TT{b[]}.
+
+Иными словами, мы трактуем 32-битный \Tint как структуру.
+
+Затем мы читаем отдельные биты из структуры.
+
+\myparagraph{MSVC}
+
+Компилируем в MSVC 2008 с опцией \Ox:
+
+\lstinputlisting[caption=\Optimizing MSVC 2008,style=customasmx86]{patterns/15_structs/6_bitfields/cpuid/CPUID_msvc_Ox.asm}
+
+\myindex{x86!\Instructions!SHR}
+Инструкция \TT{SHR} сдвигает значение из \EAX на то количество бит, 
+которое нужно \IT{пропустить}, то есть, мы игнорируем некоторые биты \IT{справа}.
+
+\myindex{x86!\Instructions!AND}
+А инструкция \AND очищает биты \IT{слева} которые нам не нужны, или же, говоря иначе, 
+она оставляет по маске только те биты в \EAX, которые нам сейчас нужны.
+
+\input{patterns/15_structs/6_bitfields/cpuid/olly_RU.tex}
+
+\myparagraph{GCC}
+
+Попробуем GCC 4.4.1 с опцией \Othree.
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.1,style=customasmx86]{patterns/15_structs/6_bitfields/cpuid/CPUID_gcc_O3.asm}
+
+Практически, то же самое. Единственное что стоит отметить это то, что GCC решил зачем-то объединить 
+вычисление \\
+\TT{extended\_model\_id} и \TT{extended\_family\_id} в один блок, 
+вместо того чтобы вычислять их перед соответствующим вызовом \printf.
+

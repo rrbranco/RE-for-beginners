@@ -1,0 +1,12 @@
+\subsection{\ShiftsSectionName}
+
+Bit shifts in \CCpp are implemented using $\ll$ and $\gg$ operators.
+The x86 \ac{ISA} has the SHL (SHift Left) and SHR (SHift Right) instructions for this.
+Shift instructions are often used in division and multiplications by powers of two: $2^{n}$ (e.g., 1, 2, 4, 8, etc.):
+\myref{subsec:mult_using_shifts},
+\myref{division_by_shifting}.
+
+% FIXME: rework this
+
+Shifting operations are also so important because they are often used for specific bit isolation
+or for constructing a value of several scattered bits.
