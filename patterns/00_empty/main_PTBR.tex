@@ -1,0 +1,77 @@
+\section{An Empty Function}
+\label{empty_func}
+
+The simplest possible function is arguably one that does nothing:
+
+\lstinputlisting[caption=\EN{\CCpp Code},style=customc]{patterns/00_empty/1.c}
+
+Let's compile it!
+
+\subsection{x86}
+
+Here's what both the GCC and MSVC compilers produce on the x86 platform:
+
+\lstinputlisting[caption=\Optimizing GCC/MSVC (\assemblyOutput),style=customasmx86]{patterns/00_empty/1.s}
+
+\myindex{x86!\Instructions!RET}
+There is just one instruction: \RET, which returns execution to the \gls{caller}.
+
+\subsection{ARM}
+
+\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) \assemblyOutput,style=customasmARM]{patterns/00_empty/1_Keil_ARM_O3.s}
+
+The return address is not saved on the local stack in the ARM \ac{ISA}, but rather in the link register, 
+so the \INS{BX LR} instruction causes execution to jump to that address---effectively returning execution
+to the \gls{caller}.
+
+\subsection{MIPS}
+
+There are two naming conventions used in the world of MIPS when naming registers:
+by number (from \$0 to \$31) or by pseudo name (\$V0, \$A0, etc.).
+
+The GCC assembly output below lists registers by number:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/00_empty/MIPS.s}
+
+\dots while \IDA does it by pseudo name:
+
+\lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/00_empty/MIPS_IDA.lst}
+
+\myindex{MIPS!\Instructions!J}
+The first instruction is the jump instruction (J or JR) which returns the execution flow to the \gls{caller},
+jumping to the address in the \$31 (or \$RA) register.
+
+This is the register analogous to \ac{LR} in ARM.
+
+The second instruction is \ac{NOP}, which does nothing.
+We can ignore it for now.
+
+\subsubsection{A Note About MIPS Instructions and Register Names}
+
+Register and instruction names in the world of MIPS are traditionally written in lowercase.
+However, for the sake of consistency, this book will stick to using uppercase letters,
+as it is the convention followed by all the other \ac{ISA}s featured this book.
+
+\subsection{Empty Functions in Practice}
+
+Despite the fact empty functions seem useless, they are quite frequent in low-level code.
+
+First of all, they are quite popular in debugging functions, like this one:
+
+\lstinputlisting[caption=\EN{\CCpp Code},style=customc]{patterns/00_empty/dbg_print.c}
+
+In a non-debug build (as in a ``release''), \TT{\_DEBUG} is not defined,
+so the \TT{dbg\_print()} function, despite still being called during execution,
+will be empty.
+
+Similarly, a popular method of software protection is to make one build for legal customers, and another demo build.
+A demo build can lack some important functions, as with this example:
+
+\lstinputlisting[caption=\EN{\CCpp Code},style=customc]{patterns/00_empty/demo.c}
+
+The \TT{save\_file()} function can be called when the user clicks \TT{File->Save} on the menu.
+The demo version may be delivered with this menu item disabled, but even if a software cracker will enable it,
+only an empty function with no useful code will be called.
+
+IDA marks such functions with names like \TT{nullsub\_00}, \TT{nullsub\_01}, etc.
+
