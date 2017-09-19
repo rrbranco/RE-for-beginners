@@ -1,77 +1,77 @@
-\section{An Empty Function}
+\section{Uma Função Vazia}
 \label{empty_func}
 
-The simplest possible function is arguably one that does nothing:
+A função mais simples possivel é, indiscutivelmente, aquela que não faz nada:
 
 \lstinputlisting[caption=\EN{\CCpp Code},style=customc]{patterns/00_empty/1.c}
 
-Let's compile it!
+Vamos compilar isto!
 
 \subsection{x86}
 
-Here's what both the GCC and MSVC compilers produce on the x86 platform:
+Aqui o que ambos compiladores GCC e MSVC produzem em uma plataforma x86:
 
-\lstinputlisting[caption=\Optimizing GCC/MSVC (\assemblyOutput),style=customasmx86]{patterns/00_empty/1.s}
+\lstinputlisting[caption=\Otimizando GCC/MSVC (\assemblyOutput),style=customasmx86]{patterns/00_empty/1.s}
 
 \myindex{x86!\Instructions!RET}
-There is just one instruction: \RET, which returns execution to the \gls{caller}.
+Há somente uma instrução: \RET, que retorna a execução para o \gls{caller}.
 
 \subsection{ARM}
 
-\lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) \assemblyOutput,style=customasmARM]{patterns/00_empty/1_Keil_ARM_O3.s}
+\lstinputlisting[caption=\OtimizandoKeilVI (\ARMMode) \assemblyOutput,style=customasmARM]{patterns/00_empty/1_Keil_ARM_O3.s}
 
-The return address is not saved on the local stack in the ARM \ac{ISA}, but rather in the link register, 
-so the \INS{BX LR} instruction causes execution to jump to that address---effectively returning execution
-to the \gls{caller}.
+O endereço de retorno não é salvo na pilha local no ARM \ac{ISA}, mas no link register,
+então a instrução \INS{BX LR} faz a execução pular para este endereço---efetivamente retornando a execução
+ao \gls{caller}.
 
 \subsection{MIPS}
 
-There are two naming conventions used in the world of MIPS when naming registers:
-by number (from \$0 to \$31) or by pseudo name (\$V0, \$A0, etc.).
+Há duas convenções de nomeação no mundo MIPS quando nomeando registradores: 
+por número (de \$0 a \$31) ou por pseudônimo (\$V0, \$A0, etc.).
 
-The GCC assembly output below lists registers by number:
+Abaixo é a saída em assembly do GCC que lista registradores por número:
 
 \lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/00_empty/MIPS.s}
 
-\dots while \IDA does it by pseudo name:
+\dots enquanto \IDA faz isso por pseudônimo:
 
 \lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/00_empty/MIPS_IDA.lst}
 
 \myindex{MIPS!\Instructions!J}
-The first instruction is the jump instruction (J or JR) which returns the execution flow to the \gls{caller},
-jumping to the address in the \$31 (or \$RA) register.
+A primeira instrução é a instrução jump (J or JR) que retorna o fluxo de execução ao \gls{caller},
+pulando para o endereço no registrador \$31 (ou \$RA).
 
-This is the register analogous to \ac{LR} in ARM.
+Este é o registrador analogo ao \ac{LR} no ARM.
 
-The second instruction is \ac{NOP}, which does nothing.
-We can ignore it for now.
+A segunda instrução é \ac{NOP}, que não faz nada.
+Podemos ignorar isso por enquanto.
 
-\subsubsection{A Note About MIPS Instructions and Register Names}
+\subsubsection{Uma Nota Sobre Instruções MIPS e Nomes de Registradores}
 
-Register and instruction names in the world of MIPS are traditionally written in lowercase.
-However, for the sake of consistency, this book will stick to using uppercase letters,
-as it is the convention followed by all the other \ac{ISA}s featured this book.
+Registradores e nomes de instruções no mundo MIPS são tradicionalmente escritas em caixa baixa.
+Entretanto, para fins de consistencia, este livro irá usar caixa alta,
+como é a convenção seguida por todos os outros \ac{ISA}s presentes nesse livro.
 
-\subsection{Empty Functions in Practice}
+\subsection{Funções Vazias na Prática}
 
-Despite the fact empty functions seem useless, they are quite frequent in low-level code.
+Tirando o fato que funções vazias parecem inúteis, elas são bem frequentes em código de baixo nível.
 
-First of all, they are quite popular in debugging functions, like this one:
+Primeiro de tudo, elas são bem populares em funções de debug, como esta:
 
-\lstinputlisting[caption=\EN{\CCpp Code},style=customc]{patterns/00_empty/dbg_print.c}
+\lstinputlisting[caption=\EN{Código \CCpp},style=customc]{patterns/00_empty/dbg_print.c}
 
-In a non-debug build (as in a ``release''), \TT{\_DEBUG} is not defined,
-so the \TT{dbg\_print()} function, despite still being called during execution,
-will be empty.
+Em uma versão sem debug (como na versão ''final''), \TT{\_DEBUG} não é definido,
+assim como a função \TT{dbg\_print()}, tirando o fato de ser chamada durante a execução,
+será vazia.
 
-Similarly, a popular method of software protection is to make one build for legal customers, and another demo build.
-A demo build can lack some important functions, as with this example:
+Similarmente, um método popular de proteção de software é fazer uma versão completa e uma versão de demo.
+Uma demo pode deixar de ter funções importantes, como esta do exemplo:
 
 \lstinputlisting[caption=\EN{\CCpp Code},style=customc]{patterns/00_empty/demo.c}
 
-The \TT{save\_file()} function can be called when the user clicks \TT{File->Save} on the menu.
-The demo version may be delivered with this menu item disabled, but even if a software cracker will enable it,
-only an empty function with no useful code will be called.
+A função \TT{save\_file()} pode ser chamada quando o usuário clica em \TT{Arquivo->Salvar} no menu.
+A versão demo pode ser entregue com esse item do menu desativado, mas mesmo se um cracker ativá-la, 
+somente uma função vazia sem código usável será chamado.
 
-IDA marks such functions with names like \TT{nullsub\_00}, \TT{nullsub\_01}, etc.
+IDA marca tais funções com nomes como \TT{nullsub\_00}, \TT{nullsub\_01}, etc.
 
