@@ -1,15 +1,15 @@
-\section{Returning Values}
+\section{Retornando Valores}
 \label{ret_val_func}
 
-Another simple function is the one that simply returns a constant value:
+Outra função simples é a que simplesmente retorna um valor constante:
 
 \lstinputlisting[caption=\EN{\CCpp Code},style=customc]{patterns/011_ret/1.c}
 
-Let's compile it.
+Vamos compilar isto.
 
 \subsection{x86}
 
-Here's what both the GCC and MSVC compilers produce (with optimization) on the x86 platform:
+Aqui está o que o compiladores GCC e MSVC produzem (com otimização) em uma plataforma x86:
 
 \lstinputlisting[caption=\Optimizing GCC/MSVC (\assemblyOutput),style=customasmx86]{patterns/011_ret/1.s}
 
@@ -22,7 +22,7 @@ The caller will take the result from the \EAX register.
 
 \subsection{ARM}
 
-There are a few differences on the ARM platform:
+Existem algumas diferenças na plataforma ARM:
 
 \lstinputlisting[caption=\OptimizingKeilVI (\ARMMode) ASM Output,style=customasmARM]{patterns/011_ret/1_Keil_ARM_O3.s}
 
@@ -32,17 +32,17 @@ ARM uses the register \Reg{0} for returning the results of functions, so 123 is 
 \myindex{x86!\Instructions!MOV}
 It is worth noting that \MOV is a misleading name for the instruction in both the x86 and ARM \ac{ISA}s.
 
-The data is not in fact \IT{moved}, but \IT{copied}.
+O dado não é, de fato, \IT{movido}, mas \IT{copiado}.
 
 \subsection{MIPS}
 
 \label{MIPS_leaf_function_ex1}
 
-The GCC assembly output below lists registers by number:
+O assembly abaixo é o resultante do GCC e lista registradores por número:
 
 \lstinputlisting[caption=\Optimizing GCC 4.4.5 (\assemblyOutput),style=customasmMIPS]{patterns/011_ret/MIPS.s}
 
-\dots while \IDA does it by their pseudo names:
+\dots enquanto \IDA faz com pseudônimos:
 
 \lstinputlisting[caption=\Optimizing GCC 4.4.5 (IDA),style=customasmMIPS]{patterns/011_ret/MIPS_IDA.lst}
 
@@ -64,10 +64,10 @@ As a consequence, branch instructions always swap places with the instruction wh
 % A footnote/link to http://en.wikipedia.org/wiki/Delay_slot#Branch_delay_slots or
 % something similar might be useful for the people more interested in it.
 
-\subsection{In practice}
+\subsection{Na prática}
 
-In practice, functions which merely return 1 (\IT{true}) or 0 (\IT{false}) are very frequent.
- 
+Na prática, funções que merametne retornam 1 (\IT{true}) ou 0 (\IT{false}) são muito frequentes.
+
 The smallest ever of the standard UNIX utilities, \IT{/bin/true} and \IT{/bin/false} return 0 and 1 respectively, as an exit code.
 (Zero as an exit code usually means success, non-zero means error.)
 
