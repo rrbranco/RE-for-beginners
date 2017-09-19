@@ -1,0 +1,34 @@
+\subsection{Limites de strings}
+
+\myindex{win32!GetOpenFileName}
+É interessante notar como parametros são passados para a função win32 \IT{GetOpenFileName()}.
+Afim de usá-la, deve-se inserir uma lista de extensões permitidas:
+
+\begin{lstlisting}[style=customc]
+    OPENFILENAME *LPOPENFILENAME;
+    ...
+    char * filter = "Text files (*.txt)\0*.txt\0MS Word files (*.doc)\0*.doc\0\0";
+    ...
+    LPOPENFILENAME = (OPENFILENAME *)malloc(sizeof(OPENFILENAME));
+    ...
+    LPOPENFILENAME->lpstrFilter = filter;
+    ...
+
+    if(GetOpenFileName(LPOPENFILENAME))
+    {
+        ...
+\end{lstlisting}
+
+O que acontece aqui é que a lista de strings é passada para \IT{GetOpenFileName()}.
+Não é dificil parseá-la: onde você encontrar um único byte zero, é um item.
+Onde você encontrar dois bytes zero, é o fim da lista.
+Se você passar esta string para \printf, ele irá tratar o primeiro item como uma única string.
+
+Então isto é uma string ou...?
+É melhor dizer que é um buffer contendo algumas C-strings terminadas em zero, que podem ser guardadas e 
+processadas como um todo.
+
+\myindex{\CStandardLibrary!strtok}
+Outro exemplo é a função \IT{strtok()}. Ela recebe uma string e escreve bytes zero no meio dela.
+Ela transforma a string de entrada em uma forma de buffer, que tem algumas C-strings terminadas em zero.
+
